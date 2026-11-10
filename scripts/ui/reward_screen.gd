@@ -19,12 +19,12 @@ var _footer: Label
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	var dim := ColorRect.new()
 	dim.color = Color(Pal.INK, 0.9)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(dim)
 	_title = UiKit.label("CHOOSE A KEEPSAKE", 16, Pal.GOLD)

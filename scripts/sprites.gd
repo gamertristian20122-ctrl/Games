@@ -61,6 +61,12 @@ static func sheet() -> Texture2D:
 	return _sheet
 
 
+## Lets go of the loaded sheet (called when the game closes).
+static func forget() -> void:
+	_sheet = null
+	_atlas_cache.clear()
+
+
 ## The rectangle on the sheet for one picture.
 static func region(cell: Vector2i) -> Rect2:
 	return Rect2(cell.x * TILE, cell.y * TILE, TILE, TILE)

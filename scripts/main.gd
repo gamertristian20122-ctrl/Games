@@ -61,6 +61,13 @@ func _ready() -> void:
 		begin_run(int(args.get("seed", "1")))
 	else:
 		_show_title()
+	if args.has("screen"):
+		_show_test_screen.call_deferred(args["screen"])
+
+
+func _exit_tree() -> void:
+	Sprites.forget()
+	UiKit.forget()
 
 
 ## Reads options typed after "--" on the command line, such as "--bot --runs=20".
@@ -100,7 +107,7 @@ func _build_screen() -> void:
 	layer.add_child(screens)
 	fade = ColorRect.new()
 	fade.color = Color(Pal.INK, 0.0)
-	fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(fade)
 
@@ -116,7 +123,7 @@ func _show_title() -> void:
 	hud.visible = false
 	reward_ui.visible = false
 	screens.show_title()
-	Sfx.music("")
+	Sfx.music("title.ogg")
 
 
 ## Starts a new run. A negative seed means "pick one at random".
@@ -146,6 +153,28 @@ func begin_run(seed_value: int = -1) -> void:
 	_end_result = ""
 	_killer = ""
 	_load_room()
+
+
+## Test option "--screen=options|pause|lost|won": jumps straight to a menu so
+## its layout can be checked (used together with "--shots").
+func _show_test_screen(which: String) -> void:
+	if which == "options":
+		screens.show_options()
+		return
+	begin_run(int(args.get("seed", "1")))
+	_apply_debug_start()
+	await get_tree().create_timer(1.5).timeout
+	match which:
+		"pause":
+			mode = "pause"
+			get_tree().paused = true
+			screens.show_pause()
+		"lost":
+			_on_keeper_died("clawling")
+		"won":
+			keeper.active = false
+			_end_result = "win"
+			_end_timer = 0.3
 
 
 ## Test options: "--floor=2 --room=5 --give=prism,twin_lens" jump ahead in a run.
@@ -200,7 +229,7 @@ func _load_room() -> void:
 	hud.show_hint(_hint_for_room())
 	if Game.room_index == 0:
 		hud.banner(String(floor_info["name"]).to_upper(), floor_info["blurb"], floor_info["accent"], 2.8)
-	Sfx.music("")
+	Sfx.music("boss.ogg" if is_boss else "floor_%d.ogg" % (Game.floor_index + 1))
 
 
 ## A few words of teaching in a player's first runs.
@@ -274,6 +303,9 @@ func _update_pointer() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause")) and screens.go_back():
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("pause"):
 		if mode == "play" and _end_result == "":
 			mode = "pause"
@@ -327,6 +359,7 @@ func _on_menu_picked(key: String) -> void:
 # ----------------------------------------------------------------------
 
 func _on_room_cleared() -> void:
+	hud.show_hint("")
 	var tape := keeper.stop_recording()
 	Game.push_tape(tape)
 	Game.room_cleared(room.clock, keeper.hits_this_room, room.kind)
@@ -336,6 +369,7 @@ func _on_room_cleared() -> void:
 		_end_result = "win"
 		_end_timer = 0.0 if Game.fast_mode else 1.8
 		Sfx.play("win")
+		Sfx.music("victory.ogg")
 		return
 	room.show_chest()
 
@@ -403,6 +437,7 @@ func _on_keeper_died(killer: String) -> void:
 	_killer = killer
 	_end_result = "death"
 	_end_timer = 0.0 if Game.fast_mode else 1.3
+	Sfx.music("")
 	if room != null:
 		room.state = "over"
 

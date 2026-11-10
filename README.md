@@ -32,7 +32,7 @@ Stand close to it and you both fire faster. That is called *Unison*.
 | Aim | Mouse | Right stick |
 | Fire | Hold left mouse button | Push the right stick, or hold RT / RB |
 | Dash (you cannot be hurt while dashing) | Space, Shift or right mouse button | A, LT or LB |
-| Pause | Esc or P | Start |
+| Pause (Options are in the pause menu) | Esc or P | Start |
 | Fullscreen | F11 or Alt+Enter | |
 | Let the bot play / take control back | F9 | |
 
@@ -50,6 +50,9 @@ Menus work with the keyboard, the mouse and the controller.
 Items stack (take the same one again and it gets stronger) and some pairs form a
 **combo** with an extra effect. A card tells you when taking it would finish a combo.
 
+**Too hard or too easy?** Open **Options** on the title screen or the pause menu and
+change **Difficulty**: Calm, Standard or Stormy. It takes effect on the next run.
+
 ## The test bot
 
 A bot can play the whole game by itself. It uses the same controls a person does.
@@ -60,6 +63,12 @@ A bot can play the whole game by itself. It uses the same controls a person does
   If Windows cannot find Godot, open the `.bat` file in Notepad: the top lines say what
   to do.
 - **On Linux or Mac:** `tools/run_bot.sh`
+- The latest results are in [docs/balance_report.md](docs/balance_report.md).
+
+There is also a **controls self-test**. It presses pretend keys, mouse buttons and
+controller sticks and checks the keeper responds. In Godot, open Project > Project
+Settings > Run, put `--controls-check` in **Main Run Args**, press F5, and read the
+Output panel. Remove the text again afterwards.
 
 ## Where to change things
 
@@ -77,6 +86,8 @@ in the FileSystem panel) or in any text editor.
 | Colours | `scripts/palette.gd` |
 | Which picture is used for what | `scripts/sprites.gd` |
 | Which sound plays when, and how loud | `scripts/autoload/sfx.gd` |
+| The music (swap a file, keep its name) | `assets/music/` |
+| What the difficulty settings do | `scripts/autoload/game.gd` (the DIFFICULTIES part) |
 | Keys and buttons | In Godot: Project > Project Settings > Input Map |
 | Title screen and menu words | `scripts/ui/screens.gd` |
 
@@ -104,9 +115,14 @@ CREDITS.md          every asset: name, artist, link, licence
 - Art, music and sound must be made by people and be under a **CC0** or **CC-BY**
   licence. No AI-generated art, music or sound.
 - One matching art style: everything visual comes from Kenney's 1-Bit Pack.
+- The art is white on a see-through background on purpose. The game colours it in
+  code, so the picture files look blank or all white if you open them by themselves.
 - Every asset is listed in `CREDITS.md`. Add the line when you add the asset.
 
 ## Status
 
 Playable from start to finish: 3 floors, 13 kinds of enemy, 3 bosses, 33 items and
-14 combos. Still to come: options menu, music, more tuning, and the Windows/Steam build.
+14 combos, three difficulty settings, sound and music.
+
+Difficulty has only been tuned with the bot so far. It needs people to play it and say
+how it feels. Still to come: a Windows build and the Steam store steps.

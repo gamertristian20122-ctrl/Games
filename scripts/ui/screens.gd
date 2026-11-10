@@ -14,15 +14,16 @@ var _icon: TextureRect
 var _items_row: Control
 var _help: Label
 var current := ""
+var _return_to := "title"      # where the Options screen goes back to
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
 	_dim = ColorRect.new()
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_dim)
 
@@ -56,7 +57,9 @@ func _ready() -> void:
 
 	_menu = MenuList.new()
 	_menu.position = Vector2(140, 196)
-	_menu.picked.connect(func(key: String) -> void: picked.emit(key))
+	_menu.picked.connect(_on_menu_picked)
+	_menu.adjusted.connect(_on_menu_adjusted)
+	_menu.moved.connect(func(_key: String) -> void: _refresh_option_help())
 	add_child(_menu)
 
 	_help = UiKit.label("", 8, Pal.FAINT.lightened(0.25))
@@ -74,6 +77,7 @@ func close() -> void:
 
 func show_title() -> void:
 	current = "title"
+	_body.position.y = 126
 	_dim.color = Pal.INK
 	_icon.visible = true
 	_title.text = "ECHOWICK"
@@ -84,13 +88,15 @@ func show_title() -> void:
 		lines += "\n\nRuns: %d     Wins: %d     Farthest: %d rooms" % [Game.total_runs, Game.total_wins, Game.best_rooms]
 	_body.text = lines
 	_fill_items(false)
-	_menu.set_entries([["start", "Begin a run"], ["quit", "Quit"]])
+	_menu.position.y = 196
+	_menu.set_entries([["start", "Begin a run"], ["options", "Options"], ["quit", "Quit"]])
 	_refresh_help()
 	visible = true
 
 
 func show_pause() -> void:
 	current = "pause"
+	_body.position.y = 126
 	_dim.color = Color(Pal.INK, 0.88)
 	_icon.visible = false
 	_title.text = "PAUSED"
@@ -101,13 +107,15 @@ func show_pause() -> void:
 		combo_names.append(ItemDB.COMBOS[combo_id]["name"])
 	_body.text = "Combos: " + (", ".join(combo_names) if not combo_names.is_empty() else "none yet")
 	_fill_items(true)
-	_menu.set_entries([["resume", "Keep going"], ["restart", "Start over"], ["title", "Back to title"]])
+	_menu.position.y = 194
+	_menu.set_entries([["resume", "Keep going"], ["options", "Options"], ["restart", "Start over"], ["title", "Back to title"]])
 	_refresh_help()
 	visible = true
 
 
 func show_end(won: bool, killer_name: String) -> void:
 	current = "end"
+	_body.position.y = 126
 	_dim.color = Color(Pal.INK, 0.9)
 	_icon.visible = won
 	_title.text = "THE LAMP IS LIT" if won else "THE LIGHT WENT OUT"
@@ -122,9 +130,118 @@ func show_end(won: bool, killer_name: String) -> void:
 		Game.rooms_cleared, FloorDB.total_rooms(), minutes, seconds,
 		"" if won else "Your last moments will echo into your next run."]
 	_fill_items(true)
+	_menu.position.y = 196
 	_menu.set_entries([["start", "Try again"], ["title", "Back to title"]])
 	_refresh_help()
 	visible = true
+
+
+# ----------------------------------------------------------------------
+# Options
+# ----------------------------------------------------------------------
+
+func show_options() -> void:
+	if current != "options":
+		_return_to = current
+	current = "options"
+	_dim.color = Pal.INK if _return_to == "title" else Color(Pal.INK, 0.94)
+	_icon.visible = false
+	_title.text = "OPTIONS"
+	_title.add_theme_color_override("font_color", Pal.PAPER)
+	_subtitle.text = "Left and right change a setting."
+	_fill_items(false)
+	_menu.position.y = 126
+	_menu.set_entries([
+		["difficulty", ""], ["music", ""], ["sound", ""], ["fullscreen", ""], ["shake", ""], ["back", "Back"],
+	])
+	_refresh_options()
+	_body.position.y = 218
+	_refresh_option_help()
+	_refresh_help()
+	visible = true
+
+
+func _refresh_options() -> void:
+	_menu.set_text("difficulty", "Difficulty: %s" % Game.DIFFICULTIES[Settings.difficulty]["name"])
+	_menu.set_text("music", "Music: %d%%" % roundi(Settings.music_volume * 100.0))
+	_menu.set_text("sound", "Sound: %d%%" % roundi(Settings.sfx_volume * 100.0))
+	_menu.set_text("fullscreen", "Fullscreen: %s" % ("On" if Settings.fullscreen else "Off"))
+	_menu.set_text("shake", "Screen shake: %s" % ("On" if Settings.screen_shake > 0.0 else "Off"))
+
+
+## A line of explanation under the options list.
+func _refresh_option_help() -> void:
+	if current != "options":
+		return
+	match _menu.selected_key():
+		"difficulty":
+			var tips := [
+				"Calm: fewer, slower enemies and 2 extra hearts.",
+				"Standard: the game as it is meant to be played.",
+				"Stormy: bigger crowds and faster shots.",
+			]
+			_body.text = "%s\nTakes effect when the next run starts." % tips[Settings.difficulty]
+		"shake":
+			_body.text = "Shakes the screen on big hits. Turn it off if it bothers you."
+		"fullscreen":
+			_body.text = "F11 or Alt+Enter also switch this at any time."
+		_:
+			_body.text = ""
+
+
+func _change_option(key: String, direction: int) -> void:
+	match key:
+		"difficulty":
+			Settings.difficulty = wrapi(Settings.difficulty + direction, 0, Game.DIFFICULTIES.size())
+		"music":
+			Settings.music_volume = clampf(snappedf(Settings.music_volume + 0.1 * direction, 0.1), 0.0, 1.0)
+		"sound":
+			Settings.sfx_volume = clampf(snappedf(Settings.sfx_volume + 0.1 * direction, 0.1), 0.0, 1.0)
+		"fullscreen":
+			Settings.fullscreen = not Settings.fullscreen
+		"shake":
+			Settings.screen_shake = 0.0 if Settings.screen_shake > 0.0 else 1.0
+		_:
+			return
+	Settings.apply()
+	Settings.save_settings()
+	_refresh_options()
+	_refresh_option_help()
+	Sfx.play("ui_move")
+
+
+func _on_menu_adjusted(key: String, direction: int) -> void:
+	if current == "options":
+		_change_option(key, direction)
+
+
+func _on_menu_picked(key: String) -> void:
+	if key == "options":
+		show_options()
+	elif current == "options":
+		if key == "back":
+			_leave_options()
+		else:
+			_change_option(key, 1)
+	else:
+		picked.emit(key)
+
+
+func _leave_options() -> void:
+	if _return_to == "pause":
+		show_pause()
+	else:
+		show_title()
+	_menu.select_key("options")
+
+
+## Called by main.gd when Esc or B is pressed. Returns true if it was used.
+func go_back() -> bool:
+	if current == "options":
+		_leave_options()
+		Sfx.play("ui_back")
+		return true
+	return false
 
 
 func _fill_items(show_them: bool) -> void:

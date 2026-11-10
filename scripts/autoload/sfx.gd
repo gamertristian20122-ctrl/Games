@@ -43,6 +43,7 @@ const SOUNDS := {
 
 const VOICES := 14            # how many sounds can overlap
 const MIN_GAP := 0.045        # seconds before the same sound may play again
+const MUSIC_DB := -15.0       # music sits under the sound effects
 
 var _players: Array[AudioStreamPlayer] = []
 var _next := 0
@@ -50,6 +51,7 @@ var _streams: Dictionary = {}
 var _last_played: Dictionary = {}
 var _music: AudioStreamPlayer
 var _music_name := ""
+var _music_fade: Tween
 
 
 func _ready() -> void:
@@ -92,15 +94,29 @@ func play(sound_name: String, pitch: float = 1.0, volume_offset: float = 0.0) ->
 
 
 ## Starts a music track from assets/music/ (or stops music with "").
+## The same track asked for twice just keeps playing.
 func music(track: String) -> void:
 	if Game.fast_mode or track == _music_name:
 		return
 	_music_name = track
+	if _music_fade != null:
+		_music_fade.kill()
+	_music_fade = create_tween()
+	if _music.playing:
+		_music_fade.tween_property(_music, "volume_db", -50.0, 0.35)
+	_music_fade.tween_callback(_start_music.bind(track))
+
+
+func _start_music(track: String) -> void:
 	_music.stop()
 	if track == "":
 		return
 	var path := "res://assets/music/" + track
-	if ResourceLoader.exists(path):
-		_music.stream = load(path)
-		_music.volume_db = -8.0
-		_music.play()
+	if not ResourceLoader.exists(path):
+		return
+	var stream := load(path) as AudioStream
+	if stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
+	_music.stream = stream
+	_music.volume_db = MUSIC_DB
+	_music.play()

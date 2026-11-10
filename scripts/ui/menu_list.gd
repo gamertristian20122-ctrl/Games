@@ -4,6 +4,8 @@ extends Control
 ## controller. Used by the title, pause and game-over screens.
 
 signal picked(key: String)
+signal adjusted(key: String, direction: int)   # left (-1) or right (+1) on a row
+signal moved(key: String)                      # the highlighted row changed
 
 const ROW_HEIGHT := 14.0
 
@@ -51,6 +53,14 @@ func set_text(key: String, text: String) -> void:
 		_refresh()
 
 
+## Highlights a row by its key (used when coming back to a menu).
+func select_key(key: String) -> void:
+	var index := _keys.find(key)
+	if index >= 0:
+		_selected = index
+		_refresh()
+
+
 func selected_key() -> String:
 	return _keys[_selected] if _selected < _keys.size() else ""
 
@@ -66,6 +76,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_select((_selected - 1 + _keys.size()) % _keys.size(), true)
 	elif event.is_action_pressed("ui_down"):
 		_select((_selected + 1) % _keys.size(), true)
+	elif event.is_action_pressed("ui_left"):
+		adjusted.emit(_keys[_selected], -1)
+	elif event.is_action_pressed("ui_right"):
+		adjusted.emit(_keys[_selected], 1)
 	elif event.is_action_pressed("ui_accept"):
 		_pick()
 	else:
@@ -80,6 +94,7 @@ func _select(index: int, with_sound: bool) -> void:
 	if with_sound:
 		Sfx.play("ui_move")
 	_refresh()
+	moved.emit(_keys[_selected])
 
 
 func _refresh() -> void:

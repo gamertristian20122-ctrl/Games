@@ -18,6 +18,11 @@ static func font(path: String) -> FontFile:
 	return _fonts[path]
 
 
+## Lets go of the loaded fonts (called when the game closes).
+static func forget() -> void:
+	_fonts.clear()
+
+
 ## A line of text. Sizes 8 and 16 are the sharp ones for the small font.
 static func label(text: String, size: int = 8, color: Color = Pal.PAPER, font_path: String = FONT_SMALL_PATH) -> Label:
 	var l := Label.new()
