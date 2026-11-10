@@ -49,6 +49,7 @@ var tapes: Array[EchoTape] = []
 # --- Modes ---
 var bot_mode := false       # the test bot is playing
 var fast_mode := false      # no sound or effects (bot batches)
+var god_mode := false       # the keeper cannot be hurt (for testing, "--god")
 
 # --- Numbers collected for the balance report ---
 var metrics: Dictionary = {}

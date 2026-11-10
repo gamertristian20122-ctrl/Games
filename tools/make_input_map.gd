@@ -36,6 +36,10 @@ func _init() -> void:
 	_extend("ui_right", [_key(KEY_D)])
 	_extend("ui_up", [_key(KEY_W)])
 	_extend("ui_down", [_key(KEY_S)])
+	# Godot's built-in menu actions have no controller buttons, so add them:
+	# A confirms, B goes back.
+	_extend("ui_accept", [_button(JOY_BUTTON_A)])
+	_extend("ui_cancel", [_button(JOY_BUTTON_B)])
 
 	var err := ProjectSettings.save()
 	print("Input map written to project.godot (error code %d, 0 means OK)." % err)
@@ -47,7 +51,7 @@ func _extend(action: String, extra: Array) -> void:
 	for e: InputEvent in extra:
 		var already := false
 		for old: InputEvent in events:
-			if old is InputEventKey and e is InputEventKey and old.physical_keycode == e.physical_keycode:
+			if old.is_match(e):
 				already = true
 		if not already:
 			events.append(e)

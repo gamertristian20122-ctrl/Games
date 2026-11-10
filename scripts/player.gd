@@ -230,7 +230,7 @@ func _update_unison(stats: PlayerStats, delta: float) -> void:
 ## Something hit the keeper. Returns true if the hit "landed" (so a shot
 ## should disappear), false if the keeper was dashing or still flashing.
 func take_hit(amount: int, source: String) -> bool:
-	if not alive or not active or _invulnerable > 0.0:
+	if not alive or not active or _invulnerable > 0.0 or Game.god_mode:
 		return false
 	if shields_left > 0:
 		shields_left -= 1

@@ -43,12 +43,20 @@ func _ready() -> void:
 		BotReport.write_from_folder(args["report"], args.get("out", "docs/balance_report.md"))
 		get_tree().quit()
 		return
+	Game.god_mode = args.has("god")
 	_shot_dir = args.get("shots", "")
 	_shot_every = int(args.get("shot-every", "120"))
 	if args.has("bot"):
 		bot = BotRunner.new()
 		add_child(bot)
 		bot.begin(self, args)
+	elif args.has("controls-check"):
+		# Self-test of the keyboard, mouse and controller (see controls_check.gd).
+		Game.god_mode = true
+		_show_title()
+		var check := ControlsCheck.new()
+		add_child(check)
+		check.begin(self)
 	elif args.has("play") or args.has("demo"):
 		begin_run(int(args.get("seed", "1")))
 	else:
@@ -274,6 +282,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			Sfx.play("ui_back")
 		elif mode == "pause":
 			_resume()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_cancel") and mode == "pause":
+		_resume()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F9:
 		_toggle_autoplay()
