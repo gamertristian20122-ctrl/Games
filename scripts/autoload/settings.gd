@@ -13,6 +13,7 @@ var fullscreen := false
 var screen_shake := 1.0      # 0 turns shake off
 var pixel_perfect := false   # only scale the picture by whole numbers
 var aim_assist := true       # gentle help when aiming with a controller
+var difficulty := 1          # 0 = Calm, 1 = Standard, 2 = Stormy
 
 var _headless := false
 
@@ -90,6 +91,7 @@ func load_settings() -> void:
 	pixel_perfect = bool(file.get_value("video", "pixel_perfect", pixel_perfect))
 	screen_shake = float(file.get_value("game", "screen_shake", screen_shake))
 	aim_assist = bool(file.get_value("game", "aim_assist", aim_assist))
+	difficulty = clampi(int(file.get_value("game", "difficulty", difficulty)), 0, 2)
 
 
 func save_settings() -> void:
@@ -103,4 +105,5 @@ func save_settings() -> void:
 	file.set_value("video", "pixel_perfect", pixel_perfect)
 	file.set_value("game", "screen_shake", screen_shake)
 	file.set_value("game", "aim_assist", aim_assist)
+	file.set_value("game", "difficulty", difficulty)
 	file.save(SAVE_PATH)

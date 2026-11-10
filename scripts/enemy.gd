@@ -53,6 +53,7 @@ var knock := Vector2.ZERO            # shove from being hit
 var facing := Vector2.RIGHT
 var chases_echo: Echo = null         # Painted Buoy: fooled into chasing an echo
 var hp_scale := 1.0
+var danger := 1.0                    # speeds up its shots and how often it fires
 
 var _sprite: Sprite2D
 var _frames: Array = []
@@ -78,7 +79,8 @@ func setup(enemy_id: String, in_room: Room, health_scale: float) -> void:
 	is_boss = def.get("boss", false)
 	max_hp = float(def.get("hp", 10.0)) * health_scale
 	hp = max_hp
-	speed = float(def.get("speed", 40.0))
+	danger = Game.danger()
+	speed = float(def.get("speed", 40.0)) * (1.0 + (danger - 1.0) * 0.5)
 	radius = float(def.get("radius", 6.0))
 	flying = def.get("flying", false)
 	base_color = def.get("color", Color.WHITE)
@@ -211,7 +213,7 @@ func _ai_shoot(delta: float) -> void:
 		_flash = 0.4
 	if shot_timer <= 0.0:
 		_warned = false
-		shot_timer = float(def.get("shot_every", 2.2)) * Game.combat_rng.randf_range(0.85, 1.15)
+		shot_timer = float(def.get("shot_every", 2.2)) * Game.combat_rng.randf_range(0.85, 1.15) / danger
 		_fire_fan(dir, float(def.get("shot_speed", 80.0)), int(def.get("spread", 1)), 16.0)
 
 
@@ -268,7 +270,7 @@ func _ai_orbit(delta: float) -> void:
 		_flash = 0.4
 	if shot_timer <= 0.0:
 		_warned = false
-		shot_timer = float(def.get("shot_every", 2.6)) * Game.combat_rng.randf_range(0.85, 1.15)
+		shot_timer = float(def.get("shot_every", 2.6)) * Game.combat_rng.randf_range(0.85, 1.15) / danger
 		_fire_fan((_target_pos() - position).normalized(), float(def.get("shot_speed", 78.0)), 1, 0.0)
 
 
@@ -281,7 +283,7 @@ func _ai_turret(delta: float) -> void:
 		_flash = 0.5
 	if shot_timer <= 0.0:
 		_warned = false
-		shot_timer = float(def.get("shot_every", 2.8))
+		shot_timer = float(def.get("shot_every", 2.8)) / danger
 		_side = -_side
 		var count := int(def.get("ring", 8))
 		var offset := 0.0 if _side > 0.0 else PI / float(count)
@@ -381,14 +383,14 @@ func _path_dir() -> Vector2:
 func _fire_fan(dir: Vector2, shot_speed: float, count: int, gap_degrees: float) -> void:
 	for i in count:
 		var offset := (float(i) - float(count - 1) / 2.0) * deg_to_rad(gap_degrees)
-		room.add_shot(Shot.enemy_shot(room, position + dir * (radius + 1.0), dir.rotated(offset), shot_speed, id))
+		room.add_shot(Shot.enemy_shot(room, position + dir * (radius + 1.0), dir.rotated(offset), shot_speed * danger, id))
 	Sfx.play("enemy_shoot")
 
 
 func _fire_ring(count: int, shot_speed: float, offset: float) -> void:
 	for i in count:
 		var dir := Vector2.from_angle(offset + TAU * float(i) / float(count))
-		room.add_shot(Shot.enemy_shot(room, position + dir * (radius + 1.0), dir, shot_speed, id))
+		room.add_shot(Shot.enemy_shot(room, position + dir * (radius + 1.0), dir, shot_speed * danger, id))
 	Sfx.play("enemy_shoot")
 
 

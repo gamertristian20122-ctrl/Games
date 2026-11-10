@@ -5,7 +5,7 @@ extends Boss
 ## When the rush ends it slams down and throws a ring of shots.
 ## Below half health it rushes twice and calls Clawlings.
 
-const RUSH_SPEED := 215.0
+const RUSH_SPEED := 195.0
 
 var _rushes_left := 0
 var _turned_at := 0.0
@@ -34,8 +34,8 @@ func _think(delta: float) -> void:
 				_turned_at = state_time
 			shot_timer -= delta
 			if shot_timer <= 0.0:
-				shot_timer = 0.95 if phase == 1 else 0.75
-				_fire_fan(dir, 85.0, 3, 14.0)
+				shot_timer = 1.1 if phase == 1 else 0.8
+				_fire_fan(dir, 78.0, 3, 16.0)
 			if state_time >= 2.4:
 				_rushes_left = 1 if phase == 1 else 2
 				_turned_at = 0.0
@@ -43,12 +43,12 @@ func _think(delta: float) -> void:
 				Sfx.play("warn")
 		"windup":
 			move_velocity = Vector2.ZERO
-			if state_time < 0.42:
+			if state_time < 0.45:
 				facing = dir
 			_aim_line = facing * 200.0
 			_flash = 0.05
 			queue_redraw()
-			if state_time >= 0.7:
+			if state_time >= 0.85:
 				_aim_line = Vector2.ZERO
 				queue_redraw()
 				_enter("rush")
@@ -73,8 +73,8 @@ func _think(delta: float) -> void:
 
 
 func _slam() -> void:
-	var count := 12 if phase == 1 else 16
-	_fire_ring(count, 70.0, Game.combat_rng.randf() * TAU)
+	var count := 10 if phase == 1 else 14
+	_fire_ring(count, 66.0, Game.combat_rng.randf() * TAU)
 	Fx.ring(room, position, 40.0, base_color, 0.35, 2.0)
 	Sfx.play("explode")
 	Game.shake(4.0)

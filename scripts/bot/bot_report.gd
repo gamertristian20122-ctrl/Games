@@ -42,17 +42,29 @@ static func write_from_folder(folder: String, out_path: String) -> void:
 
 static func summary_line(skill: String, runs: Array) -> String:
 	var s := _summarise(runs)
-	return "Skill %s: %d runs, %.0f%% won, %.1f rooms cleared on average." % [
-		skill, s["runs"], s["win_rate"] * 100.0, s["avg_rooms"]]
+	return "Skill %s on %s: %d runs, %.0f%% won, %.1f rooms cleared on average." % [
+		skill, Game.difficulty_def()["name"], s["runs"], s["win_rate"] * 100.0, s["avg_rooms"]]
 
 
-static func _by_skill(runs: Array) -> Dictionary:
+## Sorts runs into groups named "difficulty/skill", for example "1/ok".
+static func _groups(runs: Array) -> Dictionary:
 	var out := {}
 	for run: Dictionary in runs:
-		var skill: String = run.get("skill", "ok")
-		if not out.has(skill):
-			out[skill] = []
-		out[skill].append(run)
+		var key := "%d/%s" % [int(run.get("difficulty", 1)), run.get("skill", "ok")]
+		if not out.has(key):
+			out[key] = []
+		out[key].append(run)
+	return out
+
+
+static func _only(runs: Array, difficulty: int, skill: String = "") -> Array:
+	var out: Array = []
+	for run: Dictionary in runs:
+		if int(run.get("difficulty", 1)) != difficulty:
+			continue
+		if skill != "" and run.get("skill", "ok") != skill:
+			continue
+		out.append(run)
 	return out
 
 
@@ -84,13 +96,17 @@ static func _summarise(runs: Array) -> Dictionary:
 	}
 
 
-static func build(runs: Array) -> String:
+static func build(all_runs: Array) -> String:
 	var total_rooms := FloorDB.total_rooms()
-	var groups := _by_skill(runs)
+	var groups := _groups(all_runs)
+	# Everything after the first table looks at Standard difficulty only.
+	var runs := _only(all_runs, 1)
+	if runs.is_empty():
+		runs = all_runs
 	var lines: Array[String] = []
 	lines.append("# Balance report")
 	lines.append("")
-	lines.append("Made by the test bot. It plays the real game through the same controls a person uses, at three skill levels. %d runs in total." % runs.size())
+	lines.append("Made by the test bot. It plays the real game through the same controls a person uses, at three skill levels. %d runs in total." % all_runs.size())
 	lines.append("")
 	lines.append("**How to read this:** the bot is not a person. Treat the numbers as a compass, not a verdict. If something looks off here, play it and see how it feels.")
 	lines.append("")
@@ -100,18 +116,22 @@ static func build(runs: Array) -> String:
 	lines.append("")
 	lines.append("A full run is %d rooms (3 floors, each 5 fights and a boss)." % total_rooms)
 	lines.append("")
-	lines.append("| Player | Runs | Won | Rooms cleared (average) | Died on floor 1 / 2 / 3 | Died to a boss | Average length |")
-	lines.append("|---|---|---|---|---|---|---|")
-	for skill: String in SKILL_ORDER:
-		if not groups.has(skill):
-			continue
-		var s := _summarise(groups[skill])
-		var fd: Array = s["floor_deaths"]
-		lines.append("| %s | %d | %.0f%% | %.1f of %d | %d / %d / %d | %d | %s |" % [
-			SKILL_NAMES[skill], s["runs"], s["win_rate"] * 100.0, s["avg_rooms"], total_rooms,
-			fd[0], fd[1], fd[2], s["boss_deaths"], _clock(s["avg_time"])])
-		if int(s["stalled"]) > 0:
-			lines.append("| | | | | | | *%d runs got stuck and were stopped: worth a look* |" % s["stalled"])
+	lines.append("| Difficulty | Player | Runs | Won | Rooms cleared (average) | Died on floor 1 / 2 / 3 | Died to a boss | Average length |")
+	lines.append("|---|---|---|---|---|---|---|---|")
+	for difficulty in Game.DIFFICULTIES.size():
+		for skill: String in SKILL_ORDER:
+			var key := "%d/%s" % [difficulty, skill]
+			if not groups.has(key):
+				continue
+			var s := _summarise(groups[key])
+			var fd: Array = s["floor_deaths"]
+			lines.append("| %s | %s | %d | %.0f%% | %.1f of %d | %d / %d / %d | %d | %s |" % [
+				Game.DIFFICULTIES[difficulty]["name"], SKILL_NAMES[skill], s["runs"], s["win_rate"] * 100.0,
+				s["avg_rooms"], total_rooms, fd[0], fd[1], fd[2], s["boss_deaths"], _clock(s["avg_time"])])
+			if int(s["stalled"]) > 0:
+				lines.append("| | | | | | | | *%d runs got stuck and were stopped: worth a look* |" % s["stalled"])
+	lines.append("")
+	lines.append("The rest of this report looks at **Standard** difficulty only (%d runs)." % runs.size())
 	lines.append("")
 
 	# ---- Killers ----
@@ -189,9 +209,15 @@ static func build(runs: Array) -> String:
 	lines.append("")
 
 	# ---- Items ----
+	var judged := _only(runs, 1, "ok")
+	if judged.size() < 10:
+		judged = runs
+	var judged_summary := _summarise(judged)
 	lines.append("## Items")
 	lines.append("")
-	lines.append("\"Rooms with\" is the average number of rooms cleared by runs that held the item. Compare it with the overall average of %.1f. Much higher can mean too strong (or just picked late by runs already doing well). Much lower can mean too weak. Items held in fewer than 8 runs are marked with `?`." % _summarise(runs)["avg_rooms"])
+	lines.append("This table uses the Average player's runs only (%d runs, %.0f%% won, %.1f rooms on average), because that is where results vary the most." % [judged.size(), judged_summary["win_rate"] * 100.0, judged_summary["avg_rooms"]])
+	lines.append("")
+	lines.append("\"Rooms with\" is the average number of rooms cleared by runs that held the item. Much higher than %.1f can mean too strong, much lower can mean too weak. But be careful: a run that lasts longer holds more items, so every item looks a little better than it is. Look for the ones that stand out from the rest. Items held in fewer than 8 runs are marked with `?`: too few to judge." % judged_summary["avg_rooms"])
 	lines.append("")
 	lines.append("| Item | Runs that held it | Rooms with | Won with |")
 	lines.append("|---|---|---|---|")
@@ -200,7 +226,7 @@ static func build(runs: Array) -> String:
 		var held_runs := 0
 		var held_rooms := 0.0
 		var held_wins := 0
-		for run: Dictionary in runs:
+		for run: Dictionary in judged:
 			var held: Dictionary = run.get("held", {})
 			if int(held.get(id, 0)) > 0:
 				held_runs += 1
@@ -223,7 +249,7 @@ static func build(runs: Array) -> String:
 		var found := 0
 		var found_rooms := 0.0
 		var found_wins := 0
-		for run: Dictionary in runs:
+		for run: Dictionary in judged:
 			if (run.get("combos", []) as Array).has(combo_id):
 				found += 1
 				found_rooms += float(run.get("rooms_cleared", 0))

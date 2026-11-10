@@ -16,6 +16,16 @@ const ROOM_H := 240.0
 const HUD_H := 30.0
 
 const START_HP := 5
+
+## The three difficulty settings. Each one changes:
+##   danger  - how fast enemy shots fly and how often enemies fire
+##   crowd   - how many enemies each room sends
+##   hearts  - extra hearts the keeper starts with
+const DIFFICULTIES := [
+	{"name": "Calm", "danger": 0.85, "crowd": 0.8, "hearts": 2},
+	{"name": "Standard", "danger": 1.0, "crowd": 1.0, "hearts": 0},
+	{"name": "Stormy", "danger": 1.15, "crowd": 1.25, "hearts": 0},
+]
 const HP_CAP := 10
 const BOSS_HEAL := 2
 const DEATH_ECHO_PATH := "user://last_echo.dat"
@@ -50,6 +60,7 @@ var tapes: Array[EchoTape] = []
 var bot_mode := false       # the test bot is playing
 var fast_mode := false      # no sound or effects (bot batches)
 var god_mode := false       # the keeper cannot be hurt (for testing, "--god")
+var difficulty := 1         # 0 = Calm, 1 = Standard, 2 = Stormy (copied from Settings when a run starts)
 
 # --- Numbers collected for the balance report ---
 var metrics: Dictionary = {}
@@ -80,7 +91,9 @@ func new_run(seed_value: int) -> void:
 	items = {}
 	item_order = []
 	stats = PlayerStats.build(items)
-	max_hp = START_HP
+	if not bot_mode:
+		difficulty = Settings.difficulty
+	max_hp = START_HP + int(difficulty_def()["hearts"])
 	hp = max_hp
 	unhurt_streak = 0
 	hit_this_room = false
@@ -93,7 +106,7 @@ func new_run(seed_value: int) -> void:
 		if old != null:
 			tapes.append(old)
 	metrics = {
-		"seed": seed_value, "result": "", "killer": "", "floor": 0, "room": 0,
+		"seed": seed_value, "difficulty": difficulty, "result": "", "killer": "", "floor": 0, "room": 0,
 		"rooms_cleared": 0, "time": 0.0, "items": [], "combos": [],
 		"damage_by": {}, "hits_by": {}, "rooms": [], "final_hp": 0,
 	}
@@ -105,6 +118,15 @@ func new_run(seed_value: int) -> void:
 func shake(amount: float) -> void:
 	if not fast_mode:
 		shake_amount = maxf(shake_amount, amount)
+
+
+func difficulty_def() -> Dictionary:
+	return DIFFICULTIES[clampi(difficulty, 0, DIFFICULTIES.size() - 1)]
+
+
+## How dangerous enemies are right now: the floor's number times the difficulty's.
+func danger() -> float:
+	return float(floor_def().get("danger", 1.0)) * float(difficulty_def()["danger"])
 
 
 func floor_def() -> Dictionary:
@@ -161,7 +183,7 @@ func add_item(id: String) -> void:
 
 func _rebuild_stats() -> void:
 	stats = PlayerStats.build(items)
-	var new_max := mini(START_HP + stats.max_hp_bonus, HP_CAP)
+	var new_max := mini(START_HP + int(difficulty_def()["hearts"]) + stats.max_hp_bonus, HP_CAP)
 	if new_max != max_hp:
 		max_hp = new_max
 		hp = mini(hp, max_hp)

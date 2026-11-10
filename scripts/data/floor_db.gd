@@ -9,6 +9,7 @@ class_name FloorDB
 ##  - "wave_cap" is the most danger allowed on screen at once. A room whose
 ##    budget is bigger arrives in several waves.
 ##  - "hp_scale" multiplies enemy health on this floor.
+##  - "danger" speeds up enemy shots and how often they fire (1.0 = normal).
 
 const FLOORS := [
 	{
@@ -19,8 +20,8 @@ const FLOORS := [
 		"obstacles": [Vector2i(13, 18), Vector2i(13, 13), Vector2i(14, 13)],
 		"rooms": 5,
 		"enemies": {"clawling": 6, "bat": 4, "spitter": 3, "gull": 2},
-		"budget_start": 5.0, "budget_step": 2.0, "wave_cap": 7.0,
-		"hp_scale": 1.0,
+		"budget_start": 8.0, "budget_step": 3.0, "wave_cap": 10.0,
+		"hp_scale": 1.0, "danger": 1.0,
 		"boss": "clatterclaw",
 	},
 	{
@@ -30,9 +31,9 @@ const FLOORS := [
 		"wall_tiles": [Vector2i(0, 13), Vector2i(6, 15)],
 		"obstacles": [Vector2i(13, 13), Vector2i(14, 13), Vector2i(13, 18)],
 		"rooms": 5,
-		"enemies": {"crab": 4, "blob": 3, "wisp": 4, "urchin": 2, "spitter": 3, "clawling": 3},
-		"budget_start": 9.0, "budget_step": 2.0, "wave_cap": 9.0,
-		"hp_scale": 1.6,
+		"enemies": {"crab": 4, "blob": 4, "wisp": 4, "urchin": 2, "spitter": 3, "clawling": 4, "bat": 3},
+		"budget_start": 17.0, "budget_step": 3.5, "wave_cap": 14.0,
+		"hp_scale": 1.8, "danger": 1.18,
 		"boss": "diver",
 	},
 	{
@@ -43,8 +44,8 @@ const FLOORS := [
 		"obstacles": [Vector2i(20, 5), Vector2i(19, 6), Vector2i(20, 6)],
 		"rooms": 5,
 		"enemies": {"eel": 4, "inkling": 4, "puffer": 3, "lurker": 3, "wisp": 2, "urchin": 2},
-		"budget_start": 12.0, "budget_step": 2.5, "wave_cap": 11.0,
-		"hp_scale": 2.4,
+		"budget_start": 24.0, "budget_step": 4.5, "wave_cap": 18.0,
+		"hp_scale": 3.0, "danger": 1.25,
 		"boss": "undertow",
 	},
 ]

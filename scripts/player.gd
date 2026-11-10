@@ -17,7 +17,9 @@ const DASH_SPEED := 310.0
 const DASH_TIME := 0.16
 const HURT_INVULNERABLE := 1.0  # seconds of safety after being hit
 const SHOT_GAP_DEGREES := 9.0
-const MOTH_ORBIT := 26.0
+const MOTH_ORBIT := 22.0
+const MOTH_REACH := 70.0          # how far from the keeper a moth will dart
+const MOTH_LUNGE_TIME := 0.3
 
 var room: Room
 var brain: BotBrain = null
@@ -42,6 +44,9 @@ var _dash_pressed := false
 var _sprite: Sprite2D
 var _moth_angle := 0.0
 var _moths: Array[Sprite2D] = []
+var _moth_rest: Array[float] = []     # seconds until each moth may bite again
+var _moth_lunge: Array[float] = []    # seconds left of each moth's dart
+var _moth_goal: Array[Vector2] = []   # where each moth is darting to
 var _beam: BeaconBeam
 var _unison_pulse := 0.0
 var _trail_timer := 0.0
@@ -287,31 +292,49 @@ func _refresh_items() -> void:
 		moth.z_index = 1
 		add_child(moth)
 		_moths.append(moth)
+		_moth_rest.append(0.3 * _moths.size())
+		_moth_lunge.append(0.0)
+		_moth_goal.append(Vector2.ZERO)
 	while _moths.size() > want:
 		_moths.pop_back().queue_free()
+		_moth_rest.pop_back()
+		_moth_lunge.pop_back()
+		_moth_goal.pop_back()
 
 
-## Lamp Moths: circle the keeper and bite whatever they touch.
+## Lamp Moths: circle the keeper, and dart out to bite any enemy that comes near.
 func _update_moths(stats: PlayerStats, delta: float) -> void:
 	if _moths.is_empty():
 		return
-	_moth_angle += delta * (4.2 if stats.moths_to_flame > 0 else 2.8)
+	var quick := stats.moths_to_flame > 0
+	_moth_angle += delta * (4.2 if quick else 2.8)
 	var bite := stats.damage * 0.6 * _damage_bonus(stats)
 	for i in _moths.size():
-		var offset := Vector2.from_angle(_moth_angle + TAU * float(i) / float(_moths.size())) * MOTH_ORBIT
-		_moths[i].position = offset
+		var home := Vector2.from_angle(_moth_angle + TAU * float(i) / float(_moths.size())) * MOTH_ORBIT
 		_moths[i].flip_h = int(_moth_angle * 3.0) % 2 == 0
-		var at := position + offset
-		for enemy: Enemy in room.enemies:
-			if enemy.dead or not enemy.targetable or enemy.moth_cooldown > 0.0:
-				continue
-			var reach := enemy.radius + 4.0
-			if at.distance_squared_to(enemy.position) <= reach * reach:
-				enemy.moth_cooldown = 0.45
-				enemy.take_hit(bite, {"dir": offset.normalized(), "knock": 20.0, "crit": false, "source": "moth"})
-				if stats.moths_to_flame > 0:
-					enemy.set_burning(maxf(stats.burn_dps, 6.0), Combat.BURN_TIME)
-				Fx.burst(room, at, Pal.EMBER, 3, 40.0, 0.2, 1.0)
+
+		if _moth_lunge[i] > 0.0:
+			# Out and back: the moth reaches the enemy halfway through.
+			_moth_lunge[i] -= delta
+			var t := clampf(1.0 - _moth_lunge[i] / MOTH_LUNGE_TIME, 0.0, 1.0)
+			var out_and_back := 1.0 - absf(t * 2.0 - 1.0)
+			_moths[i].position = home.lerp(_moth_goal[i] - position, out_and_back)
+			continue
+
+		_moths[i].position = home
+		_moth_rest[i] -= delta
+		if _moth_rest[i] > 0.0:
+			continue
+		var target := room.nearest_enemy(position, MOTH_REACH)
+		if target == null:
+			continue
+		_moth_rest[i] = 0.55 if quick else 0.85
+		_moth_lunge[i] = MOTH_LUNGE_TIME
+		_moth_goal[i] = target.position
+		target.take_hit(bite, {"dir": (target.position - position).normalized(), "knock": 20.0, "crit": false, "source": "moth"})
+		if quick and not target.dead:
+			target.set_burning(maxf(stats.burn_dps, 6.0), Combat.BURN_TIME)
+		Fx.burst(room, target.position, Pal.EMBER, 3, 40.0, 0.2, 1.0)
 
 
 func _animate() -> void:
@@ -334,7 +357,7 @@ class BeaconBeam extends Node2D:
 	var beam_color := Pal.EMBER
 
 	func tick(room: Room, at: Vector2, level: int, base_damage: float, from_echo: bool, delta: float) -> void:
-		var new_reach := 0.0 if level <= 0 else 48.0 + 14.0 * level
+		var new_reach := 0.0 if level <= 0 else 62.0 + 20.0 * level
 		if new_reach != reach:
 			reach = new_reach
 			queue_redraw()
@@ -350,7 +373,7 @@ class BeaconBeam extends Node2D:
 			var touch := enemy.radius + 3.0
 			if closest.distance_squared_to(enemy.position) <= touch * touch:
 				enemy.beam_cooldown = 0.8
-				enemy.take_hit(base_damage * (0.9 + 0.35 * level), {
+				enemy.take_hit(base_damage * (1.0 + 0.6 * level), {
 					"dir": Vector2.from_angle(angle), "knock": 30.0, "crit": false,
 					"source": "echo_beacon" if from_echo else "beacon",
 				})

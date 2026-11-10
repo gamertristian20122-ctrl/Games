@@ -10,9 +10,10 @@ extends Node
 ##   --runs=30            how many runs to play (default 10)
 ##   --seed=1             the first run's seed; later runs count up from it
 ##   --out=file.json      where to save the results
+##   --difficulty=1       0 = Calm, 1 = Standard, 2 = Stormy
 ##   --watch              keep sound and effects on (for watching in a window)
 
-const STALL_SECONDS := 240.0     # give up on a room after this long
+const STALL_SECONDS := 480.0     # give up on a room after this long
 
 var brain := BotBrain.new()
 var skill := "ok"
@@ -38,6 +39,7 @@ func begin(main: Node, args: Dictionary) -> void:
 	watch = args.has("watch")
 	Game.bot_mode = true
 	Game.fast_mode = not watch
+	Game.difficulty = clampi(int(args.get("difficulty", "1")), 0, 2)
 	_main.run_ended.connect(_on_run_ended)
 	_started_at = Time.get_ticks_msec()
 	print("Bot: %d runs at skill '%s', seeds from %d." % [runs_wanted, skill, first_seed])
@@ -67,7 +69,36 @@ func _physics_process(delta: float) -> void:
 	_room_clock += delta
 	if _room_clock > STALL_SECONDS:
 		_room_clock = 0.0
+		_describe_stall()
 		_main.abort_run("stalled")
+
+
+## Prints what the room looked like when the bot gave up, to help find the cause.
+func _describe_stall() -> void:
+	var room: Room = _main.room
+	var keeper: Player = _main.keeper
+	if room == null or keeper == null:
+		return
+	print("  STALLED on floor %d room %d (%s). Keeper at %s, room state '%s', wave %d of %d." % [
+		Game.floor_index + 1, Game.room_index + 1, room.kind, keeper.position.round(), room.state,
+		room.wave_index + 1, room.waves.size()])
+	for enemy: Enemy in room.enemies:
+		print("    %s at %s  hp %.0f/%.0f  state '%s'  targetable %s  clear line %s" % [
+			enemy.id, enemy.position.round(), enemy.hp, enemy.max_hp, enemy.state, enemy.targetable,
+			room.clear_line(keeper.position, enemy.position)])
+	# A little map of the room: K = keeper, E = enemy, # = tall, ~ = low, W = wall.
+	for y in Room.ROWS:
+		var line := "    "
+		for x in Room.COLS:
+			var here := Vector2(x * 16.0 + 8.0, y * 16.0 + 8.0)
+			var mark := [".", "W", "#", "~"][room.cell_at(here)] as String
+			if here.distance_to(keeper.position) < 9.0:
+				mark = "K"
+			for enemy: Enemy in room.enemies:
+				if here.distance_to(enemy.position) < 9.0:
+					mark = "E"
+			line += mark
+		print(line)
 
 
 func _on_run_ended(_result: String) -> void:

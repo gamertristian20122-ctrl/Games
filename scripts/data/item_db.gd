@@ -77,7 +77,7 @@ const ITEMS := {
 	},
 	"lamp_moths": {
 		"name": "Lamp Moths",
-		"text": "A moth circles you and bites enemies it touches.",
+		"text": "A moth circles you and darts out to bite enemies that come near.",
 		"icon": Vector2i(31, 5), "rarity": UNCOMMON, "max": 4, "family": "lamp",
 		"mods": [["moths", "add", 1]],
 	},

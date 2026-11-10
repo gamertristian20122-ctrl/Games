@@ -12,12 +12,27 @@ extends RefCounted
 ##   "pro"  quick, accurate, dashes out of trouble
 
 const SKILLS := {
-	"new": {"think_every": 12, "aim_error": 13.0, "see_shots": 44.0, "look_ahead": 0.25,
-			"dash": 0.0, "lead": 0.0, "keep_away": 52.0, "lazy": 0.5, "unison": 0.0, "smart_picks": 0.0},
-	"ok": {"think_every": 6, "aim_error": 6.0, "see_shots": 70.0, "look_ahead": 0.38,
-			"dash": 0.5, "lead": 0.5, "keep_away": 72.0, "lazy": 0.1, "unison": 2.0, "smart_picks": 0.6},
-	"pro": {"think_every": 3, "aim_error": 2.0, "see_shots": 105.0, "look_ahead": 0.5,
-			"dash": 1.0, "lead": 1.0, "keep_away": 84.0, "lazy": 0.0, "unison": 4.0, "smart_picks": 1.0},
+	# think_every: game ticks between decisions (60 ticks = 1 second), so reaction time
+	# aim_error:   how many degrees the aim wobbles
+	# see_shots:   how far away it notices enemy shots
+	# watch_shots / watch_enemies: how many threats it can keep track of at once
+	# look_ahead:  how many seconds ahead it imagines its own movement
+	# noise:       how often it misjudges a move (bigger = sloppier)
+	# dash:        chance to dash when in trouble
+	# lead:        how well it aims ahead of moving enemies (0 = not at all)
+	# keep_away:   the distance it likes to keep from enemies
+	# lazy:        how much it likes standing still
+	# unison:      how much it values standing near its echo
+	# smart_picks: chance to choose a reward thoughtfully instead of at random
+	"new": {"think_every": 15, "aim_error": 13.0, "see_shots": 44.0, "watch_shots": 3, "watch_enemies": 3,
+			"look_ahead": 0.25, "noise": 14.0, "dash": 0.0, "lead": 0.0, "keep_away": 52.0, "lazy": 0.5,
+			"unison": 0.0, "smart_picks": 0.0},
+	"ok": {"think_every": 9, "aim_error": 6.0, "see_shots": 70.0, "watch_shots": 6, "watch_enemies": 5,
+			"look_ahead": 0.38, "noise": 7.0, "dash": 0.5, "lead": 0.5, "keep_away": 72.0, "lazy": 0.1,
+			"unison": 2.0, "smart_picks": 0.6},
+	"pro": {"think_every": 4, "aim_error": 2.0, "see_shots": 105.0, "watch_shots": 14, "watch_enemies": 9,
+			"look_ahead": 0.5, "noise": 1.5, "dash": 1.0, "lead": 1.0, "keep_away": 84.0, "lazy": 0.0,
+			"unison": 4.0, "smart_picks": 1.0},
 }
 
 const DIRECTIONS := 12
@@ -41,6 +56,16 @@ func setup(level: String, seed_value: int) -> void:
 	skill_name = level if SKILLS.has(level) else "ok"
 	skill = SKILLS[skill_name]
 	rng.seed = seed_value
+	# Forget everything from the run before, so a seed always plays out the same way.
+	_tick = 0
+	_move = Vector2.ZERO
+	_aim = Vector2.RIGHT
+	_shoot = false
+	_blind_time = 0.0
+	_stuck_time = 0.0
+	_last_pos = Vector2.ZERO
+	_nudge = Vector2.ZERO
+	_nudge_time = 0.0
 
 
 ## Called every tick by the keeper. Fills in "out" with what to do.
@@ -118,7 +143,8 @@ func _decide_fight(keeper: Player, room: Room, dt: float) -> bool:
 	_blind_time = 0.0 if sees_target else _blind_time + dt
 	var path_hint := Vector2.ZERO
 	if _blind_time > 0.8:
-		path_hint = room.dir_toward(here, target.position)
+		# The target is hiding behind something: walk to a spot we can shoot it from.
+		path_hint = room.dir_toward(here, room.vantage_point(target.position, 56.0))
 
 	# --- Gather what is dangerous nearby ---
 	var see := float(skill["see_shots"])
@@ -126,6 +152,19 @@ func _decide_fight(keeper: Player, room: Room, dt: float) -> bool:
 	for shot: Shot in room.enemy_shots():
 		if shot.position.distance_squared_to(here) <= see * see:
 			shots.append(shot)
+	# Nobody can track everything at once: keep only the nearest few threats.
+	shots.sort_custom(func(a: Shot, b: Shot) -> bool:
+		return a.position.distance_squared_to(here) < b.position.distance_squared_to(here))
+	if shots.size() > int(skill["watch_shots"]):
+		shots.resize(int(skill["watch_shots"]))
+	var foes: Array[Enemy] = []
+	for enemy: Enemy in room.enemies:
+		if not enemy.dead:
+			foes.append(enemy)
+	foes.sort_custom(func(a: Enemy, b: Enemy) -> bool:
+		return a.position.distance_squared_to(here) < b.position.distance_squared_to(here))
+	if foes.size() > int(skill["watch_enemies"]):
+		foes.resize(int(skill["watch_enemies"]))
 
 	# --- Score a ring of directions (and standing still) and pick the best ---
 	var look := float(skill["look_ahead"])
@@ -134,7 +173,8 @@ func _decide_fight(keeper: Player, room: Room, dt: float) -> bool:
 	var best_dir := Vector2.ZERO
 	for i in DIRECTIONS + 1:
 		var dir := Vector2.ZERO if i == DIRECTIONS else Vector2.from_angle(TAU * float(i) / float(DIRECTIONS))
-		var score := _score_move(dir, here, walk_speed, look, keeper, room, target, shots, path_hint)
+		var score := _score_move(dir, here, walk_speed, look, room, target, shots, foes, path_hint)
+		score += float(skill["noise"]) * (rng.randf() - 0.5)
 		if score > best_score:
 			best_score = score
 			best_dir = dir
@@ -144,7 +184,10 @@ func _decide_fight(keeper: Player, room: Room, dt: float) -> bool:
 	var dash_skill := float(skill["dash"])
 	if dash_skill > 0.0 and keeper.dash_ready() and best_dir != Vector2.ZERO:
 		if best_score < -70.0 or _about_to_be_hit(here, shots):
-			return rng.randf() < dash_skill
+			# Only dash if the landing spot is open floor with nobody standing on it.
+			var landing := here + best_dir * 48.0
+			if not room.blocks_walk(landing) and room.nearest_enemy(landing, 22.0) == null:
+				return rng.randf() < dash_skill
 	return false
 
 
@@ -163,8 +206,8 @@ func _pick_target(here: Vector2, room: Room) -> Enemy:
 	return best
 
 
-func _score_move(dir: Vector2, here: Vector2, walk_speed: float, look: float, keeper: Player,
-		room: Room, target: Enemy, shots: Array[Shot], path_hint: Vector2) -> float:
+func _score_move(dir: Vector2, here: Vector2, walk_speed: float, look: float,
+		room: Room, target: Enemy, shots: Array[Shot], foes: Array[Enemy], path_hint: Vector2) -> float:
 	var end := here + dir * walk_speed * look
 	var mid := here + dir * walk_speed * look * 0.5
 	if dir != Vector2.ZERO and (room.blocks_walk(end) or room.blocks_walk(mid)):
@@ -172,9 +215,10 @@ func _score_move(dir: Vector2, here: Vector2, walk_speed: float, look: float, ke
 	var score := 0.0
 
 	# Enemy shots: where will each be when we get there?
+	var parts := maxi(2, int(ceil(look / 0.13)))
 	for shot: Shot in shots:
-		for part in 2:
-			var t := look * (0.5 if part == 0 else 1.0)
+		for part in parts:
+			var t := look * float(part + 1) / float(parts)
 			var me := here + dir * walk_speed * t
 			var d := me.distance_to(shot.position + shot.velocity * t)
 			if d < 9.0:
@@ -184,14 +228,19 @@ func _score_move(dir: Vector2, here: Vector2, walk_speed: float, look: float, ke
 
 	# Enemies: do not get touched, and keep a comfortable distance.
 	var keep := float(skill["keep_away"])
-	for enemy: Enemy in room.enemies:
-		if enemy.dead:
-			continue
-		var d := end.distance_to(enemy.position + enemy.velocity * look)
+	for enemy: Enemy in foes:
 		var touch := enemy.radius + 11.0
 		if not enemy.targetable:
 			touch += 14.0      # something is about to come up out of the floor
-		if d < touch:
+		# Would we bump into it anywhere along the way?
+		var bumped := false
+		for part in parts:
+			var t := look * float(part + 1) / float(parts)
+			if (here + dir * walk_speed * t).distance_to(enemy.position + enemy.velocity * t) < touch:
+				bumped = true
+				break
+		var d := end.distance_to(enemy.position + enemy.velocity * look)
+		if bumped:
 			score -= 85.0
 		elif d < keep:
 			score -= (keep - d) * 0.8
@@ -207,10 +256,14 @@ func _score_move(dir: Vector2, here: Vector2, walk_speed: float, look: float, ke
 	var to_target := end.distance_to(target.position)
 	if to_target > 115.0:
 		score -= (to_target - 115.0) * 0.35
+	# Our shots must actually reach it.
+	var reach := Game.stats.shot_speed * Game.stats.shot_life * 0.85
+	if to_target > reach:
+		score -= (to_target - reach) * 2.0
 	if room.clear_line(end, target.position):
 		score += 9.0
 	if path_hint != Vector2.ZERO:
-		score += 14.0 * dir.dot(path_hint)
+		score += 24.0 * dir.dot(path_hint)
 
 	# Stay off the walls, where it is easy to get cornered.
 	var edge := minf(minf(end.x - 16.0, 464.0 - end.x), minf(end.y - 16.0, 224.0 - end.y))

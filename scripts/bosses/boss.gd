@@ -46,7 +46,7 @@ func _summon(enemy_id: String, count: int, limit: int) -> void:
 
 
 func _fire_single(dir: Vector2, shot_speed: float, life: float = 6.0) -> void:
-	var shot := Shot.enemy_shot(room, position + dir * (radius * 0.6), dir, shot_speed, id)
+	var shot := Shot.enemy_shot(room, position + dir * (radius * 0.6), dir, shot_speed * danger, id)
 	shot.life = life
 	room.add_shot(shot)
 

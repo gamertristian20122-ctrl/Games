@@ -58,10 +58,10 @@ func _think(delta: float) -> void:
 			_hose_angle += delta * 1.7 * _side
 			_hose_timer -= delta
 			if _hose_timer <= 0.0:
-				_hose_timer = 0.11
+				_hose_timer = 0.13
 				var arms := 2 if phase == 1 else 3
 				for arm in arms:
-					_fire_single(Vector2.from_angle(_hose_angle + TAU * float(arm) / float(arms)), 76.0)
+					_fire_single(Vector2.from_angle(_hose_angle + TAU * float(arm) / float(arms)), 68.0)
 				Sfx.play("enemy_shoot")
 			if state_time >= 2.6:
 				_side = -_side

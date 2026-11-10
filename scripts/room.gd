@@ -145,12 +145,15 @@ func _physics_process(delta: float) -> void:
 		if _flow_timer <= 0.0:
 			_flow_timer = 0.25
 			_update_flow()
+		var more_waves := wave_index + 1 < waves.size()
 		if enemies.is_empty() and _pending.is_empty() and _spawn_queue.is_empty():
-			if wave_index + 1 < waves.size():
+			if more_waves:
 				_next_wave()
 			else:
 				_finish_fight()
-		elif _wave_clock > WAVE_TIMEOUT and wave_index + 1 < waves.size() and kind != "boss":
+		elif more_waves and kind != "boss" and _pending.is_empty() \
+				and (enemies.size() <= 1 or _wave_clock > WAVE_TIMEOUT):
+			# Keep the pressure on: do not wait for the last straggler.
 			_next_wave()
 	else:
 		_run_queues()
@@ -180,8 +183,9 @@ func _finish_fight() -> void:
 ## Works out who attacks in this room, split into waves.
 func _plan_waves() -> Array:
 	var pool: Dictionary = floor_def.get("enemies", {"clawling": 1})
-	var budget := float(floor_def.get("budget_start", 5.0)) + float(floor_def.get("budget_step", 2.0)) * Game.room_index
-	var cap := float(floor_def.get("wave_cap", 7.0))
+	var crowd := float(Game.difficulty_def()["crowd"])
+	var budget := (float(floor_def.get("budget_start", 5.0)) + float(floor_def.get("budget_step", 2.0)) * Game.room_index) * crowd
+	var cap := float(floor_def.get("wave_cap", 7.0)) * crowd
 
 	# Use only two or three kinds per room so each fight has a character.
 	var kinds: Array = pool.keys()
@@ -449,6 +453,25 @@ func dir_toward(from: Vector2, goal: Vector2) -> Vector2:
 	_fill_distances(field, goal)
 	var dir := _step_dir(field, from)
 	return dir if dir != Vector2.ZERO else direct.normalized()
+
+
+## The nearest floor tile (by walking distance from the keeper) that has a
+## clear line to "target" and is at least "min_distance" away from it.
+## Returns the target itself if there is no such tile.
+func vantage_point(target: Vector2, min_distance: float) -> Vector2:
+	var best := target
+	var best_steps := 99999
+	for y in range(1, ROWS - 1):
+		for x in range(1, COLS - 1):
+			var index := y * COLS + x
+			if grid[index] != FLOOR or _flow[index] >= best_steps:
+				continue
+			var spot := Vector2(x * T + 8.0, y * T + 8.0)
+			if spot.distance_to(target) < min_distance or not clear_line(spot, target):
+				continue
+			best_steps = _flow[index]
+			best = spot
+	return best
 
 
 ## Looks at the eight tiles around "from" and heads for the one closest to the goal.
