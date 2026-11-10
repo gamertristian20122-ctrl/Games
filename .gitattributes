@@ -1,0 +1,6 @@
+# Keep line endings the same on Windows and Linux so Godot files do not churn.
+* text=auto eol=lf
+*.png binary
+*.ttf binary
+*.ogg binary
+*.wav binary
