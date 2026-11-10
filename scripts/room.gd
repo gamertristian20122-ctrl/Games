@@ -661,8 +661,9 @@ func _draw() -> void:
 				draw_rect(Rect2(at + Vector2(1, 1), Vector2(T - 2, T - 2)), wall_dark)
 				Sprites.draw(self, _obstacle_art.get(index, Sprites.CRATE), at, _accent.darkened(0.12))
 			elif c == LOW:
-				draw_rect(Rect2(at, Vector2(T, T)), Color(_accent.darkened(0.8), 1.0))
-				Sprites.draw(self, Sprites.WATER, at, Color(_accent, 0.55))
+				# Water: always blue, so it reads as something you can shoot across.
+				draw_rect(Rect2(at, Vector2(T, T)), Pal.WATER_DEEP)
+				Sprites.draw(self, Sprites.WATER, at, Pal.WATER)
 
 	# The way in (always shut behind you) and the way out.
 	var entry := Vector2(0, DOOR_ROW * T)

@@ -70,6 +70,36 @@ controller sticks and checks the keeper responds. In Godot, open Project > Proje
 Settings > Run, put `--controls-check` in **Main Run Args**, press F5, and read the
 Output panel. Remove the text again afterwards.
 
+## Making a Windows .exe
+
+This turns the project into one file anyone can double-click, without Godot.
+
+1. In Godot, open **Editor > Manage Export Templates** and press **Download and
+   Install**. You only do this once. It is a big download (about 1 GB).
+2. Open **Project > Export...** A preset called **Windows Desktop** is already set up.
+3. Press **Export Project...**, untick **Export With Debug**, pick a folder and save
+   it as `Echowick.exe`.
+4. That one `.exe` is the whole game. Zip it to send it to someone.
+
+Windows may say "Windows protected your PC" the first time, because the file is not
+signed. Press **More info**, then **Run anyway**.
+
+## Before putting it on Steam
+
+A short checklist for later. None of it is needed to keep developing.
+
+1. **Name:** search Steam for the final name and make sure it is free.
+2. **Text:** decide whether to rewrite the item names and descriptions yourself
+   (see "How this game was made" in `CREDITS.md`).
+3. **Licences:** Godot is free to use, but its licence asks you to include its
+   licence text with your game. Godot's manual explains how under "Complying with
+   licenses". `CREDITS.md` already covers the art, fonts, sound and music.
+4. **Steamworks:** you need a Steamworks developer account (there is a one-time fee
+   per game), a store page, and an uploaded build.
+5. **Controllers:** test with a real controller on Windows. The game is set up for
+   any standard controller, but so far it has only been tested with pretend button
+   presses.
+
 ## Where to change things
 
 You do not need to be a programmer for these. Open the file in Godot (double-click it

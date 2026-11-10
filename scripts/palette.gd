@@ -18,6 +18,10 @@ const GOLD := Color("ffcf5c")       # rewards
 const HEART := Color("ff6b7d")
 const GOOD := Color("8bea8f")
 
+# Water pools (you cannot walk through them, but shots fly over).
+const WATER_DEEP := Color("0c1a33")
+const WATER := Color("3f6fb5")
+
 # Status colours shown on enemies.
 const BURN := Color("ff9a3c")
 const CHILL := Color("9fd8ff")
