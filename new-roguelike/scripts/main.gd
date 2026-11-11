@@ -11,6 +11,7 @@ extends Node
 ##   --time=<sec>       quit after this much game time
 ##   --fakerun          use the fake run (scripts/ui/dev_fake_run.gd) instead of the real one
 ##   --safe=l,t,r,b     pretend the phone has a notch this many game pixels deep on each side
+##   --fonts=<dir>      try display.ttf / body.ttf from a folder outside the project
 
 const UI = preload("res://scripts/ui/theme.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
@@ -56,6 +57,7 @@ func _ready() -> void:
 	var safe := G.arg("safe").split_floats(",")
 	if safe.size() == 4:
 		UI.fake_safe = Vector4(safe[0], safe[1], safe[2], safe[3])
+	UI.font_dir_override = G.arg("fonts")
 	_build_layers()
 	G.run_ended.connect(_on_run_ended)
 	Controls.pause_pressed.connect(_back)

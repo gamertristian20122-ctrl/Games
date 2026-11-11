@@ -28,11 +28,26 @@ const C_BLUE := Color("5698cc")
 const C_ICE := Color("72d6ce")
 
 # ------------------------------------------------------------------ fonts
-## Drop pixel fonts in under exactly these names and they are used automatically.
-const FONT_DISPLAY := "res://assets/fonts/display.ttf"   ## big titles
-const FONT_BODY := "res://assets/fonts/body.ttf"         ## everything else
-## A pixel font is only crisp at whole multiples of the size it was drawn at.
-## Set these two numbers to the design size of the font files (the font's page says it).
+## Drop pixel fonts into this folder under exactly these two names and they are used automatically.
+## Without them the engine's built-in font is used.
+const FONT_DIR := "res://assets/fonts/"
+const FONT_DISPLAY := "display.ttf"      ## big titles and headings
+const FONT_BODY := "body.ttf"            ## everything else
+## A pixel font is only crisp at whole multiples of the size it was drawn at ("native size").
+## The fonts on the project's shortlist are recognised by the name stored inside the file.
+## Each row: native size, extra pixels above a line, extra pixels below, extra pixels between letters.
+## (Very compact fonts get a little air between lines; very wide ones are tightened by a pixel.)
+const FONT_TUNING := {
+	"Alkhemikal": [16, 0, 0, 0],
+	"Jacquard 12": [21, 0, 0, 0],
+	"Jacquard 24": [43, 0, 0, 0],
+	"Pixel Operator": [16, 0, 0, 0],
+	"Pixel Operator 8": [8, 1, 2, -1],
+	"Pixel Operator Mono": [16, 0, 0, 0],
+	"Pixel Operator Mono 8": [8, 1, 2, -1],
+	"m5x7": [16, 0, 0, 0],
+}
+## Any other font: set its native size here (the font's own page says what it is).
 const DISPLAY_PX := 16
 const BODY_PX := 8
 
@@ -43,6 +58,10 @@ static var size_body := 9        ## normal text and buttons
 static var size_head := 12       ## screen headings, names
 static var size_title := 24      ## the game's name, VICTORY, ...
 static var pixel_fonts := false  ## true when the pixel fonts above were found
+static var body_px := BODY_PX    ## native size of the body font in use
+static var display_px := DISPLAY_PX
+## Testing only: a folder outside the project to read display.ttf / body.ttf from (--fonts=<dir>).
+static var font_dir_override := ""
 static var _theme: Theme
 static var _boxes := {}
 static var _used_rects := {}
@@ -146,7 +165,7 @@ static func theme() -> Theme:
 
 	# labels
 	t.set_color("font_color", "Label", C_BONE)
-	t.set_constant("line_spacing", "Label", 1 if pixel_fonts else 0)
+	t.set_constant("line_spacing", "Label", 0)
 	_label_kind(t, "Title", font_display, size_title, C_BONE)
 	_label_kind(t, "Head", font_display, size_head, C_BONE)
 	_label_kind(t, "Small", font_body, size_small, C_DIM)
@@ -250,47 +269,65 @@ static func _label_kind(t: Theme, kind: String, font: Font, size: int, color: Co
 
 static func _load_fonts() -> void:
 	var fallback: Font = ThemeDB.fallback_font
-	font_body = _pixel_font(FONT_BODY)
-	font_display = _pixel_font(FONT_DISPLAY)
-	pixel_fonts = font_body != null
-	if font_body != null:
-		size_body = BODY_PX
-		size_small = BODY_PX
+	var body := _pixel_font(FONT_BODY, BODY_PX)
+	var display := _pixel_font(FONT_DISPLAY, DISPLAY_PX)
+	pixel_fonts = not body.is_empty()
+	if pixel_fonts:
+		font_body = body[0]
+		body_px = body[1]
+		size_body = body_px
+		size_small = body_px
 	else:
 		font_body = fallback
-	if font_display != null:
-		size_head = DISPLAY_PX
-		size_title = DISPLAY_PX * 2
+	if not display.is_empty():
+		font_display = display[0]
+		display_px = display[1]
+		size_head = display_px
+		size_title = display_px * 2
 	elif pixel_fonts:
 		# only a body font arrived: use it for headings too, at whole multiples
 		font_display = font_body
-		size_head = BODY_PX * 2
-		size_title = BODY_PX * 3
+		display_px = body_px
+		size_head = body_px * (2 if body_px <= 8 else 1)
+		size_title = body_px * (3 if body_px <= 8 else 2)
 	else:
 		font_display = fallback
 
 
-static func _pixel_font(path: String) -> Font:
-	if not ResourceLoader.exists(path):
-		return null
-	var f: Font = load(path)
-	if f is FontFile:
-		# hard pixel edges: no smoothing, no hinting, no sub-pixel placement
-		f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
-		f.hinting = TextServer.HINTING_NONE
-		f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
-		f.force_autohinter = false
-	return f
+## Loads one pixel font. Returns [font, native size] or [] when the file is not there.
+static func _pixel_font(file_name: String, default_px: int) -> Array:
+	var f: FontFile = null
+	if font_dir_override != "":
+		var ff := FontFile.new()
+		if ff.load_dynamic_font(font_dir_override.path_join(file_name)) == OK:
+			f = ff
+	elif ResourceLoader.exists(FONT_DIR + file_name):
+		f = load(FONT_DIR + file_name) as FontFile
+	if f == null:
+		return []
+	# hard pixel edges: no smoothing, no hinting, no sub-pixel placement
+	f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
+	f.hinting = TextServer.HINTING_NONE
+	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+	f.force_autohinter = false
+	var tune: Array = FONT_TUNING.get(f.get_font_name(), [default_px, 0, 0, 0])
+	if tune[1] == 0 and tune[2] == 0 and tune[3] == 0:
+		return [f, int(tune[0])]
+	var spaced := FontVariation.new()
+	spaced.base_font = f
+	spaced.set_spacing(TextServer.SPACING_TOP, int(tune[1]))
+	spaced.set_spacing(TextServer.SPACING_BOTTOM, int(tune[2]))
+	spaced.set_spacing(TextServer.SPACING_GLYPH, int(tune[3]))
+	return [spaced, int(tune[0])]
 
 
 ## The sizes a big title may shrink through when the text is too wide (whole multiples for pixel fonts).
 static func title_sizes() -> Array[int]:
 	var out: Array[int] = []
 	if font_display != ThemeDB.fallback_font:
-		var px := DISPLAY_PX if ResourceLoader.exists(FONT_DISPLAY) else BODY_PX
-		var n := maxi(size_title / px, 1)
+		var n := maxi(size_title / display_px, 1)
 		while n >= 1:
-			out.append(px * n)
+			out.append(display_px * n)
 			n -= 1
 	else:
 		out.assign([24, 20, 16, 14, 12])

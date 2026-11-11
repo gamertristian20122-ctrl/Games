@@ -61,7 +61,9 @@ func build() -> void:
 	var ids: Array = []
 	if is_instance_valid(player) and player.get("items") is Array:
 		ids = player.get("items")
-	var stats := UI.hbox(10)
+	var stats := HFlowContainer.new()
+	stats.add_theme_constant_override("h_separation", 10)
+	stats.add_theme_constant_override("v_separation", 1)
 	col.add_child(stats)
 	var coins := int(player.get("coins")) if is_instance_valid(player) else 0
 	for pair: Array in [["Time", UI.time_text(float(run.get("time_s")))], ["Kills", str(int(run.get("kills")))], ["Coins", str(coins)], ["Items", str(ids.size())]]:
@@ -76,10 +78,7 @@ func build() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	col.add_child(scroll)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 2)
-	grid.add_theme_constant_override("v_separation", 1)
+	var grid := UI.vbox(1)
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(grid)
 	for id: Variant in ids:
@@ -107,34 +106,35 @@ func build() -> void:
 	UI.pop_in(cols)
 
 
+## One line of the list: picture, name, and as much of the description as fits.
 func _item_row(id: String) -> Control:
 	var info := Items.info(id)
 	var cursed := bool(info.get("cursed", false))
 	var b := Button.new()
 	b.theme_type_variation = "Flat"
-	b.custom_minimum_size = Vector2(0, 15)
+	b.custom_minimum_size = Vector2(0, maxf(15.0, UI.font_body.get_height(UI.size_body) + 4.0))
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.add_theme_font_size_override("font_size", UI.size_small)
-	b.text = String(info.get("name", id))
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.clip_text = true
-	b.add_theme_constant_override("h_separation", 0)
-	if cursed:
-		b.add_theme_color_override("font_color", UI.C_CURSE)
-		b.add_theme_color_override("font_focus_color", UI.C_CURSE)
-		b.add_theme_color_override("font_hover_color", UI.C_CURSE)
-	# the picture sits in a fixed 32 px slot on the left so the names line up
+	var row := UI.hbox(4)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 3
+	row.offset_right = -4
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(row)
+	# the picture sits in a fixed 32 px slot so the names line up
+	var slot := CenterContainer.new()
+	slot.custom_minimum_size = Vector2(32, 0)
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(slot)
 	var ic := Icon.new()
 	ic.setup(String(info.get("icon", "skull")), Vector2.ZERO, 12.0)
-	ic.position = Vector2(3 + roundf((32 - ic.size.x) / 2.0), 2)
-	b.add_child(ic)
-	for state: String in ["normal", "hover", "pressed", "focus"]:
-		var sb: StyleBox = b.get_theme_stylebox(state).duplicate()
-		sb.content_margin_left = 38
-		sb.content_margin_right = 3
-		sb.content_margin_top = 1
-		sb.content_margin_bottom = 1
-		b.add_theme_stylebox_override(state, sb)
+	slot.add_child(ic)
+	var name_label := UI.label(String(info.get("name", id)), "Curse" if cursed else "")
+	row.add_child(name_label)
+	var desc := UI.label(String(info.get("desc", "")), "Small")
+	desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	desc.clip_text = true
+	desc.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	row.add_child(desc)
 	b.focus_entered.connect(_show_item.bind(id))
 	b.pressed.connect(_show_item.bind(id))
 	return b

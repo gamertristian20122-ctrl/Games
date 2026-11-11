@@ -99,30 +99,23 @@ func build() -> void:
 		inner.add_child(_rack)
 		panel.resized.connect(_fit_rack)
 
-	# new unlocks
+	# new unlocks: one gold box with every name
 	if not unlocks.is_empty():
 		inner.add_child(UI.spacer(0, 0, true))
-	var shown := 0
-	var max_rows := 3 if unlocks.size() <= 3 else 2
-	for id: Variant in unlocks:
-		if shown >= max_rows:
-			break
-		var rule := Unlocks.by_id(String(id))
-		var kind := {"hero": "New hero", "item": "New item", "ach": "Feat"}.get(Unlocks.kind(String(id)), "Unlocked") as String
-		var row := UI.panel("tag")
-		var h := UI.hbox(5)
-		row.add_child(h)
-		h.add_child(UI.label(kind, "Gold"))
-		var n := UI.label(String(rule.get("name", id)))
-		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		n.clip_text = true
-		h.add_child(n)
-		inner.add_child(row)
-		shown += 1
-	if unlocks.size() > shown:
-		var more := UI.label("and %d more: see the Collection" % (unlocks.size() - shown), "Gold")
-		more.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		inner.add_child(more)
+		var names: Array[String] = []
+		for id: Variant in unlocks:
+			if names.size() >= 4:
+				break
+			names.append(String(Unlocks.by_id(String(id)).get("name", id)))
+		var text := ", ".join(names)
+		if unlocks.size() > names.size():
+			text += " and %d more" % (unlocks.size() - names.size())
+		var box := UI.panel("tag")
+		var v := UI.vbox(0)
+		box.add_child(v)
+		v.add_child(UI.label("Unlocked", "Gold"))
+		v.add_child(UI.label(text + ".", "", 10.0))
+		inner.add_child(box)
 	UI.pop_in(cols)
 
 

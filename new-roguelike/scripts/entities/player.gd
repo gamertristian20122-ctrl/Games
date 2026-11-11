@@ -23,7 +23,7 @@ const SHOT_KNOCK := 1.0
 var run: Node
 var room: Node
 var hero: Dictionary
-var stats: RefCounted
+var stats: Stats
 
 var hp := 6
 var max_hp := 6

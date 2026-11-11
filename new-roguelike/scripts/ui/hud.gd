@@ -288,8 +288,7 @@ func _build_boss_bar() -> void:
 	_boss_name = UI.label("", "Hud")
 	_boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss_name.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	_boss_name.clip_text = true
-	_boss_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_boss_name.grow_horizontal = Control.GROW_DIRECTION_BOTH      # a long name may be wider than the bar
 	_boss_box.add_child(_boss_name)
 	_boss_bar = Control.new()
 	_boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
