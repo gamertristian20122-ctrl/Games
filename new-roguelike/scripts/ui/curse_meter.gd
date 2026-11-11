@@ -13,7 +13,8 @@ const SOCKETS := 5
 const HOT_FROM := 3                       ## sockets from this one on are drawn "hot"
 const C_LIT := Color(0.98, 0.90, 0.58)    ## the Curse's pale gold (the same as its rim)
 const C_HOT := Color(1.0, 0.52, 0.40)
-const C_EMPTY := Color(0.20, 0.19, 0.25)
+const C_EMPTY := Color(0.24, 0.23, 0.30)
+const C_SOCKET := Color(0.055, 0.05, 0.07, 0.92)   ## the dark slot behind every skull
 const C_DISC := Color(0.02, 0.02, 0.03)
 const GAP := 3                            ## px between the skulls and the belly
 const DISC := 4                           ## radius of the little belly disc
@@ -40,7 +41,7 @@ func _ready() -> void:
 
 
 func _step() -> float:
-	return _region.size.x + 1.0
+	return _region.size.x + 3.0
 
 
 func _measure() -> void:
@@ -85,7 +86,9 @@ func _draw() -> void:
 			if _pop_level > 0.0 and i == level - 1:
 				col = Color.WHITE
 				lift = 1.0
-		draw_texture_rect_region(_skull, Rect2(Vector2(i * _step(), y - lift), _region.size), _region, col)
+		var sx := i * _step()
+		draw_rect(Rect2(sx, y - 1.0, _region.size.x + 2.0, _region.size.y + 2.0), C_SOCKET)
+		draw_texture_rect_region(_skull, Rect2(Vector2(sx + 1.0, y - lift), _region.size), _region, col)
 	# ---- the belly: a tiny disc with a pale rim, then "coins/room"
 	var x := SOCKETS * _step() + GAP
 	var full := belly >= cap

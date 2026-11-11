@@ -294,7 +294,7 @@ func _draw_controls() -> void:
 		var lit := 1.0 if _call_ready else 0.4
 		_round_button(ac, _pressed_flash["action"], lit)
 		var skull_size := _skull_region.size * 2.0
-		_canvas.draw_texture_rect_region(_skull_tex, Rect2((ac - skull_size / 2.0 + Vector2(0, -1)).round(), skull_size), _skull_region, Color(CALL_GOLD, 0.95 * lit))
+		_canvas.draw_texture_rect_region(_skull_tex, Rect2((ac - skull_size / 2.0).round(), skull_size), _skull_region, Color(CALL_GOLD, 0.95 * lit))
 		if _call_fill < 1.0:
 			_canvas.draw_arc(ac, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _call_fill, 32, Color(CALL_GOLD, 0.85), 2.0, true)
 		elif _call_ready:
@@ -304,7 +304,7 @@ func _draw_controls() -> void:
 			var k := fmod(_pulse_t * 1.4, 1.0)
 			_canvas.draw_arc(ac, BUTTON_R + 10.0 * (1.0 - k), 0.0, TAU, 32, Color(CALL_GOLD, 0.25 + 0.6 * k), 2.0, true)
 		var lw := font.get_string_size(CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
-		var lp := Vector2(roundf(ac.x - lw / 2.0), ac.y + 12.0)
+		var lp := Vector2(roundf(ac.x - lw / 2.0), ac.y - BUTTON_R - 3.0)      # above the button: the bomb button is right below
 		_canvas.draw_string_outline(font, lp, CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))
 		_canvas.draw_string(font, lp, CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(CALL_GOLD, lit))
 

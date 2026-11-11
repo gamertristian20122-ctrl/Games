@@ -433,8 +433,7 @@ func die(drops: bool = true) -> void:
 	if ai.has_method("died"):
 		ai.died(self)
 	var colors := Art.palette(String(data["sprite"]))
-	run.fx.burst(position - Vector2(0, 6), colors, 10 + int(radius * 2.0), 75.0, 0.5, 2.6)
-	run.fx.ring(position - Vector2(0, 5), 2.0, radius * 2.4, 0.22, Color(1, 1, 1, 0.8), 1.5)
+	run.fx.death_puff(position - Vector2(0, 6), colors, radius)      # smoke, bits and a ring, in its own colours
 	Sfx.play("enemy_die", -6.0)
 	if elite or radius >= 5.5:
 		run.shake(0.22)

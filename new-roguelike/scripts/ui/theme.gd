@@ -460,8 +460,10 @@ static func hud_icon(kind: String) -> Control:
 		"bomb":
 			return _sprite_icon("bomb", Vector2(14, 13))
 		"key":
-			# The art pack has no key. If an icon pack adds one, it is used; until then a plain
-			# geometric stand-in (a ring and a bar) drawn by key_glyph.gd.
+			# The key is Niji's golden key (assets/art/niji, see tools/import_assets.py). Without it,
+			# an icon file is tried, then a plain geometric stand-in drawn by key_glyph.gd.
+			if Art.has("niji_key_gold_long"):
+				return _sprite_icon("niji_key_gold_long", Vector2(16, 9))
 			if ResourceLoader.exists("res://assets/ui/icon_key.png"):
 				var tr := TextureRect.new()
 				tr.texture = load("res://assets/ui/icon_key.png")

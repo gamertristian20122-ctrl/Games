@@ -7,8 +7,8 @@ extends RefCounted
 ##   give     what the player gets: {"coins": n} {"hp": half hearts} {"armor": half hearts} {"keys": n} {"bombs": n}
 ##   kind     what G.pickup_collected reports: "coin", "key", "bomb", "heart" or "armor"
 ##   sfx      sound name          need   "hurt" = only picked up when not at full health
-## STAND-IN: the 0x72 pack has no key picture. Until a key sprite is copied into res://assets/art/dungeon/
-## (the Niji add-on has "niji_key_gold"), keys are shown as the pack's yellow flask.
+## The key is Niji's "niji_key_gold" (assets/art/niji, cut out by tools/import_assets.py); the yellow
+## flask is only the fallback if that art is ever missing.
 
 const ALL := {
 	"coin": {"sprite": ["coin"], "tint": Color(1, 1, 1), "scale": 1.0, "give": {"coins": 1}, "kind": "coin", "sfx": "coin_pickup"},

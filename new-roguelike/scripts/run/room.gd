@@ -1089,11 +1089,7 @@ func explode(at: Vector2, damage: float = 40.0) -> void:
 	# the Hungry Curse: a blast close enough stuns it and makes it cough up its coins
 	if curse != null and is_instance_valid(curse):
 		curse.on_blast(at)
-	var fx: Node = run.fx
-	fx.ring(at, 4.0, run.BOMB_RADIUS, 0.28, Color(1.0, 0.9, 0.6), 3.0)
-	fx.ring(at, 2.0, run.BOMB_RADIUS * 0.7, 0.4, Color(1.0, 0.5, 0.2), 2.0, true)
-	fx.burst(at - Vector2(0, 4), [Color(1, 0.95, 0.7), Color(1, 0.6, 0.2), Color(0.9, 0.25, 0.1), Color(0.3, 0.28, 0.28)], 36, 130.0, 0.6, 3.0)
-	fx.flash(Color(1, 0.9, 0.7, 0.25), 0.12)
+	run.fx.explosion(at, run.BOMB_RADIUS)      # picture + ring + debris + flash (scripts/run/fx.gd)
 	run.shake(0.9)
 	run.hitstop(0.05)
 	Sfx.play("explosion")

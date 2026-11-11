@@ -38,11 +38,43 @@ static func check_scripts(folders: Array = ["res://scripts/run", "res://scripts/
 	return out
 
 
-static func all() -> Array[String]:
+## Room layouts. Layouts.all_problems() checks every single layout: its size and letters, that no
+## door or door approach is blocked, that no tile is sealed off, and that a 3-tile-wide lane joins
+## all four doors (room for the Hungry Curse). Here: that every floor has enough rooms to pick from.
+static func layout_checks() -> Array[String]:
 	var out: Array[String] = Layouts.all_problems()
 	for kind in ["start", "treasure", "shop", "secret", "boss", "combat"]:
 		if Layouts.pick_list(kind).is_empty():
 			out.append("no room layout of kind '%s'" % kind)
+	var real := 0
+	for l: Dictionary in Layouts.ALL:
+		if l["kind"] != "test":
+			real += 1
+		for f in l.get("floors", []):
+			if int(f) > Floors.count():
+				out.append("layout %s: floor %d does not exist" % [l["name"], int(f)])
+	if real < 45:
+		out.append("only %d room layouts (the game wants at least 45)" % real)
+	for i in Floors.count():
+		# the same difficulty window scripts/run/room.gd uses when it picks a layout
+		var lo := 1
+		var hi := 2
+		if i == 1:
+			hi = 3
+		elif i >= 2:
+			lo = 2
+			hi = 3
+		var fights := Layouts.pick_list("combat", lo, hi, i + 1).size()
+		if fights < 12:
+			out.append("floor %d: only %d fight layouts to pick from (wants 12 or more)" % [i + 1, fights])
+		for kind in ["start", "treasure", "shop", "secret", "boss"]:
+			if Layouts.pick_list(kind, 1, 3, i + 1).is_empty():
+				out.append("floor %d: no '%s' layout" % [i + 1, kind])
+	return out
+
+
+static func all() -> Array[String]:
+	var out: Array[String] = layout_checks()
 	# ---- items
 	var pool_sizes := {}
 	for id: String in Items.ALL:

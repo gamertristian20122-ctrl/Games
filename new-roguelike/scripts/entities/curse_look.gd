@@ -22,6 +22,7 @@ const C_RIM := Color(0.98, 0.90, 0.58)           ## pale gold: used by nothing e
 const C_RIM_HOT := Color(1.0, 1.0, 0.92)         ## the lunge timer and the lock flash
 const C_RIM_DARK := Color(0.33, 0.30, 0.27)      ## safe: rising, sated, stunned
 const C_EYE := Color(1.0, 0.97, 0.80)
+const C_TEETH := Color(1.0, 0.98, 0.90)          ## ivory, so the teeth stand out from the gold rim
 const C_BELLY := Color(0.80, 0.68, 0.34)         ## the belly number
 const C_BELLY_FULL := Color(1.0, 0.87, 0.35)
 const C_STRIPE := Color(0.98, 0.93, 0.70)
@@ -119,7 +120,7 @@ func _draw() -> void:
 	if r < full - 1:
 		return                                   # still rising or sinking: no face yet
 	if c.level >= c.TEETH_LEVEL:
-		_draw_teeth(mid, r, c.level, (hot_col if hot >= 1.0 else C_RIM) if lit else C_RIM_DARK)
+		_draw_teeth(mid, r, c.level, C_TEETH if lit else C_RIM_DARK)
 	_draw_face(c, mid, r, lit)
 
 
@@ -130,8 +131,10 @@ func _draw_teeth(mid: Vector2, r: int, level: int, col: Color) -> void:
 		var a := TAU * (float(k) + 0.5) / float(n)
 		var out := Vector2(sin(a), -cos(a))
 		var side := Vector2(-out.y, out.x)
-		var root := mid + out * (r - 1.6)
-		for p: Vector2 in [root, root + side, root - side, mid + out * (r - 2.6), mid + out * (r - 3.6)]:
+		# a fang: three pixels wide at the rim, then a point two pixels long
+		for step: Vector2 in [Vector2(1.5, -1), Vector2(1.5, 0), Vector2(1.5, 1), Vector2(2.5, -1), Vector2(2.5, 0), Vector2(2.5, 1),
+				Vector2(3.5, 0), Vector2(4.5, 0)]:
+			var p := mid + out * (r - step.x) + side * step.y
 			draw_rect(Rect2(floorf(p.x), floorf(p.y), 1, 1), col)
 
 
