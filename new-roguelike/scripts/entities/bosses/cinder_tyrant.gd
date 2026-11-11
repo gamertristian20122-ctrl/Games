@@ -97,7 +97,7 @@ func _begin_charge(e, warn: float) -> void:
 	e.mem["trail"] = 24.0
 	e.pose("attack", 4)                # crouched, the blade drawn back
 	e.tell(warn)
-	e.mark_lane(e.position, e.position + e.dir * (reach + 10.0), e.radius, warn)
+	e.mark_charge(e.dir, reach + 10.0, warn)
 	e.after(warn, _charge_go)
 
 

@@ -36,6 +36,7 @@ extends "res://scripts/entities/enemy.gd"
 ##   Floor marks: red, they fill up over `seconds`, the test bot steps out of them. Mark first, strike after.
 ##     e.mark_circle(at, r, seconds)               e.strike_circle(at, r) -> bool   (true = the hero was hurt)
 ##     e.mark_lane(from, to, half_width, seconds)  e.strike_lane(from, to, half_width)
+##     e.mark_charge(dir, length, seconds)         the lane its own BODY will sweep (touching it is what hurts)
 ##     e.mark_cone(tip, dir, length, half_angle, seconds)   e.strike_cone(tip, dir, length, half_angle)
 ##     e.mark_ring(at, r_inner, r_outer, seconds)  e.strike_ring(at, r_inner, r_outer)
 ##     e.in_circle / in_lane / in_cone / in_ring   the same tests without the damage
@@ -424,6 +425,14 @@ func mark_circle(at: Vector2, r: float, seconds: float, color: Color = RED) -> v
 ## A lane: everything within half_width of the line from `from` to `to`.
 func mark_lane(from: Vector2, to: Vector2, half_width: float, seconds: float, color: Color = RED) -> void:
 	run.fx.warn_line(from, to, half_width, seconds, color, get_instance_id())
+
+
+## The lane the boss's own BODY sweeps when it charges `length` px along `d` (as wide as its body
+## circle plus the hero's, so standing just outside the mark is safe). Returns where the lane ends.
+func mark_charge(d: Vector2, length: float, seconds: float, color: Color = RED) -> Vector2:
+	var to: Vector2 = position + d.normalized() * length
+	mark_lane(position, to, radius + player.radius - 1.0, seconds, color)
+	return to
 
 
 ## A wedge from `tip` along `d`, `half_angle` radians to each side.

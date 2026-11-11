@@ -346,13 +346,22 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 				move += (off.normalized() if off.length() > 0.5 else Vector2.RIGHT.rotated(randf() * TAU)) * 3.5
 				_danger += 2.0
 		elif h[0] == 2:
-			# a boss's cone: leave it over the nearer edge
+			# a boss's cone: the short way out, over the nearer edge or straight out of its far end
 			var tip: Vector2 = h[1]
 			var mid: Vector2 = (h[2] as Vector2) - tip
 			var rel2 := pos - tip
 			var turn := mid.angle_to(rel2)
-			if rel2.length() < mid.length() + 14.0 and absf(turn) < float(h[3]) + 14.0 / maxf(rel2.length(), 14.0):
-				move += mid.normalized().orthogonal() * (1.0 if turn >= 0.0 else -1.0) * 3.5
+			var far2 := rel2.length()
+			if far2 < mid.length() + 14.0 and absf(turn) < float(h[3]) + 14.0 / maxf(far2, 14.0):
+				var side_dir := mid.normalized().orthogonal() * (1.0 if turn >= 0.0 else -1.0)
+				var side_way := far2 * sin(clampf(float(h[3]) - absf(turn), 0.0, 1.5)) + 14.0
+				var out_dir := rel2.normalized() if far2 > 0.5 else mid.normalized()
+				var out_way := mid.length() + 14.0 - far2
+				var side_end := pos + side_dir * side_way
+				var out_end := pos + out_dir * out_way
+				var side_ok := side_end.x > 6.0 and side_end.x < G.ROOM_W - 6.0 and side_end.y > 6.0 and side_end.y < G.ROOM_H - 6.0
+				var out_ok := out_end.x > 6.0 and out_end.x < G.ROOM_W - 6.0 and out_end.y > 6.0 and out_end.y < G.ROOM_H - 6.0
+				move += (side_dir if (side_ok and (side_way <= out_way or not out_ok)) or not out_ok else out_dir) * 3.5
 				_danger += 2.0
 		elif h[0] == 3:
 			# a boss's ring: step inside it or outside it, whichever edge is nearer
