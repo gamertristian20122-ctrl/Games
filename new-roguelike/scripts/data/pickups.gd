@@ -10,12 +10,13 @@ extends RefCounted
 ##   sfx      sound name          need   "hurt" = only picked up when not at full health
 ## The pictures are ids "prop_*" in assets/art/props, cut by tools/import_props.py (which pack each
 ## one comes from is in assets/art/props/props.json): a spinning gold coin, a green gem for five
-## coins, a big heart, a small heart for half a heart, a blue heart for armour, a key and a bomb.
+## coins, a heart, the same heart with its right half emptied for half a heart (as on the HUD),
+## a blue heart for armour, a key that rocks (it never turns edge-on like the coin) and a bomb.
 
 const ALL := {
 	"coin": {"sprite": ["prop_coin", "coin"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 9.0, "give": {"coins": 1}, "kind": "coin", "sfx": "coin_pickup"},
 	"coin5": {"sprite": ["prop_gem", "coin"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 10.0, "give": {"coins": 5}, "kind": "coin", "sfx": "coin_pickup"},
-	"half_heart": {"sprite": ["prop_half_heart", "ui_heart_half"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 7.0, "give": {"hp": 1}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
+	"half_heart": {"sprite": ["prop_half_heart", "ui_heart_half"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"hp": 1}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
 	"heart": {"sprite": ["prop_heart", "ui_heart_full"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"hp": 2}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
 	"armor": {"sprite": ["prop_armor", "ui_heart_full"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"armor": 2}, "kind": "armor", "sfx": "heart_pickup"},
 	"key": {"sprite": ["prop_key", "niji_key_gold", "flask_yellow"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 8.0, "give": {"keys": 1}, "kind": "key", "sfx": "key_pickup"},

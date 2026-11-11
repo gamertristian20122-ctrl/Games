@@ -48,22 +48,6 @@
   "prop_chest_ashen": {
    "box": [
     240,
-    112,
-    272,
-    144
-   ],
-   "frames": 1,
-   "licence": "purchased; commercial use, no redistribution",
-   "pack": "Pixel Crawler - Forge (Anokolisa)",
-   "size": [
-    32,
-    29
-   ],
-   "source": "Pixel_Crawler_-_Forge_1.2/Pixel Crawler - Forge/Assets/Tiles.png"
-  },
-  "prop_chest_ashen_open": {
-   "box": [
-    240,
     88,
     272,
     112
@@ -74,6 +58,22 @@
    "size": [
     32,
     24
+   ],
+   "source": "Pixel_Crawler_-_Forge_1.2/Pixel Crawler - Forge/Assets/Tiles.png"
+  },
+  "prop_chest_ashen_open": {
+   "box": [
+    240,
+    112,
+    272,
+    144
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Forge (Anokolisa)",
+   "size": [
+    32,
+    29
    ],
    "source": "Pixel_Crawler_-_Forge_1.2/Pixel Crawler - Forge/Assets/Tiles.png"
   },
@@ -240,19 +240,20 @@
   },
   "prop_half_heart": {
    "box": [
-    7,
     4,
-    15,
-    11
+    1,
+    18,
+    14
    ],
    "frames": 8,
    "licence": "CC0 1.0",
+   "note": "right half (from column 7) recoloured to slate by the importer",
    "pack": "Kings and Pigs (Pixel Frog)",
    "size": [
-    8,
-    7
+    14,
+    13
    ],
-   "source": "pixelfrog_kings_and_pigs/Kings and Pigs.zip :: Sprites/12-Live and Coins/Small Heart Idle (18x14).png"
+   "source": "pixelfrog_kings_and_pigs/Kings and Pigs.zip :: Sprites/12-Live and Coins/Big Heart Idle (18x14).png"
   },
   "prop_heart": {
    "box": [
@@ -277,8 +278,9 @@
     16,
     20
    ],
-   "frames": 8,
+   "frames": 16,
    "licence": "CC0 1.0",
+   "note": "frames of the pack's loop played in the order [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 7, 7]",
    "pack": "Treasure Hunters (Pixel Frog)",
    "size": [
     8,

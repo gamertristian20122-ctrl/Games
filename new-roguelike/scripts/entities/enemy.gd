@@ -81,6 +81,7 @@ var target := Vector2.ZERO
 var mem := {}
 
 var stun := 0.0
+var status: RefCounted         ## chill / burn from items (scripts/entities/status.gd); null until something puts one on it
 var lift := 0.0
 var knock := Vector2.ZERO
 var vel_est := Vector2.ZERO  ## measured velocity (the bot uses it to lead its shots)
@@ -270,6 +271,10 @@ func _physics_process(delta: float) -> void:
 	_moved = false
 	_los_t -= delta
 	_direct_t -= delta
+	if status != null:
+		status.tick(self, delta)       # a burn can kill
+		if dead:
+			return
 	if stun > 0.0:
 		stun -= delta
 	else:
@@ -353,6 +358,8 @@ func face(d: Vector2) -> void:
 
 
 func _step(v: Vector2, delta: float) -> bool:
+	if status != null:
+		v *= status.speed              # chilled = slower, burning = faster
 	var before := position
 	var want := v * delta
 	position = room.move_circle(position, radius, want, flying)
@@ -463,6 +470,12 @@ func minion_count() -> int:
 	return n
 
 
+## How fast statuses let it move right now (1.0 = normal). The walking helpers already use it;
+## a boss fight that writes `position` itself should multiply its movement by this.
+func status_speed() -> float:
+	return status.speed if status != null else 1.0
+
+
 # ------------------------------------------------------------------------------ getting hurt
 func hurt(amount: float, from_dir: Vector2 = Vector2.ZERO, knock_mult: float = 1.0) -> void:
 	if dead or not hittable:
@@ -474,7 +487,7 @@ func hurt(amount: float, from_dir: Vector2 = Vector2.ZERO, knock_mult: float = 1
 		_hit_t = Art.anim_time(_sprite_id, "hit")
 		sprite.play("hit")
 		sprite.frame = 0
-	knock += from_dir * 85.0 * knock_mult / maxf(mass, 0.6)
+	knock += from_dir * 85.0 * knock_mult * (status.knock if status != null else 1.0) / maxf(mass, 0.6)
 	Sfx.play("enemy_hit", -9.0)
 	if ai.has_method("hurt"):
 		ai.hurt(self, amount)

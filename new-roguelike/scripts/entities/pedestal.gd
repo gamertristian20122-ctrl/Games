@@ -34,6 +34,7 @@ const CURSE_GOLD := Color(0.98, 0.90, 0.58)      ## the Hungry Curse's own pale 
 const STAND := "prop_plinth"
 const STAND_TOP := 11.0          ## how far the top edge of the stand is above the spot it stands on
 const COIN := "prop_coin"
+const TAG_PLATE := Color(0.07, 0.06, 0.09, 0.72)     ## the dark plate behind a price
 const SKULL := "prop_skull_mark"
 const BADGE_SKULL := "skull"     ## the same small skull the HUD's Curse meter is made of
 
@@ -135,6 +136,7 @@ func _build_tag() -> void:
 	tag.position = Vector2(0, 12)
 	tag.z_index = 1
 	add_child(tag)
+	tag.draw.connect(_draw_tag_plate)
 	var coin := Sprite2D.new()
 	coin.texture = Art.tex(COIN)
 	coin.position = Vector2(-6, 0)
@@ -149,6 +151,16 @@ func _build_tag() -> void:
 	label.position = Vector2(1, -7)
 	tag.add_child(label)
 	_price_label = label
+
+
+## A dark plate behind the coin and the number, so the price reads as a label on the stand and
+## its coin is never taken for a coin lying on the floor. A flat shape with its corners cut.
+func _draw_tag_plate() -> void:
+	var w := 18.0 + 5.0 * str(price).length()
+	var r := Rect2(-13, -7, w, 14)
+	tag.draw_rect(r.grow_individual(-1, 0, -1, 0), TAG_PLATE)
+	tag.draw_rect(Rect2(r.position.x, r.position.y + 1, 1, r.size.y - 2), TAG_PLATE)
+	tag.draw_rect(Rect2(r.end.x - 1, r.position.y + 1, 1, r.size.y - 2), TAG_PLATE)
 
 
 ## The small "+1 skull" (or "-1 skull") under a cursed item or the Starve stand.
@@ -203,6 +215,7 @@ func _refresh_service() -> void:
 	price = _service_price()
 	if _price_label != null:
 		_price_label.text = str(price)
+		tag.queue_redraw()
 
 
 func _use_service(player: Node) -> void:

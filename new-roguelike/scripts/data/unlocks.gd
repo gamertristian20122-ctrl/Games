@@ -55,6 +55,10 @@ const RULES := [
 	{"id": "item:tithe_imp", "name": "Tithe Bat", "hint": "Feed your Curse 3 monsters in one lunge.", "stat": "curse_feast", "at_least": 1},
 	{"id": "item:gilded_fang", "name": "Gilded Fang", "hint": "Make your Curse cough up 10 coins with one bomb.", "stat": "belly_burst_10", "at_least": 1},
 	{"id": "item:iron_leash", "name": "Iron Leash", "hint": "Let your Curse bite 30% off one boss.", "stat": "boss_bitten_30", "at_least": 1},
+	{"id": "item:reaping_hook", "name": "Reaping Hook", "hint": "Defeat 300 monsters in total.", "stat": "total_kills", "at_least": 300},
+	{"id": "item:ossuary_chain", "name": "Ossuary Chain", "hint": "Take 5 cursed items in total.", "stat": "cursed_taken", "at_least": 5},
+	{"id": "item:cry_of_knives", "name": "Cry of Knives", "hint": "CALL your Curse 40 times in total.", "stat": "curse_calls", "at_least": 40},
+	{"id": "item:knocker_bat", "name": "Knocker Bat", "hint": "Find 3 secret rooms in total.", "stat": "secret_found", "at_least": 3},
 	# ---------------------------------------------------------------- end of item unlocks
 ]
 

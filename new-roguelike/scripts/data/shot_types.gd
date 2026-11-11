@@ -31,6 +31,10 @@ const ALL := {
 	"wisp": {"color": Color(0.80, 1.0, 0.95), "edge": Color(0.15, 0.60, 0.55), "radius": 2.0, "trail": 2, "sprite": ""},
 	"shard": {"color": Color(1.0, 1.0, 0.92), "edge": Color(0.45, 0.42, 0.36), "radius": 2.0, "trail": 1, "gap": 3.0,
 		"sprite": "weapon_cleaver", "points": "up", "spin": 2.5, "tint": Color(1.0, 1.0, 1.0, 0.9)},
+	# a hero shot that flew through the Hungry Curse (Eclipse Shard): a dark orb with a violet heart
+	"eclipse": {"color": Color(0.80, 0.50, 1.0), "edge": Color(0.10, 0.02, 0.16), "radius": 3.0, "trail": 3, "sprite": ""},
+	# an enemy shot the Curse spat back (Sour Gullet)
+	"spit": {"color": Color(0.88, 1.0, 0.55), "edge": Color(0.25, 0.50, 0.10), "radius": 2.4, "trail": 2, "sprite": ""},
 	# --- enemies
 	"enemy": {"color": Color(1.0, 0.86, 0.40), "edge": Color(0.85, 0.16, 0.10), "radius": 3.0, "trail": 0,
 		"sprite": "fx_fireball", "points": "right", "anchor": Vector2(12, 8), "under": Color(0.16, 0.01, 0.03, 1.0), "dot": Color(1.0, 0.97, 0.74), "fps": 12.0,

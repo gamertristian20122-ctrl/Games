@@ -12,8 +12,9 @@ Writes assets/art/props/                  <id>.png stills, <id>_anim_f<n>.png lo
        --sheet DIR                        also writes DIR/props_sheet.png (everything x4 beside the knight)
 Idempotent: it deletes and rewrites only the prop_* PNGs it owns plus props.json.
 
-It only cuts, crops, pads and recolours whole sprites (the armour heart is the red heart with red
-and blue swapped; the lemon-yellow coin gets a warm wash so it reads as gold). No pixel is drawn.
+It only cuts, crops, pads, reorders frames and swaps colours (the armour heart is the red heart with
+red and blue swapped; half a heart is the red heart with the colours of its right half swapped for
+slate; the lemon-yellow coin gets a warm wash so it reads as gold). No pixel is drawn.
 To add a prop: add one row to STILLS or LOOPS below, run it, look at the sheet.
 """
 import glob
@@ -31,6 +32,7 @@ PC_X = os.path.join(GAME, "assets_raw", "paid_pixel_crawler", "x")
 RAW = os.path.join(GAME, "assets_raw", "props")
 OUT = os.path.join(GAME, "assets", "art", "props")
 BG = (26, 26, 36, 255)
+OUTLINE = (63, 56, 81)      # Pixel Frog's outline colour (Kings and Pigs)
 
 PC = "Pixel_Crawler_-_"
 PACKS = {
@@ -63,8 +65,8 @@ STILLS = [
     ("prop_chest_crypt_open", "hideout", None, (256, 256, 288, 304)),
     ("prop_chest_warrens", "sewer", None, (129, 40, 158, 64)),
     ("prop_chest_warrens_open", "sewer", None, (130, 4, 158, 32)),
-    ("prop_chest_ashen", "forge", None, (240, 112, 272, 144)),
-    ("prop_chest_ashen_open", "forge", None, (240, 88, 272, 112)),
+    ("prop_chest_ashen", "forge", None, (240, 88, 272, 112)),         # lid down, clasp in front
+    ("prop_chest_ashen_open", "forge", None, (240, 112, 272, 144)),   # lid up, dark inside
     ("prop_chest_pit", "library", None, (320, 272, 352, 304)),
     ("prop_chest_pit_open", "library", None, (320, 224, 352, 272)),
     ("prop_chest_locked", "desert", None, (97, 41, 127, 64)),
@@ -85,13 +87,20 @@ TH = "Treasure Hunters/Pirate Treasure/Sprites/"
 # options: "center_x": keep this x of the cell in the middle of the cut (the bomb's sparks fly to one side)
 #          "blue": swap red and blue (the armour heart is the red heart recoloured, like the HUD's)
 #          "wash": (r, g, b) every colour is multiplied by this (1, 1, 1 = unchanged)
+#          "order": [frame numbers] play these frames of the loop in this order (frames may repeat)
+#          "empty_from": x  every colour from this column of the cut to the right is swapped for a dull
+#                           slate of the same brightness; the outline colour stays (an emptied half)
 LOOPS = [
     # the coin is the plain one: Pixel Frog's gold coin has a skull on it, and skulls mean the Curse here
     ("prop_coin", "zelda", ("strip", "gfx/objects.png", 16, 16, 4, 0, 64), {"wash": (1.0, 0.84, 0.60)}),
     ("prop_gem", "treasure", ("files", TH + "Green Diamond/", 4), {}),
-    ("prop_key", "treasure", ("files", "Treasure Hunters/Merchant Ship/Sprites/Chest Key/Idle/", 8, "%d"), {}),
+    # the key ROCKS left and right and never turns edge-on: edge-on it is a thin gold bar, and so is the coin
+    ("prop_key", "treasure", ("files", "Treasure Hunters/Merchant Ship/Sprites/Chest Key/Idle/", 8, "%d"),
+     {"order": [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 7, 7]}),
     ("prop_heart", "kings", ("strip", "Sprites/12-Live and Coins/Big Heart Idle (18x14).png", 18, 14, 8), {}),
-    ("prop_half_heart", "kings", ("strip", "Sprites/12-Live and Coins/Small Heart Idle (18x14).png", 18, 14, 8), {}),
+    # half a heart is the big heart with its right half emptied, the way the HUD shows half a heart
+    # (the pack's own small heart is 8 x 7 px: too faint to find on the floor)
+    ("prop_half_heart", "kings", ("strip", "Sprites/12-Live and Coins/Big Heart Idle (18x14).png", 18, 14, 8), {"empty_from": 7}),
     ("prop_armor", "kings", ("strip", "Sprites/12-Live and Coins/Big Heart Idle (18x14).png", 18, 14, 8), {"blue": True}),
     ("prop_bomb_lit", "kings", ("strip", "Sprites/09-Bomb/Bomb On (52x56).png", 52, 56, 4), {"center_x": 26.5}),
 ]
@@ -145,6 +154,18 @@ def _wash(im, k):
     return im
 
 
+def _empty(im, x_from):
+    px = im.load()
+    for y in range(im.height):
+        for x in range(x_from, im.width):
+            r, g, b, a = px[x, y]
+            if a == 0 or (r, g, b) == OUTLINE:
+                continue
+            v = r * 0.5 + g * 0.3 + b * 0.2
+            px[x, y] = (int(v * 0.55 + 10), int(v * 0.50 + 8), int(v * 0.66 + 14), a)
+    return im
+
+
 def build():
     made = {}   # file name -> image
     info = {}   # id -> props.json row
@@ -181,6 +202,10 @@ def build():
             frames = [_blue(f) for f in frames]
         if "wash" in opt:
             frames = [_wash(f, opt["wash"]) for f in frames]
+        if "empty_from" in opt:
+            frames = [_empty(f, opt["empty_from"]) for f in frames]
+        if "order" in opt:
+            frames = [frames[i] for i in opt["order"]]
         for i, f in enumerate(frames):
             made["%s_anim_f%d.png" % (pid, i)] = f
         info[pid] = {"pack": PACKS[pack]["pack"], "licence": PACKS[pack]["licence"], "source": src,
@@ -189,6 +214,10 @@ def build():
             info[pid]["note"] = "red and blue channels swapped by the importer"
         if "wash" in opt:
             info[pid]["note"] = "colours multiplied by %s by the importer" % (list(opt["wash"]),)
+        if "empty_from" in opt:
+            info[pid]["note"] = "right half (from column %d) recoloured to slate by the importer" % opt["empty_from"]
+        if "order" in opt:
+            info[pid]["note"] = "frames of the pack's loop played in the order %s" % (opt["order"],)
     return made, info
 
 

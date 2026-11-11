@@ -10,18 +10,33 @@ extends RefCounted
 ##   mods      stat changes, added as one layer in scripts/run/stats.gd:
 ##               {"flat": {"damage": 1.0}, "pct": {"speed": 0.15}, "mult": {"damage": 2.0}, "flags": {"pierce": 1}}
 ##             stats: speed damage rate range shot_speed shot_size knockback shots spread homing
-##                    hurt_mult coin_mult luck invuln bomb_damage      flags: pierce bounce (and any you invent)
+##                    hurt_mult coin_mult luck invuln bomb_damage
 ##             the Hungry Curse reads three more stats: call_cooldown (seconds), curse_creep (speed
 ##             multiplier), belly_mult (coins a bombed Curse coughs up) and the flag curse_eats_coins
+##             FLAGS (a flag is a plain counter; each is read in ONE place):
+##               pierce, bounce     how many monsters a shot passes through / walls it bounces off
+##               return             shots fly home at the end of their flight      (scripts/run/shots.gd,
+##               reap               a shot that kills flies on and grows            where every number
+##               bounce_grow        shots grow at every bounce                      of these six lives)
+##               eat_shots          shots destroy enemy shots and grow on them
+##               curse_shove        shots push the Hungry Curse along
+##               eclipse            shots through the Curse are doubled and no longer slow it
+##               ring               a volley leaves in a full circle                (scripts/entities/player.gd)
+##               coin_ward          a hit costs this many coins instead of health   (scripts/entities/player.gd)
+##               curse_eats_coins   the Curse eats coins on the floor               (scripts/entities/curse.gd)
 ##   give      handed over once when picked up: {"max_hp": 2, "hp": 2, "armor": 2, "coins": 5, "keys": 1, "bombs": 1}
 ##             (hp, max_hp and armor are HALF hearts)
 ##   familiar  an id from familiars.gd that joins the player
 ##   locked    true = only appears after Save.is_unlocked("item:<id>")
+##   text      words an effect shows on screen (so they can be rewritten here)
 ##   Anything smarter (on kill, on hit, when hurt ...) is a function in scripts/run/item_effects.gd
 ##   named <item id>_<hook>, for example  grave_cleaver_on_kill.  No other file needs to change.
 ## POOLS: "treasure" (treasure rooms), "boss" (boss reward), "shop", "secret", "cursed" (cursed
 ## pedestals and the shop's bargain stand). An item never appears twice in one run.
 ## TO ADD AN ITEM: add a row. The icon must be an existing sprite id.
+## ICONS: every item has its own picture icon_<item id> in assets/art/icons/, copied from the
+## "Raven Fantasy Icons" pack by tools/import_icons.py (the table of which picture is at its top).
+## Statuses (chill, freeze, burn) are in scripts/entities/status.gd; helpers in scripts/data/familiars.gd.
 
 const ALL := {
 	# ---------------------------------------------------------------- plain stat items
@@ -71,6 +86,51 @@ const ALL := {
 		"mods": {"mult": {"curse_creep": 0.73}}},
 	"tithe_imp": {"name": "Tithe Imp", "desc": "After each meal it fetches you a coin from the Curse's belly.", "icon": "imp", "cursed": false, "pools": ["treasure", "shop", "secret"], "locked": true,
 		"familiar": "tithe_imp"},
+	# ================================================================ THE SECOND BATCH (25 items)
+	# ---------------------------------------------------------------- shots that behave differently
+	"bone_thistle": {"name": "Bone Thistle", "desc": "Shots burst into three splinters where their flight ends.", "icon": "skull", "cursed": false, "pools": ["treasure", "secret"]},
+	"tethered_sickle": {"name": "Tethered Sickle", "desc": "Shots fly back to you and cut again on the way.", "icon": "skull", "cursed": false, "pools": ["treasure", "boss"],
+		"mods": {"flags": {"return": 1}}},
+	"stonebiter": {"name": "Stonebiter", "desc": "Shots bounce once more and grow with every bounce.", "icon": "skull", "cursed": false, "pools": ["treasure", "secret"],
+		"mods": {"flags": {"bounce": 1, "bounce_grow": 1}}},
+	"reaping_hook": {"name": "Reaping Hook", "desc": "A shot that kills flies on, bigger with each kill.", "icon": "skull", "cursed": false, "pools": ["treasure", "boss"], "locked": true,
+		"mods": {"flags": {"reap": 1}}},
+	"starveling_blade": {"name": "Starveling Blade", "desc": "Your shots swallow enemy shots and grow on them.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "boss"],
+		"mods": {"flags": {"eat_shots": 1}}},
+	"winter_nail": {"name": "Winter Nail", "desc": "Hits chill monsters. The third hit freezes one solid.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "secret"]},
+	"eclipse_shard": {"name": "Eclipse Shard", "desc": "Shots that fly through your Curse hit twice as hard.", "curse": "Your shots no longer slow it.", "icon": "skull", "cursed": true, "pools": ["cursed"],
+		"mods": {"flags": {"eclipse": 1}}},
+	"breaking_wheel": {"name": "Breaking Wheel", "desc": "Throw four more shots at once.", "curse": "They leave in a ring around you. Only one flies where you aim.", "icon": "skull", "cursed": true, "pools": ["cursed"],
+		"mods": {"flat": {"shots": 4.0}, "flags": {"ring": 1}}},
+	"barrow_stone": {"name": "Barrow Stone", "desc": "Shots are huge, hit harder and shove monsters back.", "curse": "They crawl through the air.", "icon": "skull", "cursed": true, "pools": ["cursed"],
+		"mods": {"mult": {"shot_size": 2.0, "shot_speed": 0.5}, "pct": {"damage": 0.6, "knockback": 1.0}}},
+	"pyre_kindling": {"name": "Pyre Kindling", "desc": "Shots set monsters alight. Fire leaps to monsters that touch.", "curse": "Burning monsters run faster.", "icon": "skull", "cursed": true, "pools": ["cursed"]},
+	# ---------------------------------------------------------------- more ways to play with the Hungry Curse
+	"moth_mantle": {"name": "Moth Mantle", "desc": "Fire much faster while you stand close to your Curse.", "curse": "You fire slower when you are far from it.", "icon": "skull", "cursed": true, "pools": ["cursed"]},
+	"ossuary_chain": {"name": "Ossuary Chain", "desc": "Bigger, harder shots for every Curse Level.", "curse": "It raises your Curse by two Levels, not one.", "icon": "skull", "cursed": true, "pools": ["cursed"], "locked": true},
+	"howling_scar": {"name": "Howling Scar", "desc": "When your Curse bites you, every monster in the room is blasted.", "curse": "Your Curse creeps faster.", "icon": "skull", "cursed": true, "pools": ["cursed"],
+		"mods": {"mult": {"curse_creep": 1.3}}},
+	"oxbone_cudgel": {"name": "Oxbone Cudgel", "desc": "Your shots shove your Curse the way they fly.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "secret"],
+		"mods": {"flags": {"curse_shove": 1}}},
+	"cry_of_knives": {"name": "Cry of Knives", "desc": "CALL also throws a ring of your shots.", "icon": "skull", "cursed": false, "pools": ["treasure", "boss", "shop"], "locked": true},
+	"bitter_marrow": {"name": "Bitter Marrow", "desc": "A bite makes your Curse cough up its whole belly.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "secret"]},
+	"sour_gullet": {"name": "Sour Gullet", "desc": "Your Curse spits swallowed shots back at monsters.", "icon": "skull", "cursed": false, "pools": ["treasure", "boss", "shop"]},
+	"fasting_vow": {"name": "Fasting Vow", "desc": "No bites on a floor: your Curse drops a Level.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "secret"],
+		"text": {"broken": "Vow broken", "kept": "Vow kept"}},
+	# ---------------------------------------------------------------- staying alive, coins, helpers
+	"ransom_plate": {"name": "Ransom Plate", "desc": "A hit costs you 8 coins instead of health, while you can pay.", "icon": "skull", "cursed": false, "pools": ["treasure", "secret", "boss"],
+		"mods": {"flags": {"coin_ward": 8}}},
+	"sextons_satchel": {"name": "Sexton's Satchel", "desc": "Reach every new floor with at least 2 bombs and a key.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "secret"],
+		"give": {"bombs": 1, "keys": 1}},
+	"sinners_locket": {"name": "Sinner's Locket", "desc": "One more heart. Taking a cursed item heals you to full.", "icon": "skull", "cursed": false, "pools": ["treasure", "boss", "shop", "secret"],
+		"give": {"max_hp": 2, "hp": 2}},
+	"undertakers_due": {"name": "Undertaker's Due", "desc": "The last monster you slay in each room always drops something.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "secret"]},
+	"knocker_bat": {"name": "Knocker Bat", "desc": "It flutters at any wall that hides a secret door.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "boss"], "locked": true,
+		"familiar": "knocker_bat"},
+	"blood_porter": {"name": "Blood Porter", "desc": "Carries hearts you have no room for and feeds you when you bleed.", "icon": "skull", "cursed": false, "pools": ["treasure", "shop", "boss"],
+		"familiar": "blood_porter"},
+	"carrion_bat": {"name": "Carrion Bat", "desc": "Sits on the toughest monster. Your shots hurt it half again as much.", "icon": "skull", "cursed": false, "pools": ["treasure", "boss", "secret"],
+		"familiar": "carrion_bat"},
 }
 
 

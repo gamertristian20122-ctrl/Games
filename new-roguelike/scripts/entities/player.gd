@@ -8,6 +8,8 @@ extends Node2D
 ## It reads Controls.move / Controls.aim every physics frame, fires by itself while aiming,
 ## and places a bomb when Controls.bomb_pressed fires.
 ## Item logic does NOT live here: see scripts/data/items.gd and scripts/run/item_effects.gd.
+## The few item flags read here: ring (volleys leave in a full circle), coin_ward (a hit is paid in
+## coins; the flag's value is the price), and the shot flags turned into Shots.B_ bits in _stats_changed().
 
 const Stats = preload("res://scripts/run/stats.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
@@ -139,7 +141,28 @@ func _stats_changed() -> void:
 		"homing": stats.v("homing"),
 		"knock": stats.v("knockback") * SHOT_KNOCK,
 		"size": stats.v("shot_size"),
+		"bits": _shot_bits(),
 	}
+
+
+## Which tricks the hero's own shots carry (item flags -> the B_ bits of scripts/run/shots.gd).
+func _shot_bits() -> int:
+	var b := Shots.B_HERO
+	for pair: Array in [["return", Shots.B_RETURN], ["reap", Shots.B_REAP], ["bounce_grow", Shots.B_GROW],
+			["eat_shots", Shots.B_EAT], ["curse_shove", Shots.B_SHOVE], ["eclipse", Shots.B_ECLIPSE]]:
+		if stats.has_flag(pair[0]):
+			b |= int(pair[1])
+	return b
+
+
+## Fires `amount` of the hero's own shots in an even ring (items use this: Cry of Knives).
+func fire_ring(amount: int, range_mult: float = 1.0) -> void:
+	var speed := stats.v("shot_speed")
+	var turn := aim_dir.angle()
+	for k in amount:
+		var a := turn + TAU * float(k) / float(amount)
+		run.shots.fire(position + Vector2(cos(a), sin(a)) * 7.0, Vector2(cos(a), sin(a)) * speed, Shots.SIDE_PLAYER,
+			stats.v("damage"), stats.v("range") * range_mult, String(hero.get("shot", "blade")), _shot_extra)
 
 
 ## Called by the run every time the player walks into a room.
@@ -187,6 +210,7 @@ func _physics_process(delta: float) -> void:
 	if firing and _fire_cd <= 0.0:
 		_fire()
 		_fire_cd = 1.0 / stats.v("rate")
+	run.effects.fire("on_tick", [delta])
 	_update_look(delta)
 
 
@@ -195,8 +219,11 @@ func _fire() -> void:
 	var spread := stats.v("spread")
 	var speed := stats.v("shot_speed")
 	var from := position + aim_dir * 7.0
+	var ring := stats.has_flag("ring")       # Breaking Wheel: the volley leaves in a full circle
 	for k in n:
 		var a := aim_dir.angle() + (float(k) - float(n - 1) * 0.5) * 0.17
+		if ring:
+			a = aim_dir.angle() + TAU * float(k) / float(n)
 		if spread > 0.0:
 			a += randf_range(-spread, spread)
 		run.shots.fire(from, Vector2(cos(a), sin(a)) * speed, Shots.SIDE_PLAYER, stats.v("damage"), stats.v("range"),
@@ -274,6 +301,13 @@ func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 		queue_redraw()
 		return
 	var amount := maxi(1, int(round(float(half_hearts) * stats.v("hurt_mult"))))
+	var ransom := int(stats.flag("coin_ward"))       # Ransom Plate: the hit is paid in coins while the purse can
+	if ransom > 0 and coins >= ransom:
+		coins -= ransom
+		amount = 0
+		run.fx.burst(position - Vector2(0, _mid), [Color(1, 0.85, 0.3), Color(1, 1, 0.7)], ransom * 2, 90.0, 0.6, 2.0)
+		Sfx.play("coin_pickup", -2.0, 0.05, 0.7)
+		run.effects.fire("on_coins", [-ransom])
 	var from_armor := mini(armor, amount)
 	armor -= from_armor
 	hp -= amount - from_armor
@@ -286,8 +320,9 @@ func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 	knock = (away.normalized() if away.length() > 0.5 else Vector2.DOWN) * 150.0
 	run.shake(0.55)
 	run.hitstop(0.05)
-	run.fx.burst(position - Vector2(0, _mid), [Color(1, 0.3, 0.3), Color(1, 1, 1)], 8, 70.0, 0.4, 2.2)
-	run.fx.flash(Color(1, 0.1, 0.1, 0.18), 0.15)
+	if amount > 0:
+		run.fx.burst(position - Vector2(0, _mid), [Color(1, 0.3, 0.3), Color(1, 1, 1)], 8, 70.0, 0.4, 2.2)
+		run.fx.flash(Color(1, 0.1, 0.1, 0.18), 0.15)
 	Sfx.play("player_hurt", -3.0)
 	G.player_hurt.emit(amount)
 	run.effects.fire("on_hurt", [amount, cause])
@@ -334,7 +369,10 @@ func give(bundle: Dictionary) -> int:
 		max_hp = clampi(max_hp + int(bundle["max_hp"]), 2, MAX_HP)
 		hp = mini(hp, max_hp)
 	if bundle.has("hp"):
+		var spare := hp + int(bundle["hp"]) - max_hp
 		hp = mini(max_hp, hp + int(bundle["hp"]))
+		if spare > 0:
+			_helpers("stash", spare)          # the Blood Porter keeps what does not fit
 	if bundle.has("armor"):
 		armor = mini(MAX_ARMOR, armor + int(bundle["armor"]))
 	if bundle.has("keys"):
@@ -348,8 +386,16 @@ func give(bundle: Dictionary) -> int:
 ## True when a pickup with this "need" would be useful right now (hearts are left on the floor at full health).
 func wants(need: String) -> bool:
 	if need == "hurt":
-		return hp < max_hp
+		return hp < max_hp or _helpers("can_carry", 1)
 	return true
+
+
+## Asks every familiar whose behaviour file has `method(f, amount) -> bool`; true when one said yes.
+func _helpers(method: String, amount: int) -> bool:
+	for f in familiars:
+		if is_instance_valid(f) and f.behaviour.has_method(method) and f.behaviour.call(method, f, amount):
+			return true
+	return false
 
 
 func spend_coins(amount: int) -> bool:
@@ -381,6 +427,7 @@ func add_item(item_id: String) -> void:
 		Sfx.play("item_pickup")
 	run.fx.ring(position - Vector2(0, _mid), 4.0, 30.0, 0.45, Color(1, 0.95, 0.6), 2.0)
 	run.effects.item_added(item_id)
+	run.effects.fire("on_item", [item_id])
 	G.item_acquired.emit(item_id)
 	G.hud_changed.emit()
 

@@ -2,6 +2,11 @@ extends Control
 ## Hearts: the row of health hearts on the HUD. Health is counted in HALF hearts everywhere
 ## (6 = three full hearts). Red hearts come first, then armour hearts in blue.
 ## It only redraws when the numbers change.
+## The pictures stay the old pack's ui_heart_full / half / empty (0x72): a full / half / empty set
+## drawn by one hand, with a white rim that reads on any wall behind the HUD; the armour heart is
+## the same picture turned blue, so the whole row is one family. (The hearts lying on the floor are
+## Pixel Frog's bigger, animated ones: prop_heart, and prop_half_heart with its right half emptied
+## the same way the HUD's half heart is.)
 
 const UI = preload("res://scripts/ui/theme.gd")
 

@@ -17,6 +17,42 @@ const SIDE_PLAYER := 0
 const SIDE_ENEMY := 1
 const NO_EXTRA := {}
 
+## What a shot may do, packed into one number per shot (pass it as extra "bits").
+## The player builds his from the item flags in his stats (player.gd _stats_changed), so every
+## shot he throws, and every item that throws "his own shots", carries the same tricks.
+const B_HERO := 1        ## thrown by the hero's own weapon: its end is told to items (hook on_shot_end)
+const B_CHILD := 2       ## made by an item (splinter, spit): never starts on_hit / on_shot_end again
+const B_RETURN := 4      ## Tethered Sickle: turns round at the end of its flight and flies home
+const B_REAP := 8        ## Reaping Hook: a hit that kills does not use the shot up, it grows
+const B_GROW := 16       ## Stonebiter: grows at every bounce
+const B_EAT := 32        ## Starveling Blade: destroys enemy shots it touches and grows on them
+const B_SHOVE := 64      ## Oxbone Cudgel: pushes the Hungry Curse along
+const B_ECLIPSE := 128   ## Eclipse Shard: doubled by flying through the Hungry Curse (and never slows it)
+const B_BACK := 256      ## (state) on its way home
+const B_DARK := 512      ## (state) has already touched the Hungry Curse
+const B_HIT := 1024      ## (state) has hit a monster
+
+## The numbers of the shot items (the item rows in scripts/data/items.gd only switch them on).
+const RETURN_SPEED := 1.25     ## Tethered Sickle: speed, damage and reach of the flight home
+const RETURN_DAMAGE := 0.7
+const RETURN_REACH := 1.5
+const RETURN_CATCH := 10.0     ## px from the hero at which a returning shot is caught
+const GROW_DAMAGE := 1.5       ## Stonebiter, per bounce
+const GROW_SIZE := 1.25
+const GROW_REACH := 30.0
+const REAP_DAMAGE := 1.4       ## Reaping Hook, per kill
+const REAP_SIZE := 1.2
+const REAP_REACH := 30.0
+const REAP_MAX := 4
+const EAT_DAMAGE := 1.19       ## Starveling Blade, per enemy shot swallowed (4 times = double)
+const EAT_SIZE := 1.125
+const EAT_MAX := 4
+const SIZE_CAP := 3.0          ## no shot grows past this many times its type's radius
+const ECLIPSE_DAMAGE := 2.0    ## Eclipse Shard
+const SHOVE_PX := 5.0          ## Oxbone Cudgel: px per shot (times the shot's knockback), at most SHOVE_MAX
+const SHOVE_MAX := 10.0
+const SHOVE_PER_SEC := 60.0    ## ... and this much in one second, all shots together
+
 var run: Node
 var room: Node
 
@@ -35,6 +71,9 @@ var homing := PackedFloat32Array()
 var knock := PackedFloat32Array()
 var last_hit := PackedInt64Array()
 var src := PackedStringArray()
+var bits := PackedInt32Array()       ## the B_ flags above
+var fed := PackedByteArray()         ## how often it grew: kills reaped (low 4 bits), shots eaten (high 4 bits)
+var reach := PackedFloat32Array()    ## the range it started with
 
 ## Arcing shots (few at a time): {from, to, t, dur, radius, kind, cause, peak}
 var lobs: Array = []
@@ -52,6 +91,9 @@ var _look := ShotLook.new()        ## draws the shots (scripts/run/shot_look.gd)
 var _e_nodes: Array = []
 var _e_pos := PackedVector2Array()
 var _e_rad := PackedFloat32Array()
+var _foe_shots := PackedInt32Array()
+var _shove_left := 0.0
+var _dark_kind := 0
 
 
 func _ready() -> void:
@@ -73,6 +115,7 @@ func _ready() -> void:
 	_disc.height = 16
 	for id in ShotTypes.ALL:
 		_register(id)
+	_dark_kind = int(_type_index.get("eclipse", 0))
 
 
 func _register(id: String) -> int:
@@ -112,10 +155,13 @@ func _grow() -> void:
 	knock.resize(_cap)
 	last_hit.resize(_cap)
 	src.resize(_cap)
+	bits.resize(_cap)
+	fed.resize(_cap)
+	reach.resize(_cap)
 
 
 ## Launches a shot. `extra` may hold: pierce (int), bounce (int), homing (rad/s), knock (float),
-## size (radius multiplier), src (who fired it, for the death screen).
+## size (radius multiplier), src (who fired it, for the death screen), bits (the B_ flags above).
 func fire(p: Vector2, v: Vector2, shot_side: int, damage: float, range_px: float, type_name: String, extra: Dictionary = NO_EXTRA) -> void:
 	if count >= _cap:
 		_grow()
@@ -137,6 +183,9 @@ func fire(p: Vector2, v: Vector2, shot_side: int, damage: float, range_px: float
 	knock[i] = float(extra.get("knock", 1.0))
 	last_hit[i] = 0
 	src[i] = String(extra.get("src", ""))
+	bits[i] = int(extra.get("bits", 0))
+	fed[i] = 0
+	reach[i] = range_px
 
 
 ## A ring of `amount` enemy shots flying outward (used by many attacks).
@@ -172,15 +221,79 @@ func _kill(i: int) -> void:
 		knock[i] = knock[count]
 		last_hit[i] = last_hit[count]
 		src[i] = src[count]
+		bits[i] = bits[count]
+		fed[i] = fed[count]
+		reach[i] = reach[count]
 
 
 func _puff(i: int) -> void:
 	_look.puff(self, i)
 
 
+## A hero shot ran out of range, hit a wall with no bounce left, or came home. Tethered Sickle
+## turns it round once; otherwise it is over, and items hear about it (hook on_shot_end).
+func _finish(i: int, at: Vector2, dir: Vector2) -> void:
+	var b := bits[i]
+	pos[i] = at
+	if b & B_RETURN != 0 and b & B_BACK == 0:
+		bits[i] = b | B_BACK
+		vel[i] = -dir * vel[i].length() * RETURN_SPEED      # re-aimed at the hero every frame
+		dmg[i] *= RETURN_DAMAGE
+		left[i] = reach[i] * RETURN_REACH
+		homing[i] = 0.0
+		last_hit[i] = 0
+		return
+	_puff(i)
+	var damage := dmg[i]
+	_kill(i)
+	if b & B_HERO != 0 and b & B_CHILD == 0:
+		run.effects.fire("on_shot_end", [at, dir, damage, b & B_HIT != 0])
+
+
+func _swell(i: int, damage_mult: float, size_mult: float, more_reach: float) -> void:
+	dmg[i] *= damage_mult
+	rad[i] = minf(rad[i] * size_mult, _t_radius[kind[i]] * SIZE_CAP)
+	left[i] += more_reach
+
+
+## Starveling Blade: hero shots that carry B_EAT destroy the enemy shots they touch.
+func _eat_pass() -> void:
+	_foe_shots.clear()
+	for j in count:
+		if side[j] == SIDE_ENEMY:
+			_foe_shots.append(j)
+	if _foe_shots.is_empty():
+		return
+	for i in count:
+		if side[i] != SIDE_PLAYER or bits[i] & B_EAT == 0:
+			continue
+		var p := pos[i]
+		for j in _foe_shots:
+			var rr := rad[i] + rad[j] + 1.0
+			if left[j] > 0.0 and p.distance_squared_to(pos[j]) < rr * rr:
+				left[j] = 0.0                 # it dies with its usual puff on its own step, below
+				if int(fed[i]) >> 4 < EAT_MAX:
+					fed[i] += 16
+					_swell(i, EAT_DAMAGE, EAT_SIZE, 0.0)
+				run.fx.burst(pos[j] - Vector2(0, HEIGHT), [Color(0.95, 0.97, 1.0), Color(0.6, 0.75, 1.0)], 4, 40.0, 0.25, 2.0)
+
+
+## Oxbone Cudgel: a hero shot pushes the creeping (or resting) Curse a little along its flight.
+func _shove(curse: Node2D, dir: Vector2, strength: float) -> void:
+	if curse.state != curse.CREEP and curse.state != curse.WINDED:
+		return
+	var push := minf(minf(SHOVE_PX * strength, SHOVE_MAX), _shove_left)
+	if push <= 0.0:
+		return
+	_shove_left -= push
+	var to: Vector2 = curse.position + dir * push
+	curse.position = Vector2(clampf(to.x, curse.radius, G.ROOM_W - curse.radius), clampf(to.y, curse.radius, G.ROOM_H - curse.radius))
+
+
 func _physics_process(delta: float) -> void:
 	if room == null or not is_instance_valid(room):
 		return
+	_shove_left = minf(SHOVE_MAX * 2.0, _shove_left + SHOVE_PER_SEC * delta)
 	if count > 0:
 		_step_shots(delta)
 	if not lobs.is_empty():
@@ -209,10 +322,22 @@ func _step_shots(delta: float) -> void:
 	var c_on: bool = curse != null and is_instance_valid(curse) and curse.solid
 	var c_pos: Vector2 = curse.position if c_on else Vector2.ZERO
 	var c_rad: float = curse.radius if c_on else 0.0
+	if player.stats.has_flag("eat_shots"):
+		_eat_pass()
 	var i := count - 1
 	while i >= 0:
 		var p := pos[i]
 		var v := vel[i]
+		var b := bits[i]
+		if b & B_BACK != 0:
+			# Tethered Sickle: fly to where the hero is NOW
+			var home := p_pos - p
+			if home.length_squared() < RETURN_CATCH * RETURN_CATCH:
+				_finish(i, p, v.normalized())
+				i -= 1
+				continue
+			v = home.normalized() * v.length()
+			vel[i] = v
 		# gentle homing (player shots only)
 		if homing[i] > 0.0 and e_count > 0:
 			var best := -1
@@ -232,37 +357,57 @@ func _step_shots(delta: float) -> void:
 		var np := p + step
 		left[i] -= step.length()
 		if left[i] <= 0.0:
-			_puff(i)
-			_kill(i)
+			if side[i] == SIDE_PLAYER:
+				_finish(i, p, v.normalized())
+			else:
+				_puff(i)
+				_kill(i)
 			i -= 1
 			continue
 		# walls and solid obstacles
 		if room.shot_blocked(np):
 			room.shot_hit_solid(np, dmg[i], side[i] == SIDE_PLAYER)
+			var bx: bool = room.shot_blocked(Vector2(np.x, p.y))
+			var by: bool = room.shot_blocked(Vector2(p.x, np.y))
+			if bx or not by:
+				v.x = -v.x
+			if by or not bx:
+				v.y = -v.y
 			if bounce[i] > 0:
 				bounce[i] -= 1
-				var bx: bool = room.shot_blocked(Vector2(np.x, p.y))
-				var by: bool = room.shot_blocked(Vector2(p.x, np.y))
-				if bx or not by:
-					v.x = -v.x
-				if by or not bx:
-					v.y = -v.y
 				vel[i] = v
 				last_hit[i] = 0
+				if b & B_GROW != 0:
+					_swell(i, GROW_DAMAGE, GROW_SIZE, GROW_REACH)
 				i -= 1
 				continue
-			pos[i] = np
-			_puff(i)
 			if side[i] == SIDE_PLAYER:
 				Sfx.play("shot_hit_wall", -14.0)
-			_kill(i)
+				_finish(i, p, v.normalized())      # v is already turned the way it would bounce
+			else:
+				pos[i] = np
+				_puff(i)
+				_kill(i)
 			i -= 1
 			continue
 		pos[i] = np
 		var r := rad[i]
 		if side[i] == SIDE_PLAYER:
 			if c_on and np.distance_squared_to(c_pos) < (r + c_rad) * (r + c_rad):
-				curse.flinch()
+				if b & B_ECLIPSE != 0:
+					if b & B_DARK == 0:
+						# Eclipse Shard: through the Curse once = double damage, one more pierce, a dark shot
+						b |= B_DARK
+						dmg[i] *= ECLIPSE_DAMAGE
+						pierce[i] += 1
+						kind[i] = _dark_kind
+						run.fx.burst(np - Vector2(0, HEIGHT), [Color(0.75, 0.45, 1.0), Color(0.2, 0.05, 0.3)], 5, 50.0, 0.3, 2.0)
+				else:
+					curse.flinch()
+					if b & B_SHOVE != 0 and b & B_DARK == 0:
+						b |= B_DARK
+						_shove(curse, v.normalized(), knock[i])
+				bits[i] = b
 			var dead := false
 			for k in e_count:
 				var rr := r + _e_rad[k]
@@ -273,8 +418,14 @@ func _step_shots(delta: float) -> void:
 						continue
 					last_hit[i] = eid
 					e.hurt(dmg[i], v.normalized(), knock[i])
-					run.effects.fire("on_hit", [e, dmg[i], np])
+					bits[i] = bits[i] | B_HIT
+					if b & B_CHILD == 0:
+						run.effects.fire("on_hit", [e, dmg[i], np])
 					_look.hit(self, i, np, v.normalized())
+					if b & B_REAP != 0 and e.dead and int(fed[i]) & 15 < REAP_MAX:
+						fed[i] += 1                   # Reaping Hook: the kill feeds the shot and it flies on
+						_swell(i, REAP_DAMAGE, REAP_SIZE, REAP_REACH)
+						continue
 					if pierce[i] > 0:
 						pierce[i] -= 1
 					else:
@@ -284,10 +435,10 @@ func _step_shots(delta: float) -> void:
 				_kill(i)
 		else:
 			var hit := false
-			for b in blockers:
-				if is_instance_valid(b) and np.distance_squared_to(b.position) < (r + b.block_radius) * (r + b.block_radius):
+			for wall in blockers:
+				if is_instance_valid(wall) and np.distance_squared_to(wall.position) < (r + wall.block_radius) * (r + wall.block_radius):
 					hit = true
-					b.blocked_shot()
+					wall.blocked_shot()
 					break
 			if not hit and p_open:
 				var rr2 := r + p_rad
