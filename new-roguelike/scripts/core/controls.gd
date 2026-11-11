@@ -62,11 +62,13 @@ func _input(event: InputEvent) -> void:
 
 
 func press_bomb() -> void:
-	bomb_pressed.emit()
+	if not get_tree().paused:        # no bombs while the pause menu is open
+		bomb_pressed.emit()
 
 
 func press_action() -> void:
-	action_pressed.emit()
+	if not get_tree().paused:
+		action_pressed.emit()
 
 
 func press_pause() -> void:

@@ -27,7 +27,10 @@ var _frame := 0
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_process(false)
+
+
+func _ready() -> void:
+	set_process(animated)
 
 
 ## flat_row_height > 0 means "this icon sits in a low row": tall sprites are turned on their

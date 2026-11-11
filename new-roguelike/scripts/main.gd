@@ -35,6 +35,7 @@ var run: Node                    ## the game being played, or null on the menus
 var hud: CanvasLayer             ## scripts/ui/hud.gd
 var touch: CanvasLayer           ## scripts/ui/touch.gd
 var backdrop: Control            ## scripts/ui/backdrop.gd
+var _world: Node                 ## runs are added under this node; it stops when the game is paused
 var _menu: CanvasLayer
 var _shade: ColorRect            ## darkens the frozen game behind the pause menu
 var _fade: ColorRect
@@ -72,6 +73,11 @@ func _ready() -> void:
 
 
 func _build_layers() -> void:
+	# main.gd never pauses, but the game must: runs live under a node that does.
+	_world = Node.new()
+	_world.name = "World"
+	_world.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(_world)
 	hud = CanvasLayer.new()
 	hud.set_script(load("res://scripts/ui/hud.gd"))
 	hud.name = "Hud"
@@ -90,7 +96,7 @@ func _build_layers() -> void:
 	_menu.add_child(backdrop)
 	_shade = ColorRect.new()
 	_shade.color = Color(0.02, 0.02, 0.04, 0.66)
-	_shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_shade.visible = false
 	_menu.add_child(_shade)
 	var fade_layer := CanvasLayer.new()
@@ -99,7 +105,7 @@ func _build_layers() -> void:
 	add_child(fade_layer)
 	_fade = ColorRect.new()
 	_fade.color = Color(UI.C_VOID, 0.0)
-	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_layer.add_child(_fade)
 	_refresh_layers()
@@ -224,8 +230,7 @@ func start_run(hero_id: String, seed_value: int) -> void:
 	if G.flag("uitour") or G.flag("fakerun") or not ResourceLoader.exists(RUN_SCRIPT):
 		path = FAKE_RUN_SCRIPT
 	run = (load(path) as Script).new()
-	add_child(run)
-	move_child(run, 0)
+	_world.add_child(run)
 	run.call("setup", hero_id, seed_value)
 	hud.call("begin", run)
 	_refresh_layers()

@@ -26,12 +26,12 @@ func build() -> void:
 	_name_label.add_theme_constant_override("shadow_offset_y", 2)
 	_name_label.add_theme_color_override("font_outline_color", UI.C_INK)
 	_name_label.add_theme_constant_override("outline_size", 4)
-	_name_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_name_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	_name_label.offset_top = 2
 	area.add_child(_name_label)
 
 	_column = UI.vbox(3)
-	_column.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	_column.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
 	_column.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_column.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_column.offset_top = 16
@@ -51,7 +51,7 @@ func build() -> void:
 
 	var version := UI.label("v" + String(ProjectSettings.get_setting("application/config/version", "0")), "Small")
 	version.add_theme_color_override("font_color", UI.C_FAINT)
-	version.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	version.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	version.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	version.offset_right = -2

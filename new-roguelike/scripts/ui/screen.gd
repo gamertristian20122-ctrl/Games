@@ -18,7 +18,7 @@ var _dialog: Control
 
 
 func _init() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = UI.theme()
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -83,7 +83,7 @@ func top_bar(title_text: String) -> Control:
 	back.custom_minimum_size = Vector2(40, 19)
 	bar.add_child(back)
 	var title := UI.label(title_text, "Head")
-	title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	bar.add_child(title)

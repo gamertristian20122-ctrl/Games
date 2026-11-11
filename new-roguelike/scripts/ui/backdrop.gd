@@ -23,12 +23,12 @@ var hero_x := 0.27
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var bg := ColorRect.new()
 	bg.color = UI.C_VOID
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 	_scene = Node2D.new()
@@ -38,7 +38,7 @@ func _ready() -> void:
 	_build_light()
 	_dim = ColorRect.new()
 	_dim.color = Color(UI.C_VOID, 0.0)
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_dim)
 	resized.connect(_layout)

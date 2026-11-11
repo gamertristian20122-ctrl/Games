@@ -476,7 +476,7 @@ static func safe_insets(node: Node) -> Vector4:
 ## A full-screen container that keeps its children inside the safe area plus a small margin.
 static func safe_margin(node: Node, margin: int = 6) -> MarginContainer:
 	var m := MarginContainer.new()
-	m.set_anchors_preset(Control.PRESET_FULL_RECT)
+	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var s := safe_insets(node)
 	m.add_theme_constant_override("margin_left", margin + int(s.x))

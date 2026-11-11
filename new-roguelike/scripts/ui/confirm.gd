@@ -20,15 +20,15 @@ func setup(message: String, yes_text: String, no_text: String, danger: bool) -> 
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var dim := ColorRect.new()
 	dim.color = Color(0.02, 0.02, 0.04, 0.72)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim)
 	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(centre)
 	var panel := UI.panel("card")

@@ -177,8 +177,12 @@ func _draw_ground() -> void:
 
 func _ring(canvas: Node2D, r: Array) -> void:
 	var k: float = clampf(r[3] / r[4], 0.0, 1.0)
-	var e := 1.0 - (1.0 - k) * (1.0 - k)
-	var rad: float = lerpf(r[1], r[2], e)
 	var col: Color = r[5]
+	if r[1] > r[2]:
+		# a ring that closes in is a warning: it gets stronger until it lands
+		col.a *= 0.3 + 0.7 * k
+		canvas.draw_arc(r[0], maxf(lerpf(r[1], r[2], k), 0.5), 0.0, TAU, 28, col, r[6])
+		return
+	var e := 1.0 - (1.0 - k) * (1.0 - k)
 	col.a *= 1.0 - k
-	canvas.draw_arc(r[0], maxf(rad, 0.5), 0.0, TAU, 28, col, r[6] * (1.0 - 0.5 * k))
+	canvas.draw_arc(r[0], maxf(lerpf(r[1], r[2], e), 0.5), 0.0, TAU, 28, col, r[6] * (1.0 - 0.5 * k))

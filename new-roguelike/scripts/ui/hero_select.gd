@@ -55,7 +55,7 @@ func build() -> void:
 	# the info panel and the Start button fill the right part of the screen
 	var right := UI.vbox(4)
 	right.name = "Right"
-	right.set_anchors_preset(Control.PRESET_FULL_RECT)
+	right.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	area.add_child(right)
 	_panel = UI.panel("panel")
 	_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -129,7 +129,7 @@ func _layout() -> void:
 	var right: Control = _panel.get_parent()
 	# the panel starts a little to the right of the hero's pool of light
 	var left_edge := maxf(spot.x + 64.0, size.x * 0.47)
-	right.set_anchors_preset(Control.PRESET_FULL_RECT)
+	right.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	right.offset_left = roundf(left_edge) - 6.0 - insets.x
 	right.offset_top = 0
 	_prev.size = _prev.custom_minimum_size
