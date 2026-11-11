@@ -12,7 +12,7 @@ extends RefCounted
 ##            tongue's own colour carries it on to tongue_reach px. After a lash it sits dazed
 ##            (THE BREATHER). Phase 2: a shorter warning.
 ##   SPIT     its throat swells while thin red lanes show where three globs of slime will fly; the
-##            globs are slow and bounce off the walls twice. Phase 2: five globs.
+##            globs are slow and bounce off the walls once. Phase 2: four globs.
 ##   BROOD    phase 2 only: two Spore Caps on marked spots (only when none is left, and not more
 ##            often than every brood_gap s).
 ## Phase 2 (half health) begins with BROOD and a triple HOP.
@@ -97,7 +97,9 @@ func tick(e, delta: float) -> void:
 func _pick(e, mean: bool) -> void:
 	var queue: Array = e.mem["queue"]
 	var next := -1
-	if not queue.is_empty():
+	if G.flag("tonguetest"):             # --tonguetest: only licks (to look at the tongue)
+		next = A_TONGUE
+	elif not queue.is_empty():
 		next = int(queue.pop_front())
 	else:
 		var rel: Vector2 = e.to_player()
@@ -299,7 +301,7 @@ func _begin_spit(e, mean: bool) -> void:
 	e.tell(warn)
 	var mouth: Vector2 = e.at_feet(MOUTH) + Vector2(0.0, e.SHOT_PLANE)
 	var aim: float = (e.player.position - mouth).angle()
-	var amount := 5 if mean else 3
+	var amount := 4 if mean else 3
 	var arc := 1.3 if mean else 0.8
 	var dirs: Array = []
 	for k in amount:
@@ -313,7 +315,7 @@ func _begin_spit(e, mean: bool) -> void:
 
 func _spit(e) -> void:
 	for d: Vector2 in e.mem["dirs"]:
-		e.shoot_from(e.mem["mouth"], d, float(e.p.get("spit_speed", 80.0)), "slime", {"bounce": 2, "range": 230.0, "size": 1.25})
+		e.shoot_from(e.mem["mouth"], d, float(e.p.get("spit_speed", 80.0)), "slime", {"bounce": int(e.p.get("spit_bounce", 1)), "range": 200.0, "size": 1.25})
 	e.run.fx.burst(e.at_feet(MOUTH), SPLASH, 8, 60.0, 0.3, 2.0, Vector2(e.facing, 0.0))
 	Sfx.play("enemy_shoot", -2.0, 0.0, 0.6)
 	e.state = REST

@@ -118,7 +118,7 @@ var _death_wave := 0
 var _log := false                ## --bosslog: print what happens in the fight (see _say)
 var _fight_t := 0.0
 var _hurt_by := ""
-var shielded := false            ## a guard is up: hits from shots do nothing (bombs, knock_mult 3, and Curse bites still land)
+var shielded := false            ## a guard is up: shots do nothing (shots.gd skips it); bombs, burns and Curse bites still land
 var _flick := 0.0                ## seconds of hit flicker left
 var _flick_gap := 0.0            ## seconds until the next flicker may start
 
@@ -760,15 +760,13 @@ func _update_look(delta: float) -> void:
 		_flick -= delta
 		sprite.material = hit_material()
 	elif _tell > 0.0 and _tell_dur - _tell < TELL_PULSE:
-		sprite.material = tell_material()
+		sprite.material = hit_material()      # the same soft flicker as a hit (the pale wind-up shader whitened a boss this size)
 	else:
 		sprite.material = null
 
 
 # =============================================================================== getting hurt
 func hurt(amount: float, from_dir: Vector2 = Vector2.ZERO, knock_mult: float = 1.0) -> void:
-	if shielded and knock_mult < 3.0:       # room.explode() hurts with knock_mult 3.0
-		return
 	super.hurt(amount * (_stagger_dmg if staggered > 0.0 else 1.0), from_dir, knock_mult)
 
 

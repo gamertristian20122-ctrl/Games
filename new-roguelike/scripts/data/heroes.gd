@@ -41,7 +41,7 @@ const LIST := [
 		"desc": "A thief who went too deep. Quick feet, quick knives, short reach.",
 		"passive": "Prepared: starts with a key and two bombs, and finds more coins.",
 		"locked": true, "unlock_hint": "Find two secret rooms.",
-		"hp": 6, "armor": 0, "speed": 108.0, "damage": 3.0, "rate": 2.5, "range": 100.0, "shot_speed": 190.0,
+		"hp": 6, "armor": 0, "speed": 108.0, "damage": 3.3, "rate": 2.5, "range": 108.0, "shot_speed": 190.0,
 		"shot": "knife", "shoot_sfx": "player_shoot_knife", "start": {"keys": 1, "bombs": 2},
 		"mods": {"flags": {"pierce": 1}, "pct": {"coin_mult": 0.25}},
 	},

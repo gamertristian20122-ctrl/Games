@@ -438,7 +438,7 @@ func _step_shots(delta: float) -> void:
 				if np.distance_squared_to(_e_pos[k]) < rr * rr:
 					var e: Node = _e_nodes[k]
 					var eid := _e_ids[k]
-					if eid == last_hit[i] or not e.hittable:
+					if eid == last_hit[i] or not e.hittable or e.get("shielded") == true:   # a boss's guard stops shots only
 						continue
 					last_hit[i] = eid
 					e.hurt(dmg[i], v.normalized(), knock[i])

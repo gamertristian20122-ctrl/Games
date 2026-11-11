@@ -292,7 +292,7 @@ func _begin_gutter(e, mean: bool) -> void:
 	e.run.fx.burst(e.body_point(), SMOKE, 20, 50.0, 0.8, 3.0, Vector2.UP, -50.0)
 	Sfx.play("bomb_fuse", -3.0, 0.05, 0.55)
 	if mean:
-		e.summon_minions(String(e.p.get("helper", "bone_walker")), int(e.p.get("helpers", 2)), {"max": 4, "far": 50.0})
+		e.summon_minions(String(e.p.get("helper", "bone_walker")), int(e.p.get("helpers", 1)), {"max": 2, "far": 50.0})
 
 
 func _begin_relight(e) -> void:

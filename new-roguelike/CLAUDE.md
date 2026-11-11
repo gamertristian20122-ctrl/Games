@@ -48,6 +48,11 @@ item makes it bigger.
 - Android SDK at `/usr/lib/android-sdk` (platform-tools, build-tools 35, platform 35), JDK 17 at
   `/usr/lib/jvm/java-17-openjdk-amd64`, both set in `~/.config/godot/editor_settings-4.7.tres`
 - `xvfb-run` for screenshots, `ffmpeg`, Python 3 with Pillow
+- Installing all of it in a fresh container takes about 5 minutes: Godot and the export templates (only
+  the `android*` files are needed) from the godotengine/godot GitHub release, Android command-line
+  tools from dl.google.com + `sdkmanager`, `apt-get install openjdk-17-jdk-headless`.
+- The APK is 64-bit only (`architectures/arm64-v8a` in `export_presets.cfg`), about 42 MB: the owner's
+  phone could not download the 69 MB two-architecture build.
 - The signing key is NOT in the repo: `tools/build_apk.sh` reads `KEYSTORE`, `KEY_ALIAS`, `KEY_PASS`.
   Every APK must be signed with the same key or phones refuse to update.
 
@@ -226,7 +231,8 @@ Added by the cast builder. Every character on screen is a purchased Pixel Crawle
   `"hover"` are for flyers. A dead body plays the pack's death animation, then fades (it is already
   out of `room.enemies`). Old row keys kept because tests and other files name them: `bone_archer`
   (shown as Bone Mage), `lantern_head` (Ember Husk).
-- **Flashes:** a hit = pure white for `HIT_FLASH` (0.06 s). A wind-up (`tell()`) blinks PALE, not white
+- **Flashes:** a hit = a bright flash that keeps the drawing, `HIT_FLASH` (0.05 s) then at least `FLASH_GAP`
+  (0.1 s) unflashed. A wind-up (`tell()`) blinks PALE, not white
   (`TELL_SHADER`), so tall sprites never turn into a blank white shape.
 - **Bosses:** no longer Pixel Crawler creatures at double size. See the "Bosses" section.
 - **Helpers:** familiars are tinted `pc_bat_small` using the flying loop (`scripts/data/familiars.gd`;
@@ -284,15 +290,20 @@ layout letters in that section still hold.
 Seven bosses drawn from their own art at real size (never scaled). Names are placeholders the owner
 may change (`"name"` in `scripts/data/bosses.gd`; the row KEY is what saves and unlocks remember).
 
-| Floor | Row key | Name | Sprite | State |
-| --- | --- | --- | --- | --- |
-| 1 | `pyre_saint` | The Pyre Saint | `boss_fire_skull` | stub |
-| 1 | `red_sexton` | The Red Sexton | `boss_death` | stub |
-| 2 | `stonejaw` | Stonejaw | `boss_ogre` | full fight (reference) |
-| 2 | `gutter_king` | The Gutter King | `boss_mutant_toad` | stub |
-| 3 | `forge_warden` | The Forge Warden | `boss_mecha_golem` | stub |
-| 3 | `cinder_tyrant` | The Cinder Tyrant | `boss_demon_slime` (CC-BY, chierit) | full fight (reference) |
-| 4 | `starved_king` | The Starved King (FINAL) | `boss_demon` | stub |
+| Floor | Row key | Name | Sprite | State | Bot wins (knight / witch / robber) |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `pyre_saint` | The Pyre Saint | `boss_fire_skull` | full fight | 7/10, 5/9, 7/10 |
+| 1 | `red_sexton` | The Red Sexton | `boss_death` | full fight | 7/9, 7/9, 4/9 |
+| 2 | `stonejaw` | Stonejaw | `boss_ogre` | full fight | 4/10, 4/11, 2/10 |
+| 2 | `gutter_king` | The Gutter King | `boss_mutant_toad` | full fight | 4/9, 2/12, 2/10 |
+| 3 | `forge_warden` | The Forge Warden | `boss_mecha_golem` | full fight | 4/9, 1/8, 2/9 |
+| 3 | `cinder_tyrant` | The Cinder Tyrant | `boss_demon_slime` (CC-BY, chierit) | full fight | 7/10, 4/11, 2/10 |
+| 4 | `starved_king` | The Starved King (FINAL) | `boss_demon` | full fight | 2/5, 0/6, 1/6 (with 7 items) |
+
+"Bot wins" is the fairness sweep of v0.3.0 (11 Nov 2026): the bot, a BARE hero with no items, 2 seeds,
+240 game seconds each at `--speed=8` (the King was measured with a 7-item kit, since nobody reaches
+floor 4 bare). The bot ignores a lot, so people do better. The Grave Robber is still the weakest hero
+against floors 2 and 3; the Forge Warden and the Starved King are the hardest fights.
 
 A floor with two bosses picks one per run (seeded). Killing the row with `"final": true` wins the run
 (`run.boss_killed`); its death is longer. A row's `"layout"` forces the boss room layout (the King
@@ -332,11 +343,31 @@ and the Tyrant are too big for pillars).
 - **The bot in a boss room** (`scripts/run/bot.gd`): steps out of circles, lanes, cones and rings
   (`run.fx.hazards`), keeps its distance from a boss's SIDE, never walks into its body, and shoots
   a helper that is right on top of it.
-- **Measured (bot, no items, `--speed=8`):** Stonejaw 42 to 64 s, Cinder Tyrant 52 to 62 s; the bot
-  wins about half of those fights with a bare hero. The five stubs are not balanced.
+- **Measured (bot, no items, `--speed=8`):** won fights last 31 to 76 s (Starved King 92 to 109 s with
+  items). What was tuned in the sweep: Pyre Saint's body hurts only during a swoop and it calls 1 helper
+  (was 2); Gutter King 360 hp (was 410), 4 hop shots, globs bounce once; Starved King 2300 hp (was 2500);
+  Grave Robber damage 3.3 (was 3.0) and range 108 (was 85).
+- **Flashes:** a boss flickers for `HIT_FLICK` (0.05 s) at most once per `HIT_GAP` (0.3 s) when hit, and
+  once for `TELL_PULSE` (0.12 s) at the start of a wind-up; the red floor marks do the warning.
+- **Guards:** `e.shielded = true` (Forge Warden) stops hero SHOTS only (`shots.gd` skips it); bombs,
+  burns and Curse bites still land. `e.harmful = false` makes a body safe to touch.
+- **Marks stay on the floor:** `fx.gd` clips circles, lanes, rings and shockwaves to the floor rectangle.
+- `--tonguetest` makes the Gutter King only lick (to look at the tongue).
 - **Old saves:** `Bosses.RENAMED` maps a retired boss id (`gravekeeper`) to the boss that took its
   place, so `boss_killed:<id>` counters and rules stay true. `./tools/check.sh` checks every row:
   its file loads, every listed animation exists, every floor has a boss.
 - **Licences:** ansimuz "Legacy Collection" CC0; Kronovi "Mecha-Stone Golem" free for commercial use
   (no redistribution: one more reason the repo stays private); chierit "Demon Slime" CC-BY 4.0
   (credit required). Evidence: `assets_raw/bosses/*/SOURCE.txt`.
+
+## What's next (written 11 Nov 2026, after v0.3.0)
+Everything on the v0.3.0 fix list is done. Ideas for the next passes, most useful first:
+1. The owner plays v0.3.0 on the phone and says what feels wrong (bosses above all). Their notes come first.
+2. Grave Robber against floors 2 and 3 bosses: still the weakest hero (see the Bosses table).
+3. Forge Warden: the lanes (arm throw, beam) hit the bot most; maybe a longer warning.
+4. Starved King: only measured with one 7-item kit; needs a real play-through from floor 1.
+5. Tile gaps: a second pillar picture for the crypt and the ashen halls; a ragged hole for blown-open side doors.
+6. Still old art: HUD hearts, explosions, the 6 px Curse skull badge.
+7. Sound pass for the seven bosses (they reuse monster and door sounds).
+8. Boss names are placeholders the owner may want to rename (`scripts/data/bosses.gd`).
+Not planned unless the owner asks: anything for publishers (pitch, slides, trailer, store text).
