@@ -10,6 +10,7 @@ extends Node2D
 ## below: that is the one place to change when projectile sprites arrive.
 
 const ShotTypes = preload("res://scripts/data/shot_types.gd")
+const ShotLook = preload("res://scripts/run/shot_look.gd")
 
 const HEIGHT := 7.0
 const SIDE_PLAYER := 0
@@ -45,6 +46,7 @@ var _t_radius: Array[float] = []
 var _t_trail: Array[int] = []
 var _t_tex: Array = []
 var _disc: GradientTexture2D
+var _look := ShotLook.new()        ## draws the shots (scripts/run/shot_look.gd)
 
 # scratch lists rebuilt every tick so the inner loops never touch nodes
 var _e_nodes: Array = []
@@ -80,8 +82,8 @@ func _register(id: String) -> int:
 	_t_edge.append(row["edge"])
 	_t_radius.append(float(row["radius"]))
 	_t_trail.append(int(row["trail"]))
-	var sprite_id := String(row.get("sprite", ""))
-	_t_tex.append(Art.tex(sprite_id) if sprite_id != "" and Art.has(sprite_id) else null)
+	_t_tex.append(null)
+	_look.register(id)
 	return _t_color.size() - 1
 
 
@@ -173,7 +175,7 @@ func _kill(i: int) -> void:
 
 
 func _puff(i: int) -> void:
-	run.fx.burst(pos[i] - Vector2(0, HEIGHT), [_t_color[kind[i]], _t_edge[kind[i]]], 3, 30.0, 0.22, 1.6)
+	_look.puff(self, i)
 
 
 func _physics_process(delta: float) -> void:
@@ -272,7 +274,7 @@ func _step_shots(delta: float) -> void:
 					last_hit[i] = eid
 					e.hurt(dmg[i], v.normalized(), knock[i])
 					run.effects.fire("on_hit", [e, dmg[i], np])
-					run.fx.burst(np - Vector2(0, HEIGHT), [_t_color[kind[i]], Color(1, 1, 1)], 3, 40.0, 0.2, 1.6)
+					_look.hit(self, i, np, v.normalized())
 					if pierce[i] > 0:
 						pierce[i] -= 1
 					else:
@@ -316,42 +318,7 @@ func _step_lobs(delta: float) -> void:
 			lobs.remove_at(k)
 
 
+## Every shot is painted here, by this one node; HOW is in scripts/run/shot_look.gd.
 func _draw() -> void:
-	var up := Vector2(0.0, HEIGHT)
-	for i in count:
-		var t := kind[i]
-		var p := pos[i] - up
-		var r := rad[i]
-		var tex: Texture2D = _t_tex[t]
-		if tex != null:
-			# sprite shot: drawn pointing the way it flies (art points up)
-			draw_set_transform(p, vel[i].angle() + PI * 0.5, Vector2.ONE)
-			draw_texture(tex, -tex.get_size() * 0.5)
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-			continue
-		var core := _t_color[t]
-		var edge := _t_edge[t]
-		var trail := _t_trail[t]
-		if trail > 0:
-			var back := vel[i] * 0.022
-			for k in range(trail, 0, -1):
-				var tr := r * (1.0 - 0.22 * k)
-				var tc := edge
-				tc.a = 0.5 - 0.13 * k
-				var tp := p - back * k
-				draw_texture_rect(_disc, Rect2(tp.x - tr, tp.y - tr, tr * 2.0, tr * 2.0), false, tc)
-		var o := r + 1.2
-		draw_texture_rect(_disc, Rect2(p.x - o, p.y - o, o * 2.0, o * 2.0), false, edge)
-		var c := r * 0.72
-		draw_texture_rect(_disc, Rect2(p.x - c, p.y - c, c * 2.0, c * 2.0), false, core)
-	for l in lobs:
-		var u: float = clampf(l["t"] / l["dur"], 0.0, 1.0)
-		var g: Vector2 = (l["from"] as Vector2).lerp(l["to"], u)
-		var h: float = float(l["peak"]) * 4.0 * u * (1.0 - u) + HEIGHT * (1.0 - u)
-		var t2: int = l["kind"]
-		var r2 := _t_radius[t2]
-		draw_texture_rect(_disc, Rect2(g.x - r2, g.y - r2 * 0.5, r2 * 2.0, r2), false, Color(0, 0, 0, 0.35))
-		var p2 := g - Vector2(0.0, h)
-		var o2 := r2 + 1.2
-		draw_texture_rect(_disc, Rect2(p2.x - o2, p2.y - o2, o2 * 2.0, o2 * 2.0), false, _t_edge[t2])
-		draw_texture_rect(_disc, Rect2(p2.x - r2 * 0.75, p2.y - r2 * 0.85, r2 * 1.5, r2 * 1.5), false, _t_color[t2])
+	_look.tick(get_physics_process_delta_time())
+	_look.draw(self)

@@ -844,7 +844,13 @@ func _first_visit_content() -> void:
 	match type:
 		G.RoomType.TREASURE:
 			var item: String = run.take_item("treasure", rng)
-			if item != "":
+			# every key is a temptation: a normal item and a cursed one stand side by side, and
+			# taking one makes the other crumble (only the normal one when no cursed item is left)
+			var twin: String = run.take_item("cursed", rng) if item != "" else ""
+			if item != "" and twin != "":
+				add_thing("pedestal", {"item": item, "pair": 1, "pos": free_spot_near(G.ROOM_CENTER + Vector2(-26, 0))})
+				add_thing("pedestal", {"item": twin, "pair": 1, "pos": free_spot_near(G.ROOM_CENTER + Vector2(26, 0))})
+			elif item != "":
 				add_thing("pedestal", {"item": item, "pos": G.ROOM_CENTER})
 			else:
 				add_thing("chest", {"pos": G.ROOM_CENTER, "locked": false, "rich": true})

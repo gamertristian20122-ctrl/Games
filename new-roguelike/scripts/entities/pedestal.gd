@@ -87,6 +87,10 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 		icon_id = Pickups.sprite_for(pickup)
 		tint = Pickups.info(pickup).get("tint", Color(1, 1, 1))
 		glow_color = Color(0.9, 0.9, 1.0)
+	elif service != "":
+		tint = CURSE_GOLD
+		glow_color = CURSE_GOLD
+		price = _service_price()
 	glow = Sprite2D.new()
 	glow.texture = room.run.light_tex
 	var mat := CanvasItemMaterial.new()
@@ -112,9 +116,13 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 		add_child(light)
 	if price > 0:
 		_build_tag()
+	if cursed or service != "":
+		_build_badge()
 	_bob = randf() * 6.0
 	if taken:
 		_hide_goods()
+	if service != "":
+		_refresh_service()
 
 
 func _build_tag() -> void:
@@ -135,10 +143,99 @@ func _build_tag() -> void:
 	label.add_theme_constant_override("outline_size", 3)
 	label.position = Vector2(-1, -7)
 	tag.add_child(label)
+	_price_label = label
+
+
+## The small "+1 skull" (or "-1 skull") under a cursed item or the Starve stand.
+func _build_badge() -> void:
+	if _skull_rect.size == Vector2.ZERO:
+		var img := Art.tex("skull").get_image()
+		_skull_rect = Rect2(img.get_used_rect()) if img != null else Rect2(0, 0, 16, 16)
+	badge = Node2D.new()
+	badge.position = Vector2(0, 20 if price > 0 else 11)
+	badge.z_index = 1
+	add_child(badge)
+	badge.draw.connect(_draw_badge)
+
+
+func _draw_badge() -> void:
+	var run: Node = room.run
+	var font: Font = run.font()
+	var grow := service == ""
+	var text := BADGE_GROW if grow else BADGE_SHRINK
+	# the teeth warning: taking this item makes the Curse's bite a full heart
+	var teeth: bool = grow and run.curse_level == Curse.TEETH_LEVEL - 1
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+	var total := w + 1.0 + _skull_rect.size.x + (11.0 if teeth else 0.0)
+	var x := -roundf(total / 2.0)
+	badge.draw_string_outline(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, 3, Color(0.08, 0.06, 0.08))
+	badge.draw_string(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BADGE_GROW_COLOR if grow else BADGE_SHRINK_COLOR)
+	x += w + 1.0
+	badge.draw_texture_rect_region(Art.tex("skull"), Rect2(Vector2(x, 3.0 - _skull_rect.size.y), _skull_rect.size), _skull_rect)
+	x += _skull_rect.size.x + 2.0
+	if teeth:
+		badge.draw_rect(Rect2(x - 1, -4, 11, 6), Color(0.08, 0.06, 0.08))
+		for k in 3:
+			badge.draw_rect(Rect2(x + k * 3, -3, 3, 1), CURSE_GOLD)
+			badge.draw_rect(Rect2(x + k * 3 + 1, -2, 1, 2), CURSE_GOLD)
+
+
+# ------------------------------------------------------------------ the "Starve the Curse" stand
+func _service_price() -> int:
+	var prices: Array = Pickups.PRICE_STARVE
+	return int(prices[clampi(room.run.starve_bought, 0, prices.size() - 1)])
+
+
+## Open from Curse Level 1, until every price on the list has been paid in this run.
+func _service_open() -> bool:
+	return room.run.curse_level >= 1 and room.run.starve_bought < (Pickups.PRICE_STARVE as Array).size()
+
+
+func _refresh_service() -> void:
+	var open := _service_open()
+	visible = open
+	solid = open
+	price = _service_price()
+	if _price_label != null:
+		_price_label.text = str(price)
+
+
+func _use_service(player: Node) -> void:
+	if not _away:
+		return
+	if not player.spend_coins(price):
+		_deny(true)
+		return
+	_away = false
+	room.run.starve_bought += 1
+	Curse.change_level(room.run, -1)
+	G.stat.emit("shop_buy", 1)
+	G.stat.emit("curse_starved", 1)
+	Sfx.play("shop_buy")
+	Sfx.play("curse_whisper", -5.0, 0.03, 1.7)
+	G.toast.emit(STARVE_DONE, "")
+	room.run.fx.burst(position + Vector2(0, _icon_y), [CURSE_GOLD, Color(1, 1, 0.9)], 12, 60.0, 0.45, 2.0)
+	room.run.fx.ring(position + Vector2(0, _icon_y), 12.0, 3.0, 0.35, CURSE_GOLD, 1.5)
+	_refresh_service()
+
+
+## The other half of a pair was taken: this one falls to rubble and is gone for good.
+func crumble() -> void:
+	if taken or crumbled:
+		return
+	crumbled = true
+	taken = true
+	room.run.fx.burst(position - Vector2(0, 4), Art.palette("column"), 16, 70.0, 0.55, 2.6)
+	room.run.fx.burst(position + Vector2(0, _icon_y), [Color(0.5, 0.45, 0.5), Color(0.25, 0.22, 0.25)], 8, 50.0, 0.4, 2.0)
+	Sfx.play("rock_break", -5.0)
+	room.remove_thing(self)
 
 
 func save() -> Dictionary:
-	return {"kind": "pedestal", "pos": position, "item": item, "pickup": pickup, "price": price, "taken": taken, "warned": warned}
+	if crumbled:
+		return {}
+	return {"kind": "pedestal", "pos": position, "item": item, "pickup": pickup, "price": price, "taken": taken, "warned": warned,
+		"service": service, "pair": pair}
 
 
 func _hide_goods() -> void:
@@ -148,6 +245,8 @@ func _hide_goods() -> void:
 		light.visible = false
 	if tag != null:
 		tag.visible = false
+	if badge != null:
+		badge.visible = false
 
 
 func _physics_process(delta: float) -> void:
@@ -161,11 +260,24 @@ func _physics_process(delta: float) -> void:
 	if tag != null and _shake > 0.0:
 		_shake -= delta
 		tag.position.x = sin(_shake * 70.0) * 2.0 if _shake > 0.0 else 0.0
+	if badge != null and _badge_level != room.run.curse_level:
+		_badge_level = room.run.curse_level
+		badge.queue_redraw()
+		if service != "":
+			_refresh_service()
 	var player: Node = room.run.player
 	if player == null or player.dead:
 		return
 	var d: Vector2 = player.position - position
 	var dist := d.length()
+	if service != "":
+		if not visible:
+			return
+		if not warned and dist < WARN_RANGE:
+			warned = true
+			G.toast.emit(STARVE_NAME, STARVE_HINT)
+		if dist > BLOCK_RADIUS + player.radius + 5.0:
+			_away = true
 	if cursed and not taken and not warned and dist < WARN_RANGE:
 		warned = true
 		var info: Dictionary = Items.info(item)
@@ -179,6 +291,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _touched(player: Node) -> void:
+	if service != "":
+		_use_service(player)
+		return
 	if pickup != "" and not player.wants(String(Pickups.info(pickup).get("need", ""))):
 		_deny(false)
 		return
@@ -190,6 +305,11 @@ func _touched(player: Node) -> void:
 		Sfx.play("shop_buy")
 	taken = true
 	_hide_goods()
+	if pair != 0:
+		# a choice of two: the one left behind crumbles
+		for other in room.things.duplicate():
+			if other != self and is_instance_valid(other) and other.kind == "pedestal" and other.pair == pair:
+				other.crumble()
 	if item != "":
 		player.add_item(item)
 	elif pickup != "":
