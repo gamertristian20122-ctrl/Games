@@ -4,8 +4,8 @@ extends RefCounted
 ##   HOP      ("jump") it crouches, blinking, and a red circle marks where it will come down; it
 ##            cannot be hit in the air. The landing hurts inside the circle and throws a ring of
 ##            slime shots. Leave the circle, then slip between the shots.
-##            Phase 2: THREE hops in a row, each landing leaves a puddle of slime that hurts to
-##            stand in; after the third it sits winded (THE BREATHER of phase 2).
+##            Phase 2: THREE hops in a row with smaller rings, each landing leaves a puddle of slime
+##            that hurts to stand in; after the third it sits winded (THE BREATHER of phase 2).
 ##   TONGUE   ("attack") only when the hero stands level with it: a red lane along the floor in
 ##            front of its mouth, then the tongue lashes out along it. Step up or down out of the
 ##            lane. The pack's tongue is 41 px long and cut flat at its tip, so a plain line in the
@@ -237,6 +237,7 @@ static func _puddle_fade(k: float, puddle: Node2D, boss: Variant) -> void:
 # ------------------------------------------------------------------------------ TONGUE
 func _begin_tongue(e, mean: bool) -> void:
 	e.state = BUSY
+	e.position = e.position.round()    # whole pixels, so the drawn line sits exactly on the pack's tongue
 	var side := 1.0 if e.to_player().x >= 0.0 else -1.0
 	_turn(e, side)
 	e.dir = Vector2(side, 0.0)
