@@ -12,6 +12,7 @@ extends Node2D
 ##   --curse=<0-5> start at this Curse Level   --belly=<n> coins already in its belly   --nocurse no Curse at all
 ## summary()["floor"] counts from 1 (floor_index counts from 0).
 
+const Heroes = preload("res://scripts/data/heroes.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
@@ -122,7 +123,8 @@ func setup(hero: String, run_seed: int) -> void:
 	hero_id = hero
 	seed_value = run_seed
 	G.run = self
-	Controls.action_enabled = G.curse_on()        # the second button was CALL (the Hungry Curse, switched off)
+	# the second button: BLOCK for a sword hero (player.gd), CALL only with the old Curse switched on
+	Controls.action_enabled = G.curse_on() or Heroes.by_id(hero).has("melee")
 	floor_count = Floors.count()
 	if not _built:
 		_build_nodes()

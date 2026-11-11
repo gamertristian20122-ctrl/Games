@@ -1,6 +1,8 @@
 # Notes for Claude
 
-**Cursebait** (working title; the owner will pick a new name, see "Direction") is an original
+**Hollow Hill** (the owner picked this name on 11 Nov 2026; it was "Cursebait" before, and the repo
+folder, the APK key file and the Android package id `com.cursebait.game` keep the old word so updates
+still install) is an original
 Android-first pixel-art game made in **Godot 4.7.2** (GL Compatibility, landscape, GDScript only).
 
 ## Direction (set by the owner on 11 Nov 2026 — this overrules older sections below)
@@ -17,6 +19,10 @@ The game is now a **story adventure in the spirit of old 2D adventure games**, n
    it back, and do not build on it. Items that only worked with it are no longer offered.
 6. Use the purchased Pixel Crawler packs wherever possible; the owner paid for them and wants them seen.
 7. The owner wants to be **interviewed**: ask clear multiple-choice questions before big decisions.
+8. Answers so far (11 Nov 2026): name **Hollow Hill**; tone **dark but warm** (as the lines in story.gd);
+   the sword gets a **shield block** and otherwise stays simple (no roll, no spin); build next, in this
+   order of the owner's picks: **a world map with new areas** from the other packs, **more story scenes**
+   (before and after bosses, when someone joins), **camp upgrades** bought with coins.
 Top-down, one screen per room, twin-stick. Four dungeon looks, seven bosses, three heroes.
 
 ## About the owner
@@ -420,6 +426,10 @@ screen -> "Camp" (or "Try again"). Back / pause in the camp goes to the title.
 - **Sword swing:** `"melee"` in the knight's row of `heroes.gd`, `player.gd` `_swing()`: an arc in front of
   him hits everything at once and cuts enemy shots down; a boss's guard (`shielded`) stops it. Shot items
   still help: extra shots = harder swings, extra range = a little reach. The white crescent is code-drawn.
+- **Block (v0.5.1):** hold the second button (touch BLOCK, keys Q / Shift, gamepad left shoulder):
+  `player.gd` `_update_block()` / `_blocked()`. He walks at 45% speed, cannot swing, and blows and shots
+  from inside `guard_arc` of the way he faces do nothing. Spikes and hits from behind still hurt. The bot
+  never blocks. The guard is a code-drawn pale arc (no shield art is used yet).
 - **Test flags:** `--autotest --level=<id>` (the bot plays that level; add `--goto=boss --bosshp=40` to
   finish it fast; prints the chapter and kit), `--hub --hublevel=<id>`, `--hub --hubtalk=<npc id>`.
 - **Not balanced yet:** the knight's sword against all seven bosses, level length, and how strong a kit of

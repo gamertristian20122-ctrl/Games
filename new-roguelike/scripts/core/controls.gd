@@ -23,6 +23,9 @@ var touch_aim_active := false
 
 ## The on-screen Action button stays hidden until this is true (the game's twist turns it on).
 var action_enabled := false
+## True while the second button is held down (the knight's shield block). Touch sets touch_action_held.
+var action_held := false
+var touch_action_held := false
 ## True while the touch screen is the input in use. The touch controls hide themselves when a
 ## key or gamepad is used and come back on the next touch.
 var using_touch := false
@@ -81,6 +84,7 @@ func _process(_delta: float) -> void:
 	if bot:
 		move = bot_move.limit_length(1.0)
 		aim = bot_aim.limit_length(1.0)
+		action_held = G.flag("holdblock")        # the bot never blocks, except in the --holdblock test
 		return
 	var m := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_A): m.x -= 1
@@ -101,6 +105,10 @@ func _process(_delta: float) -> void:
 	if touch_aim_active: a = touch_aim
 	move = m.limit_length(1.0)
 	aim = a.limit_length(1.0)
+	var held := touch_action_held or Input.is_physical_key_pressed(KEY_Q) or Input.is_physical_key_pressed(KEY_SHIFT)
+	for pad2 in Input.get_connected_joypads():
+		held = held or Input.is_joy_button_pressed(pad2, JOY_BUTTON_LEFT_SHOULDER) or Input.get_joy_axis(pad2, JOY_AXIS_TRIGGER_LEFT) > 0.4
+	action_held = (held or G.flag("holdblock")) and not get_tree().paused       # --holdblock: a test, the guard is always up
 
 
 func _unhandled_input(event: InputEvent) -> void:

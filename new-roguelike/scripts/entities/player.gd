@@ -180,6 +180,48 @@ func entered_room(the_room: Node) -> void:
 		light.color = run.theme.get("light", Color(1, 0.9, 0.7))
 
 
+## The knight's guard (hold the second button): he walks slowly, cannot swing, and whatever comes
+## from the side he faces is stopped. Numbers in the hero's "melee" row (heroes.gd).
+var blocking := false
+var _block_dir := Vector2.RIGHT
+var _guard: Node2D
+
+func _update_block() -> void:
+	var can := hero.has("melee") and not dead and _swing_t <= 0.0
+	blocking = can and Controls.action_held
+	if not blocking:
+		if _guard != null:
+			_guard.visible = false
+		return
+	if Controls.aim.length() > Controls.AIM_DEADZONE:
+		_block_dir = Controls.aim.normalized()
+	elif Controls.move.length() > 0.3:
+		_block_dir = Controls.move.normalized()
+	else:
+		_block_dir = Vector2(_face, 0.0) if absf(_block_dir.x) < 0.01 and absf(_block_dir.y) < 0.01 else _block_dir
+	aim_dir = _block_dir
+	if _guard == null:
+		_guard = Node2D.new()
+		_guard.z_index = 2
+		_guard.draw.connect(func() -> void:
+			var a := _block_dir.angle()
+			_guard.draw_arc(Vector2(0, -9), 15.0, a - 1.1, a + 1.1, 14, Color(0.75, 0.9, 1.0, 0.85), 2.0)
+			_guard.draw_arc(Vector2(0, -9), 12.5, a - 0.9, a + 0.9, 12, Color(0.75, 0.9, 1.0, 0.3), 2.0))
+		add_child(_guard)
+	_guard.visible = true
+	_guard.queue_redraw()
+
+
+## True when a blow from `from` lands on the raised guard.
+func _blocked(from: Vector2) -> bool:
+	if not blocking:
+		return false
+	var to := from - position
+	if to.length() < 0.5:
+		return false
+	return absf(angle_difference(_block_dir.angle(), to.angle())) <= float((hero["melee"] as Dictionary).get("guard_arc", 2.4)) * 0.5
+
+
 func can_be_hit() -> bool:
 	return not dead and invuln <= 0.0 and not run.busy()
 
@@ -199,7 +241,8 @@ func _physics_process(delta: float) -> void:
 	invuln = maxf(0.0, invuln - delta)
 	_spike_cd = maxf(0.0, _spike_cd - delta)
 	# ---- walking
-	var want: Vector2 = Controls.move * stats.v("speed")
+	_update_block()
+	var want: Vector2 = Controls.move * stats.v("speed") * (0.45 if blocking else 1.0)
 	vel = vel.move_toward(want, (ACCEL if want != Vector2.ZERO else DECEL) * delta)
 	position = room.move_circle(position, radius, (vel + knock) * delta, stats.has_flag("flying"), true)
 	knock = knock.move_toward(Vector2.ZERO, 700.0 * delta)
@@ -208,7 +251,7 @@ func _physics_process(delta: float) -> void:
 		hurt(1, position + Vector2(0, 1), "spikes")
 	# ---- aiming and firing
 	var aim: Vector2 = Controls.aim
-	firing = aim.length() > Controls.AIM_DEADZONE
+	firing = aim.length() > Controls.AIM_DEADZONE and not blocking
 	if firing:
 		aim_dir = aim.normalized()
 	_fire_cd -= delta
@@ -346,6 +389,10 @@ func _update_look(delta: float) -> void:
 		var dir := aim_dir.rotated((k - 0.5) * _swing_arc * _swing_side)
 		HeroLook.layer(weapon, body, HeroLook.aim(weapon, dir, 0.0, _face))
 		_slash.queue_redraw()
+	elif blocking:
+		# the sword held across the body, toward the threat
+		_face = signf(_block_dir.x) if absf(_block_dir.x) > 0.15 else _face
+		HeroLook.layer(weapon, body, HeroLook.aim(weapon, _block_dir.rotated(1.2 * _face), 0.0, _face))
 	elif firing:
 		HeroLook.layer(weapon, body, HeroLook.aim(weapon, aim_dir, _kick, _face))
 	else:
@@ -378,6 +425,12 @@ func _draw() -> void:
 ## Takes `half_hearts` of damage from something at `from` (armor first). `cause` ends up on the death screen.
 func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 	if not can_be_hit():
+		return
+	if _blocked(from) and cause != "spikes":
+		invuln = 0.25
+		knock = (position - from).normalized() * 70.0
+		run.fx.burst(position - Vector2(0, 9) + _block_dir * 13.0, [Color(1, 1, 1), Color(0.75, 0.9, 1.0)], 6, 80.0, 0.2, 2.0, _block_dir)
+		Sfx.play("shot_hit_wall", -3.0, 0.06, 1.3)
 		return
 	if ward_ready:
 		ward_ready = false

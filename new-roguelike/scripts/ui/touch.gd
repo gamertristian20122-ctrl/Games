@@ -21,6 +21,7 @@ const BUTTON_R := 14.0          ## visible button radius (28 px across)
 const HIT_PAD := 9.0            ## invisible extra reach around every button
 const PAUSE_SIZE := 20.0
 const ALPHA := 0.35
+const BLOCK_LABEL := "BLOCK"                   ## the same button in a level when the hero carries a shield arm (melee)
 const TALK_LABEL := "TALK"                     ## the same button in the camp (hub_mode)
 const CALL_LABEL := "CALL"                     ## the word under the second button
 const CALL_GOLD := Color(0.98, 0.90, 0.58)     ## the Hungry Curse's pale gold
@@ -90,6 +91,7 @@ func _release_all() -> void:
 	Controls.touch_move_active = false
 	Controls.touch_aim = Vector2.ZERO
 	Controls.touch_aim_active = false
+	Controls.touch_action_held = false
 
 
 func _read_bombs() -> void:
@@ -130,6 +132,9 @@ func _read_call(delta: float) -> void:
 			fill = f
 		ready = G.run.get("call_ready") == true
 		pulse = G.run.get("call_pulse") == true
+	if _block_mode():
+		ready = true                  # BLOCK is always there to hold
+		fill = 1.0
 	if pulse:
 		_pulse_t += delta
 	if not is_equal_approx(fill, _call_fill) or ready != _call_ready or pulse != _call_pulse or pulse:
@@ -137,6 +142,14 @@ func _read_call(delta: float) -> void:
 		_call_ready = ready
 		_call_pulse = pulse
 		_canvas.queue_redraw()
+
+
+## In a level with a sword hero the second button is BLOCK (hold it).
+func _block_mode() -> bool:
+	if hub_mode or not is_instance_valid(G.run):
+		return false
+	var p: Variant = G.run.get("player")
+	return is_instance_valid(p) and p.get("hero") is Dictionary and (p.get("hero") as Dictionary).has("melee")
 
 
 func _buzz(msec: int) -> void:
@@ -205,6 +218,7 @@ func _press(finger: int, pos: Vector2) -> void:
 				Controls.press_bomb()
 			"action":
 				_buzz(20)
+				Controls.touch_action_held = true
 				Controls.press_action()
 		_canvas.queue_redraw()
 		return
@@ -236,6 +250,9 @@ func _drag(finger: int, pos: Vector2) -> void:
 func _release(finger: int) -> void:
 	var role := String(_fingers.get(finger, "none"))
 	_fingers.erase(finger)
+	if role == "action":
+		Controls.touch_action_held = false
+		_canvas.queue_redraw()
 	if role == "move" or role == "aim":
 		_held[role] = false
 		_feed(role)
@@ -299,7 +316,13 @@ func _draw_controls() -> void:
 		var lit := 1.0 if _call_ready else 0.4
 		_round_button(ac, _pressed_flash["action"], lit)
 		var skull_size := _skull_region.size * 2.0
-		if hub_mode:
+		if _block_mode():
+			# a small shield: a flat shape
+			var held := 1.0 if Controls.touch_action_held else 0.8
+			_canvas.draw_rect(Rect2(ac.x - 5.0, ac.y - 6.0, 10, 7), Color(UI.C_BONE, held * lit))
+			_canvas.draw_colored_polygon(PackedVector2Array([ac + Vector2(-5, 1), ac + Vector2(5, 1), ac + Vector2(0, 7)]), Color(UI.C_BONE, held * lit))
+			_canvas.draw_rect(Rect2(ac.x - 1.0, ac.y - 4.0, 2, 7), Color(UI.C_INK, 0.6 * lit))
+		elif hub_mode:
 			for k in 3:       # three dots: "speak"
 				_canvas.draw_rect(Rect2(ac.x - 7.0 + 5.0 * k, ac.y - 1.0, 3, 3), Color(UI.C_BONE, 0.95 * lit))
 		else:
@@ -312,7 +335,7 @@ func _draw_controls() -> void:
 			# the first-run lesson: a ring closes in on the button again and again
 			var k := fmod(_pulse_t * 1.4, 1.0)
 			_canvas.draw_arc(ac, BUTTON_R + 10.0 * (1.0 - k), 0.0, TAU, 32, Color(CALL_GOLD, 0.25 + 0.6 * k), 2.0, true)
-		var label_text := TALK_LABEL if hub_mode else CALL_LABEL
+		var label_text := TALK_LABEL if hub_mode else (BLOCK_LABEL if _block_mode() else CALL_LABEL)
 		var lw := font.get_string_size(label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
 		var lp := Vector2(roundf(ac.x - lw / 2.0), ac.y - BUTTON_R - 3.0)      # above the button: the bomb button is right below
 		_canvas.draw_string_outline(font, lp, label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))

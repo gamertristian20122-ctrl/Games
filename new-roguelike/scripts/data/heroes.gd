@@ -30,7 +30,7 @@ const LIST := [
 		# a SWORD SWING instead of shots (player.gd _swing): everything inside the arc in front of him is hit
 		# at once and enemy shots inside it are cut down. reach px from his middle, arc in radians.
 		# Shot items still count: more shots = harder swings, more range = a little more reach.
-		"melee": {"reach": 34.0, "arc": 2.3, "knock": 1.6},
+		"melee": {"reach": 34.0, "arc": 2.3, "knock": 1.6, "guard_arc": 2.4},     # guard_arc: how wide the BLOCK covers (radians)
 	},
 	{
 		"id": "witch", "name": "Ozric", "title": "The Old Hexer", "sprite": "pc_wizard", "weapon": "pc_weapon_hideout_14", "grip": 11, "hand": "pc_hand_base_0",
