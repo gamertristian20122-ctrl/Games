@@ -16,43 +16,50 @@ extends RefCounted
 ##   BLUE BREATH     ("attack2") it turns AWAY from the hero and draws breath: a cyan ring closes
 ##                   on its skull and a red fan fills that half of the room. It burns that half
 ##                   blue; meanwhile the OTHER half fills red, then it turns and burns that too.
-##                   -> wait near the King on your side; when the blue fire dies, cross under
+##                   It rears up off the floor for all of this, so nothing of it can be touched.
+##                   -> wait near the King on your side; when the blue fire dies, run under
 ##                   it to the burnt side. Afterwards it is winded: THE BREATHER (a stagger).
-##   GUARDS          at two thirds and at one third of its health it calls two royal guards.
+##   GUARDS          at two thirds and at one third of its health it calls two royal guards (a
+##                   soldier who chases and an archer who keeps away and shoots) and
+##                   only watches while they stand ("watch" seconds at most)  -> cut them down first
 ## PHASE 2 (half health): the room darkens a little, the attacks come in PAIRS (volley + embers,
 ##   breath + embers, embers + volley, breath + volley) and the Hungry Curse is drawn into the
 ##   fight: its lunge timer fills in "curse_fill" seconds instead of 6 (more danger, and more
 ##   chances to feed it the King).
-## LAST STAND (a fifth of its health): it stops swaying and repeats two things, its skulls firing
-##   through both:
+## LAST STAND (a fifth of its health): it stops swaying and repeats two things:
 ##   RIPPLE          three red bands spread out from it, one after another  -> step inward,
 ##                   behind each band as it goes off
-##   BLUE BREATH x3  left, right and back again, embers falling in between
+##   BLUE BREATH x3  left, right and back again, a skull firing while each half burns
+## In a pair with the breath, the second attack only comes while a half burns (the hero stands
+## and waits then), never in the moments he has to run under the King.
 ## DEATH (the pack drew none): its wings burn away from the tips inward, the chained skulls
 ##   burst, the body fades, its own skull hangs in the air a moment longer, then shatters in a
 ##   white-out. Made by the helper node "Court" at the bottom of this file, on top of the base's
 ##   slow motion, shakes and shockwaves.
-## Also made by "Court": a thin cyan rim round the dark body, the sprite turning half see-through
-## while the hero stands behind it, and the darker room of phase 2.
+## Also made by "Court": a thin cyan rim round the dark body (it flashes white when a shot lands,
+## the body itself only pales a little), the sprite turning half see-through while the hero stands
+## behind it, and the darker room of phase 2.
 ##
 ## params (bosses.gd): home_y px (where its feet hover), sway px to each side, volley_warn s,
 ##   volley_speed px/s, ember_radius px, ember_warn s, great_radius px, great_warn s,
+##   rest s (the pause after a volley or the embers; phase 2 takes four fifths of it),
 ##   breath_warn s (the first inhale), turn_warn s (the turn between two breaths), winded s,
-##   ripple_warn s, guard (enemy id), guards (how many per call), curse_fill s, dark (0..1, how
-##   much light phase 2 leaves)
+##   ripple_warn s, guard / guard2 (enemy ids, called in turn), guards (how many per call), watch s, curse_fill s,
+##   dark (0..1, how much light phase 2 leaves)
 const CAST := 0             # timers run the attack; the next one is picked when e.t runs out
 const BREATH := 1           # the breath's own callbacks move the fight on
 const FAN := 1.5            # half-angle of one breath fan (radians): a fan is one half of the room
 const TIP_BACK := 6.0       # a fan starts this far behind the King's middle, so the two overlap under it
+const RISE := 7.0           # px it lifts off the floor while it breathes (from 6 px up a boss cannot be touched)
 const LANE_HALF := 4.0
 const FALL := 0.36          # seconds a fireball takes to drop into its circle
-const FALL_FROM := Vector2(-50.0, -64.0)
+const FALL_FROM := Vector2(-34.0, -72.0)
 const RIPPLE := [25.0, 56.0, 92.0, 152.0]
-const RIPPLE_GAP := 0.5
+const RIPPLE_GAP := 0.55
 ## The test bot reads a cone as a narrow wedge; a fan as wide as half the room is handed to it
 ## as one very wide lane instead (it then walks toward the King's middle, the right way out).
 const BOT_HW := 320.0
-const BOT_SOFT := 30.0      # while one half burns, the bot is only asked to stand this close to the middle
+const BOT_SOFT := 64.0      # until the first half is out, the bot is only asked to come this close to the middle
 const CYAN := Color(0.30, 0.90, 1.0)
 const BLUE := Color(0.10, 0.70, 1.0)
 const BLUES := [Color(0.0, 0.87, 0.96), Color(0.0, 0.69, 0.85), Color(0.75, 0.97, 1.0)]
@@ -70,7 +77,7 @@ func start(e) -> void:
 	e.state = CAST
 	e.t = 1.6
 	e.mem = {"home": Vector2(G.ROOM_W * 0.5, _p(e, "home_y", 66.0)), "sway": 0.0, "hold": 0.0, "step": 0, "guards": 0,
-		"side": 1.0, "breaths": 0, "burn_t": 0.0, "burn_side": 1.0, "burn_fx": 0.0, "next_half": null, "falls": []}
+		"side": 1.0, "breaths": 0, "burn_t": 0.0, "burn_side": 1.0, "burn_fx": 0.0, "next_half": null, "falls": [], "watch": 0.0}
 	var court := Court.new()
 	court.setup(e, _p(e, "curse_fill", 3.5), _p(e, "dark", 0.78))
 	e.room.ysort.add_child(court)
@@ -91,13 +98,17 @@ func phase_changed(e, _phase: int) -> void:
 func tick(e, delta: float) -> void:
 	e.t -= delta
 	e.mem["hold"] = maxf(float(e.mem["hold"]) - delta, 0.0)
+	e.mem["watch"] = maxf(float(e.mem["watch"]) - delta, 0.0)
 	_tick_falls(e, delta)
+	# it rears up off the floor for the breath: nothing of it can be touched then, the way under it is open
+	e.lift = move_toward(e.lift, RISE if e.state == BREATH else 0.0, delta * 30.0)
 	if float(e.mem["burn_t"]) > 0.0:
 		_tick_burn(e, delta)
 	if e.state == CAST:
 		if not e.busy() and float(e.mem["hold"]) <= 0.0:
 			_sway(e, delta)
-		if e.t <= 0.0 and not e.busy():
+		# while the guards it called still stand, it only watches (for a few seconds at most)
+		if e.t <= 0.0 and not e.busy() and (float(e.mem["watch"]) <= 0.0 or e.minion_count() == 0):
 			_pick(e)
 
 
@@ -130,29 +141,38 @@ func _pick(e) -> void:
 		if step % 2 == 0:
 			_ripple(e)
 		else:
-			_breath(e, 3, _p(e, "breath_warn", 1.4) * 0.8)
-			_embers(e, 2, false, 1.6)
-			_volley(e, 3, false, 1.5, 2.2)
+			var warn3 := _p(e, "breath_warn", 1.4) * 0.8
+			_breath(e, 3, warn3)
+			_volley(e, 3, false, _beat(e), warn3 + 0.1)      # one burst while each half burns
 		return
 	var pairs: bool = e.phase >= 2
 	match step % 4:
 		0:
-			e.t = _volley(e, 3 if pairs else 4, pairs, 1.0 if pairs else 0.8) + (0.9 if pairs else 1.2)
+			e.t = _volley(e, 3 if pairs else 4, pairs, 1.0 if pairs else 0.8) + _p(e, "rest", 1.5) * (0.8 if pairs else 1.0)
 			if pairs:
 				_embers(e, 3, false, 0.5)
 		1, 3:
-			_breath(e, 2, _p(e, "breath_warn", 1.4) * (0.85 if pairs else 1.0))
+			# the second attack of a pair only comes while a half burns (the hero stands and waits
+			# then), never in the moments he has to run under the King
+			var warn2 := _p(e, "breath_warn", 1.4) * (0.85 if pairs else 1.0)
+			_breath(e, 2, warn2)
 			if pairs and step % 4 == 1:
-				_embers(e, 2, false, 1.5)
+				e.after(warn2 - 0.1, _ember_wave)
+				e.after(warn2 - 0.1 + _beat(e), _ember_wave)
 			elif pairs:
-				_volley(e, 3, false, 0.9, 1.3)
+				_volley(e, 2, false, _beat(e), warn2 - 0.2)
 		2:
 			e.play("attack")
 			e.tell(0.6)
 			Sfx.play("boss_roar", -10.0, 0.0, 1.35)
-			e.t = _embers(e, 4 if pairs else 3, true, 0.6) + (0.9 if pairs else 1.2)
+			e.t = _embers(e, 4 if pairs else 3, true, 0.6) + _p(e, "rest", 1.5) * (0.8 if pairs else 1.0)
 			if pairs:
 				_volley(e, 3, false, 1.1, 0.9)
+
+
+## Seconds from the start of one breath's fire to the start of the next one's.
+func _beat(e) -> float:
+	return _burn_time(e) + _tail_time(e) + _p(e, "turn_warn", 1.0)
 
 
 # ------------------------------------------------------------------------------ SKULL VOLLEY
@@ -304,7 +324,9 @@ func _breath(e, sides: int, warn: float) -> void:
 		side = 1.0
 	_mark_half(e, side, warn, 0.0)
 	_inhale(e, side, warn)
-	e.tell(warn)
+	# the half the hero stands in is next. A player who knows the fight walks to the King at the
+	# inhale; the test bot is told the same (a row for the bot only, nothing is drawn)
+	e.mem["next_half"] = _bot_half(e, -side, warn + _burn_time(e) + _tail_time(e) + _p(e, "turn_warn", 1.0) + 0.1, BOT_SOFT)
 
 
 func _inhale(e, side: float, warn: float) -> void:
@@ -320,12 +342,26 @@ func _tip(e, side: float) -> Vector2:
 	return e.position - Vector2(side * TIP_BACK, 0.0)
 
 
-## The red fan over the half of the room on `side` (+1 right, -1 left). Returns the bot's row for it.
-func _mark_half(e, side: float, seconds: float, soft: float) -> Array:
+## How long the fire of one breath burns (the frames of "attack2" that show it), and the rest of the animation.
+func _burn_time(e) -> float:
+	return Art.frame_time(e._sprite_id, "attack2", 16) - e.hit_time("attack2")
+
+
+func _tail_time(e) -> float:
+	return e.anim_time("attack2") - Art.frame_time(e._sprite_id, "attack2", 16)
+
+
+## Draws the fan over the half of the room on `side` (+1 right, -1 left): red = a warning, blue = it burns.
+func _fan(e, side: float, seconds: float, color: Color) -> void:
 	var tip := _tip(e, side)
 	var corner := Vector2(G.ROOM_W if side > 0.0 else 0.0, 0.0 if tip.y > G.ROOM_H * 0.5 else G.ROOM_H)
-	e.mark_cone(tip, Vector2(side, 0.0), tip.distance_to(corner) + 4.0, FAN, seconds)
+	e.mark_cone(tip, Vector2(side, 0.0), tip.distance_to(corner) + 4.0, FAN, seconds, color)
 	e.run.fx.hazards.pop_back()          # the cone the mark just told the bot about (see BOT_HW)
+
+
+## The red fan, and the bot's row for it (returned).
+func _mark_half(e, side: float, seconds: float, soft: float) -> Array:
+	_fan(e, side, seconds, e.RED)
 	return _bot_half(e, side, seconds + 0.1, soft)
 
 
@@ -339,22 +375,22 @@ func _bot_half(e, side: float, seconds: float, soft: float) -> Array:
 ## The hit frame of "attack2": the fire is out. It burns as long as the animation shows it.
 func _burn_begin(e, _frame: int) -> void:
 	var side: float = e.mem["side"]
-	var burn: float = Art.frame_time(e._sprite_id, "attack2", 16) - e.hit_time("attack2")
-	var tail: float = e.anim_time("attack2") - Art.frame_time(e._sprite_id, "attack2", 16)
+	var burn := _burn_time(e)
 	e.mem["burn_side"] = side
 	e.mem["burn_t"] = burn
 	e.mem["burn_fx"] = 0.0
 	_bot_half(e, side, burn, 0.0)
-	var tip := _tip(e, side)
-	var width: float = (G.ROOM_W - tip.x) if side > 0.0 else tip.x
-	for spot: Vector2 in [Vector2(0.28, 26.0), Vector2(0.28, 88.0), Vector2(0.74, 26.0), Vector2(0.74, 88.0), Vector2(0.52, 58.0)]:
-		e.run.fx.zone(Vector2(tip.x + side * width * spot.x, spot.y), 30.0, burn + 0.15, BLUE, e.get_instance_id())
+	# the red fan has just run out: the same fan in the breath's own blue shows what burns, as long as it burns
+	_fan(e, side, burn, BLUE)
 	e.run.shake(0.5)
 	e.run.fx.flash(Color(0.45, 0.9, 1.0, 0.16), 0.2)
 	Sfx.play("explosion", -5.0, 0.0, 0.55)
 	if int(e.mem["breaths"]) > 1:
 		# the other half is next: it fills while this one burns and while the King turns
-		e.mem["next_half"] = _mark_half(e, -side, burn + tail + _p(e, "turn_warn", 0.7), BOT_SOFT)
+		var wait: float = burn + _tail_time(e) + _p(e, "turn_warn", 1.0)
+		_fan(e, -side, wait, e.RED)
+		if e.mem["next_half"] == null:
+			e.mem["next_half"] = _bot_half(e, -side, wait + 0.1, BOT_SOFT)
 
 
 func _tick_burn(e, delta: float) -> void:
@@ -385,7 +421,7 @@ func _breath_done(e) -> void:
 	var left := int(e.mem["breaths"]) - 1
 	e.mem["breaths"] = left
 	if left > 0:
-		_inhale(e, -float(e.mem["side"]), _p(e, "turn_warn", 0.7))
+		_inhale(e, -float(e.mem["side"]), _p(e, "turn_warn", 1.0))
 		return
 	# out of breath: the breather
 	e.state = CAST
@@ -398,25 +434,28 @@ func _call_guards(e) -> void:
 	e.play("attack")
 	e.tell(0.6)
 	e.t = 2.2
+	e.mem["watch"] = _p(e, "watch", 5.0) if e.phase < 3 else 0.0     # no pause in the last stand
 	Sfx.play("boss_roar", -4.0, 0.0, 1.25)
 	e.after(0.6, _guards_rise)
 
 
 func _guards_rise(e) -> void:
-	e.summon_minions(String(e.p.get("guard", "pit_guard")), int(_p(e, "guards", 2.0)), {"delay": 1.0, "far": 50.0})
+	# a pair: every second one is the row's "guard2" (a soldier and an archer)
+	for k in int(_p(e, "guards", 2.0)):
+		var id := String(e.p.get("guard", "pit_guard")) if k % 2 == 0 else String(e.p.get("guard2", e.p.get("guard", "pit_guard")))
+		e.summon_minions(id, 1, {"delay": 1.0, "far": 50.0})
 	e.run.shake(0.3)
 	Sfx.play("door_open", -4.0, 0.0, 0.7)
 
 
 # ------------------------------------------------------------------------------ RIPPLE (last stand)
 func _ripple(e) -> void:
-	var warn := _p(e, "ripple_warn", 0.8)
+	var warn := _p(e, "ripple_warn", 0.9)
 	e.play("attack")
 	e.tell(0.6)
 	Sfx.play("boss_roar", -8.0, 0.0, 0.8)
 	for k in 3:
 		e.after(RIPPLE_GAP * float(k), _ripple_mark.bind(k, e.position, warn))
-	_volley(e, 2, false, 1.2, 0.6)
 	e.t = RIPPLE_GAP * 2.0 + warn + 0.7
 
 
@@ -445,6 +484,10 @@ class Court extends Node2D:
 	const RIM_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nuniform vec4 rim : source_color = vec4(0.3, 0.9, 1.0, 0.6);\nvoid fragment() {\n\tvec2 px = TEXTURE_PIXEL_SIZE;\n\tfloat a = texture(TEXTURE, UV).a;\n\tfloat n = texture(TEXTURE, UV + vec2(px.x, 0.0)).a + texture(TEXTURE, UV - vec2(px.x, 0.0)).a + texture(TEXTURE, UV + vec2(0.0, px.y)).a + texture(TEXTURE, UV - vec2(0.0, px.y)).a;\n\tCOLOR = vec4(rim.rgb, (a < 0.5 && n > 0.5) ? rim.a : 0.0);\n}\n"
 	## Keeps only the skull's own pixels (its blues) of the piece cut out of the frame, and can whiten them.
 	const SKULL_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nuniform float glow = 0.0;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tfloat keep = step(0.3, c.b) * step(c.r, 0.15);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0), glow), c.a * keep);\n}\n"
+	## Its hit flash: the base turns a boss nearly white, and a giant going white several times a
+	## second hides the fight. The King only pales a little; its rim flashes white instead.
+	const SOFT_HIT_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0), 0.22), c.a);\n}\n"
+	const RIM_COLOR := Color(0.3, 0.9, 1.0, 0.6)
 	const SKULL_RECT := Rect2(86, 68, 33, 30)        # its skull in frame 0 of "idle" (canvas px)
 	const WING_TIPS := [Vector2(-86, -122), Vector2(40, -128)]
 	const WING_ROOTS := [Vector2(-18, -84), Vector2(12, -86)]
@@ -458,6 +501,7 @@ class Court extends Node2D:
 	var run: Node
 	var room: Node
 	var rim: AnimatedSprite2D
+	var soft_hit: ShaderMaterial
 	var skull: Sprite2D
 	var skull_at := Vector2.ZERO
 	var lit := Color(1, 1, 1)
@@ -488,6 +532,9 @@ class Court extends Node2D:
 		mat.shader.code = RIM_SHADER
 		rim.material = mat
 		s.add_child(rim)
+		soft_hit = ShaderMaterial.new()
+		soft_hit.shader = Shader.new()
+		soft_hit.shader.code = SOFT_HIT_SHADER
 
 	func _exit_tree() -> void:
 		if run != null and is_instance_valid(run) and run.ambient != null:
@@ -513,8 +560,14 @@ class Court extends Node2D:
 		if rim.animation != s.animation:
 			rim.animation = s.animation
 		rim.frame = s.frame
+		var hit: bool = s.material != null and s.material == boss.hit_material()
+		if hit:
+			s.material = soft_hit
+		(rim.material as ShaderMaterial).set_shader_parameter("rim", Color(1, 1, 1, 1) if hit else RIM_COLOR)
 		# the hero behind the King would be hidden by it: the body goes half see-through
 		var p: Node2D = boss.player
+		if p == null or not is_instance_valid(p):
+			return
 		var along: float = (p.position.x - boss.position.x) * boss.facing
 		var behind: bool = p.position.y < boss.position.y - 3.0 and along > -96.0 and along < 50.0
 		s.modulate.a = move_toward(s.modulate.a, 0.42 if behind else 1.0, delta * 5.0)

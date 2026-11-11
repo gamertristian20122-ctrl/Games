@@ -94,7 +94,11 @@ const LIST := [
 			"shop": [{"piece": "prop_crate_a", "col": 3, "y": 29}, {"piece": "prop_crate_b", "col": 4, "y": 23}, {"piece": "prop_crate_a", "col": 13, "y": 29}],
 			"treasure": [{"piece": "deco_banner_triple", "col": 3, "dx": -1, "y": 2}, {"piece": "deco_banner_triple", "col": 12, "dx": -1, "y": 2}],
 			"secret": [{"piece": "deco_niche", "col": 3, "y": -2}, {"piece": "deco_window_dark", "col": 5, "y": 12}, {"piece": "deco_window_dark", "col": 11, "y": 12}, {"piece": "deco_niche", "col": 13, "y": -2}],
-			"boss": [{"piece": "deco_window_lit", "col": 1, "y": 12}, {"piece": "deco_banner_triple", "col": 3, "dx": -1, "y": 2}, {"piece": "deco_banner_triple", "col": 12, "dx": -1, "y": 2}, {"piece": "deco_window_lit", "col": 15, "y": 12}],
+			# the throne hall of the final boss: columns at both ends, lit windows, three great banners
+			# (the middle one hangs behind the King and is what is left when he falls) and two busts
+			"boss": [{"piece": "prop_column_a", "col": 0, "y": -4}, {"piece": "deco_window_lit", "col": 1, "y": 12}, {"piece": "deco_banner_triple", "col": 3, "dx": -1, "y": 2},
+				{"piece": "prop_bust_a", "col": 6, "y": 22}, {"piece": "deco_banner_triple", "col": 7, "dx": 7, "y": 2}, {"piece": "prop_bust_a", "col": 10, "dx": -1, "y": 22, "flip": true},
+				{"piece": "deco_banner_triple", "col": 12, "dx": -1, "y": 2}, {"piece": "deco_window_lit", "col": 15, "y": 12}, {"piece": "prop_column_a", "col": 16, "y": -4, "flip": true}],
 		},
 		"motes": {"count": 14, "color": Color(0.86, 0.56, 1.0, 0.6), "size": 1.0, "rise": 4.0, "drift": 2.0, "twinkle": 0.9},
 		"vignette": 0.56,

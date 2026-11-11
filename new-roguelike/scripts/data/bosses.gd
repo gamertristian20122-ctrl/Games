@@ -59,12 +59,12 @@ const ALL := {
 		"params": {"charge_speed": 175.0, "charge_warn": 0.75, "cleave_warn": 0.9, "cleave_reach": 122.0, "cleave_angle": 0.5,
 			"slam_radius": 44.0, "slam_warn": 0.8, "burn_seconds": 3.5}},
 	# ---- floor 4, the Pit: the final boss
-	"starved_king": {"name": "The Starved King", "sprite": "boss_demon", "floors": [4], "hp": 1100.0,
+	"starved_king": {"name": "The Starved King", "sprite": "boss_demon", "floors": [4], "hp": 2500.0,
 		"speed": 24.0, "touch": 1, "shot": "enemy", "radius": 20.0, "flying": true, "final": true, "layout": "boss_arena",
 		"hover": -9.0, "bob": 1.0, "phases": [0.5, 0.2], "stagger_dmg": 1.25,
-		"params": {"home_y": 66.0, "sway": 44.0, "volley_warn": 0.6, "volley_speed": 105.0, "ember_radius": 13.0, "ember_warn": 0.85,
-			"great_radius": 30.0, "great_warn": 1.0, "breath_warn": 1.4, "turn_warn": 0.7, "winded": 2.0, "ripple_warn": 0.8,
-			"guard": "pit_guard", "guards": 2, "curse_fill": 3.5, "dark": 0.78}},
+		"params": {"home_y": 66.0, "sway": 44.0, "rest": 1.6, "volley_warn": 0.6, "volley_speed": 95.0, "ember_radius": 13.0, "ember_warn": 0.95,
+			"great_radius": 30.0, "great_warn": 1.0, "breath_warn": 1.4, "turn_warn": 1.0, "winded": 2.0, "ripple_warn": 0.9,
+			"guard": "pit_guard", "guard2": "pit_marksman", "guards": 2, "watch": 5.0, "curse_fill": 4.0, "dark": 0.78}},
 }
 
 ## Boss ids from older versions of the game and the boss that took their place, so an old save's
