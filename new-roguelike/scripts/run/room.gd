@@ -283,6 +283,8 @@ func _make_obstacle_sprite(i: int) -> void:
 				s2.centered = false
 				s2.position = Vector2(-8, -36)
 				node.add_child(s2)
+	if not torch_cells.has(i):
+		look.tint_obstacle(node)
 	ysort.add_child(node)
 	cell_nodes[i] = node
 
@@ -840,6 +842,11 @@ func save_state() -> void:
 
 
 # =============================================================================== content
+## `at` itself when its tile is empty, else the middle of the nearest empty tile.
+func _spot_or_near(at: Vector2) -> Vector2:
+	return at if is_free_cell(G.cell_of(at)) else free_spot_near(at)
+
+
 func _first_visit_content() -> void:
 	match type:
 		G.RoomType.TREASURE:
@@ -848,8 +855,8 @@ func _first_visit_content() -> void:
 			# taking one makes the other crumble (only the normal one when no cursed item is left)
 			var twin: String = run.take_item("cursed", rng) if item != "" else ""
 			if item != "" and twin != "":
-				add_thing("pedestal", {"item": item, "pair": 1, "pos": free_spot_near(G.ROOM_CENTER + Vector2(-26, 0))})
-				add_thing("pedestal", {"item": twin, "pair": 1, "pos": free_spot_near(G.ROOM_CENTER + Vector2(26, 0))})
+				add_thing("pedestal", {"item": item, "pair": 1, "pos": _spot_or_near(G.ROOM_CENTER + Vector2(-26, 0))})
+				add_thing("pedestal", {"item": twin, "pair": 1, "pos": _spot_or_near(G.ROOM_CENTER + Vector2(26, 0))})
 			elif item != "":
 				add_thing("pedestal", {"item": item, "pos": G.ROOM_CENTER})
 			else:
@@ -858,7 +865,14 @@ func _first_visit_content() -> void:
 			add_thing("shopkeeper", {"pos": Vector2(W * 0.5, 18)})
 			var y := 46.0
 			add_thing("pedestal", {"pickup": "heart", "price": Pickups.PRICE_HEART, "pos": Vector2(W * 0.5 - 60, y)})
-			add_thing("pedestal", {"pickup": "key" if rng.randf() < 0.5 else "bomb", "price": Pickups.PRICE_SUPPLY, "pos": Vector2(W * 0.5 - 20, y)})
+			# the supply stand: a key or a bomb, but always a bomb when the hero holds none
+			# (a bomb is how you get the coins out of the Hungry Curse's belly)
+			var supply := "key" if rng.randf() < 0.5 else "bomb"
+			if run.player.bombs <= 0:
+				supply = "bomb"
+			add_thing("pedestal", {"pickup": supply, "price": Pickups.PRICE_SUPPLY, "pos": Vector2(W * 0.5 - 20, y)})
+			# "Starve the Curse": it only shows itself from Curse Level 1 (see pedestal.gd)
+			add_thing("pedestal", {"service": "starve", "pos": _spot_or_near(Vector2(W * 0.5 + 100, y))})
 			var item2: String = run.take_item("shop", rng)
 			if item2 != "":
 				add_thing("pedestal", {"item": item2, "price": Pickups.PRICE_ITEM, "pos": Vector2(W * 0.5 + 20, y)})
@@ -905,6 +919,16 @@ func _start_fight() -> void:
 	var player_pos: Vector2 = run.player.position
 	if type == G.RoomType.BOSS:
 		spawn_enemy(run.boss_id, G.ROOM_CENTER + Vector2(0, -8), {"boss": true, "delay": 1.1})
+		return
+	# the first-run lesson stages its first two fights (scripts/run/curse_tutor.gd)
+	var lesson: Array = run.tutor.fight_lineup(self) if run.tutor != null and is_instance_valid(run.tutor) else []
+	if not lesson.is_empty():
+		for row: Dictionary in lesson:
+			var spot: Vector2 = row["pos"]
+			if spot == Vector2.INF:
+				spot = random_spawn_spot(player_pos)
+			var staged: Node2D = spawn_enemy(String(row["id"]), spot, {"delay": SPAWN_DELAY, "elite": false})
+			staged.stun = float(row.get("stand", 0.0))
 		return
 	var marks := spawn_marks.duplicate()
 	for i in range(marks.size() - 1, 0, -1):

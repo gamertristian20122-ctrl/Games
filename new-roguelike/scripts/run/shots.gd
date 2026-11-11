@@ -321,4 +321,4 @@ func _step_lobs(delta: float) -> void:
 ## Every shot is painted here, by this one node; HOW is in scripts/run/shot_look.gd.
 func _draw() -> void:
 	_look.tick(get_physics_process_delta_time())
-	_look.draw(self)
+	_look.draw(self, self)

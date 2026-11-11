@@ -22,6 +22,7 @@ const FxScript = preload("res://scripts/run/fx.gd")
 const ItemEffects = preload("res://scripts/run/item_effects.gd")
 const PlayerScript = preload("res://scripts/entities/player.gd")
 const Curse = preload("res://scripts/entities/curse.gd")
+const CurseTutor = preload("res://scripts/run/curse_tutor.gd")
 
 # ------------------------------------------------------------------ tuning (one place for the big numbers)
 ## Mood lighting. Set to false if a phone struggles: the game then draws flat and bright.
@@ -192,6 +193,13 @@ func _begin() -> void:
 	_generate_floor()
 	player = PlayerScript.new()
 	player.setup(self, hero_id)
+	if tutor != null and is_instance_valid(tutor):
+		tutor.free()
+	tutor = null
+	if CurseTutor.wanted():
+		tutor = CurseTutor.new()
+		add_child(tutor)
+		tutor.setup(self)
 	G.stat.emit("runs", 1)
 	G.run_started.emit(self)
 	_enter_floor()

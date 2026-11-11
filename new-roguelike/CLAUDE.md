@@ -72,3 +72,40 @@ Flags (after `--`): `--autotest` (a bot plays), `--hero=`, `--seed=`, `--speed=`
   then run `godot --headless --path . --import`. It never draws anything: it only cuts, renames and swaps
   one outline colour. `--sheet /tmp/dir` also writes contact sheets to look at. To add an effect, add one
   row to `FX` at the top of that script. New folders must also be listed in `Art.DIRS` (`scripts/core/art.gd`).
+
+## The Hungry Curse
+The game's twist (built by the twist builder). Rules and EVERY number: `scripts/entities/curse.gd`
+(one block of consts at the top). How it is drawn: `scripts/entities/curse_look.gd`.
+
+The rules in ten lines:
+1. It exists only in locked rooms (fights and bosses). It rises 1 s after the doors lock, at the
+   spawn point farthest from the hero, and sinks when the last enemy dies.
+2. It creeps straight at the hero (26 px/s, through rocks and pits). Its lunge timer fills while it
+   creeps (3 s for the first lunge in a room, then 5 s); the rim shows the timer filling clockwise.
+3. Lunge: a pale hatched stripe runs from the disc through the hero to the wall, follows for 0.5 s,
+   locks and flashes for 0.5 s, then the disc dashes along it to the wall and rests 1.5 s.
+4. CALL (the second button, `Controls.action_pressed`) locks the stripe at once. 4 s cooldown, only
+   while it creeps.
+5. Lit rim = it bites. Dark rim = safe (rising, sated for 3 s after biting the hero, stunned).
+6. It swallows normal enemies whole (no death effect, no loot). Elites and "big" enemies lose half
+   their health per bite. A boss loses (5 + level)% per bite, never below 10%, and knocks it back.
+7. Enemy shots die on it. Hero and familiar shots pass through and slow it for 0.4 s.
+8. Curse Level 0-5: each cursed item taken adds 1 (bigger disc, bigger belly; a full-heart bite and
+   teeth from Level 3). The shop's "Starve the Curse" stand takes 1 off for 15 / 25 / 35 coins.
+9. The belly: +1 coin per enemy swallowed (elite 3, summoned minion 0) up to the level's cap; kept
+   all run. A bomb blast next to the disc stuns it for 4 s and it coughs every coin out. A bomb it
+   touches goes off at once.
+10. A lunge that ends at a hidden door cracks the wall (it shows on the minimap); a second one, or
+    a bomb, opens it.
+
+Where the numbers live:
+- `scripts/entities/curse.gd`: level table, speeds, timers, bite sizes, belly pay, bomb and crack reach.
+- `scripts/run/stats.gd`: `call_cooldown`, `curse_creep`, `belly_mult` (so items can change them).
+- `scripts/data/pickups.gd`: `PRICE_STARVE`. `scripts/data/enemies.gd`: `"big": true` rows.
+- Run state (`scripts/run/run.gd`): `curse_level`, `belly`, `starve_bought`, `call_cd`.
+- Test flags: `--curse=<0-5>`, `--belly=<n>`, `--nocurse`, `--botstyle=dodge|feeder|caller`.
+
+To add a curse-related item: add a row in `scripts/data/items.gd`. `"cursed": true` alone already
+gives +1 Curse Level. Use `mods` with `call_cooldown`, `curse_creep`, `belly_mult` or the flag
+`curse_eats_coins`; anything smarter is a hook function in `scripts/run/item_effects.gd`. A locked
+item also needs `"locked": true` and a row in `scripts/data/unlocks.gd`.

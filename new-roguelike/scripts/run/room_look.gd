@@ -138,7 +138,7 @@ func _roll_floor() -> void:
 			carpet = Rect2i(3, 2, 11, 2)
 		G.RoomType.TREASURE:
 			carpet_id = "niji_carpet_red"
-			carpet = Rect2i(7, 2, 3, 3)
+			carpet = Rect2i(5, 2, 7, 3)
 		G.RoomType.START:
 			carpet_id = "niji_carpet_grey"
 			carpet = Rect2i(6, 2, 5, 3)
@@ -355,6 +355,11 @@ func _build_fountain(col: int, colour: String) -> void:
 	_add_light(Vector2(col * T + 8, 2), Color(1.0, 0.45, 0.25) if colour == "red" else Color(0.35, 0.65, 1.0), 0.75, 1.1, false)
 
 
+## Rocks, crates and columns stand in the light of the room, so they take some of the floor's tint.
+func tint_obstacle(node: Node2D) -> void:
+	node.modulate = (theme["tile_tint"] as Color).lerp(Color(1, 1, 1), 0.45)
+
+
 ## A standing torch on the floor (layout letter T). The Room already made it solid, like a column;
 ## this gives its obstacle node the picture, the glow and (if the room can afford it) a light.
 func build_floor_torch(node: Node2D) -> void:
@@ -546,9 +551,6 @@ func _draw_back_wall(c: Node2D) -> void:
 			c.draw_texture(Art.tex("niji_bag_brown"), Vector2(col * T - 8, -9))
 			c.draw_texture(Art.tex("niji_bag_gold"), Vector2(col * T + 5, -8))
 			c.draw_texture(Art.tex("niji_bag_brown_patched"), Vector2(col * T - 1, -6))
-		elif (kind == "torch" or kind == "torch_unlit") and Art.has("niji_torch_glow"):
-			# soot on the bricks behind the torch
-			c.draw_texture(Art.tex("niji_torch_glow"), Vector2(col * T, -2 * T + 2), Color(1, 1, 1, 0.55))
 
 
 func _draw_top_door(c: Node2D) -> void:

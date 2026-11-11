@@ -252,6 +252,8 @@ func _physics_process(delta: float) -> void:
 			if t <= 0.0:
 				fill = 0.0
 				fill_time = FIRST_FILL
+				if run.tutor != null and is_instance_valid(run.tutor):
+					fill_time = run.tutor.first_fill(room, FIRST_FILL)   # the first-run lesson lunges early
 				_go(CREEP, 0.0)
 		CREEP:
 			var to: Vector2 = player.position - position

@@ -10,8 +10,10 @@ extends RefCounted
 ## THE LOOK of a floor (read by scripts/run/room_look.gd and scripts/run/fx.gd). Every floor should be
 ## recognisable at a glance, and enemies must stay readable on all of them, so keep `ambient` from
 ## getting much darker than these and keep `tile_tint` away from pure colours.
-##   ambient      the colour of the darkness (CanvasModulate). Lights add on top of it.
-##   tile_tint    a tint for floor and wall tiles only
+##   ambient      the colour of the darkness (CanvasModulate) on EVERYTHING. Keep it bright: monsters
+##                and heroes must stay easy to see. Lights add on top of it.
+##   tile_tint    a tint for floor and wall tiles only. THIS is what makes a floor dark and moody:
+##                dark tiles under bright characters is what makes the characters stand out.
 ##   light        colour of the light around the player
 ##   torch_light  colour of the light a torch throws          flame_tint   tint of the flame sprites
 ##   torch_power  how strong torch lights are (1.0 = normal)
@@ -29,7 +31,7 @@ extends RefCounted
 const LIST := [
 	{
 		"id": "crypt", "name": "The Crypt", "rooms": 8, "enemies": [],
-		"ambient": Color(0.50, 0.55, 0.74), "tile_tint": Color(0.82, 0.90, 1.06), "light": Color(1.0, 0.88, 0.70),
+		"ambient": Color(0.84, 0.87, 1.0), "tile_tint": Color(0.70, 0.77, 0.98), "light": Color(1.0, 0.88, 0.70),
 		"torch_light": Color(1.0, 0.72, 0.42), "flame_tint": Color(1.0, 1.0, 1.0), "torch_power": 1.0,
 		"fountain": "blue", "banners": ["wall_banner_blue", "wall_banner_green"],
 		"cracks": 0.20,
@@ -41,8 +43,8 @@ const LIST := [
 	},
 	{
 		"id": "warrens", "name": "The Warrens", "rooms": 10, "enemies": [],
-		"ambient": Color(0.50, 0.62, 0.46), "tile_tint": Color(0.80, 0.98, 0.70), "light": Color(1.0, 0.95, 0.66),
-		"torch_light": Color(0.90, 0.86, 0.36), "flame_tint": Color(0.92, 1.12, 0.62), "torch_power": 0.95,
+		"ambient": Color(0.86, 0.94, 0.80), "tile_tint": Color(0.70, 0.84, 0.62), "light": Color(1.0, 0.95, 0.66),
+		"torch_light": Color(0.86, 0.80, 0.40), "flame_tint": Color(0.92, 1.12, 0.62), "torch_power": 0.85,
 		"fountain": "blue", "banners": ["wall_banner_green", "wall_banner_yellow"],
 		"cracks": 0.30,
 		"wall_bits": {"hole": 0.4, "goo": 0.75, "pipe": 0.6, "grate": 0.6, "fountain": 0.2, "banners": 0.25},
@@ -53,7 +55,7 @@ const LIST := [
 	},
 	{
 		"id": "ashen", "name": "The Ashen Halls", "rooms": 11, "enemies": [],
-		"ambient": Color(0.70, 0.50, 0.42), "tile_tint": Color(1.10, 0.80, 0.66), "light": Color(1.0, 0.80, 0.55),
+		"ambient": Color(1.0, 0.86, 0.80), "tile_tint": Color(0.84, 0.64, 0.56), "light": Color(1.0, 0.80, 0.55),
 		"torch_light": Color(1.0, 0.55, 0.22), "flame_tint": Color(1.1, 0.95, 0.85), "torch_power": 1.15,
 		"fountain": "red", "banners": ["wall_banner_red", "wall_banner_yellow"],
 		"cracks": 0.38,
@@ -65,7 +67,7 @@ const LIST := [
 	},
 	{
 		"id": "pit", "name": "The Pit", "rooms": 12, "enemies": [],
-		"ambient": Color(0.52, 0.42, 0.68), "tile_tint": Color(0.84, 0.68, 1.02), "light": Color(1.0, 0.76, 0.80),
+		"ambient": Color(0.88, 0.78, 1.0), "tile_tint": Color(0.68, 0.56, 0.86), "light": Color(1.0, 0.76, 0.80),
 		"torch_light": Color(0.80, 0.40, 1.0), "flame_tint": Color(0.86, 0.62, 1.5), "torch_power": 1.1,
 		"fountain": "red", "banners": ["wall_banner_red", "wall_banner_blue"],
 		"cracks": 0.45,
