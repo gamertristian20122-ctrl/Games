@@ -10,3 +10,5 @@ assets_raw/paid_pixel_crawler/x/
 assets_raw/_paid_previews/
 # The purchased art zips must be kept (the top-level .gitignore skips *.zip).
 !assets_raw/paid_pixel_crawler/zips/*.zip
+# Free boss packs chosen for the game: their (trimmed) original archives are kept too.
+!assets_raw/bosses/**/*.zip
