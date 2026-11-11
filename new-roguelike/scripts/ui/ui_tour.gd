@@ -205,7 +205,7 @@ func _run_tour() -> void:
 	await _shot("title_quit_question")
 
 	print("[tour] done, %d screenshots" % _count)
-	get_tree().quit()
+	G.quit()
 
 
 # ------------------------------------------------------------------ the flow test (--uitour=flow)
@@ -279,7 +279,7 @@ func _run_flow() -> void:
 	_check("menus are closed during the run", main.call("top_name") == "")
 	_check("the HUD is showing", main.get("hud").visible)
 	if not is_instance_valid(run):
-		get_tree().quit(1)
+		G.quit(1)
 		return
 	await _settle(1.5)
 	await G.save_shot("flow_02_run.png")
@@ -343,4 +343,4 @@ func _run_flow() -> void:
 	await _settle()
 	_check("Esc on the title asks before quitting", _focus_text() == "Stay")
 	print("[flow] done: %d checks, %d failed" % [_count, _fails])
-	get_tree().quit(1 if _fails > 0 else 0)
+	G.quit(1 if _fails > 0 else 0)

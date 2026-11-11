@@ -15,9 +15,9 @@ timeout 300 "$GODOT" --headless --path . --import > "$LOG/import.log" 2>&1 || ti
 
 echo "== scripts and data tables"
 timeout 120 "$GODOT" --headless --path . res://dev/world_test.tscn -- --validate > "$LOG/validate.log" 2>&1
-tail -n 1 "$LOG/validate.log"
-if ! grep -q "VALIDATE OK" "$LOG/validate.log"; then
-	grep -E "SCRIPT ERROR|ERROR:" "$LOG/validate.log" | head -20
+grep "VALIDATE" "$LOG/validate.log" | tail -n 1
+if ! grep -q "VALIDATE OK" "$LOG/validate.log" || grep -E "SCRIPT ERROR|ERROR:" "$LOG/validate.log" > /dev/null; then
+	grep -E -A 2 "SCRIPT ERROR|ERROR:|VALIDATE" "$LOG/validate.log" | head -24
 	FAIL=1
 fi
 

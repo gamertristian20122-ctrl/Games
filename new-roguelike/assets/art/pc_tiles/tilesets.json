@@ -1,0 +1,5845 @@
+{
+ "about": "Room tile sets cut from the purchased Pixel Crawler packs by tools/pc_import_tiles.py. Do not edit by hand.",
+ "room": {
+  "tile": 16,
+  "cols": 17,
+  "rows": 7,
+  "side_w": 16,
+  "bottom_h": 16,
+  "door_col": 8,
+  "door_row": 3,
+  "how_to_read": [
+   "Room origin (0,0) is the top-left corner of the wall frame. The floor starts at (side_w, back_wall_h).",
+   "walls.back_rows: each row is drawn across the 17 floor columns from x=side_w; column i uses repeat[i % len].",
+   "walls.left / right repeat down from y=16 to the bottom strip; corners sit at the four ends.",
+   "walls.bottom is the 16 px strip under the floor; draw it IN FRONT of characters.",
+   "doors.<dir>.<state> is a list of draw ops {piece, dx, dy, front}. dx/dy are relative to the door cell:",
+   "  n: (side_w + 8*16, 0)   s: (side_w + 8*16, back_wall_h + 112)   w: (0, back_wall_h + 48)   e: (side_w + 272, back_wall_h + 48)",
+   "  Each state is {gap, ops}. 'gap' lists the wall-strip cells (relative to the door cell, in tiles) that the ops replace:",
+   "  do not draw the bottom / side strip there. Back-wall doors are drawn over the wall, so their gap is empty.",
+   "  An op with 'code' instead of 'piece' is something the game must draw itself (only the boss mark is left).",
+   "obstacles.<kind>.variants: draw at cell top-left + (dx, dy); 'up' is how many px overlap the tile above.",
+   "  flat = lies on the floor (draw under characters); otherwise y-sort with characters by the cell's bottom edge.",
+   "wall_deco: x = side_w + column*16 + dx, y from the room top; never use the columns in 'keep_clear'.",
+   "  A back row may name 'first' / 'last': pieces for the two end columns instead of the repeat.",
+   "  Door ops are drawn in list order; ops with front=true are drawn after the characters (they hide feet).",
+   "  boss_open = the boss door after the fight. cracked (s/w/e) replaces only the door cell itself.",
+   "  An animated thing lists 'frames' (+ 'fps'); a torch has 'variants' (the stand) plus 'flame' frames drawn on top.",
+   "  obstacles.pit.autotile9 names nine tiles x four frames to use instead when pit cells touch (sludge, lava).",
+   "lights: colour + radius for a Light2D / additive glow; (lx, ly) is relative to the piece's cell (obstacles) or draw position (wall_deco).",
+   "void_color fills the screen outside the floor; pieces are transparent where the wall mass shows it."
+  ]
+ },
+ "themes": {
+  "crypt": {
+   "name": "crypt",
+   "floor": {
+    "variants": [
+     [
+      "floor_a",
+      40
+     ],
+     [
+      "floor_b",
+      10
+     ],
+     [
+      "floor_c",
+      10
+     ],
+     [
+      "floor_d",
+      10
+     ],
+     [
+      "floor_e",
+      10
+     ],
+     [
+      "floor_f",
+      7
+     ],
+     [
+      "floor_g",
+      7
+     ],
+     [
+      "floor_h",
+      6
+     ]
+    ],
+    "shade_top": "floor_shade_top",
+    "shade_left": "floor_shade_left",
+    "shade_corner": "floor_shade_corner"
+   },
+   "source": "Cemetery pack (walls, doors, tombs, statues) on Free Pack dungeon flagstones; sconces and urns from Castle",
+   "back_wall_h": 48,
+   "void_color": "#000000",
+   "walls": {
+    "back_rows": [
+     {
+      "y": 0,
+      "repeat": [
+       "wall_top_a",
+       "wall_top_b"
+      ]
+     },
+     {
+      "y": 16,
+      "repeat": [
+       "wall_face_a",
+       "wall_face_b"
+      ]
+     }
+    ],
+    "corner_tl": "corner_tl",
+    "corner_tr": "corner_tr",
+    "corner_bl": "corner_bl",
+    "corner_br": "corner_br",
+    "left": [
+     "wall_side_left"
+    ],
+    "right": [
+     "wall_side_right"
+    ],
+    "bottom": [
+     "wall_bottom_a",
+     "wall_bottom_b"
+    ]
+   },
+   "doors": {
+    "n": {
+     "open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_frame",
+        "dx": -8,
+        "dy": 0
+       }
+      ]
+     },
+     "shut": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_frame",
+        "dx": -8,
+        "dy": 0
+       },
+       {
+        "piece": "door_n_leaf",
+        "dx": -3,
+        "dy": 4
+       }
+      ]
+     },
+     "locked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_frame",
+        "dx": -8,
+        "dy": 0
+       },
+       {
+        "piece": "door_n_leaf",
+        "dx": -3,
+        "dy": 4
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 24
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_cracked",
+        "dx": -4,
+        "dy": 10
+       }
+      ]
+     },
+     "boss": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_frame",
+        "dx": -8,
+        "dy": 0
+       },
+       {
+        "piece": "door_n_leaf_boss",
+        "dx": -3,
+        "dy": 4
+       },
+       {
+        "piece": "deco_banner_red",
+        "dx": -22,
+        "dy": 20
+       },
+       {
+        "piece": "deco_banner_red",
+        "dx": 28,
+        "dy": 20
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 1,
+        "note": "skull over the lintel (old art)"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_frame",
+        "dx": -8,
+        "dy": 0
+       },
+       {
+        "piece": "deco_banner_red",
+        "dx": -22,
+        "dy": 20
+       },
+       {
+        "piece": "deco_banner_red",
+        "dx": 28,
+        "dy": 20
+       }
+      ]
+     }
+    },
+    "s": {
+     "open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2,
+        "front": true
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_stone_a",
+        "dx": 1,
+        "dy": 7,
+        "front": true
+       },
+       {
+        "piece": "floor_stone_b",
+        "dx": 6,
+        "dy": 1,
+        "front": true
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     }
+    },
+    "w": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_stone_a",
+        "dx": 1,
+        "dy": 7
+       },
+       {
+        "piece": "floor_stone_b",
+        "dx": 6,
+        "dy": 1
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    },
+    "e": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_stone_a",
+        "dx": 1,
+        "dy": 7
+       },
+       {
+        "piece": "floor_stone_b",
+        "dx": 6,
+        "dy": 1
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    }
+   },
+   "obstacles": {
+    "rock": {
+     "what": "tombstone",
+     "variants": [
+      {
+       "piece": "prop_tomb_a",
+       "dx": 0,
+       "dy": -11,
+       "up": 11
+      },
+      {
+       "piece": "prop_tomb_b",
+       "dx": 0,
+       "dy": -15,
+       "up": 15
+      },
+      {
+       "piece": "prop_tomb_c",
+       "dx": 0,
+       "dy": -10,
+       "up": 10
+      }
+     ]
+    },
+    "pillar": {
+     "what": "stone statue",
+     "variants": [
+      {
+       "piece": "prop_statue",
+       "dx": 0,
+       "dy": -18,
+       "up": 18
+      }
+     ]
+    },
+    "crate": {
+     "what": "burial urn",
+     "variants": [
+      {
+       "piece": "prop_urn_a",
+       "dx": 0,
+       "dy": -5,
+       "up": 5
+      },
+      {
+       "piece": "prop_urn_b",
+       "dx": 1,
+       "dy": -8,
+       "up": 8
+      }
+     ]
+    },
+    "pit": {
+     "what": "dark shaft in the flagstones",
+     "flat": true,
+     "variants": [
+      {
+       "piece": "prop_pit",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      }
+     ]
+    },
+    "spikes": {
+     "what": "spike plate",
+     "flat": true,
+     "animated": true,
+     "frames": [
+      {
+       "piece": "spikes_f0",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "spikes_f1",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "spikes_f2",
+       "dx": 0,
+       "dy": -16,
+       "up": 16
+      }
+     ],
+     "note": "f0 down (safe), f1 warning, f2 up; f2 is 32 px tall and overlaps the tile above"
+    },
+    "torch": {
+     "what": "standing torch",
+     "variants": [
+      {
+       "piece": "prop_torch_stand",
+       "dx": 0,
+       "dy": -9,
+       "up": 9
+      }
+     ],
+     "flame": {
+      "frames": [
+       "flame_f0",
+       "flame_f1",
+       "flame_f2",
+       "flame_f3"
+      ],
+      "fps": 8,
+      "dx": 0,
+      "dy": -31
+     },
+     "light": {
+      "lx": 8,
+      "ly": -17,
+      "color": "#ff9a4a",
+      "radius": 56
+     }
+    }
+   },
+   "wall_deco": {
+    "keep_clear": [
+     7,
+     8,
+     9
+    ],
+    "pieces": [
+     {
+      "piece": "deco_sconce",
+      "frames": 4,
+      "fps": 8,
+      "dx": 0,
+      "y": 12,
+      "weight": 0,
+      "columns": [
+       2,
+       5,
+       11,
+       14
+      ],
+      "light": {
+       "lx": 8,
+       "ly": 12,
+       "color": "#ffb060",
+       "radius": 64
+      }
+     },
+     {
+      "piece": "deco_shackle_a",
+      "dx": 3,
+      "y": 20,
+      "weight": 3
+     },
+     {
+      "piece": "deco_shackle_b",
+      "dx": 3,
+      "y": 20,
+      "weight": 3
+     },
+     {
+      "piece": "deco_shackle_c",
+      "dx": 3,
+      "y": 20,
+      "weight": 2
+     },
+     {
+      "piece": "deco_cross",
+      "dx": 1,
+      "y": 20,
+      "weight": 3
+     },
+     {
+      "piece": "deco_grate",
+      "dx": 1,
+      "y": 27,
+      "weight": 2
+     }
+    ],
+    "set_pieces": [
+     {
+      "piece": "deco_coffin",
+      "note": "32x35 lying on the floor against the back wall in peaceful rooms; blocks nothing by itself"
+     },
+     {
+      "piece": "deco_coffin_open"
+     },
+     {
+      "piece": "deco_reaper",
+      "note": "30x43 statue for boss or treasure rooms"
+     },
+     {
+      "piece": "deco_gargoyle"
+     }
+    ]
+   },
+   "floor_deco": [
+    {
+     "piece": "floor_blood_a",
+     "tile": true,
+     "weight": 2
+    },
+    {
+     "piece": "floor_blood_b",
+     "tile": true,
+     "weight": 2
+    },
+    {
+     "piece": "floor_drain",
+     "tile": true,
+     "weight": 1
+    },
+    {
+     "piece": "floor_stone_a",
+     "weight": 3
+    },
+    {
+     "piece": "floor_stone_b",
+     "weight": 3
+    },
+    {
+     "piece": "floor_stone_c",
+     "weight": 3
+    }
+   ],
+   "ambient": "#b9c4c9",
+   "light_color": "#ffb060",
+   "gaps": [
+    "No boss emblem in the pack: the 'code' ops mark where the game draws it. The lock is the Sewer pack's keyhole plate.",
+    "Side and bottom doors use the Free Pack portcullis top (bars) and small hatch; the pack has no side-view door.",
+    "No ragged hole for a blown-open secret door: 'cracked' shows the gap with rubble stones (back wall: a bricked-up arch).",
+    "Boss door = the green leaf palette-swapped to the Forge brick reds, with two red banners."
+   ],
+   "pieces": {
+    "corner_bl": [
+     16,
+     16
+    ],
+    "corner_br": [
+     16,
+     16
+    ],
+    "corner_tl": [
+     16,
+     16
+    ],
+    "corner_tr": [
+     16,
+     16
+    ],
+    "deco_banner_red": [
+     10,
+     21
+    ],
+    "deco_coffin": [
+     20,
+     35
+    ],
+    "deco_coffin_open": [
+     20,
+     35
+    ],
+    "deco_cross": [
+     14,
+     19
+    ],
+    "deco_gargoyle": [
+     32,
+     33
+    ],
+    "deco_grate": [
+     14,
+     21
+    ],
+    "deco_reaper": [
+     30,
+     43
+    ],
+    "deco_sconce_f0": [
+     16,
+     32
+    ],
+    "deco_sconce_f1": [
+     16,
+     32
+    ],
+    "deco_sconce_f2": [
+     16,
+     32
+    ],
+    "deco_sconce_f3": [
+     16,
+     32
+    ],
+    "deco_shackle_a": [
+     10,
+     22
+    ],
+    "deco_shackle_b": [
+     10,
+     20
+    ],
+    "deco_shackle_c": [
+     10,
+     14
+    ],
+    "door_bars": [
+     16,
+     16
+    ],
+    "door_e_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_e_jamb_top": [
+     16,
+     16
+    ],
+    "door_hatch": [
+     16,
+     16
+    ],
+    "door_hatch_boss": [
+     16,
+     16
+    ],
+    "door_lock": [
+     6,
+     12
+    ],
+    "door_n_cracked": [
+     24,
+     38
+    ],
+    "door_n_frame": [
+     32,
+     48
+    ],
+    "door_n_leaf": [
+     22,
+     44
+    ],
+    "door_n_leaf_boss": [
+     22,
+     44
+    ],
+    "door_s_jamb_left": [
+     16,
+     16
+    ],
+    "door_s_jamb_right": [
+     16,
+     16
+    ],
+    "door_w_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_w_jamb_top": [
+     16,
+     16
+    ],
+    "flame_f0": [
+     16,
+     24
+    ],
+    "flame_f1": [
+     16,
+     24
+    ],
+    "flame_f2": [
+     16,
+     24
+    ],
+    "flame_f3": [
+     16,
+     24
+    ],
+    "floor_a": [
+     16,
+     16
+    ],
+    "floor_b": [
+     16,
+     16
+    ],
+    "floor_blood_a": [
+     16,
+     16
+    ],
+    "floor_blood_b": [
+     16,
+     16
+    ],
+    "floor_c": [
+     16,
+     16
+    ],
+    "floor_d": [
+     16,
+     16
+    ],
+    "floor_drain": [
+     16,
+     16
+    ],
+    "floor_e": [
+     16,
+     16
+    ],
+    "floor_f": [
+     16,
+     16
+    ],
+    "floor_g": [
+     16,
+     16
+    ],
+    "floor_h": [
+     16,
+     16
+    ],
+    "floor_shade_corner": [
+     16,
+     16
+    ],
+    "floor_shade_left": [
+     16,
+     16
+    ],
+    "floor_shade_top": [
+     16,
+     16
+    ],
+    "floor_stone_a": [
+     10,
+     8
+    ],
+    "floor_stone_b": [
+     10,
+     9
+    ],
+    "floor_stone_c": [
+     6,
+     5
+    ],
+    "prop_pit": [
+     16,
+     16
+    ],
+    "prop_statue": [
+     16,
+     34
+    ],
+    "prop_tomb_a": [
+     16,
+     27
+    ],
+    "prop_tomb_b": [
+     16,
+     31
+    ],
+    "prop_tomb_c": [
+     16,
+     26
+    ],
+    "prop_torch_stand": [
+     16,
+     25
+    ],
+    "prop_urn_a": [
+     16,
+     21
+    ],
+    "prop_urn_b": [
+     14,
+     24
+    ],
+    "spikes_f0": [
+     16,
+     16
+    ],
+    "spikes_f1": [
+     16,
+     16
+    ],
+    "spikes_f2": [
+     16,
+     32
+    ],
+    "wall_bottom_a": [
+     16,
+     16
+    ],
+    "wall_bottom_b": [
+     16,
+     16
+    ],
+    "wall_face_a": [
+     16,
+     32
+    ],
+    "wall_face_b": [
+     16,
+     32
+    ],
+    "wall_side_left": [
+     16,
+     16
+    ],
+    "wall_side_right": [
+     16,
+     16
+    ],
+    "wall_top_a": [
+     16,
+     16
+    ],
+    "wall_top_b": [
+     16,
+     16
+    ]
+   }
+  },
+  "warrens": {
+   "name": "warrens",
+   "floor": {
+    "variants": [
+     [
+      "floor_a",
+      30
+     ],
+     [
+      "floor_b",
+      20
+     ],
+     [
+      "floor_c",
+      20
+     ],
+     [
+      "floor_d",
+      10
+     ],
+     [
+      "floor_e",
+      10
+     ],
+     [
+      "floor_f",
+      4
+     ],
+     [
+      "floor_g",
+      3
+     ],
+     [
+      "floor_h",
+      3
+     ]
+    ],
+    "shade_top": "floor_shade_top",
+    "note": "the cracked tiles (f, g, h) are kept rare so the floor stays calm"
+   },
+   "source": "Sewer pack (walls, brick floor, tunnel door, copper bars and spikes, sludge, crates); hatch and flame from the Free Pack",
+   "why": "Sewer beats Cave and Hideout: straight indoor walls with corners, a calm dark brick floor, and its own spikes, bars, pit and crates.",
+   "back_wall_h": 48,
+   "void_color": "#0e1113",
+   "walls": {
+    "back_rows": [
+     {
+      "y": 0,
+      "repeat": [
+       "wall_top_a",
+       "wall_top_b"
+      ]
+     },
+     {
+      "y": 16,
+      "first": "wall_face_left",
+      "last": "wall_face_right",
+      "repeat": [
+       "wall_face_a",
+       "wall_face_b",
+       "wall_face_a",
+       "wall_face_c",
+       "wall_face_b"
+      ]
+     }
+    ],
+    "corner_tl": "corner_tl",
+    "corner_tr": "corner_tr",
+    "corner_bl": "corner_bl",
+    "corner_br": "corner_br",
+    "left": [
+     "wall_side_left"
+    ],
+    "right": [
+     "wall_side_right"
+    ],
+    "bottom": [
+     "wall_bottom_a",
+     "wall_bottom_b"
+    ]
+   },
+   "doors": {
+    "n": {
+     "open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "floor_shade_top",
+        "dx": -16,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 0,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 16,
+        "dy": 32
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -24,
+        "dy": 9
+       }
+      ]
+     },
+     "shut": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "floor_shade_top",
+        "dx": -16,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 0,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 16,
+        "dy": 32
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -24,
+        "dy": 9
+       },
+       {
+        "piece": "door_n_bars",
+        "dx": -4,
+        "dy": 16
+       }
+      ]
+     },
+     "locked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "floor_shade_top",
+        "dx": -16,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 0,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 16,
+        "dy": 32
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -24,
+        "dy": 9
+       },
+       {
+        "piece": "door_n_bars",
+        "dx": -4,
+        "dy": 16
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 24
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_cracked",
+        "dx": -8,
+        "dy": 33
+       }
+      ]
+     },
+     "boss": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_boss",
+        "dx": -17,
+        "dy": 16
+       },
+       {
+        "piece": "deco_lamp",
+        "dx": -26,
+        "dy": 20
+       },
+       {
+        "piece": "deco_lamp",
+        "dx": 33,
+        "dy": 20
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 12,
+        "note": "boss mark over the drain ring (old skull art)"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "floor_shade_top",
+        "dx": -16,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 0,
+        "dy": 32
+       },
+       {
+        "piece": "floor_shade_top",
+        "dx": 16,
+        "dy": 32
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -24,
+        "dy": 9
+       },
+       {
+        "piece": "deco_lamp",
+        "dx": -26,
+        "dy": 20
+       },
+       {
+        "piece": "deco_lamp",
+        "dx": 33,
+        "dy": 20
+       }
+      ]
+     }
+    },
+    "s": {
+     "open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2,
+        "front": true
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_b",
+        "dx": 1,
+        "dy": 6,
+        "front": true
+       },
+       {
+        "piece": "floor_bit_d",
+        "dx": 8,
+        "dy": 1,
+        "front": true
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     }
+    },
+    "w": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_b",
+        "dx": 1,
+        "dy": 6
+       },
+       {
+        "piece": "floor_bit_d",
+        "dx": 8,
+        "dy": 1
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    },
+    "e": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_b",
+        "dx": 1,
+        "dy": 6
+       },
+       {
+        "piece": "floor_bit_d",
+        "dx": 8,
+        "dy": 1
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    }
+   },
+   "obstacles": {
+    "rock": {
+     "what": "stone block",
+     "variants": [
+      {
+       "piece": "prop_block_a",
+       "dx": 0,
+       "dy": -6,
+       "up": 6
+      }
+     ]
+    },
+    "pillar": {
+     "what": "broken stone pillar",
+     "variants": [
+      {
+       "piece": "prop_pillar_a",
+       "dx": 0,
+       "dy": -20,
+       "up": 20
+      },
+      {
+       "piece": "prop_pillar_b",
+       "dx": 0,
+       "dy": -40,
+       "up": 40
+      }
+     ]
+    },
+    "crate": {
+     "what": "crate or barrel",
+     "variants": [
+      {
+       "piece": "prop_crate",
+       "dx": 0,
+       "dy": -9,
+       "up": 9
+      },
+      {
+       "piece": "prop_barrel",
+       "dx": 0,
+       "dy": -8,
+       "up": 8
+      }
+     ]
+    },
+    "pit": {
+     "what": "sludge well",
+     "flat": true,
+     "animated": true,
+     "fps": 4,
+     "frames": [
+      {
+       "piece": "prop_pit_f0",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "prop_pit_f1",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "prop_pit_f2",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "prop_pit_f3",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      }
+     ],
+     "autotile9": "pit9_<tl|t|tr|l|c|r|bl|b|br>_f<0-3>: use these instead when pits touch, so they merge into one pool",
+     "alt": "prop_pit_dark is a dark broken-floor tile if the green reads too loud under the Curse"
+    },
+    "spikes": {
+     "what": "copper spikes",
+     "flat": true,
+     "animated": true,
+     "frames": [
+      {
+       "piece": "spikes_f0",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "spikes_f1",
+       "dx": 0,
+       "dy": -4,
+       "up": 4
+      },
+      {
+       "piece": "spikes_f2",
+       "dx": 0,
+       "dy": -12,
+       "up": 12
+      }
+     ],
+     "note": "f0 holes only (safe), f1 tips, f2 up; taller frames overlap the tile above"
+    },
+    "torch": {
+     "what": "standing torch",
+     "variants": [
+      {
+       "piece": "prop_torch_stand",
+       "dx": 0,
+       "dy": -6,
+       "up": 6
+      }
+     ],
+     "flame": {
+      "frames": [
+       "flame_f0",
+       "flame_f1",
+       "flame_f2",
+       "flame_f3"
+      ],
+      "fps": 8,
+      "dx": 0,
+      "dy": -28
+     },
+     "light": {
+      "lx": 8,
+      "ly": -14,
+      "color": "#ffb347",
+      "radius": 56
+     }
+    }
+   },
+   "wall_deco": {
+    "keep_clear": [
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "pieces": [
+     {
+      "piece": "deco_lamp",
+      "dx": 3,
+      "y": 20,
+      "weight": 0,
+      "columns": [
+       2,
+       5,
+       11,
+       14
+      ],
+      "light": {
+       "lx": 4,
+       "ly": 4,
+       "color": "#ffd070",
+       "radius": 60
+      }
+     },
+     {
+      "piece": "deco_porthole",
+      "dx": 0,
+      "y": 22,
+      "weight": 3
+     },
+     {
+      "piece": "deco_pipe",
+      "dx": 4,
+      "y": 0,
+      "weight": 3
+     },
+     {
+      "piece": "deco_chain",
+      "dx": 3,
+      "y": 12,
+      "weight": 2
+     },
+     {
+      "piece": "deco_keyhook",
+      "dx": 5,
+      "y": 20,
+      "weight": 1
+     },
+     {
+      "piece": "deco_lamp_off",
+      "dx": 3,
+      "y": 20,
+      "weight": 1
+     }
+    ],
+    "set_pieces": []
+   },
+   "floor_deco": [
+    {
+     "piece": "floor_bit_a",
+     "weight": 3
+    },
+    {
+     "piece": "floor_bit_b",
+     "weight": 2
+    },
+    {
+     "piece": "floor_bit_c",
+     "weight": 3
+    },
+    {
+     "piece": "floor_bit_d",
+     "weight": 2
+    },
+    {
+     "piece": "prop_pit_dark",
+     "tile": true,
+     "weight": 2
+    }
+   ],
+   "ambient": "#c4c2b4",
+   "light_color": "#ffd070",
+   "gaps": [
+    "Tunnel door is 64 px wide: keep back-wall decoration out of columns 6-10.",
+    "Sludge is bright green; if it fights the Curse stripe use prop_pit_dark instead.",
+    "Locked = copper bars + the pack's own keyhole plate (door_lock).",
+    "Boss door = the big barred drain ring; a boss emblem must come from the old art or code."
+   ],
+   "pieces": {
+    "corner_bl": [
+     16,
+     16
+    ],
+    "corner_br": [
+     16,
+     16
+    ],
+    "corner_tl": [
+     16,
+     16
+    ],
+    "corner_tr": [
+     16,
+     16
+    ],
+    "deco_chain": [
+     10,
+     30
+    ],
+    "deco_keyhook": [
+     6,
+     15
+    ],
+    "deco_lamp": [
+     9,
+     20
+    ],
+    "deco_lamp_off": [
+     9,
+     20
+    ],
+    "deco_pipe": [
+     8,
+     40
+    ],
+    "deco_porthole": [
+     16,
+     18
+    ],
+    "door_bars": [
+     16,
+     16
+    ],
+    "door_e_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_e_jamb_top": [
+     16,
+     16
+    ],
+    "door_hatch": [
+     16,
+     16
+    ],
+    "door_hatch_boss": [
+     16,
+     16
+    ],
+    "door_lock": [
+     6,
+     12
+    ],
+    "door_n_bars": [
+     24,
+     32
+    ],
+    "door_n_boss": [
+     50,
+     32
+    ],
+    "door_n_cracked": [
+     32,
+     15
+    ],
+    "door_n_frame": [
+     64,
+     39
+    ],
+    "door_s_jamb_left": [
+     16,
+     16
+    ],
+    "door_s_jamb_right": [
+     16,
+     16
+    ],
+    "door_w_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_w_jamb_top": [
+     16,
+     16
+    ],
+    "flame_f0": [
+     16,
+     24
+    ],
+    "flame_f1": [
+     16,
+     24
+    ],
+    "flame_f2": [
+     16,
+     24
+    ],
+    "flame_f3": [
+     16,
+     24
+    ],
+    "floor_a": [
+     16,
+     16
+    ],
+    "floor_b": [
+     16,
+     16
+    ],
+    "floor_bit_a": [
+     8,
+     4
+    ],
+    "floor_bit_b": [
+     7,
+     9
+    ],
+    "floor_bit_c": [
+     7,
+     5
+    ],
+    "floor_bit_d": [
+     7,
+     9
+    ],
+    "floor_c": [
+     16,
+     16
+    ],
+    "floor_d": [
+     16,
+     16
+    ],
+    "floor_e": [
+     16,
+     16
+    ],
+    "floor_f": [
+     16,
+     16
+    ],
+    "floor_g": [
+     16,
+     16
+    ],
+    "floor_h": [
+     16,
+     16
+    ],
+    "floor_shade_top": [
+     16,
+     16
+    ],
+    "pit9_b_f0": [
+     16,
+     16
+    ],
+    "pit9_b_f1": [
+     16,
+     16
+    ],
+    "pit9_b_f2": [
+     16,
+     16
+    ],
+    "pit9_b_f3": [
+     16,
+     16
+    ],
+    "pit9_bl_f0": [
+     16,
+     16
+    ],
+    "pit9_bl_f1": [
+     16,
+     16
+    ],
+    "pit9_bl_f2": [
+     16,
+     16
+    ],
+    "pit9_bl_f3": [
+     16,
+     16
+    ],
+    "pit9_br_f0": [
+     16,
+     16
+    ],
+    "pit9_br_f1": [
+     16,
+     16
+    ],
+    "pit9_br_f2": [
+     16,
+     16
+    ],
+    "pit9_br_f3": [
+     16,
+     16
+    ],
+    "pit9_c_f0": [
+     16,
+     16
+    ],
+    "pit9_c_f1": [
+     16,
+     16
+    ],
+    "pit9_c_f2": [
+     16,
+     16
+    ],
+    "pit9_c_f3": [
+     16,
+     16
+    ],
+    "pit9_l_f0": [
+     16,
+     16
+    ],
+    "pit9_l_f1": [
+     16,
+     16
+    ],
+    "pit9_l_f2": [
+     16,
+     16
+    ],
+    "pit9_l_f3": [
+     16,
+     16
+    ],
+    "pit9_r_f0": [
+     16,
+     16
+    ],
+    "pit9_r_f1": [
+     16,
+     16
+    ],
+    "pit9_r_f2": [
+     16,
+     16
+    ],
+    "pit9_r_f3": [
+     16,
+     16
+    ],
+    "pit9_t_f0": [
+     16,
+     16
+    ],
+    "pit9_t_f1": [
+     16,
+     16
+    ],
+    "pit9_t_f2": [
+     16,
+     16
+    ],
+    "pit9_t_f3": [
+     16,
+     16
+    ],
+    "pit9_tl_f0": [
+     16,
+     16
+    ],
+    "pit9_tl_f1": [
+     16,
+     16
+    ],
+    "pit9_tl_f2": [
+     16,
+     16
+    ],
+    "pit9_tl_f3": [
+     16,
+     16
+    ],
+    "pit9_tr_f0": [
+     16,
+     16
+    ],
+    "pit9_tr_f1": [
+     16,
+     16
+    ],
+    "pit9_tr_f2": [
+     16,
+     16
+    ],
+    "pit9_tr_f3": [
+     16,
+     16
+    ],
+    "prop_barrel": [
+     16,
+     24
+    ],
+    "prop_block_a": [
+     16,
+     22
+    ],
+    "prop_block_b": [
+     16,
+     22
+    ],
+    "prop_crate": [
+     16,
+     25
+    ],
+    "prop_pillar_a": [
+     16,
+     36
+    ],
+    "prop_pillar_b": [
+     16,
+     56
+    ],
+    "prop_pit_dark": [
+     16,
+     16
+    ],
+    "prop_pit_f0": [
+     16,
+     16
+    ],
+    "prop_pit_f1": [
+     16,
+     16
+    ],
+    "prop_pit_f2": [
+     16,
+     16
+    ],
+    "prop_pit_f3": [
+     16,
+     16
+    ],
+    "prop_torch_stand": [
+     16,
+     22
+    ],
+    "spikes_f0": [
+     16,
+     16
+    ],
+    "spikes_f1": [
+     16,
+     20
+    ],
+    "spikes_f2": [
+     16,
+     28
+    ],
+    "wall_bottom_a": [
+     16,
+     16
+    ],
+    "wall_bottom_b": [
+     16,
+     16
+    ],
+    "wall_face_a": [
+     16,
+     32
+    ],
+    "wall_face_b": [
+     16,
+     32
+    ],
+    "wall_face_c": [
+     16,
+     32
+    ],
+    "wall_face_left": [
+     16,
+     32
+    ],
+    "wall_face_right": [
+     16,
+     32
+    ],
+    "wall_side_left": [
+     16,
+     16
+    ],
+    "wall_side_right": [
+     16,
+     16
+    ],
+    "wall_top_a": [
+     16,
+     16
+    ],
+    "wall_top_b": [
+     16,
+     16
+    ]
+   }
+  },
+  "ashen": {
+   "name": "ashen",
+   "floor": {
+    "variants": [
+     [
+      "floor_a",
+      20
+     ],
+     [
+      "floor_b",
+      20
+     ],
+     [
+      "floor_c",
+      15
+     ],
+     [
+      "floor_d",
+      10
+     ],
+     [
+      "floor_e",
+      10
+     ],
+     [
+      "floor_f",
+      10
+     ],
+     [
+      "floor_g",
+      10
+     ],
+     [
+      "floor_h",
+      5
+     ]
+    ],
+    "shade_top": "floor_shade_top"
+   },
+   "source": "Forge pack (walls, arch door, floor, lava, barrels, statues); rocks, spikes, hatch from the Free Pack; copper bars from Sewer",
+   "back_wall_h": 48,
+   "void_color": "#291013",
+   "walls": {
+    "back_rows": [
+     {
+      "y": 0,
+      "repeat": [
+       "wall_top_a"
+      ]
+     },
+     {
+      "y": 16,
+      "repeat": [
+       "wall_mid_a"
+      ]
+     },
+     {
+      "y": 32,
+      "repeat": [
+       "wall_base_a",
+       "wall_base_a",
+       "wall_base_b",
+       "wall_base_a"
+      ]
+     }
+    ],
+    "corner_tl": "corner_tl",
+    "corner_tr": "corner_tr",
+    "corner_bl": "corner_bl",
+    "corner_br": "corner_br",
+    "left": [
+     "wall_side_left"
+    ],
+    "right": [
+     "wall_side_right"
+    ],
+    "bottom": [
+     "wall_bottom_a"
+    ]
+   },
+   "doors": {
+    "n": {
+     "open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_dark",
+        "dx": -6,
+        "dy": 8
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -16,
+        "dy": 0
+       }
+      ]
+     },
+     "shut": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_leaf",
+        "dx": -6,
+        "dy": 8
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -16,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_leaf",
+        "dx": -6,
+        "dy": 8
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -16,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 26
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_cracked",
+        "dx": 1,
+        "dy": 19
+       }
+      ]
+     },
+     "boss": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_leaf",
+        "dx": -6,
+        "dy": 8
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -16,
+        "dy": 0
+       },
+       {
+        "piece": "deco_pilaster_lit",
+        "dx": -32,
+        "dy": 0
+       },
+       {
+        "piece": "deco_pilaster_lit",
+        "dx": 32,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 3,
+        "note": "boss mark on the keystone (old skull art)"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_dark",
+        "dx": -6,
+        "dy": 8
+       },
+       {
+        "piece": "door_n_frame",
+        "dx": -16,
+        "dy": 0
+       },
+       {
+        "piece": "deco_pilaster_lit",
+        "dx": -32,
+        "dy": 0
+       },
+       {
+        "piece": "deco_pilaster_lit",
+        "dx": 32,
+        "dy": 0
+       }
+      ]
+     }
+    },
+    "s": {
+     "open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2,
+        "front": true
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_b",
+        "dx": 1,
+        "dy": 4,
+        "front": true
+       },
+       {
+        "piece": "floor_bit_c",
+        "dx": 9,
+        "dy": 1,
+        "front": true
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     }
+    },
+    "w": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_b",
+        "dx": 1,
+        "dy": 4
+       },
+       {
+        "piece": "floor_bit_c",
+        "dx": 9,
+        "dy": 1
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    },
+    "e": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_b",
+        "dx": 1,
+        "dy": 4
+       },
+       {
+        "piece": "floor_bit_c",
+        "dx": 9,
+        "dy": 1
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    }
+   },
+   "obstacles": {
+    "rock": {
+     "what": "dark rock",
+     "variants": [
+      {
+       "piece": "prop_rock_a",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "prop_rock_b",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      }
+     ]
+    },
+    "pillar": {
+     "what": "brick pillar",
+     "variants": [
+      {
+       "piece": "prop_pillar",
+       "dx": 0,
+       "dy": -24,
+       "up": 24
+      }
+     ]
+    },
+    "crate": {
+     "what": "barrel",
+     "variants": [
+      {
+       "piece": "prop_barrel_a",
+       "dx": 0,
+       "dy": -6,
+       "up": 6
+      },
+      {
+       "piece": "prop_barrel_b",
+       "dx": 0,
+       "dy": -7,
+       "up": 7
+      }
+     ],
+     "alt": "prop_barrel_skull for an explosive barrel"
+    },
+    "pit": {
+     "what": "lava well",
+     "flat": true,
+     "animated": true,
+     "fps": 4,
+     "frames": [
+      {
+       "piece": "prop_pit_f0",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "prop_pit_f1",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "prop_pit_f2",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "prop_pit_f3",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      }
+     ],
+     "autotile9": "pit9_<tl|t|tr|l|c|r|bl|b|br>_f<0-3>: use these instead when pits touch, so they merge into one pool",
+     "light": {
+      "lx": 8,
+      "ly": 8,
+      "color": "#ff6a20",
+      "radius": 30
+     }
+    },
+    "spikes": {
+     "what": "spike plate (Free Pack steel, no Forge version)",
+     "flat": true,
+     "animated": true,
+     "frames": [
+      {
+       "piece": "spikes_f0",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "spikes_f1",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "spikes_f2",
+       "dx": 0,
+       "dy": -16,
+       "up": 16
+      }
+     ]
+    },
+    "torch": {
+     "what": "lava bowl (glows by itself, no flame)",
+     "variants": [
+      {
+       "piece": "prop_brazier",
+       "dx": -6,
+       "dy": -12,
+       "up": 12
+      }
+     ],
+     "light": {
+      "lx": 8,
+      "ly": 4,
+      "color": "#ff7a30",
+      "radius": 56
+     }
+    }
+   },
+   "wall_deco": {
+    "keep_clear": [
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "pieces": [
+     {
+      "piece": "deco_niche",
+      "dx": 1,
+      "y": 9,
+      "weight": 0,
+      "columns": [
+       2,
+       5,
+       11,
+       14
+      ],
+      "light": {
+       "lx": 7,
+       "ly": 14,
+       "color": "#ff7a30",
+       "radius": 52
+      }
+     },
+     {
+      "piece": "deco_pilaster",
+      "dx": 0,
+      "y": 0,
+      "weight": 4
+     },
+     {
+      "piece": "deco_pilaster_lit",
+      "dx": 0,
+      "y": 0,
+      "weight": 2
+     },
+     {
+      "piece": "deco_vent",
+      "dx": 4,
+      "y": 35,
+      "weight": 2
+     },
+     {
+      "piece": "deco_ring",
+      "dx": 3,
+      "y": 16,
+      "weight": 1
+     }
+    ],
+    "set_pieces": [
+     {
+      "piece": "deco_statue",
+      "note": "28x58 bearded statue for boss or treasure rooms"
+     },
+     {
+      "piece": "deco_statue_broken"
+     }
+    ]
+   },
+   "floor_deco": [
+    {
+     "piece": "floor_bit_a",
+     "weight": 3
+    },
+    {
+     "piece": "floor_bit_b",
+     "weight": 2
+    },
+    {
+     "piece": "floor_bit_c",
+     "weight": 3
+    },
+    {
+     "piece": "floor_bit_d",
+     "weight": 3
+    }
+   ],
+   "ambient": "#d0b8b0",
+   "light_color": "#ff7a30",
+   "gaps": [
+    "The Forge pack has no spikes: the Free Pack steel spike plate is used (cool grey on a purple floor).",
+    "Lava is very bright: keep lava pits few, away from the lanes the Curse stripe needs.",
+    "The arch door is the pack's 80 px arch with 32 rows cut out of its pillars to fit a 48 px wall.",
+    "Lock = the Sewer keyhole plate. Boss door = arch flanked by two lit gem pilasters + a mark from code. item_key is a 12x7 key sprite."
+   ],
+   "pieces": {
+    "corner_bl": [
+     16,
+     16
+    ],
+    "corner_br": [
+     16,
+     16
+    ],
+    "corner_tl": [
+     16,
+     16
+    ],
+    "corner_tr": [
+     16,
+     16
+    ],
+    "deco_niche": [
+     14,
+     29
+    ],
+    "deco_pilaster": [
+     16,
+     48
+    ],
+    "deco_pilaster_lit": [
+     16,
+     48
+    ],
+    "deco_ring": [
+     10,
+     13
+    ],
+    "deco_statue": [
+     28,
+     58
+    ],
+    "deco_statue_broken": [
+     28,
+     44
+    ],
+    "deco_vent": [
+     8,
+     13
+    ],
+    "door_bars": [
+     16,
+     16
+    ],
+    "door_e_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_e_jamb_top": [
+     16,
+     16
+    ],
+    "door_hatch": [
+     16,
+     16
+    ],
+    "door_hatch_boss": [
+     16,
+     16
+    ],
+    "door_lock": [
+     6,
+     12
+    ],
+    "door_n_cracked": [
+     14,
+     29
+    ],
+    "door_n_dark": [
+     28,
+     40
+    ],
+    "door_n_frame": [
+     48,
+     48
+    ],
+    "door_n_leaf": [
+     28,
+     40
+    ],
+    "door_s_jamb_left": [
+     16,
+     16
+    ],
+    "door_s_jamb_right": [
+     16,
+     16
+    ],
+    "door_w_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_w_jamb_top": [
+     16,
+     16
+    ],
+    "flame_f0": [
+     16,
+     24
+    ],
+    "flame_f1": [
+     16,
+     24
+    ],
+    "flame_f2": [
+     16,
+     24
+    ],
+    "flame_f3": [
+     16,
+     24
+    ],
+    "floor_a": [
+     16,
+     16
+    ],
+    "floor_b": [
+     16,
+     16
+    ],
+    "floor_bit_a": [
+     10,
+     6
+    ],
+    "floor_bit_b": [
+     9,
+     11
+    ],
+    "floor_bit_c": [
+     7,
+     9
+    ],
+    "floor_bit_d": [
+     10,
+     8
+    ],
+    "floor_c": [
+     16,
+     16
+    ],
+    "floor_d": [
+     16,
+     16
+    ],
+    "floor_e": [
+     16,
+     16
+    ],
+    "floor_f": [
+     16,
+     16
+    ],
+    "floor_g": [
+     16,
+     16
+    ],
+    "floor_h": [
+     16,
+     16
+    ],
+    "floor_shade_top": [
+     16,
+     16
+    ],
+    "item_key": [
+     12,
+     7
+    ],
+    "pit9_b_f0": [
+     16,
+     16
+    ],
+    "pit9_b_f1": [
+     16,
+     16
+    ],
+    "pit9_b_f2": [
+     16,
+     16
+    ],
+    "pit9_b_f3": [
+     16,
+     16
+    ],
+    "pit9_bl_f0": [
+     16,
+     16
+    ],
+    "pit9_bl_f1": [
+     16,
+     16
+    ],
+    "pit9_bl_f2": [
+     16,
+     16
+    ],
+    "pit9_bl_f3": [
+     16,
+     16
+    ],
+    "pit9_br_f0": [
+     16,
+     16
+    ],
+    "pit9_br_f1": [
+     16,
+     16
+    ],
+    "pit9_br_f2": [
+     16,
+     16
+    ],
+    "pit9_br_f3": [
+     16,
+     16
+    ],
+    "pit9_c_f0": [
+     16,
+     16
+    ],
+    "pit9_c_f1": [
+     16,
+     16
+    ],
+    "pit9_c_f2": [
+     16,
+     16
+    ],
+    "pit9_c_f3": [
+     16,
+     16
+    ],
+    "pit9_l_f0": [
+     16,
+     16
+    ],
+    "pit9_l_f1": [
+     16,
+     16
+    ],
+    "pit9_l_f2": [
+     16,
+     16
+    ],
+    "pit9_l_f3": [
+     16,
+     16
+    ],
+    "pit9_r_f0": [
+     16,
+     16
+    ],
+    "pit9_r_f1": [
+     16,
+     16
+    ],
+    "pit9_r_f2": [
+     16,
+     16
+    ],
+    "pit9_r_f3": [
+     16,
+     16
+    ],
+    "pit9_t_f0": [
+     16,
+     16
+    ],
+    "pit9_t_f1": [
+     16,
+     16
+    ],
+    "pit9_t_f2": [
+     16,
+     16
+    ],
+    "pit9_t_f3": [
+     16,
+     16
+    ],
+    "pit9_tl_f0": [
+     16,
+     16
+    ],
+    "pit9_tl_f1": [
+     16,
+     16
+    ],
+    "pit9_tl_f2": [
+     16,
+     16
+    ],
+    "pit9_tl_f3": [
+     16,
+     16
+    ],
+    "pit9_tr_f0": [
+     16,
+     16
+    ],
+    "pit9_tr_f1": [
+     16,
+     16
+    ],
+    "pit9_tr_f2": [
+     16,
+     16
+    ],
+    "pit9_tr_f3": [
+     16,
+     16
+    ],
+    "prop_barrel_a": [
+     16,
+     22
+    ],
+    "prop_barrel_b": [
+     16,
+     23
+    ],
+    "prop_barrel_skull": [
+     16,
+     22
+    ],
+    "prop_brazier": [
+     28,
+     28
+    ],
+    "prop_pillar": [
+     16,
+     40
+    ],
+    "prop_pit_f0": [
+     16,
+     16
+    ],
+    "prop_pit_f1": [
+     16,
+     16
+    ],
+    "prop_pit_f2": [
+     16,
+     16
+    ],
+    "prop_pit_f3": [
+     16,
+     16
+    ],
+    "prop_rock_a": [
+     16,
+     16
+    ],
+    "prop_rock_b": [
+     16,
+     16
+    ],
+    "spikes_f0": [
+     16,
+     16
+    ],
+    "spikes_f1": [
+     16,
+     16
+    ],
+    "spikes_f2": [
+     16,
+     32
+    ],
+    "wall_base_a": [
+     16,
+     16
+    ],
+    "wall_base_b": [
+     16,
+     16
+    ],
+    "wall_bottom_a": [
+     16,
+     16
+    ],
+    "wall_mid_a": [
+     16,
+     16
+    ],
+    "wall_side_left": [
+     16,
+     16
+    ],
+    "wall_side_right": [
+     16,
+     16
+    ],
+    "wall_top_a": [
+     16,
+     16
+    ]
+   }
+  },
+  "pit": {
+   "name": "pit",
+   "floor": {
+    "variants": [
+     [
+      "floor_a",
+      100
+     ]
+    ],
+    "shade_top": "floor_shade_top",
+    "note": "one tile only: the diamonds must stay a regular checker"
+   },
+   "source": "Castle pack (walls, stone door, floor, busts, columns, crates, banners, windows, sconces); rocks, spikes, bars, hatch from the Free Pack",
+   "why": "Castle beats Library: cold stone under a dark cornice, purple banners and glowing stained glass look like the heart of the dungeon; the Library is warm and cosy.",
+   "back_wall_h": 48,
+   "void_color": "#1c172c",
+   "walls": {
+    "back_rows": [
+     {
+      "y": 0,
+      "repeat": [
+       "wall_top_a",
+       "wall_top_b"
+      ]
+     },
+     {
+      "y": 16,
+      "repeat": [
+       "wall_mid_a",
+       "wall_mid_b"
+      ]
+     },
+     {
+      "y": 32,
+      "repeat": [
+       "wall_base_a",
+       "wall_base_b"
+      ]
+     }
+    ],
+    "corner_tl": "corner_tl",
+    "corner_tr": "corner_tr",
+    "corner_bl": "corner_bl",
+    "corner_br": "corner_br",
+    "left": [
+     "wall_side_left"
+    ],
+    "right": [
+     "wall_side_right"
+    ],
+    "bottom": [
+     "wall_bottom_a"
+    ]
+   },
+   "doors": {
+    "n": {
+     "open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_dark",
+        "dx": 2,
+        "dy": 18
+       },
+       {
+        "piece": "door_n_open",
+        "dx": -4,
+        "dy": 6
+       }
+      ]
+     },
+     "shut": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_leaf",
+        "dx": -4,
+        "dy": 6
+       }
+      ]
+     },
+     "locked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_leaf",
+        "dx": -4,
+        "dy": 6
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 26
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_cracked",
+        "dx": 2,
+        "dy": 22
+       }
+      ]
+     },
+     "boss": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_leaf_boss",
+        "dx": -4,
+        "dy": 6
+       },
+       {
+        "piece": "deco_banner",
+        "dx": -24,
+        "dy": 12
+       },
+       {
+        "piece": "deco_banner",
+        "dx": 24,
+        "dy": 12
+       },
+       {
+        "piece": "deco_window_lit",
+        "dx": -42,
+        "dy": 12
+       },
+       {
+        "piece": "deco_window_lit",
+        "dx": 42,
+        "dy": 12
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 4,
+        "note": "boss mark over the arch (old skull art)"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [],
+      "ops": [
+       {
+        "piece": "door_n_dark",
+        "dx": 2,
+        "dy": 18
+       },
+       {
+        "piece": "door_n_open",
+        "dx": -4,
+        "dy": 6
+       },
+       {
+        "piece": "deco_banner",
+        "dx": -24,
+        "dy": 12
+       },
+       {
+        "piece": "deco_banner",
+        "dx": 24,
+        "dy": 12
+       },
+       {
+        "piece": "deco_window_lit",
+        "dx": -42,
+        "dy": 12
+       },
+       {
+        "piece": "deco_window_lit",
+        "dx": 42,
+        "dy": 12
+       }
+      ]
+     }
+    },
+    "s": {
+     "open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2,
+        "front": true
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_a",
+        "dx": 1,
+        "dy": 8,
+        "front": true
+       },
+       {
+        "piece": "floor_bit_c",
+        "dx": 7,
+        "dy": 2,
+        "front": true
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        -1,
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_s_jamb_left",
+        "dx": -16,
+        "dy": 0,
+        "front": true
+       },
+       {
+        "piece": "door_s_jamb_right",
+        "dx": 16,
+        "dy": 0,
+        "front": true
+       }
+      ]
+     }
+    },
+    "w": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_a",
+        "dx": 1,
+        "dy": 8
+       },
+       {
+        "piece": "floor_bit_c",
+        "dx": 7,
+        "dy": 2
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_w_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_w_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    },
+    "e": {
+     "open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     },
+     "shut": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_bars",
+        "dx": 0,
+        "dy": 0
+       }
+      ]
+     },
+     "locked": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_lock",
+        "dx": 5,
+        "dy": 2
+       }
+      ]
+     },
+     "hidden": {
+      "gap": [],
+      "ops": []
+     },
+     "cracked": {
+      "gap": [
+       [
+        0,
+        0
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "floor_bit_a",
+        "dx": 1,
+        "dy": 8
+       },
+       {
+        "piece": "floor_bit_c",
+        "dx": 7,
+        "dy": 2
+       }
+      ]
+     },
+     "boss": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       },
+       {
+        "piece": "door_hatch_boss",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "code": "boss_mark",
+        "dx": 8,
+        "dy": 8,
+        "note": "boss mark (old skull art) centred on the red hatch"
+       }
+      ]
+     },
+     "boss_open": {
+      "gap": [
+       [
+        0,
+        -1
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ]
+      ],
+      "ops": [
+       {
+        "piece": "floor_a",
+        "dx": 0,
+        "dy": 0
+       },
+       {
+        "piece": "door_e_jamb_top",
+        "dx": 0,
+        "dy": -16
+       },
+       {
+        "piece": "door_e_jamb_bottom",
+        "dx": 0,
+        "dy": 16
+       }
+      ]
+     }
+    }
+   },
+   "obstacles": {
+    "rock": {
+     "what": "stone bust (breaks)",
+     "variants": [
+      {
+       "piece": "prop_bust_a",
+       "dx": -1,
+       "dy": -16,
+       "up": 16
+      },
+      {
+       "piece": "prop_bust_b",
+       "dx": 0,
+       "dy": -17,
+       "up": 17
+      },
+      {
+       "piece": "prop_bust_c",
+       "dx": 1,
+       "dy": -15,
+       "up": 15
+      }
+     ]
+    },
+    "pillar": {
+     "what": "stone column",
+     "variants": [
+      {
+       "piece": "prop_column_a",
+       "dx": 0,
+       "dy": -36,
+       "up": 36
+      },
+      {
+       "piece": "prop_column_b",
+       "dx": 0,
+       "dy": -36,
+       "up": 36
+      }
+     ]
+    },
+    "crate": {
+     "what": "wooden crate",
+     "variants": [
+      {
+       "piece": "prop_crate_a",
+       "dx": 0,
+       "dy": -9,
+       "up": 9
+      },
+      {
+       "piece": "prop_crate_b",
+       "dx": 0,
+       "dy": -15,
+       "up": 15
+      }
+     ]
+    },
+    "pit": {
+     "what": "stone-rimmed shaft",
+     "flat": true,
+     "variants": [
+      {
+       "piece": "prop_pit",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      }
+     ]
+    },
+    "spikes": {
+     "what": "spike plate (Free Pack)",
+     "flat": true,
+     "animated": true,
+     "frames": [
+      {
+       "piece": "spikes_f0",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "spikes_f1",
+       "dx": 0,
+       "dy": 0,
+       "up": 0
+      },
+      {
+       "piece": "spikes_f2",
+       "dx": 0,
+       "dy": -16,
+       "up": 16
+      }
+     ]
+    },
+    "torch": {
+     "what": "standing torch",
+     "variants": [
+      {
+       "piece": "prop_torch_stand",
+       "dx": 0,
+       "dy": -9,
+       "up": 9
+      }
+     ],
+     "flame": {
+      "frames": [
+       "flame_f0",
+       "flame_f1",
+       "flame_f2",
+       "flame_f3"
+      ],
+      "fps": 8,
+      "dx": 0,
+      "dy": -31
+     },
+     "light": {
+      "lx": 8,
+      "ly": -17,
+      "color": "#ff9a4a",
+      "radius": 56
+     }
+    }
+   },
+   "wall_deco": {
+    "keep_clear": [
+     7,
+     8,
+     9
+    ],
+    "pieces": [
+     {
+      "piece": "deco_sconce",
+      "frames": 4,
+      "fps": 8,
+      "dx": 0,
+      "y": 10,
+      "weight": 0,
+      "columns": [
+       2,
+       5,
+       11,
+       14
+      ],
+      "light": {
+       "lx": 8,
+       "ly": 12,
+       "color": "#ffb060",
+       "radius": 64
+      }
+     },
+     {
+      "piece": "deco_banner",
+      "dx": 0,
+      "y": 12,
+      "weight": 4
+     },
+     {
+      "piece": "deco_window_dark",
+      "dx": 0,
+      "y": 12,
+      "weight": 3
+     },
+     {
+      "piece": "deco_window_lit",
+      "dx": 0,
+      "y": 12,
+      "weight": 2,
+      "light": {
+       "lx": 8,
+       "ly": 16,
+       "color": "#ff9a30",
+       "radius": 44
+      }
+     },
+     {
+      "piece": "deco_slit",
+      "dx": 2,
+      "y": 20,
+      "weight": 2
+     },
+     {
+      "piece": "deco_shield",
+      "dx": 3,
+      "y": 20,
+      "weight": 2
+     }
+    ],
+    "set_pieces": [
+     {
+      "piece": "deco_banner_triple",
+      "note": "34x46, for the boss room wall"
+     },
+     {
+      "piece": "deco_niche",
+      "note": "16x52 dark niche between two shafts: 4 px taller than the wall, let it rise above it"
+     },
+     {
+      "piece": "deco_lightbeam",
+      "note": "8x23 shaft of light under a lit window (additive)"
+     }
+    ]
+   },
+   "floor_deco": [
+    {
+     "piece": "floor_bit_a",
+     "weight": 3
+    },
+    {
+     "piece": "floor_bit_b",
+     "weight": 3
+    },
+    {
+     "piece": "floor_bit_c",
+     "weight": 3
+    }
+   ],
+   "ambient": "#bdb8d6",
+   "light_color": "#ffb060",
+   "gaps": [
+    "The Castle pack has no pit, spikes, bars or open door: the pit is built from the wall trim's four corner quarters,",
+    "spikes/bars/hatch come from the Free Pack, and the open door is the stone door's arch top and jambs over a patch of the dark wall mass.",
+    "Boss door = the leaf swapped to Forge reds, flanked by purple banners and lit stained glass + a mark from code.",
+    "The pack's light paving and red carpet are too pale/loud for fight rooms; the indigo diamonds are used instead."
+   ],
+   "pieces": {
+    "corner_bl": [
+     16,
+     16
+    ],
+    "corner_br": [
+     16,
+     16
+    ],
+    "corner_tl": [
+     16,
+     16
+    ],
+    "corner_tr": [
+     16,
+     16
+    ],
+    "deco_banner": [
+     16,
+     30
+    ],
+    "deco_banner_triple": [
+     34,
+     46
+    ],
+    "deco_lightbeam": [
+     8,
+     23
+    ],
+    "deco_niche": [
+     16,
+     52
+    ],
+    "deco_sconce_f0": [
+     16,
+     32
+    ],
+    "deco_sconce_f1": [
+     16,
+     32
+    ],
+    "deco_sconce_f2": [
+     16,
+     32
+    ],
+    "deco_sconce_f3": [
+     16,
+     32
+    ],
+    "deco_shield": [
+     10,
+     14
+    ],
+    "deco_slit": [
+     12,
+     16
+    ],
+    "deco_window_dark": [
+     16,
+     32
+    ],
+    "deco_window_lit": [
+     16,
+     32
+    ],
+    "door_bars": [
+     16,
+     16
+    ],
+    "door_e_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_e_jamb_top": [
+     16,
+     16
+    ],
+    "door_hatch": [
+     16,
+     16
+    ],
+    "door_hatch_boss": [
+     16,
+     16
+    ],
+    "door_lock": [
+     6,
+     12
+    ],
+    "door_n_cracked": [
+     12,
+     22
+    ],
+    "door_n_dark": [
+     12,
+     30
+    ],
+    "door_n_leaf": [
+     24,
+     42
+    ],
+    "door_n_leaf_boss": [
+     24,
+     42
+    ],
+    "door_n_open": [
+     24,
+     42
+    ],
+    "door_s_jamb_left": [
+     16,
+     16
+    ],
+    "door_s_jamb_right": [
+     16,
+     16
+    ],
+    "door_w_jamb_bottom": [
+     16,
+     16
+    ],
+    "door_w_jamb_top": [
+     16,
+     16
+    ],
+    "flame_f0": [
+     16,
+     24
+    ],
+    "flame_f1": [
+     16,
+     24
+    ],
+    "flame_f2": [
+     16,
+     24
+    ],
+    "flame_f3": [
+     16,
+     24
+    ],
+    "floor_a": [
+     16,
+     16
+    ],
+    "floor_bit_a": [
+     8,
+     6
+    ],
+    "floor_bit_b": [
+     7,
+     6
+    ],
+    "floor_bit_c": [
+     8,
+     6
+    ],
+    "floor_shade_top": [
+     16,
+     16
+    ],
+    "prop_bust_a": [
+     17,
+     32
+    ],
+    "prop_bust_b": [
+     16,
+     33
+    ],
+    "prop_bust_c": [
+     14,
+     31
+    ],
+    "prop_column_a": [
+     16,
+     52
+    ],
+    "prop_column_b": [
+     16,
+     52
+    ],
+    "prop_crate_a": [
+     16,
+     25
+    ],
+    "prop_crate_b": [
+     16,
+     31
+    ],
+    "prop_pit": [
+     16,
+     16
+    ],
+    "prop_torch_stand": [
+     16,
+     25
+    ],
+    "spikes_f0": [
+     16,
+     16
+    ],
+    "spikes_f1": [
+     16,
+     16
+    ],
+    "spikes_f2": [
+     16,
+     32
+    ],
+    "wall_base_a": [
+     16,
+     16
+    ],
+    "wall_base_b": [
+     16,
+     16
+    ],
+    "wall_bottom_a": [
+     16,
+     16
+    ],
+    "wall_mid_a": [
+     16,
+     16
+    ],
+    "wall_mid_b": [
+     16,
+     16
+    ],
+    "wall_side_left": [
+     16,
+     16
+    ],
+    "wall_side_right": [
+     16,
+     16
+    ],
+    "wall_top_a": [
+     16,
+     16
+    ],
+    "wall_top_b": [
+     16,
+     16
+    ]
+   }
+  }
+ }
+}

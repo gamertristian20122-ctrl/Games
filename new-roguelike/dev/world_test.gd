@@ -25,7 +25,7 @@ func _ready() -> void:
 		for p in problems:
 			print("ERROR: data check: " + p)
 		print("VALIDATE %s (%d problems)" % ["OK" if problems.is_empty() else "FAILED", problems.size()])
-		get_tree().quit(0 if problems.is_empty() else 1)
+		G.quit(0 if problems.is_empty() else 1)
 		return
 	_build_hud()
 	G.hud_changed.connect(_refresh)
@@ -107,4 +107,4 @@ func _process(delta: float) -> void:
 		if _toast_t <= 0.0:
 			toast.text = ""
 	if _quit_at > 0.0 and run != null and is_instance_valid(run) and run.time_s >= _quit_at:
-		get_tree().quit(0)
+		G.quit(0)

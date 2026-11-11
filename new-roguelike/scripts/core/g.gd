@@ -27,6 +27,7 @@ const DOOR_ROW := 3
 const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 # CanvasLayer numbers so overlays stack the same way everywhere.
+const QUIT_WAIT := 0.25                  ## real seconds G.quit() waits for the sounds to stop
 const LAYER_HUD := 10
 const LAYER_TOUCH := 15
 const LAYER_MENU := 20
@@ -114,6 +115,25 @@ func flag(name: String) -> bool:
 
 func arg(name: String, default_value: String = "") -> String:
 	return String(args.get(name, default_value))
+
+
+## Closes the game cleanly: use this instead of get_tree().quit(). A sound that is still playing
+## at the moment the game closes is never let go ("resources still in use at exit"), so every
+## sound is stopped first and the sound system gets a moment of real time to drop it.
+var quitting := false
+func quit(code: int = 0) -> void:
+	if quitting:
+		return
+	quitting = true
+	Sfx.shutdown()
+	get_tree().paused = true               # nothing may start a new sound while we wait
+	# wait on the real clock, frame by frame (a timer could fire at once after a long first frame)
+	var until := Time.get_ticks_msec() + int(QUIT_WAIT * 1000.0)
+	var frames := 0
+	while Time.get_ticks_msec() < until or frames < 3:
+		await get_tree().process_frame
+		frames += 1
+	get_tree().quit(code)
 
 
 ## Saves a screenshot of the whole screen to the --shots folder (does nothing without --shots).

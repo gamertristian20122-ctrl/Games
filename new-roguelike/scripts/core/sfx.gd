@@ -18,6 +18,7 @@ var _music_b: AudioStreamPlayer
 var _music_role := ""
 var sfx_volume := 1.0
 var music_volume := 0.7
+var _closed := false        # set by shutdown(): the game is closing, stay silent
 
 
 func _ready() -> void:
@@ -53,6 +54,8 @@ func has(name: String) -> bool:
 ## `pitch` shifts the whole sound (0.5 = an octave lower, 2.0 = an octave higher); the Hungry Curse
 ## reuses existing effects this way instead of adding new recordings.
 func play(name: String, volume_db: float = 0.0, pitch_var: float = 0.06, pitch: float = 1.0) -> void:
+	if _closed:
+		return
 	var list := _load(name)
 	if list.is_empty() or sfx_volume <= 0.001:
 		return
@@ -71,7 +74,7 @@ func play(name: String, volume_db: float = 0.0, pitch_var: float = 0.06, pitch: 
 ## Crossfade to a music track by role name ("" fades to silence). Asking for the track that is
 ## already playing does nothing.
 func music(role: String, fade: float = 1.0) -> void:
-	if role == _music_role:
+	if role == _music_role or _closed:
 		return
 	_music_role = role
 	var from := _music_a
@@ -91,6 +94,20 @@ func music(role: String, fade: float = 1.0) -> void:
 	to.volume_db = -60.0
 	to.play()
 	create_tween().tween_property(to, "volume_db", _music_db(), fade)
+
+
+## Stops every sound and lets go of every loaded sound file. G.quit() calls this before the
+## game closes; after it nothing plays any more.
+func shutdown() -> void:
+	_closed = true
+	for tw in get_tree().get_processed_tweens():
+		if tw.is_valid() and tw.is_running():
+			tw.kill()
+	for p in _players + [_music_a, _music_b]:
+		p.stop()
+		p.stream = null
+	_streams.clear()
+	_music_role = ""
 
 
 func _music_db() -> float:

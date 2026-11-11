@@ -28,7 +28,7 @@ const CurseTutor = preload("res://scripts/run/curse_tutor.gd")
 ## Mood lighting. Set to false if a phone struggles: the game then draws flat and bright.
 const LIGHTING := true
 ## A fight room's enemy budget: BASE + PER_FLOOR x floor_index + PER_ROOM x rooms already cleared on this floor.
-const SPAWN_BUDGET_BASE := 6.0
+const SPAWN_BUDGET_BASE := 6.5
 const SPAWN_BUDGET_PER_FLOOR := 3.0
 const SPAWN_BUDGET_PER_ROOM := 0.5
 const MAX_ENEMIES_PER_ROOM := 10

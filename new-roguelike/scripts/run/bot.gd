@@ -26,6 +26,7 @@ const STYLES: Array[String] = ["dodge", "feeder", "caller"]
 const CALL_MIN_ENEMIES := 2      ## caller: enemies on the line before it presses CALL
 const CALL_MIN_DIST := 40.0      ## caller: ... and the disc at least this far away
 const FEED_FROM_FILL := 0.45     ## feeder: starts lining enemies up when the lunge timer is this full
+const FEED_MAX_DANGER := 0.6    ## feeder: ... but only while the fight is not pressing it harder than this
 const BOMB_BELLY := 5            ## feeder: bombs the disc when its belly holds this much (or is full)
 const CURSED_UP_TO := 2          ## it takes cursed items only below this Curse Level
 const STARVE_FROM := 3           ## it buys "Starve the Curse" from this Curse Level
@@ -57,6 +58,7 @@ var boss_bite_max := 0
 var _bomb_spot := Vector2.INF    ## a bomb we dropped for the Curse: keep away from it
 var _bomb_spot_t := 0.0
 
+var _danger := 0.0               ## how hard the fight is pushing us around right now (enemies close, shots, warnings)
 var _restart := false
 var _done := false
 var _strafe := 1.0
@@ -136,9 +138,13 @@ func _on_curse_stat(key: String, n: int) -> void:
 			if run.floor_index == 0:
 				kills_f1 += n
 		"curse_meals":
-			_log("meal belly=%d/%d meals=%d" % [run.belly, run.belly_cap(), int(tally[key])])
+			var c0: Node2D = run.room.curse if run.room != null else null
+			_log("meal belly=%d/%d meals=%d while=%s t=%.1f" % [run.belly, run.belly_cap(), int(tally[key]),
+				Curse.STATE_NAMES[c0.state] if c0 != null and is_instance_valid(c0) else "?", run.room.fight_time if run.room != null else 0.0])
 		"curse_bites":
-			_log("bite level=%d hp=%d/%d armor=%d" % [run.curse_level, run.player.hp, run.player.max_hp, run.player.armor])
+			var c: Node2D = run.room.curse if run.room != null else null
+			_log("bite level=%d hp=%d/%d armor=%d while=%s enemies=%d" % [run.curse_level, run.player.hp, run.player.max_hp, run.player.armor,
+				Curse.STATE_NAMES[c.state] if c != null and is_instance_valid(c) else "?", run.room.enemies.size() if run.room != null else 0])
 		"belly_coins":
 			if n > 1:
 				_log("belly_cough coins=%d" % n)
@@ -215,7 +221,7 @@ func _finish() -> void:
 	result["boss_bite_pct_avg"] = snappedf(float(tally.get("curse_boss_permille", 0)) / 10.0 / maxf(1.0, float(boss_starts)), 0.1)
 	result["boss_bite_pct_max"] = snappedf(boss_bite_max / 10.0, 0.1)
 	print("AUTOTEST RESULT " + JSON.stringify(result))
-	get_tree().quit(0)
+	G.quit(0)
 
 
 func _physics_process(delta: float) -> void:
@@ -288,7 +294,8 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 		var lead: Vector2 = tp + target.vel_est * (dist / shot_speed) * 0.85
 		aim = (lead - pos).normalized()
 		# ---- keep a comfortable distance and circle
-		var want := clampf(shot_range * 0.62, 42.0, 78.0)
+		# (a short-range hero fights near the end of his reach instead of in the monsters' faces)
+		var want := clampf(maxf(shot_range * 0.62, minf(shot_range - 22.0, 64.0)), 42.0, 78.0)
 		var to: Vector2 = (tp - pos).normalized()
 		if dist > shot_range * 0.85 or not room.sight_clear(pos, tp):
 			move += _path_dir(room, pos, tp) * 1.0
@@ -300,12 +307,14 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 			_strafe = -_strafe
 		move += to.orthogonal() * _strafe * 0.7
 	# ---- stay away from every enemy (also the ones still appearing)
+	_danger = 0.0
 	for e in room.enemies:
 		var away: Vector2 = pos - e.position
 		var d2 := away.length()
 		var danger: float = 40.0 + e.radius * 2.0
 		if d2 < danger and d2 > 0.01:
 			move += away / d2 * 2.2 * (danger - d2) / danger
+			_danger += 2.2 * (danger - d2) / danger
 	# ---- sidestep enemy shots that are coming at us
 	var shots: Node = run.shots
 	for i in shots.count:
@@ -326,6 +335,7 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 		if rel.dot(perp) < 0.0:
 			perp = -perp
 		move += perp * 1.8 * (1.0 - d3 / 44.0 + 0.3)
+		_danger += 1.0
 	# ---- get out of red warnings
 	for h in run.fx.hazards:
 		if h[0] == 0:
@@ -334,6 +344,7 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 			var off := pos - c
 			if off.length() < r:
 				move += (off.normalized() if off.length() > 0.5 else Vector2.RIGHT.rotated(randf() * TAU)) * 3.5
+				_danger += 2.0
 		else:
 			var a: Vector2 = h[1]
 			var b: Vector2 = h[2]
@@ -346,6 +357,7 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 				if off2.dot(side) < 0.0:
 					side = -side
 				move += side * 3.5
+				_danger += 2.0
 	# ---- do not hug walls, do not stand on spikes
 	move += _wall_push(pos) * 1.2
 	move += _spike_push(room, pos) * 2.0
@@ -383,27 +395,45 @@ func _curse_moves(p: Node, room: Node, curse: Node2D, move: Vector2, delta: floa
 	var r: float = curse.radius
 	var state: int = curse.state
 	_bomb_spot_t = maxf(0.0, _bomb_spot_t - delta)
-	# ---- 1. step off a locked stripe (every style)
+	# ---- 1. step off a locked stripe (every style): the short way out, unless a wall or a rock
+	# is in the way there and the other side is open
 	if state == Curse.LOCK or state == Curse.LUNGE:
 		var dir: Vector2 = curse.aim_dir
+		var orth := dir.orthogonal()
 		var rel := pos - cpos
 		var along := rel.dot(dir)
-		var side_off := rel.cross(dir)             # signed distance from the stripe's middle line
-		var need := r + Curse.HERO_BITE_PAD + 7.0
+		var side_off := rel.dot(orth)              # signed distance from the stripe's middle line
+		var need := r + Curse.HERO_BITE_PAD + 8.0
 		if along > -need and absf(side_off) < need:
-			var side: Vector2 = dir.orthogonal() * (-1.0 if side_off >= 0.0 else 1.0)
-			var goal := pos + side * (need - absf(side_off) + 4.0)
-			if goal.x < 6.0 or goal.y < 6.0 or goal.x > G.ROOM_W - 6.0 or goal.y > G.ROOM_H - 6.0 or room.blocks_walk(G.cell_of(goal)):
-				side = -side                       # a wall is in the way: cross to the other side
-			return side
+			var s := 1.0 if side_off >= 0.0 else -1.0
+			var near_need := need - absf(side_off) + 3.0
+			var far_need := need + absf(side_off) + 3.0
+			var near_free := _free_dist(room, pos, orth * s, near_need)
+			if near_free >= near_need:
+				return orth * s
+			var far_free := _free_dist(room, pos, -orth * s, far_need)
+			if far_free >= far_need:
+				return -orth * s
+			# boxed in on both sides: go where there is more room, and away from the disc
+			var pick := orth * s if near_free >= far_free else -orth * s
+			return (pick + dir * 0.6).normalized()
 	if not curse.lit():
 		return move
-	# ---- 2. never walk into a lit rim (every style)
+	# ---- 2. never walk into a lit rim, and never let it push us into a corner (every style)
 	var away := pos - cpos
 	var dist := away.length()
-	var keep := r + 16.0
+	var keep := r + 20.0
 	if dist < keep and dist > 0.01:
-		move += away / dist * 3.0 * (keep - dist) / 16.0
+		var out := away / dist
+		move += out * 3.0 * (keep - dist) / 20.0
+		if _free_dist(room, pos, out, 30.0) < 30.0:
+			# a wall is behind us: slip around the disc toward the open side of the room
+			var slip := out.orthogonal()
+			var a := _free_dist(room, pos, slip, 60.0)
+			var b := _free_dist(room, pos, -slip, 60.0)
+			if b > a or (is_equal_approx(a, b) and slip.dot(G.ROOM_CENTER - pos) < 0.0):
+				slip = -slip
+			move = move.limit_length(1.0) * 0.4 + slip * 1.6
 	var next := pos + move.limit_length(1.0) * 22.0
 	if next.distance_to(cpos) < r + 8.0 and dist > 0.01:
 		var inward := -away / dist
@@ -411,10 +441,14 @@ func _curse_moves(p: Node, room: Node, curse: Node2D, move: Vector2, delta: floa
 	if style == "dodge":
 		return move
 	# ---- 3. a bomb for a full belly (feeder, caller)
-	if _bomb_spot_t > 0.0 and pos.distance_to(_bomb_spot) < 44.0:
-		move += (pos - _bomb_spot).normalized() * 3.0
-	elif p.bombs > 0 and state == Curse.CREEP and run.belly >= mini(BOMB_BELLY, run.belly_cap()) \
-			and dist < r + Curse.BOMB_REACH - 8.0 and dist > r + 12.0:
+	# The disc creeps at us, so a bomb dropped at our feet when it is close is still in reach
+	# when the fuse runs out (or the disc walks into it, which sets it off at once). Not when
+	# the fight is almost won: the disc would sink before the blast.
+	if _bomb_spot_t > 0.0:
+		if pos.distance_to(_bomb_spot) < 44.0:
+			move += (pos - _bomb_spot).normalized() * 3.0
+	elif p.bombs > 0 and (state == Curse.CREEP or state == Curse.WINDED) and run.belly >= mini(BOMB_BELLY, run.belly_cap()) \
+			and dist < r + Curse.BOMB_REACH - 6.0 and dist > r + 10.0 and _fight_will_last(room):
 		Controls.press_bomb()
 		_bomb_spot = pos
 		_bomb_spot_t = 1.8
@@ -433,18 +467,70 @@ func _curse_moves(p: Node, room: Node, curse: Node2D, move: Vector2, delta: floa
 					continue
 				var score := _on_line(room, curse, c) - ring * 0.006
 				for e in room.enemies:
-					if (e.position as Vector2).distance_to(c) < 26.0:
-						score -= 0.7
+					if (e.position as Vector2).distance_to(c) < 32.0:
+						score -= 1.0
 				if score > best_score + 0.01:
 					best_score = score
 					best = c
-		if best != pos and best_score >= 1.0:
-			move = move * 0.35 + (best - pos).normalized()
-		elif here_score >= 1.0 and state == Curse.FOLLOW:
-			move *= 0.3                                    # good spot: hold it while the stripe sweeps
-		if style == "caller" and here_score >= CALL_MIN_ENEMIES and dist >= CALL_MIN_DIST and curse.can_call():
+		# ... and the whole room: for every direction the disc could lunge in, how many would it
+		# swallow, and where would we have to stand (just past the last of them)?
+		for k in 24:
+			var ray := Vector2.RIGHT.rotated(TAU * k / 24.0)
+			var n := 0.0
+			var far := 0.0
+			for e in room.enemies:
+				if not e.hittable:
+					continue
+				var rel: Vector2 = (e.position as Vector2) - cpos
+				var al := rel.dot(ray)
+				if al > 0.0 and absf(rel.cross(ray)) < r + e.radius - 2.0:
+					n += 0.5 if e.has_method("bitten") else 1.0
+					far = maxf(far, al)
+			if n < 1.0:
+				continue
+			var c := cpos + ray * (far + 36.0)
+			c = Vector2(clampf(c.x, 12.0, G.ROOM_W - 12.0), clampf(c.y, 12.0, G.ROOM_H - 12.0))
+			if (c - cpos).dot(ray) < far + 22.0 or room.blocks_walk(G.cell_of(c)) or c.distance_to(cpos) < r + 34.0:
+				continue
+			var score := _on_line(room, curse, c) - pos.distance_to(c) * 0.008
+			if score > best_score + 0.3:
+				best_score = score
+				best = c
+		# (safety first: only while nothing is pressing us, so lining them up never costs health)
+		# (and never around a boss: a bite takes only a few percent off it, not worth a hit)
+		var boss_room: bool = room.type == G.RoomType.BOSS
+		if _danger < FEED_MAX_DANGER and not boss_room:
+			if best != pos and best_score >= 1.0:
+				var way: Vector2 = _path_dir(room, pos, best) if pos.distance_to(best) > 44.0 else (best - pos).normalized()
+				move = move.limit_length(1.0) * 0.5 + way * 0.8
+			elif here_score >= 1.0 and state == Curse.FOLLOW:
+				move *= 0.4                                # good spot: hold it while the stripe sweeps
+		# caller: 2 or more on the line (in a boss fight the boss alone is worth a call)
+		if style == "caller" and here_score >= (0.5 if boss_room else float(CALL_MIN_ENEMIES)) and dist >= CALL_MIN_DIST and curse.can_call():
 			Controls.press_action()
 	return move
+
+
+## How far (up to `far` px) the hero can walk from `from` along `dir` before a wall, rock or pit.
+func _free_dist(room: Node, from: Vector2, dir: Vector2, far: float) -> float:
+	var d := 4.0
+	while d <= far + 3.9:
+		var q := from + dir * minf(d, far)
+		if q.x < 5.0 or q.y < 5.0 or q.x > G.ROOM_W - 5.0 or q.y > G.ROOM_H - 5.0 or room.blocks_walk(G.cell_of(q)):
+			return d - 4.0
+		d += 4.0
+	return far
+
+
+## True when the enemies left will not all be dead within a bomb's fuse (a boss, or 2 or more).
+func _fight_will_last(room: Node) -> bool:
+	var n := 0
+	for e in room.enemies:
+		if e.has_method("bitten"):
+			return e.hp > e.max_hp * 0.2
+		if not e.dead:
+			n += 1
+	return n >= 2
 
 
 func _wall_push(pos: Vector2) -> Vector2:
@@ -680,6 +766,9 @@ func _search(p: Node, allow_boss: bool) -> Vector2i:
 ## Returns Vector2.INF when not hunting.
 func _secret_hunt(p: Node, room: Node) -> Vector2:
 	if p.bombs <= 0 or _secret_known() or _tried_gaps.size() >= 2 or _search(p, false) != Vector2i.ZERO:
+		return Vector2.INF
+	# the last bomb is worth more on a full belly (the boss fight is next) than on a wall
+	if style != "dodge" and p.bombs == 1 and run.belly >= mini(BOMB_BELLY, run.belly_cap()) and not G.flag("nocurse"):
 		return Vector2.INF
 	var plan := _secret_plan()
 	if plan.is_empty():

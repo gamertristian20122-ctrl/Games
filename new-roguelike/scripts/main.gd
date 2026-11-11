@@ -316,7 +316,7 @@ func give_up() -> void:
 
 func quit_game() -> void:
 	Save.flush()
-	get_tree().quit()
+	G.quit()
 
 
 # ------------------------------------------------------------------ back / pause

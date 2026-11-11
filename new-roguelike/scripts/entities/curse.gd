@@ -44,12 +44,14 @@ const SPAWN_POINTS: Array[Vector2] = [Vector2(32, 32), Vector2(240, 32), Vector2
 const RISE_DELAY := 1.0                  ## seconds after the doors lock
 const RISE_TIME := 1.0                   ## seconds it takes to rise (harmless)
 const SINK_TIME := 0.5
+const RISE_NUDGE_SPEED := 70.0           ## px/s: monsters standing where it rises are pushed off the spot
+const RISE_NUDGE_PAD := 3.0              ## ... until they are this far past the rim
 # ------------------------------------------------------------------ moving
-const CREEP_SPEED := 26.0                ## px/s (times the hero's "curse_creep" stat)
+const CREEP_SPEED := 22.0                ## px/s (times the hero's "curse_creep" stat)
 const FLINCH_SPEED := 8.0                ## px/s for FLINCH_TIME after a hero shot passes through it
 const FLINCH_TIME := 0.4
-const FIRST_FILL := 3.0                  ## seconds of creeping before the first lunge in a room
-const FILL := 5.0                        ## ... and before every later one
+const FIRST_FILL := 4.0                  ## seconds of creeping before the first lunge in a room
+const FILL := 6.0                        ## ... and before every later one
 const FOLLOW_TIME := 0.5                 ## the stripe follows the hero this long
 const LOCK_TIME := 0.5                   ## then it is locked and flashes this long
 const LUNGE_SPEED := 260.0
@@ -248,6 +250,7 @@ func _physics_process(delta: float) -> void:
 			if t <= 0.0:
 				_rise()
 		RISING:
+			_nudge_off(delta)
 			t -= delta
 			if t <= 0.0:
 				fill = 0.0
@@ -335,6 +338,21 @@ func _rise() -> void:
 	_go(RISING, RISE_TIME)
 	Sfx.play("curse_whisper", -5.0, 0.03, 0.7)
 	run.fx.burst(position, [Color(0.05, 0.04, 0.06), Color(0.30, 0.27, 0.22)], 10, 40.0, 0.6, 2.0)
+
+
+## While it rises it is harmless: monsters standing on the spot are shouldered aside, so nobody
+## is swallowed just for standing where it comes up (a boss is too heavy to move).
+func _nudge_off(delta: float) -> void:
+	for e in room.enemies:
+		if not is_instance_valid(e) or e.dead or e.has_method("bitten"):
+			continue
+		var off: Vector2 = e.position - position
+		var d := off.length()
+		if d >= radius + e.radius + RISE_NUDGE_PAD:
+			continue
+		var out := off / d if d > 0.5 else Vector2.RIGHT.rotated(randf() * TAU)
+		var q: Vector2 = e.position + out * RISE_NUDGE_SPEED * delta
+		e.position = Vector2(clampf(q.x, 6.0, G.ROOM_W - 6.0), clampf(q.y, 6.0, G.ROOM_H - 6.0))
 
 
 ## When the last enemy dies: harmless at once, gone in half a second.

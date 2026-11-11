@@ -99,9 +99,20 @@ func setup(the_run: Node, hero_id: String) -> void:
 		add_child(light)
 	stats.changed.connect(_stats_changed)
 	_stats_changed()
-	Controls.bomb_pressed.connect(place_bomb)
+	_hook_bomb_button()
 	if hero.has("familiar"):
 		add_familiar(String(hero["familiar"]))
+
+
+## The hero is taken out of the tree and put back at every room change, so the bomb button is
+## hooked up each time he comes back (hooking it up only once left bombs dead after the first room).
+func _enter_tree() -> void:
+	_hook_bomb_button()
+
+
+func _hook_bomb_button() -> void:
+	if not Controls.bomb_pressed.is_connected(place_bomb):
+		Controls.bomb_pressed.connect(place_bomb)
 
 
 func _exit_tree() -> void:

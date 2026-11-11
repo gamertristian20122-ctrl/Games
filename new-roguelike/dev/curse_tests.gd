@@ -337,10 +337,13 @@ static func _t_shots(run: Node) -> void:
 	_expect(shots.count == 0, "an enemy shot dies on the Curse")
 	_expect(run.player.hp == run.player.max_hp, "and never reaches the hero behind it")
 	shots.clear()
-	shots.fire(Vector2(50, 56), Vector2(160, 0), Shots.SIDE_PLAYER, 3.0, 200.0, "blade")
+	# the disc crept toward the hero during the half second above, so aim at where it is NOW
+	# (the shot starts 30 px to its left and is inside the disc a quarter of a second later)
+	shots.fire(c.position - Vector2(30, 0), Vector2(160, 0), Shots.SIDE_PLAYER, 3.0, 200.0, "blade")
 	_tick(run, 0.25)
 	_expect(shots.count == 1, "a hero shot passes through the Curse")
 	_expect(c.flinching > 0.0, "and makes it flinch")
+	shots.clear()                          # one touch only: the slow-down must last by itself
 	var before := c.position
 	run.player.position = Vector2(100, 100)
 	_tick(run, 0.1)
@@ -400,6 +403,14 @@ static func _t_bomb(run: Node) -> void:
 	run.player.position = Vector2(100.0 + c.radius + 60.0, 56)       # it creeps toward the hero, over the bomb
 	_tick(run, 0.5)
 	_expect(room.bombs.is_empty() and c.state == Curse.STUNNED, "a bomb it touches goes off at once and stuns it")
+	# the bomb button still works after a room change (the hero leaves the tree and comes back)
+	c = _arena(run, Vector2(30, 20))
+	room = run.room
+	run.player.bombs = 1
+	Controls.press_bomb()
+	_expect(room.bombs.size() == 1 and run.player.bombs == 0, "the bomb button places a bomb in every room, not only the first")
+	room.bombs[0].queue_free()
+	room.bombs.clear()
 
 
 static func _t_call(run: Node) -> void:
@@ -453,6 +464,9 @@ static func _t_secret_wall(run: Node) -> void:
 	room._spawn_curse()
 	_enemy(run, "shambler", ANCHOR)
 	var c2: Node2D = room.curse
+	# the game counts one secret per floor, and an earlier test (a bomb) may already have blown a
+	# hidden door open on this floor: start the count afresh
+	run._secret_counted = false
 	var secrets := int(_stats.get("secret_found", 0))
 	for hit in 2:
 		run.player.position = HERO_SAFE

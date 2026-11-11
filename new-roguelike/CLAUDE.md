@@ -121,31 +121,76 @@ The game's twist (built by the twist builder). Rules and EVERY number: `scripts/
 
 The rules in ten lines:
 1. It exists only in locked rooms (fights and bosses). It rises 1 s after the doors lock, at the
-   spawn point farthest from the hero, and sinks when the last enemy dies.
-2. It creeps straight at the hero (26 px/s, through rocks and pits). Its lunge timer fills while it
-   creeps (3 s for the first lunge in a room, then 5 s); the rim shows the timer filling clockwise.
+   spawn point farthest from the hero, and sinks when the last enemy dies. While it rises it is
+   harmless and shoulders aside any monster standing on the spot (no free meals).
+2. It creeps straight at the hero (22 px/s, through rocks and pits). Its lunge timer fills while it
+   creeps (4 s for the first lunge in a room, then 6 s); the rim shows the timer filling clockwise.
 3. Lunge: a pale hatched stripe runs from the disc through the hero to the wall, follows for 0.5 s,
-   locks and flashes for 0.5 s, then the disc dashes along it to the wall and rests 1.5 s.
+   locks and flashes for 0.5 s, then the disc dashes along it (260 px/s) to the wall and rests 1.5 s.
 4. CALL (the second button, `Controls.action_pressed`) locks the stripe at once. 4 s cooldown, only
    while it creeps.
-5. Lit rim = it bites. Dark rim = safe (rising, sated for 3 s after biting the hero, stunned).
+5. Lit rim (pale gold) = it bites. Dark rim (ash grey) = safe (rising, sated for 3 s after biting
+   the hero, stunned).
 6. It swallows normal enemies whole (no death effect, no loot). Elites and "big" enemies lose half
    their health per bite. A boss loses (5 + level)% per bite, never below 10%, and knocks it back.
-7. Enemy shots die on it. Hero and familiar shots pass through and slow it for 0.4 s.
+7. Enemy shots die on it. Hero and familiar shots pass through and slow it to 8 px/s for 0.4 s.
 8. Curse Level 0-5: each cursed item taken adds 1 (bigger disc, bigger belly; a full-heart bite and
    teeth from Level 3). The shop's "Starve the Curse" stand takes 1 off for 15 / 25 / 35 coins.
-9. The belly: +1 coin per enemy swallowed (elite 3, summoned minion 0) up to the level's cap; kept
-   all run. A bomb blast next to the disc stuns it for 4 s and it coughs every coin out. A bomb it
-   touches goes off at once.
+9. The belly: +1 coin per enemy swallowed (elite 3, summoned minion 0) up to the level's cap
+   (5, 7, 9, 11, 13, 15); kept all run. A bomb blast within 30 px of the rim stuns it for 4 s and
+   it coughs every coin out. A bomb it touches goes off at once.
 10. A lunge that ends at a hidden door cracks the wall (it shows on the minimap); a second one, or
-    a bomb, opens it.
+    a bomb, opens it. (The game counts one found secret per floor.)
 
 Where the numbers live:
 - `scripts/entities/curse.gd`: level table, speeds, timers, bite sizes, belly pay, bomb and crack reach.
 - `scripts/run/stats.gd`: `call_cooldown`, `curse_creep`, `belly_mult` (so items can change them).
+- `scripts/run/run.gd`: `SPAWN_BUDGET_BASE` is 6.5 (was 6.0 before the Curse: it eats about a third
+  of the monsters, so rooms got one cheap monster more). 7.0 was tried and is too hard on the Grave Robber.
 - `scripts/data/pickups.gd`: `PRICE_STARVE`. `scripts/data/enemies.gd`: `"big": true` rows.
+- `scripts/data/items.gd`: Iron Leash is `curse_creep` x 0.73 (22 to 16 px/s), Spiked Goad is
+  `call_cooldown` - 1.5 (4 to 2.5 s).
 - Run state (`scripts/run/run.gd`): `curse_level`, `belly`, `starve_bought`, `call_cd`.
-- Test flags: `--curse=<0-5>`, `--belly=<n>`, `--nocurse`, `--botstyle=dodge|feeder|caller`.
+- First-run teaching (four lines, 26 words): `scripts/run/curse_tutor.gd`.
+- Test flags: `--curse=<0-5>`, `--belly=<n>`, `--nocurse`, `--botstyle=dodge|feeder|caller`,
+  `--budget=<n>` (overrides SPAWN_BUDGET_BASE), `--teach` (the bot sees the first-run lesson).
+- Tests: `dev/curse_tests.gd` (run by `./tools/check.sh`). The tests share one run, so a test must
+  not rely on a room being untouched by the tests before it.
+
+Two traps found while finishing it:
+- The hero leaves the scene tree at every room change. Anything he connects to an autoload signal
+  must be hooked up in `_enter_tree()`, not once in `setup()` (the bomb button was dead after the
+  first room because of this).
+- Close the game with `G.quit(code)`, never `get_tree().quit()`: a sound still playing at the
+  moment of exit is not released and Godot prints "resources still in use at exit".
+
+How the bot plays it (`scripts/run/bot.gd`), and the numbers it measured
+(300 game seconds x 6 seeds per row, `--speed=8`, floor 1 mostly; "before" = `--nocurse --budget=6`):
+```
+hero    style   deaths/room  fight s  first boss  Curse kills  belly coins  bites/run
+knight  before     0.10       15.8      6/9          -            -           -
+knight  dodge      0.11       13.1      6/7         43%           0%         0.8
+knight  feeder     0.13       12.5      7/9         32%          20%         0.5
+knight  caller     0.12       10.0      6/11        57%          22%         0.8
+witch   before     0.17       12.3      4/10         -            -           -
+witch   dodge      0.15       10.0     10/12        25%           0%         0.3
+witch   feeder     0.13        9.8      8/10        31%          12%         0.4
+witch   caller     0.09        9.0      8/13        44%          22%         1.0
+robber  before     0.34       20.7      2/5          -            -           -
+robber  dodge      0.24       14.5      4/7         49%           0%         0.4
+robber  feeder     0.32       14.8      3/7         49%          19%         0.6
+robber  caller     0.17       11.1      7/9         68%          32%         0.8
+```
+- `dodge` steps off a locked stripe (the short way out), never walks into a lit rim and slips
+  sideways instead of backing into a corner. `feeder` also walks to the spot that puts the most
+  monsters on the line (only while nothing presses it, never around a boss) and bombs the disc
+  when its belly is full. `caller` also presses CALL with 2+ monsters on the line (or the boss).
+- A bot run lasts 1 to 2 minutes, so "bites/run" is per short run: about 0.2 to 0.5 bites a minute.
+  Bites are 2 to 14% of all damage taken; a boss loses 8 to 16% of its health to bites (most 30%).
+- Still off the spec's targets: fights are 17 to 30% shorter than before the Curse (target 15%),
+  the caller's Curse makes 44 to 68% of the kills (target 25 to 40%), the Grave Robber's Curse
+  about half (he kills slowly; the bot plays him worst with or without the Curse), and `feeder`
+  beats `dodge` on coins only, not on survival. One seed batch swings deaths/room by about 0.07.
 
 To add a curse-related item: add a row in `scripts/data/items.gd`. `"cursed": true` alone already
 gives +1 Curse Level. Use `mods` with `call_cooldown`, `curse_creep`, `belly_mult` or the flag

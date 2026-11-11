@@ -68,7 +68,7 @@ const ALL := {
 	"spiked_goad": {"name": "Spiked Goad", "desc": "CALL is ready again much sooner.", "icon": "weapon_baton_with_spikes", "cursed": false, "pools": ["treasure", "shop", "secret"], "locked": true,
 		"mods": {"flat": {"call_cooldown": -1.5}}},
 	"iron_leash": {"name": "Iron Leash", "desc": "Your Curse creeps slower.", "icon": "weapon_mace", "cursed": false, "pools": ["treasure", "shop", "boss"], "locked": true,
-		"mods": {"mult": {"curse_creep": 0.615}}},
+		"mods": {"mult": {"curse_creep": 0.73}}},
 	"tithe_imp": {"name": "Tithe Imp", "desc": "After each meal it fetches you a coin from the Curse's belly.", "icon": "imp", "cursed": false, "pools": ["treasure", "shop", "secret"], "locked": true,
 		"familiar": "tithe_imp"},
 }
