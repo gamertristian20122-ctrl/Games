@@ -753,6 +753,41 @@ func free_spot_near(p: Vector2, avoid_things: bool = true) -> Vector2:
 	return G.ROOM_CENTER
 
 
+## Where a reward chest may stand: the free tile nearest the middle that is more than two tiles
+## from every door and off the straight lines between any two doors (so a shut chest can never
+## stand in the hero's way out). Falls back to the old spot if a layout leaves no such tile.
+func _chest_spot() -> Vector2:
+	var doors: Array[Vector2] = [door_pos(UP), door_pos(DOWN), door_pos(LEFT), door_pos(RIGHT)]
+	var best := Vector2.INF
+	var best_d := INF
+	for cy in G.ROOM_ROWS:
+		for cx in G.ROOM_COLS:
+			var c := Vector2i(cx, cy)
+			if not is_free_cell(c):
+				continue
+			var q := G.cell_center(cx, cy)
+			if _thing_near(q, 11.0):
+				continue
+			var ok := true
+			for i in doors.size():
+				if q.distance_to(doors[i]) <= 2.0 * T + 8.0:
+					ok = false
+					break
+				for j in range(i + 1, doors.size()):
+					if q.distance_to(Geometry2D.get_closest_point_to_segment(q, doors[i], doors[j])) < 20.0:
+						ok = false
+						break
+				if not ok:
+					break
+			if not ok:
+				continue
+			var d := q.distance_squared_to(G.ROOM_CENTER)
+			if d < best_d:
+				best_d = d
+				best = q
+	return best if best != Vector2.INF else free_spot_near(G.ROOM_CENTER)
+
+
 func _thing_near(p: Vector2, dist: float) -> bool:
 	for t in things:
 		if is_instance_valid(t) and t.solid and (t.position as Vector2).distance_to(p) < dist:
@@ -1028,6 +1063,7 @@ func _roll_room_reward() -> void:
 		"bomb":
 			drop("bomb", at)
 		"chest":
+			at = _chest_spot()
 			add_thing("chest", {"pos": at, "locked": rng.randf() < 0.3})
 	if pick != "nothing":
 		run.fx.ring(at, 2.0, 14.0, 0.35, Color(1, 1, 0.8, 0.8), 1.5, true)

@@ -2,7 +2,7 @@
 # build_apk.sh: makes the signed Android APK in build/.
 #   ./tools/build_apk.sh
 # Needs: godot 4.7.2 + Android export templates, the Android SDK, JDK 17, and the signing key.
-# The signing key is NOT in this repo (the repo is public). It is read from these environment
+# The signing key is NOT in this repo (the repo is PRIVATE, but a signing key still never goes in git). It is read from these environment
 # variables, or from /root/keys/game.keystore with the values below when they are not set:
 #   KEYSTORE=/path/to/game.keystore   KEY_ALIAS=game   KEY_PASS=...
 # Every build must be signed with the SAME key, or phones refuse to install it over the old one.

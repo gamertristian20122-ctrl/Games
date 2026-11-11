@@ -33,12 +33,15 @@ const Shots = preload("res://scripts/run/shots.gd")
 const CORPSE_FADE := 0.45       ## seconds a fallen body takes to fade after its death animation
 const SHOT_PLANE := 7.0         ## shots are drawn this far above the floor (see shot_look.gd)
 
-const FLASH_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(1.0, 1.0, 1.0, c.a);\n}\n"
+## The hit flash brightens the sprite but keeps its drawing and colours (a pure white cut-out of
+## these big sprites read as a white cloud).
+const FLASH_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0), 0.55), c.a);\n}\n"
 
 ## The wind-up blink: the sprite goes pale but keeps its drawing (a full white shape of these tall
 ## sprites looked like a blank cut-out). Pure white is kept for the short hit flash only.
 const TELL_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0, 0.96, 0.85), 0.6), c.a);\n}\n"
-const HIT_FLASH := 0.06         ## seconds of pure white when a shot lands (3 to 4 frames)
+const HIT_FLASH := 0.05         ## seconds of bright flash when a shot lands (3 frames)
+const FLASH_GAP := 0.1          ## after a flash, at least this long unflashed: rapid fire flickers, never stays white
 
 static var _ai_cache := {}
 static var _white: ShaderMaterial
@@ -89,6 +92,7 @@ var appear := 0.0
 var sprite: AnimatedSprite2D
 var shadow: Sprite2D
 var _flash := 0.0
+var _flash_gap := 0.0
 var _tell := 0.0
 var _tell_dur := 0.0
 var _moved := false
@@ -310,6 +314,7 @@ func _update_look(delta: float) -> void:
 		sc *= 1.0 + 0.35 * sin(clampf(_pop / 0.18, 0.0, 1.0) * PI)
 	sprite.scale = Vector2(sc, sc)
 	shadow.modulate.a = clampf(1.0 - lift / 40.0, 0.35, 1.0)
+	_flash_gap -= delta
 	if _flash > 0.0:
 		_flash -= delta
 		sprite.material = white_material()
@@ -481,9 +486,11 @@ func hurt(amount: float, from_dir: Vector2 = Vector2.ZERO, knock_mult: float = 1
 	if dead or not hittable:
 		return
 	hp -= amount
-	_flash = HIT_FLASH
+	if _flash_gap <= 0.0:
+		_flash = HIT_FLASH
+		_flash_gap = HIT_FLASH + FLASH_GAP
 	if _has_hit and _attack_t <= 0.0:
-		_flash = HIT_FLASH * 0.7
+		_flash = minf(_flash, HIT_FLASH * 0.7)
 		_hit_t = Art.anim_time(_sprite_id, "hit")
 		sprite.play("hit")
 		sprite.frame = 0

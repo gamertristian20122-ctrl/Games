@@ -273,7 +273,7 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 	var target: Node = null
 	var best := INF
 	for e in room.enemies:
-		if not e.hittable:
+		if not e.hittable or e.get("shielded") == true:   # no point shooting into a boss's guard
 			continue
 		var d: float = pos.distance_to(e.position)
 		if not room.sight_clear(pos, e.position):

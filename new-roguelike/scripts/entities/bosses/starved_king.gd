@@ -112,6 +112,17 @@ func tick(e, delta: float) -> void:
 			_pick(e)
 
 
+## Phase 2, once a cycle: the King calls the Hungry Curse to its side for a few seconds
+## (curse.gd beckon(); it lunges and bites as always, it only creeps to the King instead of the hero).
+func _beckon_curse(e) -> void:
+	var c: Node = e.room.curse
+	if c == null or not is_instance_valid(c) or not c.has_method("beckon"):
+		return
+	var side := 1.0 if float(e.player.position.x) >= float(e.position.x) else -1.0
+	c.beckon((e.position as Vector2) + Vector2(side * 36.0, 18.0), _p(e, "beckon_time", 3.0))
+	e._say("calls the Curse")
+
+
 func _p(e, key: String, fallback: float) -> float:
 	return float(e.p.get(key, fallback))
 
@@ -151,6 +162,7 @@ func _pick(e) -> void:
 			e.t = _volley(e, 3 if pairs else 4, pairs, 1.0 if pairs else 0.8) + _p(e, "rest", 1.5) * (0.8 if pairs else 1.0)
 			if pairs:
 				_embers(e, 3, false, 0.5)
+				_beckon_curse(e)
 		1, 3:
 			# the second attack of a pair only comes while a half burns (the hero stands and waits
 			# then), never in the moments he has to run under the King

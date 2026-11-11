@@ -65,9 +65,13 @@ const SHOT_CAP := 120            ## boss shots stop being fired when this many s
 const SHOT_RANGE := 300.0
 const RED := Color(1.0, 0.22, 0.16)
 const EMBER := Color(1.0, 0.42, 0.12)
-## The hit flash of a boss: most of the way to white, but the drawing stays readable (a pure white
-## shape this size, several times a second, hid the boss).
-const HIT_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0), 0.7), c.a);\n}\n"
+## The hit flash of a boss: a short, partial flicker (HIT_FLICK s, at most one per HIT_GAP s), so a
+## boss under steady fire keeps its real colours almost all the time (a long white-out hid the boss).
+const HIT_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0), 0.45), c.a);\n}\n"
+const HIT_FLICK := 0.05
+const HIT_GAP := 0.3
+## A wind-up shows only a brief pale pulse at its start; the red floor marks do the warning.
+const TELL_PULSE := 0.12
 
 static var _fx_frames := {}
 static var _hit_mat: ShaderMaterial
@@ -114,6 +118,9 @@ var _death_wave := 0
 var _log := false                ## --bosslog: print what happens in the fight (see _say)
 var _fight_t := 0.0
 var _hurt_by := ""
+var shielded := false            ## a guard is up: hits from shots do nothing (bombs, knock_mult 3, and Curse bites still land)
+var _flick := 0.0                ## seconds of hit flicker left
+var _flick_gap := 0.0            ## seconds until the next flicker may start
 
 
 static func hit_material() -> ShaderMaterial:
@@ -742,19 +749,26 @@ func _update_look(delta: float) -> void:
 	sprite.position = Vector2(0.0, 2.0 - lift - _hover + bob)
 	shadow.modulate.a = clampf(1.0 - (lift + _lifted * 0.5) / 60.0, 0.35, 1.0)
 	sprite.self_modulate = Color(0.72, 0.74, 0.86) if staggered > 0.0 else Color(1, 1, 1)
-	if _flash > 0.0:
-		_flash -= delta
-		sprite.material = hit_material()
-	elif _tell > 0.0:
+	_flick_gap -= delta
+	if _flash > 0.0 and _flick_gap <= 0.0:
+		_flick = HIT_FLICK
+		_flick_gap = HIT_GAP
+	_flash = 0.0
+	if _tell > 0.0:
 		_tell -= delta
-		var k := 1.0 - _tell / maxf(_tell_dur, 0.01)
-		sprite.material = tell_material() if fmod(k * k * 7.0 + k * 3.0, 1.0) < 0.5 else null
+	if _flick > 0.0:
+		_flick -= delta
+		sprite.material = hit_material()
+	elif _tell > 0.0 and _tell_dur - _tell < TELL_PULSE:
+		sprite.material = tell_material()
 	else:
 		sprite.material = null
 
 
 # =============================================================================== getting hurt
 func hurt(amount: float, from_dir: Vector2 = Vector2.ZERO, knock_mult: float = 1.0) -> void:
+	if shielded and knock_mult < 3.0:       # room.explode() hurts with knock_mult 3.0
+		return
 	super.hurt(amount * (_stagger_dmg if staggered > 0.0 else 1.0), from_dir, knock_mult)
 
 

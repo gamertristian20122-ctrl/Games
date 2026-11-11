@@ -1,11 +1,13 @@
 extends Control
 ## Backdrop: the small lit piece of dungeon behind the title screen and the menus.
-## It is built from the art pack's own tiles, drawn at double size, with one hero standing in
+## It is built from the crypt's Pixel Crawler tile pieces (scripts/run/room_look.gd loads them), drawn at double size, with one hero standing in
 ## a pool of light. main.gd owns one copy and keeps it alive behind every menu screen;
 ## the hero-select screen swaps the hero that stands in it.
 
 const UI = preload("res://scripts/ui/theme.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
+const RoomLook = preload("res://scripts/run/room_look.gd")
+const SET := "crypt"                     ## the Pixel Crawler tile set the backdrop is built from
 
 const ZOOM := 2.0
 const HERO_FEET := Vector2(8, 30)        ## where the hero stands, in tile-space pixels
@@ -56,45 +58,52 @@ func hero_spot() -> Vector2:
 	return _scene.position + HERO_FEET * ZOOM
 
 
-func _tile(id: String, col: int, row: int) -> Sprite2D:
+## One picture of the crypt's Pixel Crawler tile set (the same pieces and loader the rooms use).
+func _piece(piece_name: String, at: Vector2) -> Sprite2D:
 	var s := Sprite2D.new()
-	s.texture = Art.tex(id)
+	s.texture = RoomLook.piece(SET, piece_name)
 	s.centered = false
-	s.position = Vector2(col * 16, row * 16)
+	s.position = at
 	_scene.add_child(s)
 	return s
-
-
-func _anim_tile(id: String, col: int, row: int) -> void:
-	var s := Art.sprite(id, "default")
-	s.position = Vector2(col * 16 + 8, row * 16 + 16)
-	_scene.add_child(s)
 
 
 func _build_room() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
+	var floors: Array = (RoomLook.tile_set(SET).get("floor", {}) as Dictionary).get("variants", [["floor_a", 1]])
+	var total := 0.0
+	for v: Array in floors:
+		total += float(v[1])
 	for col in range(-9, 16):
-		_tile("wall_top_mid", col, -2)
-		_tile("wall_mid", col, -1)
+		var ab := "a" if posmod(col, 2) == 0 else "b"
+		_piece("wall_top_" + ab, Vector2(col * 16, -48))
+		_piece("wall_face_" + ab, Vector2(col * 16, -32))
 		for row in range(0, 5):
-			var id := "floor_1"
-			if rng.randf() < 0.22:
-				id = "floor_%d" % rng.randi_range(2, 8)
-			_tile(id, col, row)
+			var roll := rng.randf() * total
+			var pick := String(floors[0][0])
+			for v: Array in floors:
+				roll -= float(v[1])
+				if roll < 0.0:
+					pick = String(v[0])
+					break
+			_piece(pick, Vector2(col * 16, row * 16))
+		_piece("floor_shade_top", Vector2(col * 16, 0))
 	# things on the wall and the floor, placed by hand around the hero
-	_tile("wall_banner_red", -2, -1)
-	_tile("wall_banner_red", 5, -1)
-	_tile("wall_fountain_top_1", 2, -2)
-	_anim_tile("wall_fountain_mid_red_anim", 2, -1)
-	_anim_tile("wall_fountain_basin_red_anim", 2, 0)
-	_tile("wall_hole_1", -4, -1)
-	_tile("wall_goo", 7, -1)
-	_tile("wall_goo_base", 7, 0)
-	_tile("column", -3, -2)
-	_tile("column", 4, -2)
-	_tile("skull", 2, 2).position += Vector2(3, 2)
-	_tile("crate", -2, 0).position += Vector2(2, -2)
+	for col: int in [-3, 4]:
+		var sconce := AnimatedSprite2D.new()
+		sconce.sprite_frames = RoomLook.anim(SET, ["deco_sconce_f0", "deco_sconce_f1", "deco_sconce_f2", "deco_sconce_f3"], 8.0)
+		sconce.centered = false
+		sconce.position = Vector2(col * 16, -36)
+		sconce.play("default")
+		_scene.add_child(sconce)
+	_piece("deco_banner_red", Vector2(19, -28))
+	_piece("deco_shackle_a", Vector2(-77, -28))
+	_piece("deco_cross", Vector2(97, -28))
+	_piece("prop_statue", Vector2(-32, -18))
+	_piece("prop_statue", Vector2(48, -18))
+	_piece("prop_urn_a", Vector2(-16, -3))
+	_piece("floor_stone_a", Vector2(35, 36))
 
 	# a soft shadow under the hero, then the hero and the weapon
 	var shadow := Node2D.new()

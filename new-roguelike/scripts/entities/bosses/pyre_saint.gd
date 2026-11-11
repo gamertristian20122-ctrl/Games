@@ -40,6 +40,7 @@ const SMOKE := [Color(0.34, 0.30, 0.30), Color(0.20, 0.18, 0.20), Color(0.50, 0.
 func start(e) -> void:
 	e.state = DRIFT
 	e.t = 1.8
+	e.harmful = false                      # its body hurts only while it swoops (drifting into it is free)
 	e.mem = {"done": 0, "bag": [], "left": 0.0, "legs": 0, "drops": 0, "pending": [], "out": false, "gap": 0.0}
 
 
@@ -54,6 +55,7 @@ func phase_changed(e, _phase: int) -> void:
 		return
 	e.stop()
 	e.set_loops("idle")
+	e.harmful = false
 	e.state = DRIFT
 	e.t = 1.0
 
@@ -208,6 +210,7 @@ func _aim(e) -> float:
 
 func _swoop_go(e) -> void:
 	e.state = SWOOP
+	e.harmful = true                       # the only time its body hurts
 	# the lane stays red for as long as the skull is flying down it
 	_mark_swoop(e, maxf(float(e.mem["left"]) / float(e.p.get("swoop_speed", 185.0)), 0.2))
 
@@ -222,6 +225,7 @@ func _mark_swoop(e, seconds: float) -> void:
 
 
 func _swoop_ends(e, mean: bool) -> void:
+	e.harmful = false
 	e.run.shake(0.4)
 	e.run.fx.burst(e.body_point() + e.dir * 16.0, FIRE, 16, 90.0, 0.45, 2.6)
 	Sfx.play("rock_break", -6.0, 0.06, 0.9)
@@ -305,7 +309,7 @@ func _relit(e) -> void:
 	var r := float(e.p.get("flare_radius", 30.0))
 	e.lift = 0.0
 	e.mem["out"] = false
-	e.harmful = true
+	e.harmful = false                      # the relight circle hurts; its body only on a swoop
 	e.set_loops("idle")
 	e.strike_circle(e.position, r)
 	e.run.fx.ring(e.position, 6.0, r, 0.3, FIRE[1], 3.0, true)

@@ -44,6 +44,8 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	if sprite.sprite_frames.get_frame_count("default") > 1:
 		sprite.frame = randi() % sprite.sprite_frames.get_frame_count("default")
 	add_child(sprite)
+	if String(info.get("kind", "")) == "heart":
+		_add_plate()
 	_bob = randf() * 6.0
 	if desc.get("pop", false):
 		var a := randf() * TAU
@@ -52,6 +54,22 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 		lift = 2.0
 		bounces = 2
 	_place_sprite()
+
+
+## A soft dark plate behind a heart (code-drawn discs, no art), so a red or half heart still reads
+## on the red Ashen Halls floor and on every other one. It rides on the sprite, behind it.
+func _add_plate() -> void:
+	var tex: Texture2D = sprite.sprite_frames.get_frame_texture("default", 0)
+	if tex == null:
+		return
+	var plate := Node2D.new()
+	plate.show_behind_parent = true
+	plate.position = sprite.offset + tex.get_size() / 2.0
+	var r := maxf(tex.get_size().x, tex.get_size().y) * 0.5 + 1.5
+	plate.draw.connect(func() -> void:
+		plate.draw_circle(Vector2.ZERO, r + 1.5, Color(0.04, 0.02, 0.05, 0.3))
+		plate.draw_circle(Vector2.ZERO, r, Color(0.04, 0.02, 0.05, 0.6)))
+	sprite.add_child(plate)
 
 
 func save() -> Dictionary:

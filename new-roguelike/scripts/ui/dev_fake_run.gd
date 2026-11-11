@@ -9,6 +9,8 @@ extends Node2D
 const Heroes = preload("res://scripts/data/heroes.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Items = preload("res://scripts/data/items.gd")
+const RoomLook = preload("res://scripts/run/room_look.gd")
+const SET := "crypt"
 
 
 class FakePlayer extends Node2D:
@@ -178,34 +180,42 @@ func explore() -> void:
 		enter_room(c)
 
 
-func _put(id: String, pos: Vector2, tint: Color = Color.WHITE) -> void:
+## One picture of the crypt's Pixel Crawler tile set, through the same loader the real rooms use.
+func _put(piece_name: String, pos: Vector2) -> void:
 	var s := Sprite2D.new()
-	s.texture = Art.tex(id)
+	s.texture = RoomLook.piece(SET, piece_name)
 	s.centered = false
 	s.position = pos
-	s.modulate = tint
 	add_child(s)
 
 
+## A still crypt room in the new look (cheap: plain sprites, no lights): walls, floor, the top door.
 func _build_room() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
-	for col in range(-1, G.ROOM_COLS + 1):
-		_put("wall_top_mid", Vector2(col * 16, -48))
-		_put("wall_mid", Vector2(col * 16, -32))
-		_put("wall_mid", Vector2(col * 16, -16))
-		_put("wall_top_mid", Vector2(col * 16, G.ROOM_H - 16))
-		_put("wall_mid", Vector2(col * 16, G.ROOM_H), Color(0.75, 0.75, 0.8))
-	for row in G.ROOM_ROWS:
-		_put("wall_mid", Vector2(-16, row * 16), Color(0.6, 0.6, 0.66))
-		_put("wall_mid", Vector2(G.ROOM_W, row * 16), Color(0.6, 0.6, 0.66))
-		for col in G.ROOM_COLS:
-			_put("floor_1" if rng.randf() > 0.2 else "floor_%d" % rng.randi_range(2, 8), Vector2(col * 16, row * 16))
+	for col in G.ROOM_COLS:
+		var ab := "a" if col % 2 == 0 else "b"
+		_put("wall_top_" + ab, Vector2(col * 16, -48))
+		_put("wall_face_" + ab, Vector2(col * 16, -32))
+		_put("wall_bottom_" + ab, Vector2(col * 16, G.ROOM_H))
+		for row in G.ROOM_ROWS:
+			var r := rng.randf()
+			var pick := "floor_a" if r < 0.45 else "floor_" + "bcdefgh"[rng.randi_range(0, 6)]
+			_put(pick, Vector2(col * 16, row * 16))
+		_put("floor_shade_top", Vector2(col * 16, 0))
+	_put("corner_tl", Vector2(-16, -48))
+	_put("corner_tr", Vector2(G.ROOM_W, -48))
+	_put("corner_bl", Vector2(-16, G.ROOM_H))
+	_put("corner_br", Vector2(G.ROOM_W, G.ROOM_H))
+	for y in range(-32, G.ROOM_H, 16):
+		_put("wall_side_left", Vector2(-16, y))
+		_put("wall_side_right", Vector2(G.ROOM_W, y))
 	for col: int in [2, 5, 11, 14]:
-		_put("wall_banner_red" if col % 2 == 0 else "wall_banner_blue", Vector2(col * 16, -16))
-	_put("doors_leaf_closed", Vector2(G.DOOR_COL * 16 - 8, -32))
-	_put("crate", Vector2(3 * 16, 1 * 16 - 8))
-	_put("skull", Vector2(12 * 16, 5 * 16))
+		_put("deco_sconce_f0", Vector2(col * 16, -36))
+	_put("door_n_frame", Vector2(G.DOOR_COL * 16 - 8, -48))
+	_put("door_n_leaf", Vector2(G.DOOR_COL * 16 - 3, -44))
+	_put("prop_urn_a", Vector2(3 * 16, 1 * 16 - 5))
+	_put("floor_stone_a", Vector2(12 * 16 + 3, 5 * 16 + 4))
 
 
 func _on_bomb() -> void:

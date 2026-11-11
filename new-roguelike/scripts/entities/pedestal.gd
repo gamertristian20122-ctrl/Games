@@ -34,7 +34,8 @@ const CURSE_GOLD := Color(0.98, 0.90, 0.58)      ## the Hungry Curse's own pale 
 const STAND := "prop_plinth"
 const STAND_TOP := 11.0          ## how far the top edge of the stand is above the spot it stands on
 const COIN := "prop_coin"
-const TAG_PLATE := Color(0.07, 0.06, 0.09, 0.72)     ## the dark plate behind a price
+const TAG_PLATE := Color(0.07, 0.06, 0.09, 0.8)      ## the dark plate behind a price
+const PRICE_FONT := 16      ## the body font (m5x7) at its native size: digits 7 px tall, crisp
 const SKULL := "prop_skull_mark"
 const BADGE_SKULL := "skull"     ## the same small skull the HUD's Curse meter is made of
 
@@ -55,7 +56,6 @@ var service := ""
 var pair := 0
 var crumbled := false
 var badge: Node2D
-var _price_label: Label
 var _away := true                ## the hero stepped away since the last purchase (service stands)
 var _badge_level := -1
 static var _skull_rect := Rect2()
@@ -141,26 +141,22 @@ func _build_tag() -> void:
 	coin.texture = Art.tex(COIN)
 	coin.position = Vector2(-6, 0)
 	tag.add_child(coin)
-	var label := Label.new()
-	label.text = str(price)
-	label.add_theme_font_override("font", room.run.font())
-	label.add_theme_font_size_override("font_size", 8)
-	label.add_theme_color_override("font_color", Color(1, 0.95, 0.6))
-	label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.08))
-	label.add_theme_constant_override("outline_size", 3)
-	label.position = Vector2(1, -7)
-	tag.add_child(label)
-	_price_label = label
 
 
 ## A dark plate behind the coin and the number, so the price reads as a label on the stand and
 ## its coin is never taken for a coin lying on the floor. A flat shape with its corners cut.
 func _draw_tag_plate() -> void:
-	var w := 18.0 + 5.0 * str(price).length()
-	var r := Rect2(-13, -7, w, 14)
+	# the number is drawn here in the body font at its native size (crisp, 7 px digits with a dark
+	# 1 px outline), so it stands as tall as the 11 px coin beside it on every floor
+	var font: Font = room.run.font()
+	var text := str(price)
+	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, PRICE_FONT).x
+	var r := Rect2(-13, -7, 15.0 + tw + 3.0, 14)
 	tag.draw_rect(r.grow_individual(-1, 0, -1, 0), TAG_PLATE)
 	tag.draw_rect(Rect2(r.position.x, r.position.y + 1, 1, r.size.y - 2), TAG_PLATE)
 	tag.draw_rect(Rect2(r.end.x - 1, r.position.y + 1, 1, r.size.y - 2), TAG_PLATE)
+	tag.draw_string_outline(font, Vector2(1, 4), text, HORIZONTAL_ALIGNMENT_LEFT, -1, PRICE_FONT, 2, Color(0.08, 0.06, 0.08))
+	tag.draw_string(font, Vector2(1, 4), text, HORIZONTAL_ALIGNMENT_LEFT, -1, PRICE_FONT, Color(1, 0.95, 0.6))
 
 
 ## The small "+1 skull" (or "-1 skull") under a cursed item or the Starve stand.
@@ -169,7 +165,7 @@ func _build_badge() -> void:
 		var img := Art.tex(BADGE_SKULL).get_image()
 		_skull_rect = Rect2(img.get_used_rect()) if img != null else Rect2(0, 0, 16, 16)
 	badge = Node2D.new()
-	badge.position = Vector2(0, 23 if price > 0 else 11)
+	badge.position = Vector2(0, 26 if price > 0 else 12)
 	badge.z_index = 1
 	add_child(badge)
 	badge.draw.connect(_draw_badge)
@@ -182,11 +178,11 @@ func _draw_badge() -> void:
 	var text := BADGE_GROW if grow else BADGE_SHRINK
 	# the teeth warning: taking this item makes the Curse's bite a full heart
 	var teeth: bool = grow and run.curse_level == Curse.TEETH_LEVEL - 1
-	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, PRICE_FONT).x
 	var total := w + 1.0 + _skull_rect.size.x + (11.0 if teeth else 0.0)
 	var x := -roundf(total / 2.0)
-	badge.draw_string_outline(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, 3, Color(0.08, 0.06, 0.08))
-	badge.draw_string(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BADGE_GROW_COLOR if grow else BADGE_SHRINK_COLOR)
+	badge.draw_string_outline(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, PRICE_FONT, 2, Color(0.08, 0.06, 0.08))
+	badge.draw_string(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, PRICE_FONT, BADGE_GROW_COLOR if grow else BADGE_SHRINK_COLOR)
 	x += w + 1.0
 	badge.draw_texture_rect_region(Art.tex(BADGE_SKULL), Rect2(Vector2(x, 3.0 - _skull_rect.size.y), _skull_rect.size), _skull_rect)
 	x += _skull_rect.size.x + 2.0
@@ -213,8 +209,7 @@ func _refresh_service() -> void:
 	visible = open
 	solid = open
 	price = _service_price()
-	if _price_label != null:
-		_price_label.text = str(price)
+	if tag != null:
 		tag.queue_redraw()
 
 

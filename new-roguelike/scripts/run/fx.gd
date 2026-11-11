@@ -304,9 +304,9 @@ func pop(at: Vector2, color: Color, edge: Color = Color(1, 1, 1)) -> void:
 func death_puff(at: Vector2, colors: Array, size: float = 5.0) -> void:
 	var main: Color = colors[0] if not colors.is_empty() else Color(0.8, 0.8, 0.8)
 	var big := 2.0 if size >= 8.0 else 1.0
-	var smoke := main.lerp(Color(1, 1, 1), 0.25)
-	smoke.a = 0.85
-	anim(ANIM_SMOKE, at, smoke, 15.0, big, randf() * TAU, Vector2(0, -6))
+	var smoke := main.lerp(Color(0.12, 0.1, 0.12), 0.35)      # darker than the body: a pale monster no longer leaves a white cloud
+	smoke.a = 0.6
+	anim(ANIM_SMOKE, at, smoke, 22.0, big * 0.75, randf() * TAU, Vector2(0, -6))
 	burst(at, colors, 10 + int(size * 2.0), 75.0, 0.5, 2.6, Vector2.ZERO, 70.0)
 	ring(at + Vector2(0, 1), 2.0, size * 2.4, 0.22, Color(1, 1, 1, 0.8), 1.5)
 
@@ -604,30 +604,77 @@ func _draw_ground() -> void:
 			full.append(tip)
 			ground.draw_polyline(full, Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
 		elif w[0] == 3:
+			# boss marks are clipped to the floor rectangle (they never spill over the walls)
 			var r_in: float = w[8]
 			var r_out: float = w[3]
 			var band := r_out - r_in
-			ground.draw_arc(w[1], (r_in + r_out) * 0.5, 0.0, TAU, 40, Color(col.r, col.g, col.b, 0.12), band)
+			_clip_band(w[1], r_in, r_out, Color(col.r, col.g, col.b, 0.12))
 			if k > 0.04:
-				ground.draw_arc(w[1], r_in + band * k * 0.5, 0.0, TAU, 40, Color(col.r, col.g, col.b, 0.24 * pulse), band * k)
-			ground.draw_arc(w[1], r_in, 0.0, TAU, 32, Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
-			ground.draw_arc(w[1], r_out, 0.0, TAU, 40, Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
+				_clip_band(w[1], r_in, r_in + band * k, Color(col.r, col.g, col.b, 0.24 * pulse))
+			_clip_line(_circle_pts(w[1], r_in, 32, true), Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
+			_clip_line(_circle_pts(w[1], r_out, 40, true), Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
 		elif w[0] == 0:
 			var rad: float = w[3]
-			ground.draw_circle(w[1], rad, Color(col.r, col.g, col.b, 0.10))
-			ground.draw_circle(w[1], rad * k, Color(col.r, col.g, col.b, 0.22 * pulse))
-			ground.draw_arc(w[1], rad, 0.0, TAU, 28, Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
+			_clip_fill(_circle_pts(w[1], rad, 28, false), Color(col.r, col.g, col.b, 0.10))
+			if k > 0.02:
+				_clip_fill(_circle_pts(w[1], rad * k, 28, false), Color(col.r, col.g, col.b, 0.22 * pulse))
+			_clip_line(_circle_pts(w[1], rad, 28, true), Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
 		else:
 			var a: Vector2 = w[1]
 			var b: Vector2 = w[2]
 			if a.distance_to(b) > 1.0:
 				b = a + (b - a).normalized() * _reach_in_room(a, (b - a).normalized(), a.distance_to(b))   # a lane stops at the walls
-			ground.draw_line(a, b, Color(col.r, col.g, col.b, 0.16), w[3] * 2.0)
-			ground.draw_line(a, a.lerp(b, k), Color(col.r, col.g, col.b, 0.30 * pulse), w[3] * 2.0)
-			ground.draw_line(a, b, Color(col.r, col.g, col.b, 0.9 * pulse), 1.0)
+			_clip_fill(_lane_pts(a, b, w[3]), Color(col.r, col.g, col.b, 0.16))
+			_clip_fill(_lane_pts(a, a.lerp(b, k), w[3]), Color(col.r, col.g, col.b, 0.30 * pulse))
+			_clip_line(PackedVector2Array([a, b]), Color(col.r, col.g, col.b, 0.9 * pulse), 1.0)
 	for r in rings:
 		if r[7]:
 			_ring(ground, r)
+
+
+## Floor clipping for boss marks (Geometry2D against the floor rectangle).
+func _floor_rect() -> PackedVector2Array:
+	return PackedVector2Array([Vector2.ZERO, Vector2(G.ROOM_W, 0), Vector2(G.ROOM_W, G.ROOM_H), Vector2(0, G.ROOM_H)])
+
+
+func _circle_pts(c: Vector2, r: float, n: int, closed: bool) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in (n + 1 if closed else n):
+		pts.append(c + Vector2.RIGHT.rotated(TAU * float(i) / float(n)) * r)
+	return pts
+
+
+func _lane_pts(a: Vector2, b: Vector2, hw: float) -> PackedVector2Array:
+	var d := (b - a).normalized() if a.distance_to(b) > 0.01 else Vector2.RIGHT
+	var n := d.orthogonal() * hw
+	return PackedVector2Array([a + n, b + n, b - n, a - n])
+
+
+func _clip_fill(poly: PackedVector2Array, col: Color) -> void:
+	if poly.size() < 3:
+		return
+	for part in Geometry2D.intersect_polygons(poly, _floor_rect()):
+		if part.size() >= 3:
+			ground.draw_colored_polygon(part, col)
+
+
+func _clip_line(pts: PackedVector2Array, col: Color, width: float) -> void:
+	for part in Geometry2D.intersect_polyline_with_polygon(pts, _floor_rect()):
+		if part.size() >= 2:
+			ground.draw_polyline(part, col, width)
+
+
+## A filled band between two radii, as small quads so each can be clipped on its own.
+func _clip_band(c: Vector2, r_in: float, r_out: float, col: Color) -> void:
+	if r_out - r_in < 0.3:
+		return
+	var n := 36
+	for i in n:
+		var a0 := TAU * float(i) / float(n)
+		var a1 := TAU * float(i + 1) / float(n)
+		var u0 := Vector2.RIGHT.rotated(a0)
+		var u1 := Vector2.RIGHT.rotated(a1)
+		_clip_fill(PackedVector2Array([c + u0 * r_in, c + u0 * r_out, c + u1 * r_out, c + u1 * r_in]), col)
 
 
 ## How far a mark may run from `from` along the unit vector `d` before it leaves the floor.
@@ -654,4 +701,8 @@ func _ring(canvas: Node2D, r: Array) -> void:
 		return
 	var e := 1.0 - (1.0 - k) * (1.0 - k)
 	col.a *= 1.0 - k
+	if canvas == ground:
+		# a shockwave on the floor stops at the walls
+		_clip_line(_circle_pts(r[0], maxf(lerpf(r[1], r[2], e), 0.5), 28, true), col, r[6] * (1.0 - 0.5 * k))
+		return
 	canvas.draw_arc(r[0], maxf(lerpf(r[1], r[2], e), 0.5), 0.0, TAU, 28, col, r[6] * (1.0 - 0.5 * k))

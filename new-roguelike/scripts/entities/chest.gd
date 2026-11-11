@@ -93,8 +93,8 @@ func _physics_process(delta: float) -> void:
 			_open_t = -1.0
 			body.scale = Vector2.ONE
 	var player: Node = room.run.player
-	if player == null or player.dead:
-		return
+	if player == null or player.dead or opened:
+		return       # an OPENED chest no longer blocks anyone (it stays to look at; it never traps the hero by a door)
 	# An oval as wide as the art (about 30 px) and BLOCK_RADIUS deep, so the hero stops at its sides.
 	var d: Vector2 = player.position - position
 	var reach := Vector2(BLOCK_HALF_WIDTH, BLOCK_RADIUS) + Vector2.ONE * float(player.radius)

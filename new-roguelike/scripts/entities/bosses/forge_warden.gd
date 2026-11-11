@@ -68,6 +68,7 @@ func start(e) -> void:
 func phase_changed(e, _phase: int) -> void:
 	# the base has already taken back marks and timers; put away what this file made itself
 	_drop(e)
+	e.shielded = false
 	e.state = REST
 	e.t = 0.3
 	e.mem["next"] = A_LASER              # phase 2 shows its new trick first: the sweeping beam
@@ -382,7 +383,7 @@ func _shield_ring(e) -> void:
 
 func _guard_on(e, _frame: int) -> void:
 	e.pose("block", 7)
-	e.hittable = false
+	e.shielded = true                      # shots are turned back (_reflect); bombs and Curse bites still land
 	e.state = GUARD
 	e.t = float(e.p.get("guard_time", 2.0))
 	e.mem["pulse"] = 0.0
@@ -410,7 +411,7 @@ func _guard(e, delta: float, mean: bool) -> void:
 	elif not e.mem["blast"]:
 		e.chase(delta, 0.55)
 	if e.t <= 0.0:
-		e.hittable = true
+		e.shielded = false
 		e.stop()
 		e.state = REST
 		e.t = 0.5

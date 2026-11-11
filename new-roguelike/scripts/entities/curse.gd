@@ -114,6 +114,8 @@ var _boss_cd := 0.0
 var _boss_feat_done := false
 var _last_bite := {}             ## big enemy's instance id -> fight time of its last bite
 var _lock_pips := 0
+var _beckon_at := Vector2.ZERO   ## beckon(): while _beckon_t > 0 it creeps here instead of at the hero
+var _beckon_t := 0.0
 var _vp: SubViewport
 var _floor: Sprite2D
 
@@ -259,7 +261,8 @@ func _physics_process(delta: float) -> void:
 					fill_time = run.tutor.first_fill(room, FIRST_FILL)   # the first-run lesson lunges early
 				_go(CREEP, 0.0)
 		CREEP:
-			var to: Vector2 = player.position - position
+			_beckon_t -= delta
+			var to: Vector2 = (_beckon_at if _beckon_t > 0.0 else player.position) - position
 			var dist := to.length()
 			var speed: float = CREEP_SPEED * player.stats.v("curse_creep")
 			if flinching > 0.0:
@@ -304,6 +307,13 @@ func _physics_process(delta: float) -> void:
 		_touch_things(from, position)
 	if arrived and state == LUNGE:
 		_end_lunge()
+
+
+## A boss calls the Curse to a point: it creeps there (not at the hero) for `seconds`, then hunts
+## the hero again. Only the creep changes; its lunge timer, lunges and bites work as always.
+func beckon(point: Vector2, seconds: float = 3.0) -> void:
+	_beckon_at = _clamp(point)
+	_beckon_t = seconds
 
 
 func _fight_over() -> bool:
