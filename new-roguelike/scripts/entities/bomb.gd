@@ -11,6 +11,7 @@ var room: Node
 var t := 0.0
 var sprite: AnimatedSprite2D
 var _fuse_sfx := 0.0
+var _gone := false
 
 
 func setup(the_room: Node, at: Vector2) -> void:
@@ -35,5 +36,14 @@ func _physics_process(delta: float) -> void:
 		_fuse_sfx = 0.45
 		Sfx.play("bomb_fuse", -12.0)
 	if t >= FUSE:
-		room.explode(position, room.run.player.stats.v("bomb_damage"))
-		queue_free()
+		detonate()
+
+
+## Goes off right now (the fuse ran out, or the Hungry Curse swallowed it).
+func detonate() -> void:
+	if _gone:
+		return
+	_gone = true
+	room.bombs.erase(self)
+	room.explode(position, room.run.player.stats.v("bomb_damage"))
+	queue_free()

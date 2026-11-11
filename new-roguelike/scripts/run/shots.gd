@@ -202,6 +202,11 @@ func _step_shots(delta: float) -> void:
 	var p_rad: float = player.hit_radius
 	var p_open: bool = player.can_be_hit()
 	var blockers: Array = room.blockers
+	# the Hungry Curse: hero shots pass through it, and each one makes it flinch
+	var curse: Node2D = room.curse
+	var c_on: bool = curse != null and is_instance_valid(curse) and curse.solid
+	var c_pos: Vector2 = curse.position if c_on else Vector2.ZERO
+	var c_rad: float = curse.radius if c_on else 0.0
 	var i := count - 1
 	while i >= 0:
 		var p := pos[i]
@@ -254,6 +259,8 @@ func _step_shots(delta: float) -> void:
 		pos[i] = np
 		var r := rad[i]
 		if side[i] == SIDE_PLAYER:
+			if c_on and np.distance_squared_to(c_pos) < (r + c_rad) * (r + c_rad):
+				curse.flinch()
 			var dead := false
 			for k in e_count:
 				var rr := r + _e_rad[k]

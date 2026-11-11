@@ -8,6 +8,7 @@ extends Node2D
 ## The same seed gives the same floors, rooms, items and shop stock.
 ## Test flags (after "--" on the command line): --autotest --hero= --seed= --speed= --time= --god
 ##   --floor=<1-4> --give=id,id --goto=boss|shop|treasure|secret --layout=<name> --shots=<dir> --shot_every=<sec>
+##   --curse=<0-5> start at this Curse Level   --belly=<n> coins already in its belly   --nocurse no Curse at all
 ## summary()["floor"] counts from 1 (floor_index counts from 0).
 
 const Floors = preload("res://scripts/data/floors.gd")
@@ -20,6 +21,7 @@ const ShotsScript = preload("res://scripts/run/shots.gd")
 const FxScript = preload("res://scripts/run/fx.gd")
 const ItemEffects = preload("res://scripts/run/item_effects.gd")
 const PlayerScript = preload("res://scripts/entities/player.gd")
+const Curse = preload("res://scripts/entities/curse.gd")
 
 # ------------------------------------------------------------------ tuning (one place for the big numbers)
 ## Mood lighting. Set to false if a phone struggles: the game then draws flat and bright.
@@ -53,6 +55,15 @@ var cur := Vector2i.ZERO
 var rooms := {}
 var player: Node2D
 var boss: Node = null
+# ---- the Hungry Curse (rules and numbers: scripts/entities/curse.gd)
+var curse_level := 0             ## 0..5; every cursed item taken adds 1, "Starve the Curse" takes 1 off
+var belly := 0                   ## coins the Curse has swallowed and still carries (kept from room to room and floor to floor)
+var starve_bought := 0           ## how many times "Starve the Curse" was bought this run (the price climbs)
+var call_cd := 0.0               ## seconds until the CALL button works again
+var call_fill := 1.0             ## 0..1 for the button's cooldown ring
+var call_ready := false          ## pressing CALL would work right now
+var call_pulse := false          ## the first-run lesson asks the button to pulse
+var tutor: Node = null           ## the first-run lesson (scripts/run/curse_tutor.gd), or null
 
 # ------------------------------------------------------------------ world internals
 var seed_value := 0
@@ -105,6 +116,7 @@ func setup(hero: String, run_seed: int) -> void:
 	hero_id = hero
 	seed_value = run_seed
 	G.run = self
+	Controls.action_enabled = true        # the second button is CALL (the Hungry Curse)
 	floor_count = Floors.count()
 	if not _built:
 		_build_nodes()
@@ -164,6 +176,11 @@ func _begin() -> void:
 	victory = false
 	death_cause = ""
 	boss = null
+	curse_level = clampi(int(G.arg("curse", "0")), 0, Curse.MAX_LEVEL)
+	belly = clampi(int(G.arg("belly", "0")), 0, Curse.belly_cap(self))
+	starve_bought = 0
+	call_cd = 0.0
+	call_pulse = false
 	elite_chance = ELITE_CHANCE
 	_end_t = -1.0
 	_has_pending = false
@@ -204,6 +221,7 @@ func _exit_tree() -> void:
 		_slow_base = 0.0
 	if G.run == self:
 		G.run = null
+		Controls.action_enabled = false
 
 
 ## The font for the few numbers the world draws itself (shop prices). Uses the first font file
@@ -427,6 +445,18 @@ func enemy_killed(e: Node) -> void:
 	effects.fire("on_kill", [e])
 
 
+## The Hungry Curse swallowed an enemy whole. It counts as a kill, but nothing died the usual
+## way: "on kill" item effects do not fire.
+func enemy_devoured(_e: Node) -> void:
+	kills += 1
+	G.stat.emit("kills", 1)
+
+
+## The most coins the Curse's belly holds right now (it grows with the Curse Level).
+func belly_cap() -> int:
+	return Curse.belly_cap(self)
+
+
 func boss_killed(b: Node) -> void:
 	kills += 1
 	var id: String = b.boss_id
@@ -458,6 +488,10 @@ func _finish() -> void:
 	if victory:
 		G.stat.emit("wins", 1)
 		G.stat.emit("wins:" + hero_id, 1)
+		if curse_level <= 0:
+			G.stat.emit("win_curse_0", 1)
+		elif curse_level >= Curse.MAX_LEVEL:
+			G.stat.emit("win_curse_5", 1)
 	Save.flush()
 	G.run_ended.emit(victory, summary())
 
@@ -470,6 +504,7 @@ func summary() -> Dictionary:
 		"items": player.items.duplicate() if player != null else [],
 		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
+		"curse_level": curse_level,
 	}
 
 
@@ -527,6 +562,10 @@ func _physics_process(delta: float) -> void:
 	_trauma = maxf(0.0, _trauma - delta * 1.7)
 	var s := _trauma * _trauma * SHAKE_PIXELS
 	camera.position = G.CAMERA_CENTER - _slide + Vector2(randf_range(-s, s), randf_range(-s, s))
+	# ---- the CALL button's cooldown
+	call_cd = maxf(0.0, call_cd - delta)
+	call_fill = 1.0 - clampf(call_cd / maxf(player.stats.v("call_cooldown"), 0.01), 0.0, 1.0)
+	call_ready = room != null and room.curse != null and room.curse.can_call()
 	# ---- the clock, the end of the run
 	if not over:
 		time_s += delta

@@ -64,6 +64,20 @@ func _physics_process(delta: float) -> void:
 			ai.phase_changed(self, 2)
 
 
+## The Hungry Curse took a bite (scripts/entities/curse.gd, where the numbers live): the boss
+## loses `percent` of its full health, but never drops below `floor_share` of it, so the hero
+## always lands the last hit. It flinches for `flinch` seconds. Returns the health really lost.
+func bitten(percent: float, floor_share: float, flinch: float) -> float:
+	if dead or not hittable:
+		return 0.0
+	var loss := clampf(max_hp * percent / 100.0, 0.0, maxf(hp - max_hp * floor_share, 0.0))
+	hp -= loss
+	_flash = 0.2
+	stun = maxf(stun, flinch)
+	Sfx.play("enemy_hit", -4.0, 0.05, 0.6)
+	return loss
+
+
 func die(_drops: bool = true) -> void:
 	if dead:
 		return

@@ -92,6 +92,9 @@ var _pop := 0.0
 var _base_scale := 1.0
 var _tint := Color(1, 1, 1)
 var _aura_t := 0.0
+var _eaten_by: Node2D          ## the Hungry Curse that is swallowing this enemy (see devour())
+var _eaten_t := 0.0
+var _eaten_dur := 0.0
 
 
 static func ai_for(ai_name: String, folder: String = "ai") -> RefCounted:
@@ -211,6 +214,8 @@ func _appear() -> void:
 
 func _physics_process(delta: float) -> void:
 	if dead:
+		if _eaten_dur > 0.0:
+			_tick_eaten(delta)
 		return
 	if appear > 0.0:
 		appear -= delta
@@ -437,6 +442,36 @@ func die(drops: bool = true) -> void:
 	if drops and not minion:
 		_drop_loot()
 	queue_free()
+
+
+## Swallowed whole by the Hungry Curse (scripts/entities/curse.gd): the enemy shrinks into the
+## disc and is gone. Unlike die() there is no death effect and no loot, and the AI's died() is
+## NOT called (so an exploder does not blow up).
+func devour(into: Node2D, seconds: float = 0.2) -> void:
+	if dead:
+		return
+	dead = true
+	hittable = false
+	room.enemy_died(self)
+	run.enemy_devoured(self)
+	_eaten_by = into
+	_eaten_t = seconds
+	_eaten_dur = maxf(seconds, 0.01)
+	shadow.visible = false
+	sprite.material = null
+	queue_redraw()
+
+
+func _tick_eaten(delta: float) -> void:
+	_eaten_t -= delta
+	var k := clampf(_eaten_t / _eaten_dur, 0.0, 1.0)
+	if is_instance_valid(_eaten_by):
+		position = position.lerp(_eaten_by.position, 1.0 - exp(-14.0 * delta))
+	sprite.scale = Vector2(_base_scale * k, _base_scale * k)
+	sprite.position.y = 2.0 - lift * k
+	sprite.modulate = _tint.darkened(1.0 - k)
+	if _eaten_t <= 0.0:
+		queue_free()
 
 
 func _drop_loot() -> void:

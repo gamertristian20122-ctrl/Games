@@ -48,6 +48,10 @@ enum RoomType { START, COMBAT, TREASURE, SHOP, SECRET, BOSS, ALTAR }
 ##                                  .items: Array[String] (item ids, in pickup order)
 ##                                  .familiars: Array (nodes)   .global_position
 ##   run.boss                       null, or a node with .display_name: String  .hp: float  .max_hp: float
+##   run.curse_level: int (0-5)     run.belly: int (coins inside the Curse)    run.belly_cap(): int
+##   run.call_fill: float           0..1, how far the CALL cooldown has recovered (1 = ready)
+##   run.call_ready: bool           pressing CALL (Controls.action_pressed) would work right now
+##   run.call_pulse: bool           the first-run lesson wants the CALL button to pulse
 ##   run.summary() -> Dictionary    { victory, hero, floor, floor_name, time_s, kills, coins, items, rooms_cleared,
 ##                                    secrets_found, bosses, damage_taken, cause }
 ## What the shell may call:
@@ -78,6 +82,8 @@ signal run_ended(victory: bool, summary: Dictionary)
 ## Free-form counters for unlocks and achievements, e.g. ("secret_found", 1), ("boss_killed:gravekeeper", 1).
 ## The shell adds them to the save file and checks unlock rules.
 signal stat(key: String, amount: int)
+## The world asks for a short vibration (the touch layer does it if the setting allows).
+signal buzz(msec: int)
 
 # ------------------------------------------------------------------ command-line flags
 ## Flags after "--" on the command line, e.g.  godot --path . -- --autotest --hero=witch --seed=7

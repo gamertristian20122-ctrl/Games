@@ -19,11 +19,13 @@ extends Node2D
 ## thing is just a new file there with  setup(room, desc)  and  save() -> Dictionary.
 
 const Layouts = preload("res://scripts/data/room_layouts.gd")
+const RoomLook = preload("res://scripts/run/room_look.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const BossScript = preload("res://scripts/entities/boss.gd")
 const BombScript = preload("res://scripts/entities/bomb.gd")
+const CurseScript = preload("res://scripts/entities/curse.gd")
 
 # ---- what a floor tile can hold
 const EMPTY := 0
@@ -77,7 +79,9 @@ var spawn_marks: Array[Vector2i] = []
 
 var enemies: Array = []          ## every living enemy (and boss) in the room
 var things: Array = []           ## pickups, chests, pedestals ... (anything with save())
-var blockers: Array = []         ## familiars that stop enemy shots
+var blockers: Array = []         ## familiars that stop enemy shots (and the Hungry Curse)
+var curse: Node2D = null         ## the Hungry Curse while a fight is on (scripts/entities/curse.gd), else null
+var bombs: Array = []            ## bombs lying in the room whose fuse is still burning
 var fighting := false
 var fight_time := 0.0
 var spikes_up := false
@@ -99,10 +103,18 @@ var _flow_walk := PackedInt32Array()
 var _flow_fly := PackedInt32Array()
 var _flow_cell := -1
 var _flow_dirty := true
-var _floor_variant := PackedByteArray()
-var _decor: Array = []           ## back wall decorations: [col, kind]
+var look: Node2D                 ## draws the room: floor, walls, doors, torches, decoration (scripts/run/room_look.gd)
+var torch_cells := {}            ## cell index -> true where a column is really a standing torch (layout letter T)
 var _lock_bump_cd := 0.0
 var _pending_reward := false
+var _crack_fx: Node2D            ## draws the cracks the Hungry Curse leaves on hidden doors
+## Shown once when the Curse cracks a wall.
+const CRACK_TEXT := "The wall cracked!"
+const CRACK_LIGHT := Color(0.69, 0.60, 0.52, 0.55)
+## The crack as pixel steps: x = how deep into the wall, y = sideways.
+const CRACK_SHAPE: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 0), Vector2i(5, 0),
+	Vector2i(6, -1), Vector2i(7, -1), Vector2i(8, 0), Vector2i(9, 1), Vector2i(10, 1), Vector2i(11, 2),
+	Vector2i(3, 2), Vector2i(4, 3), Vector2i(5, 4), Vector2i(6, -2), Vector2i(7, -3), Vector2i(8, -4), Vector2i(2, -1), Vector2i(1, -2)]
 
 
 # =============================================================================== building
@@ -153,6 +165,8 @@ func _build_nodes() -> void:
 	door_fx.z_index = 2
 	add_child(door_fx)
 	door_fx.draw.connect(_draw_doors)
+	look = RoomLook.new()
+	add_child(look)
 
 
 func _build_grid() -> void:
@@ -167,6 +181,10 @@ func _build_grid() -> void:
 			var ch := line[x]
 			if ch == "e":
 				spawn_marks.append(Vector2i(x, y))
+			elif ch == "T":
+				# a standing torch: solid like a column, drawn (and lit) by the look
+				grid[y * COLS + x] = COLUMN
+				torch_cells[y * COLS + x] = true
 			elif CHAR_TO_CELL.has(ch):
 				grid[y * COLS + x] = CHAR_TO_CELL[ch]
 	if rs.has("grid"):
@@ -201,7 +219,9 @@ func _pick_layout() -> Dictionary:
 	elif run.floor_index >= 2:
 		lo = 2
 		hi = 3
-	var list := Layouts.pick_list(kind, lo, hi)
+	var list := Layouts.pick_list(kind, lo, hi, run.floor_index + 1)
+	if list.is_empty():
+		list = Layouts.pick_list(kind, 1, 3, run.floor_index + 1)
 	if list.is_empty():
 		list = Layouts.pick_list(kind)
 	if list.is_empty():
@@ -209,89 +229,14 @@ func _pick_layout() -> Dictionary:
 	return list[rng.randi() % list.size()]
 
 
-## Decides the room's look from its seed: which floor tiles are cracked, what hangs on the back wall.
+## Decides the room's look from its seed (floor tiles, wall decoration, torches): see room_look.gd.
 func _roll_look() -> void:
-	var look := RandomNumberGenerator.new()
-	look.seed = int(rs["seed"]) + 101
-	_floor_variant.resize(COLS * ROWS)
-	for i in COLS * ROWS:
-		_floor_variant[i] = 1 if look.randf() < 0.80 else 2 + look.randi() % 7
-	var free_cols: Array[int] = []
-	for c in range(2, 15):
-		if door_exists(UP) and c >= 6 and c <= 10:
-			continue
-		free_cols.append(c)
-	var used := {}
-	var banners: Array = theme.get("banners", ["wall_banner_red"])
-	var fountain := "wall_fountain_mid_%s" % String(theme.get("fountain", "blue"))
-	if look.randf() < 0.3:
-		fountain = "wall_fountain_mid_red" if fountain.ends_with("blue") else "wall_fountain_mid_blue"
-	match type:
-		G.RoomType.SHOP:
-			for c: int in [3, 5, 11, 13]:
-				_add_decor(c, "wall_banner_yellow", used)
-		G.RoomType.TREASURE:
-			for c: int in [4, 12]:
-				_add_decor(c, "wall_fountain_mid_blue", used)
-		G.RoomType.BOSS:
-			for c: int in [2, 4, 12, 14]:
-				_add_decor(c, "wall_banner_red", used)
-		_:
-			if look.randf() < 0.55:
-				var c: int = [2, 3, 4, 5][look.randi() % 4]
-				var b := String(banners[look.randi() % banners.size()])
-				_add_decor(c, b, used)
-				_add_decor(16 - c, b, used)
-			if look.randf() < 0.40:
-				var c2: int = [3, 4, 5][look.randi() % 3]
-				if look.randf() < 0.5:
-					c2 = 16 - c2
-				_add_decor(c2, fountain, used)
-				if look.randf() < 0.35:
-					_add_decor(16 - c2, fountain, used)
-			if look.randf() < 0.30 and not free_cols.is_empty():
-				_add_decor(free_cols[look.randi() % free_cols.size()], "wall_goo", used)
-			for k in look.randi() % 3:
-				if not free_cols.is_empty():
-					_add_decor(free_cols[look.randi() % free_cols.size()], "wall_hole_%d" % (1 + look.randi() % 2), used)
+	look.roll(self)
 
 
-func _add_decor(col: int, kind: String, used: Dictionary) -> void:
-	if used.has(col) or (door_exists(UP) and col >= 6 and col <= 10):
-		return
-	# a fountain's basin stands on the floor: skip it if an obstacle is there
-	if kind.begins_with("wall_fountain") and grid[col] != EMPTY:
-		return
-	used[col] = true
-	_decor.append([col, kind])
-
-
+## Builds the torches, fountains and their lights.
 func _build_decor_nodes() -> void:
-	for d in _decor:
-		var col: int = d[0]
-		var kind: String = d[1]
-		if not kind.begins_with("wall_fountain_mid"):
-			continue
-		var colour := "red" if kind.ends_with("red") else "blue"
-		var mid := Art.sprite("wall_fountain_mid_" + colour, "default")
-		mid.position = Vector2(col * T + 8, 0)
-		mid.z_index = -9
-		mid.modulate = theme["tile_tint"]
-		add_child(mid)
-		var basin := Art.sprite("wall_fountain_basin_" + colour, "default")
-		basin.position = Vector2(col * T + 8, 16)
-		basin.z_index = -9
-		basin.modulate = theme["tile_tint"]
-		add_child(basin)
-		extra_solids.append(Rect2(col * T + 1, 0, 14, 7))
-		if run.LIGHTING:
-			var light := PointLight2D.new()
-			light.texture = run.light_tex
-			light.texture_scale = 1.1
-			light.energy = 0.75
-			light.color = Color(1.0, 0.45, 0.25) if colour == "red" else Color(0.35, 0.65, 1.0)
-			light.position = Vector2(col * T + 8, 2)
-			add_child(light)
+	look.build()
 
 
 func _build_obstacle_sprites() -> void:
@@ -330,130 +275,26 @@ func _make_obstacle_sprite(i: int) -> void:
 			s.position = Vector2(-8, -22)
 			node.add_child(s)
 		COLUMN:
-			var s2 := Sprite2D.new()
-			s2.texture = Art.tex("column")
-			s2.centered = false
-			s2.position = Vector2(-8, -36)
-			node.add_child(s2)
+			if torch_cells.has(i):
+				look.build_floor_torch(node)
+			else:
+				var s2 := Sprite2D.new()
+				s2.texture = Art.tex("column")
+				s2.centered = false
+				s2.position = Vector2(-8, -36)
+				node.add_child(s2)
 	ysort.add_child(node)
 	cell_nodes[i] = node
 
 
 # =============================================================================== drawing
-func _floor_tex(i: int) -> Texture2D:
-	return Art.tex("floor_%d" % _floor_variant[i])
-
-
+## The floor, the walls and the doors are drawn by the look (scripts/run/room_look.gd).
 func _draw_tiles() -> void:
-	var c := tiles
-	# floor
-	for y in ROWS:
-		for x in COLS:
-			var i := y * COLS + x
-			c.draw_texture(_floor_tex(i), Vector2(x * T, y * T))
-			if grid[i] == PIT:
-				c.draw_texture(Art.tex("hole"), Vector2(x * T, y * T))
-	# back wall: brick face (row -1) with the trim on top (row -2)
-	for x in COLS:
-		var face := "wall_mid"
-		var trim := "wall_top_mid"
-		if x == 0:
-			face = "wall_left"
-			trim = "wall_top_left"
-		elif x == COLS - 1:
-			face = "wall_right"
-			trim = "wall_top_right"
-		c.draw_texture(Art.tex(face), Vector2(x * T, -T))
-		c.draw_texture(Art.tex(trim), Vector2(x * T, -2 * T))
-	for d in _decor:
-		var col: int = d[0]
-		var kind: String = d[1]
-		if kind.begins_with("wall_fountain_mid"):
-			c.draw_texture(Art.tex("wall_fountain_top_%d" % (1 + col % 3)), Vector2(col * T, -2 * T))
-		elif kind == "wall_goo":
-			c.draw_texture(Art.tex("wall_goo"), Vector2(col * T, -T))
-			if grid[col] == EMPTY:
-				c.draw_texture(Art.tex("wall_goo_base"), Vector2(col * T, 0))
-		else:
-			c.draw_texture(Art.tex(kind), Vector2(col * T, -T))
-	# side walls: thin strips of trim, with a gap where a door is
-	for y in range(-1, ROWS):
-		if y == G.DOOR_ROW and door_visible(LEFT):
-			_draw_passage(LEFT)
-		else:
-			c.draw_texture(Art.tex("wall_outer_mid_left"), Vector2(-T, y * T))
-		if y == G.DOOR_ROW and door_visible(RIGHT):
-			_draw_passage(RIGHT)
-		else:
-			c.draw_texture(Art.tex("wall_outer_mid_right"), Vector2(W, y * T))
-	c.draw_texture(Art.tex("wall_outer_top_left"), Vector2(-T, -2 * T))
-	c.draw_texture(Art.tex("wall_outer_top_right"), Vector2(W, -2 * T))
-	if door_visible(DOWN):
-		_draw_passage(DOWN)
-	# the door in the back wall uses the pack's door frame
-	if door_visible(UP):
-		var door: Dictionary = rs["doors"][UP]
-		if door["hidden"]:
-			# a secret door that was blown open: broken bricks around a dark hole
-			c.draw_texture(Art.tex("wall_hole_1"), Vector2(7 * T, -T))
-			c.draw_texture(Art.tex("wall_hole_2"), Vector2(9 * T, -T))
-			c.draw_rect(Rect2(8 * T - 1, -T + 2, T + 2, T - 2), STONE_DARK)
-			c.draw_rect(Rect2(8 * T + 1, -T, T - 2, 3), STONE_DARK)
-		else:
-			c.draw_rect(Rect2(8 * T - 6, -2 * T + 4, 28, 28), Color(0.02, 0.02, 0.04))
-			c.draw_texture(Art.tex("doors_frame_left"), Vector2(8 * T - 24, -2 * T))
-			c.draw_texture(Art.tex("doors_frame_right"), Vector2(8 * T + 24, -2 * T))
-			c.draw_texture(Art.tex("doors_frame_top"), Vector2(8 * T - 8, -3 * T))
+	look.draw_tiles(tiles)
 
 
-## The bit of floor you see through an open side or bottom door, fading into the dark.
-func _draw_passage(dir: Vector2i) -> void:
-	var c := tiles
-	var ft := Art.tex("floor_1")
-	if dir == LEFT:
-		c.draw_texture(ft, Vector2(-T, G.DOOR_ROW * T), Color(0.62, 0.62, 0.62))
-		c.draw_texture(ft, Vector2(-2 * T, G.DOOR_ROW * T), Color(0.26, 0.26, 0.26))
-		c.draw_texture(ft, Vector2(-3 * T, G.DOOR_ROW * T), Color(0.08, 0.08, 0.08))
-	elif dir == RIGHT:
-		c.draw_texture(ft, Vector2(W, G.DOOR_ROW * T), Color(0.62, 0.62, 0.62))
-		c.draw_texture(ft, Vector2(W + T, G.DOOR_ROW * T), Color(0.26, 0.26, 0.26))
-		c.draw_texture(ft, Vector2(W + 2 * T, G.DOOR_ROW * T), Color(0.08, 0.08, 0.08))
-	elif dir == DOWN:
-		c.draw_texture(ft, Vector2(G.DOOR_COL * T, H), Color(0.62, 0.62, 0.62))
-		c.draw_texture(ft, Vector2(G.DOOR_COL * T, H + T), Color(0.22, 0.22, 0.22))
-
-
-## The bottom wall, drawn IN FRONT of everything standing in the room.
 func _draw_front() -> void:
-	var c := front
-	var gap := door_visible(DOWN)
-	var trim_y := H - 14.0
-	var face_y := H + 2.0
-	for x in COLS:
-		if gap and x == G.DOOR_COL:
-			continue
-		var face := "wall_mid"
-		var trim := "wall_top_mid"
-		if x == 0:
-			face = "wall_left"
-			trim = "wall_top_left"
-		elif x == COLS - 1:
-			face = "wall_right"
-			trim = "wall_top_right"
-		c.draw_texture(Art.tex(trim), Vector2(x * T, trim_y))
-		c.draw_texture(Art.tex(face), Vector2(x * T, face_y))
-	# the side strips run down past the floor and end in a brick foot
-	c.draw_texture_rect_region(Art.tex("wall_outer_mid_left"), Rect2(-T, H - 2, T, 4), Rect2(0, 0, T, 4))
-	c.draw_texture_rect_region(Art.tex("wall_outer_mid_right"), Rect2(W, H - 2, T, 4), Rect2(0, 0, T, 4))
-	c.draw_texture(Art.tex("wall_outer_front_left"), Vector2(-T, face_y))
-	c.draw_texture(Art.tex("wall_outer_front_right"), Vector2(W, face_y))
-	if gap:
-		# stone posts either side of the bottom doorway
-		var x0 := G.DOOR_COL * T
-		c.draw_rect(Rect2(x0 - 2, trim_y + 11, 3, 21), STONE_DARK)
-		c.draw_rect(Rect2(x0 + T - 1, trim_y + 11, 3, 21), STONE_DARK)
-		c.draw_rect(Rect2(x0 - 1, trim_y + 12, 1, 19), STONE_LIGHT)
-		c.draw_rect(Rect2(x0 + T, trim_y + 12, 1, 19), STONE_LIGHT)
+	look.draw_front(front)
 
 
 func _draw_spikes() -> void:
@@ -465,125 +306,13 @@ func _draw_spikes() -> void:
 			spikes_node.draw_texture(tex, Vector2((i % COLS) * T, (i / COLS) * T))
 
 
-## Door states you can read at a glance:
-##   open    side/bottom: a lit passage.  back wall: the pack's open door
-##   shut    iron bars (during a fight)
-##   locked  golden bars with a keyhole plate (treasure room)
-##   boss    red bars / red door with a skull above
-##   hidden  looks like plain wall until a bomb reveals it
+## Door states (open, shut, locked, boss, hidden, blown open) are explained at the top of room_look.gd.
 func _draw_doors() -> void:
-	var c := door_fx
-	for dir: Vector2i in rs["doors"]:
-		if not door_visible(dir):
-			continue
-		var door: Dictionary = rs["doors"][dir]
-		var locked: bool = door["locked"] and type != G.RoomType.TREASURE
-		var shut: bool = fighting or locked
-		var boss: bool = door["boss"]
-		var bar_dark := IRON_DARK
-		var bar_light := IRON_LIGHT
-		if locked:
-			bar_dark = Color(0.45, 0.30, 0.08)
-			bar_light = GOLD
-		elif boss:
-			bar_dark = Color(0.30, 0.05, 0.06)
-			bar_light = BOSS_RED
-		var mid := door_pos(dir)
-		if dir == UP:
-			if door["hidden"]:
-				if shut:
-					_bars_h(c, Rect2(mid.x - 8, -14, 16, 14), bar_dark, bar_light)
-			else:
-				if locked:
-					c.draw_rect(Rect2(mid.x - 4, -15, 8, 9), STONE_DARK)
-					c.draw_rect(Rect2(mid.x - 3, -14, 6, 7), GOLD)
-					c.draw_rect(Rect2(mid.x - 1, -12, 2, 3), STONE_DARK)
-				if boss:
-					c.draw_texture(Art.tex("skull"), Vector2(mid.x - 8, -47))
-		elif dir == DOWN:
-			if shut:
-				_bars_h(c, Rect2(mid.x - 8, H - 3, 16, 22), bar_dark, bar_light)
-			if locked:
-				c.draw_rect(Rect2(mid.x - 4, H + 3, 8, 9), STONE_DARK)
-				c.draw_rect(Rect2(mid.x - 3, H + 4, 6, 7), GOLD)
-				c.draw_rect(Rect2(mid.x - 1, H + 6, 2, 3), STONE_DARK)
-			if boss:
-				c.draw_texture(Art.tex("skull"), Vector2(mid.x - 22, H - 6))
-				c.draw_texture(Art.tex("skull"), Vector2(mid.x + 6, H - 6))
-		else:
-			var x0 := -6.0 if dir == LEFT else W
-			if shut:
-				_bars_v(c, Rect2(x0, mid.y - 9, 6, 18), bar_dark, bar_light)
-				# the passage behind a shut door is dark
-				var px := -3.0 * T if dir == LEFT else W + 6.0
-				c.draw_rect(Rect2(px, mid.y - 8, 3 * T - 6, 16), Color(0.03, 0.03, 0.05, 0.82))
-			if locked:
-				var kx := -11.0 if dir == LEFT else W + 3.0
-				c.draw_rect(Rect2(kx, mid.y - 5, 8, 9), STONE_DARK)
-				c.draw_rect(Rect2(kx + 1, mid.y - 4, 6, 7), GOLD)
-				c.draw_rect(Rect2(kx + 3, mid.y - 2, 2, 3), STONE_DARK)
-			if boss:
-				var sx := -15.0 if dir == LEFT else W - 1.0
-				c.draw_texture(Art.tex("skull"), Vector2(sx, mid.y - 27))
-		# a coloured frame so doors stand out from the wall
-		if dir == LEFT or dir == RIGHT:
-			var fx0 := -6.0 if dir == LEFT else W
-			var frame := STONE_LIGHT
-			if locked:
-				frame = GOLD
-			elif boss:
-				frame = BOSS_RED
-			c.draw_rect(Rect2(fx0, mid.y - 12, 6, 4), STONE_DARK)
-			c.draw_rect(Rect2(fx0 + 1, mid.y - 11, 4, 2), frame)
-			c.draw_rect(Rect2(fx0, mid.y + 8, 6, 4), STONE_DARK)
-			c.draw_rect(Rect2(fx0 + 1, mid.y + 9, 4, 2), frame)
-
-
-## Upright iron bars seen from the front (bottom door, blown-open back wall).
-func _bars_h(c: Node2D, r: Rect2, dark: Color, light: Color) -> void:
-	c.draw_rect(r, Color(0.03, 0.03, 0.05, 0.85))
-	var x := r.position.x + 1.0
-	while x < r.end.x - 1.0:
-		c.draw_rect(Rect2(x, r.position.y, 2, r.size.y), dark)
-		c.draw_rect(Rect2(x, r.position.y, 1, r.size.y), light)
-		x += 4.0
-	c.draw_rect(Rect2(r.position.x, r.position.y + 3, r.size.x, 2), dark)
-	c.draw_rect(Rect2(r.position.x, r.position.y + 3, r.size.x, 1), light)
-
-
-## A gate in a side wall, seen from above: a thick strip with rivets.
-func _bars_v(c: Node2D, r: Rect2, dark: Color, light: Color) -> void:
-	c.draw_rect(r, dark)
-	c.draw_rect(Rect2(r.position.x + 1, r.position.y + 1, r.size.x - 2, r.size.y - 2), light.darkened(0.25))
-	var y := r.position.y + 2.0
-	while y < r.end.y - 2.0:
-		c.draw_rect(Rect2(r.position.x + 2, y, 2, 2), light.lightened(0.3))
-		y += 4.0
+	look.draw_doors(door_fx)
 
 
 func _refresh_door_art() -> void:
-	if not door_visible(UP) or rs["doors"][UP]["hidden"]:
-		if _top_leaf != null:
-			_top_leaf.visible = false
-		door_fx.queue_redraw()
-		return
-	if _top_leaf == null:
-		_top_leaf = Sprite2D.new()
-		_top_leaf.centered = false
-		_top_leaf.position = Vector2(8 * T - 8, -2 * T)
-		_top_leaf.z_index = -9
-		add_child(_top_leaf)
-	var door: Dictionary = rs["doors"][UP]
-	var locked: bool = door["locked"] and type != G.RoomType.TREASURE
-	var shut: bool = fighting or locked
-	_top_leaf.visible = true
-	_top_leaf.texture = Art.tex("doors_leaf_closed" if shut else "doors_leaf_open")
-	var tint: Color = theme["tile_tint"]
-	if door["boss"]:
-		tint = Color(1.25, 0.55, 0.55)
-	elif locked:
-		tint = Color(1.25, 1.05, 0.55)
-	_top_leaf.modulate = tint
+	look.refresh_door_art()
 	door_fx.queue_redraw()
 
 
@@ -674,7 +403,60 @@ func reveal_door(dir: Vector2i) -> void:
 	Sfx.play("secret_found")
 	run.secret_revealed()
 	_doors_changed()
+	_refresh_cracks()
 	G.hud_changed.emit()
+
+
+## The Hungry Curse slammed into the wall in front of a hidden door: it leaves a crack that stays
+## for good (on both sides) and shows on the minimap. A second slam, or a bomb, opens the door.
+func crack_door(dir: Vector2i) -> void:
+	var door: Dictionary = rs["doors"][dir]
+	if door.get("cracked", false) or door["revealed"]:
+		return
+	door["cracked"] = true
+	var other: Dictionary = run.rooms[door["to"]]["doors"]
+	if other.has(-dir):
+		other[-dir]["cracked"] = true
+	run.fx.burst(door_pos(dir), [STONE_LIGHT, Color(0.4, 0.35, 0.32), Color(0.25, 0.22, 0.22)], 14, 60.0, 0.5, 2.2)
+	Sfx.play("rock_break", -4.0, 0.05, 0.75)
+	G.stat.emit("wall_cracked", 1)
+	G.toast.emit(CRACK_TEXT, "")
+	_refresh_cracks()
+	G.hud_changed.emit()
+
+
+## Cracked hidden doors are drawn by a small canvas of their own, on top of the walls.
+func _refresh_cracks() -> void:
+	var any := false
+	for dir: Vector2i in rs["doors"]:
+		var door: Dictionary = rs["doors"][dir]
+		if door["hidden"] and not door["revealed"] and door.get("cracked", false):
+			any = true
+	if _crack_fx == null:
+		if not any:
+			return
+		_crack_fx = Node2D.new()
+		_crack_fx.z_index = 2
+		add_child(_crack_fx)
+		_crack_fx.draw.connect(_draw_cracks)
+	_crack_fx.queue_redraw()
+
+
+## A crack is a jagged dark line with a paler edge: plain pixels, no picture.
+func _draw_cracks() -> void:
+	for dir: Vector2i in rs["doors"]:
+		var door: Dictionary = rs["doors"][dir]
+		if not door["hidden"] or door["revealed"] or not door.get("cracked", false):
+			continue
+		var into := Vector2(dir)                 # from the floor's edge into the wall
+		var along := Vector2(absf(into.y), absf(into.x))
+		var from := door_pos(dir) + into * (1.0 if dir == UP or dir == LEFT else 0.0)
+		if dir == DOWN:
+			from.y -= 2.0                        # the bottom wall's top edge overlaps the floor
+		for step: Vector2i in CRACK_SHAPE:
+			var p := from + into * float(step.x) + along * float(step.y)
+			_crack_fx.draw_rect(Rect2(floorf(p.x) + 1.0, floorf(p.y), 1, 1), CRACK_LIGHT)
+			_crack_fx.draw_rect(Rect2(floorf(p.x), floorf(p.y), 1, 1), STONE_DARK)
 
 
 func _check_doors(player: Node) -> void:
@@ -1041,6 +823,7 @@ func add_bomb(at: Vector2) -> void:
 	var bomb: Node2D = BombScript.new()
 	ysort.add_child(bomb)
 	bomb.setup(self, at)
+	bombs.append(bomb)
 
 
 ## Writes everything worth remembering into the room record (called when the player leaves).
@@ -1092,6 +875,7 @@ func _first_visit_content() -> void:
 ## Called by the run once the player stands in the room.
 func begin(first_visit: bool) -> void:
 	_update_flow()
+	_refresh_cracks()
 	if (type == G.RoomType.COMBAT or type == G.RoomType.BOSS) and not rs["cleared"]:
 		_start_fight()
 	elif not rs["cleared"]:
@@ -1111,6 +895,7 @@ func _start_fight() -> void:
 	fight_time = 0.0
 	Sfx.play("door_close")
 	_doors_changed()
+	_spawn_curse()
 	var player_pos: Vector2 = run.player.position
 	if type == G.RoomType.BOSS:
 		spawn_enemy(run.boss_id, G.ROOM_CENTER + Vector2(0, -8), {"boss": true, "delay": 1.1})
@@ -1131,6 +916,16 @@ func _start_fight() -> void:
 		if at == Vector2.INF:
 			at = random_spawn_spot(player_pos, Enemies.info(id).get("flying", false))
 		spawn_enemy(id, at + Vector2(rng.randf_range(-3, 3), rng.randf_range(-3, 3)), {"delay": SPAWN_DELAY + rng.randf() * 0.15})
+
+
+## Every locked room gets the Hungry Curse. It waits a second, rises, and sinks again when the
+## fight is won (it watches room.fighting and room.enemies by itself).
+func _spawn_curse() -> void:
+	if G.flag("nocurse"):
+		return
+	curse = CurseScript.new()
+	add_child(curse)
+	curse.setup(self)
 
 
 ## A random empty tile at least SPAWN_SAFE_DIST away from `avoid`.
@@ -1196,6 +991,8 @@ func enemy_died(e: Node) -> void:
 func _room_cleared() -> void:
 	fighting = false
 	rs["cleared"] = true
+	if curse != null and is_instance_valid(curse):
+		curse.sink()
 	Sfx.play("door_open")
 	_doors_changed()
 	run.on_room_cleared(self)
@@ -1259,6 +1056,9 @@ func explode(at: Vector2, damage: float = 40.0) -> void:
 	for t in things.duplicate():
 		if is_instance_valid(t) and t.has_method("bombed") and (t.position as Vector2).distance_to(at) < run.BOMB_RADIUS:
 			t.bombed()
+	# the Hungry Curse: a blast close enough stuns it and makes it cough up its coins
+	if curse != null and is_instance_valid(curse):
+		curse.on_blast(at)
 	var fx: Node = run.fx
 	fx.ring(at, 4.0, run.BOMB_RADIUS, 0.28, Color(1.0, 0.9, 0.6), 3.0)
 	fx.ring(at, 2.0, run.BOMB_RADIUS * 0.7, 0.4, Color(1.0, 0.5, 0.2), 2.0, true)

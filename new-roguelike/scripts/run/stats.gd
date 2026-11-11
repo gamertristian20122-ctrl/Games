@@ -27,6 +27,10 @@ const DEFAULTS := {
 	"luck": 0.0,          # raises drop chances a little
 	"invuln": 1.0,        # seconds of blinking safety after a hit
 	"bomb_damage": 40.0,
+	# ---- the Hungry Curse (scripts/entities/curse.gd)
+	"call_cooldown": 4.0, # seconds before CALL works again
+	"curse_creep": 1.0,   # multiplier on how fast the Curse creeps toward the hero
+	"belly_mult": 1.0,    # multiplier on the coins a bombed Curse coughs up
 }
 
 ## Lowest and highest value each stat may reach, whatever the items say.
@@ -35,6 +39,7 @@ const LIMITS := {
 	"shot_speed": [60.0, 360.0], "shot_size": [0.5, 3.0], "knockback": [0.0, 4.0], "shots": [1.0, 7.0],
 	"spread": [0.0, 1.2], "homing": [0.0, 8.0], "hurt_mult": [0.5, 4.0], "coin_mult": [0.25, 5.0],
 	"luck": [-5.0, 10.0], "invuln": [0.3, 3.0], "bomb_damage": [10.0, 400.0],
+	"call_cooldown": [1.0, 10.0], "curse_creep": [0.3, 2.0], "belly_mult": [0.5, 4.0],
 }
 
 var base := {}

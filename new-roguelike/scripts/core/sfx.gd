@@ -50,7 +50,9 @@ func has(name: String) -> bool:
 	return not _load(name).is_empty()
 
 
-func play(name: String, volume_db: float = 0.0, pitch_var: float = 0.06) -> void:
+## `pitch` shifts the whole sound (0.5 = an octave lower, 2.0 = an octave higher); the Hungry Curse
+## reuses existing effects this way instead of adding new recordings.
+func play(name: String, volume_db: float = 0.0, pitch_var: float = 0.06, pitch: float = 1.0) -> void:
 	var list := _load(name)
 	if list.is_empty() or sfx_volume <= 0.001:
 		return
@@ -62,7 +64,7 @@ func play(name: String, volume_db: float = 0.0, pitch_var: float = 0.06) -> void
 	_next = (_next + 1) % VOICES
 	p.stream = list[randi() % list.size()]
 	p.volume_db = volume_db + linear_to_db(sfx_volume)
-	p.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
+	p.pitch_scale = maxf(0.05, pitch * (1.0 + randf_range(-pitch_var, pitch_var)))
 	p.play()
 
 

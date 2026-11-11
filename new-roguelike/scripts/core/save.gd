@@ -3,6 +3,7 @@ extends Node
 ##   unlocks   ids such as "hero:witch", "item:glass_blade", "ach:first_win"
 ##   stats     lifetime counters (runs, wins, total_kills, "boss_killed:<id>", "secret_found" ...)
 ##   seen      item ids the player has picked up at least once (for the collection screen)
+##   flags     one-time things this profile has already seen, e.g. the first-run lessons ("taught:curse_intro")
 ##   settings  sfx_volume, music_volume, vibration, swap_sticks, last_hero
 ## It also keeps score by itself: it listens to the game's events (G.stat, G.run_ended,
 ## G.item_acquired), adds them to the counters and checks the unlock rules in
@@ -25,6 +26,7 @@ const DEFAULTS := {
 	"unlocks": {},
 	"stats": {},
 	"seen": {},
+	"flags": {},
 	"settings": DEFAULT_SETTINGS,
 }
 
@@ -75,7 +77,7 @@ func _load() -> void:
 ## Copies only the parts of a loaded file that have the right shape. Anything odd is skipped,
 ## so files from older versions (or edited by hand) still load.
 func _absorb(loaded: Dictionary) -> void:
-	for section: String in ["unlocks", "seen"]:
+	for section: String in ["unlocks", "seen", "flags"]:
 		var src: Variant = loaded.get(section)
 		var keys: Array = []
 		if src is Dictionary:
@@ -188,6 +190,20 @@ func has_seen(item_id: String) -> bool:
 	return data["seen"].has(item_id)
 
 
+# ------------------------------------------------------------------ one-time flags
+## True once set_flag(key) was called on this save profile (first-run lessons use it).
+func flag(key: String) -> bool:
+	return (data.get("flags", {}) as Dictionary).has(key)
+
+
+func set_flag(key: String) -> void:
+	if not data.has("flags"):
+		data["flags"] = {}
+	if not data["flags"].has(key):
+		data["flags"][key] = true
+		_dirty = true
+
+
 # ------------------------------------------------------------------ settings
 func setting(key: String) -> Variant:
 	return data["settings"].get(key, DEFAULT_SETTINGS.get(key))
@@ -207,6 +223,7 @@ func reset_progress() -> void:
 	data["unlocks"] = {}
 	data["stats"] = {}
 	data["seen"] = {}
+	data["flags"] = {}
 	run_unlocks.clear()
 	_dirty = true
 	flush()
