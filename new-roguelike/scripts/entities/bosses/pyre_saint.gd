@@ -68,10 +68,12 @@ func tick(e, delta: float) -> void:
 				_next_attack(e, mean)
 		SWOOP:
 			var v: float = float(e.p.get("swoop_speed", 185.0)) * (1.15 if mean else 1.0) * e.status_speed()
-			var blocked: bool = e.dash(e.dir * v, delta)
-			e.mem["left"] = float(e.mem["left"]) - v * delta
+			# it flies EXACTLY down the marked lane (no sliding along a wall: _aim keeps the lane inside the room)
+			var go := minf(v * delta, float(e.mem["left"]))
+			e.position += e.dir * go
+			e.mem["left"] = float(e.mem["left"]) - go
 			e.run.fx.burst(e.body_point() - e.dir * 18.0, FIRE, 1, 30.0, 0.4, 2.6)
-			if blocked or float(e.mem["left"]) <= 0.0:
+			if float(e.mem["left"]) <= 0.01:
 				_swoop_ends(e, mean)
 		REST:
 			if e.t <= 0.0:
@@ -174,18 +176,41 @@ func _ring(e, gap_at: float) -> void:
 # ------------------------------------------------------------------------------ SWOOP
 func _begin_swoop(e, warn: float) -> void:
 	e.state = BUSY
-	e.dir = e.to_player().normalized() if e.dist_to_player() > 1.0 else Vector2.RIGHT
-	var reach: float = e.room.ray_walk(e.position, e.dir, 320.0, true)
-	e.mem["left"] = reach + 6.0
+	var reach := _aim(e)
+	e.mem["left"] = reach
 	e.tell(warn)
-	e.mark_charge(e.dir, reach + 10.0, warn)
+	e.mark_charge(e.dir, reach + 24.0, warn)   # + its own body at the far end
 	e._say("SWOOP")
 	Sfx.play("boss_roar", -9.0, 0.05, 1.5)
 	e.after(warn, _swoop_go)
 
 
+## Aims a swoop at the hero and returns how far it goes. Its body is too big to reach the last
+## strip of floor along a wall, so it aims at the nearest spot it CAN reach: the lane it marks is
+## then exactly the lane it flies.
+func _aim(e) -> float:
+	var r: float = e.radius
+	var lo := Vector2(r, r)
+	var hi := Vector2(G.ROOM_W - r, G.ROOM_H - r)
+	var from: Vector2 = (e.position as Vector2).clamp(lo, hi)
+	e.position = from
+	var to: Vector2 = (e.player.position as Vector2).clamp(lo, hi)
+	var d := to - from
+	e.dir = d.normalized() if d.length() > 1.0 else Vector2.RIGHT
+	# how far along e.dir until the middle of the body meets the wall
+	var reach := 400.0
+	if absf(e.dir.x) > 0.001:
+		reach = minf(reach, ((hi.x if e.dir.x > 0.0 else lo.x) - from.x) / e.dir.x)
+	if absf(e.dir.y) > 0.001:
+		reach = minf(reach, ((hi.y if e.dir.y > 0.0 else lo.y) - from.y) / e.dir.y)
+	return maxf(reach, 0.0)
+
+
 func _swoop_go(e) -> void:
 	e.state = SWOOP
+	# the lane stays red for as long as the skull is flying down it
+	var v := float(e.p.get("swoop_speed", 185.0))
+	e.mark_charge(e.dir, float(e.mem["left"]) + 24.0, maxf(float(e.mem["left"]) / v, 0.2))
 	Sfx.play("enemy_shoot", -3.0, 0.05, 0.6)
 
 
@@ -242,7 +267,7 @@ func _rain_erupt(e) -> void:
 	e.run.fx.burst(at, FIRE, 6, 70.0, 0.35, 2.2)
 	Sfx.play("explosion", -11.0, 0.1, 1.5)
 	if e.phase >= 2:
-		e.burn_ground(at, r - 3.0, 1.4, 0.0)
+		e.burn_ground(at, r - 4.0, 1.0, 0.0)
 
 
 # ------------------------------------------------------------------------------ GUTTERS OUT

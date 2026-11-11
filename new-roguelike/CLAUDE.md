@@ -14,6 +14,8 @@ item makes it bigger.
   short numbered steps, no jargon.
 - Send the APK as soon as a build is done, and send screenshots as progress updates.
 - Keep the work moving; give a short plan, then do it.
+- Do NOT make publisher materials (pitch pages, slides, trailers, store text) unless the owner asks:
+  on 11 Nov 2026 they said publishers were only a mention. Build the game.
 - Usage limits are tight (they have cut work off mid-task many times). The owner asked on 11 Nov 2026:
   "keep the quality and cut down on usage". So: few agents with tight briefs, one light tester rather
   than several heavy ones, no repeated checking of the same thing; spend on building, not re-verifying.

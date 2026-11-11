@@ -46,6 +46,7 @@ const ARM_HALF := 8.0
 const ARM_BODY := 14.0               # half the length of the flying arm
 const BEAM_HALF := 6.0
 const WAVE_GAP := 0.45               # s between the fist and each shockwave band
+const SWEEP_HOLD := 0.3              # s the phase-2 beam stands on its first edge before it turns
 const GUARD_WARN := 0.7
 const BLAST_WARN := 0.7
 const BLAST_RADIUS := 20.0
@@ -323,18 +324,16 @@ func _beam_on(e, _frame: int) -> void:
 	Sfx.play("player_shoot_magic", 2.0, 0.0, 0.5)
 	Sfx.play("explosion", -9.0, 0.0, 1.6)
 	if mean:
-		# the test bot keeps out of the whole wedge while the beam turns
+		# the wedge stays on the floor (and fills again) for as long as the beam turns
 		var mid := Vector2.RIGHT.rotated((float(e.mem["a0"]) + float(e.mem["a1"])) * 0.5)
-		var from: Vector2 = e.mem["beam_from"]
-		e.run.fx.hazards.append([2, from, from + mid * LASER_REACH, float(e.p.get("sweep", 0.85)) * 0.5,
-			0.3 + float(e.p.get("sweep_time", 1.6)), e.get_instance_id(), 0.0])
+		e.mark_cone(e.mem["beam_from"], mid, LASER_REACH, float(e.p.get("sweep", 0.85)) * 0.5, SWEEP_HOLD + float(e.p.get("sweep_time", 1.6)))
 	_burn(e, 0.0, mean)
 
 
 func _burn(e, delta: float, mean: bool) -> void:
 	var t := float(e.mem["beam_t"]) + delta
 	e.mem["beam_t"] = t
-	var hold := 0.3 if mean else float(e.p.get("laser_time", 0.7))
+	var hold := SWEEP_HOLD if mean else float(e.p.get("laser_time", 0.7))
 	var turning := float(e.p.get("sweep_time", 1.6)) if mean else 0.0
 	var a := float(e.mem["a0"])
 	if mean:
