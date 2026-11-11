@@ -27,13 +27,17 @@ const SCREENS := {
 	"collection": "res://scripts/ui/collection.gd",
 	"settings": "res://scripts/ui/settings.gd",
 	"credits": "res://scripts/ui/credits.gd",
+	"hub_talk": "res://scripts/ui/hub_talk.gd",
 }
 ## Screens that keep the dungeon picture bright behind them; behind the others it is dimmed.
 const BRIGHT := ["title", "hero_select"]
 const RUN_SCRIPT := "res://scripts/run/run.gd"
 const FAKE_RUN_SCRIPT := "res://scripts/ui/dev_fake_run.gd"
+const HUB_SCRIPT := "res://scripts/hub/hub.gd"
+const Quests = preload("res://scripts/data/quests.gd")
 
 var run: Node                    ## the game being played, or null on the menus
+var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
 var hud: CanvasLayer             ## scripts/ui/hud.gd
 var touch: CanvasLayer           ## scripts/ui/touch.gd
 var backdrop: Control            ## scripts/ui/backdrop.gd
@@ -71,6 +75,8 @@ func _ready() -> void:
 		add_child(tour)
 	elif G.flag("autotest"):
 		start_run(G.arg("hero", "knight"), int(G.arg("seed", "1")))
+	elif G.flag("hub"):
+		show_hub()
 	else:
 		_fade.color.a = 1.0
 		show_title()
@@ -172,19 +178,46 @@ func top_screen() -> Control:
 
 func _refresh_layers() -> void:
 	var in_run := run != null
-	backdrop.visible = not in_run
+	var in_hub := is_instance_valid(hub)
+	backdrop.visible = not in_run and not in_hub
 	backdrop.call("set_dimmed", not _names.is_empty() and not (_names.back() in BRIGHT))
-	_shade.visible = in_run and not _stack.is_empty()
+	_shade.visible = (in_run or in_hub) and not _stack.is_empty()
 	hud.visible = in_run and _stack.is_empty()      # the pause menu shows its own numbers
-	touch.call("set_active", in_run and _stack.is_empty() and not _ending)
+	touch.set("hub_mode", in_hub)
+	touch.call("set_active", (in_run or in_hub) and _stack.is_empty() and not _ending)
+	if in_hub:
+		hub.set("frozen", not _stack.is_empty())
 
 
 func show_title() -> void:
 	await _drop_run()
+	_drop_hub()
 	get_tree().paused = false
 	close_all()
 	open("title")
 	Sfx.music("title")
+
+
+## The camp between runs: walk around, talk, pick a stage at the gate.
+func show_hub() -> void:
+	await _drop_run()
+	_drop_hub()
+	get_tree().paused = false
+	close_all()
+	_ending = false
+	hub = (load(HUB_SCRIPT) as Script).new()
+	hub.name = "Hub"
+	hub.connect("action", _on_action)
+	_world.add_child(hub)
+	_refresh_layers()
+	Sfx.music("title")
+
+
+func _drop_hub() -> void:
+	if is_instance_valid(hub):
+		hub.queue_free()
+	hub = null
+	_refresh_layers()
 
 
 ## Every request a screen can send ends up here.
@@ -198,14 +231,33 @@ func _on_action(what: String, arg: Variant) -> void:
 			elif _stack.size() > 1:
 				close_top()
 		"play":
-			open("hero_select")
+			_transition(show_hub)
+		"talk":
+			open("hub_talk", {"info": arg})
+		"hub_stage":
+			G.next_run = {"floor": int(arg), "pack": Quests.take_pack()}
+			_transition(start_run.bind(String(Save.setting("last_hero")), _fresh_seed()))
+		"hub_hero":
+			Save.set_setting("last_hero", String(arg))
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("refresh_heroes")
+		"hub_claim":
+			Quests.claim(String(arg))
+			Sfx.play("ui_start")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("retalk")
 		"collection", "settings", "credits":
 			open(what)
 		"start":
 			_transition(start_run.bind(String(arg), _fresh_seed()))
 		"retry":
+			G.next_run = {"floor": 1, "pack": Quests.take_pack()}
 			_transition(start_run.bind(_hero_id, _fresh_seed()))
 		"menu":
+			_transition(show_hub)         # after a run you are back in the camp
+		"title":
 			_transition(show_title)
 		"resume":
 			resume()
@@ -225,6 +277,7 @@ func _fresh_seed() -> int:
 ## Starts a new run (and throws away the old one, if any).
 func start_run(hero_id: String, seed_value: int) -> void:
 	await _drop_run()
+	_drop_hub()
 	close_all()
 	get_tree().paused = false
 	_hero_id = hero_id
@@ -329,6 +382,8 @@ func _back() -> void:
 		_stack.back().call("on_back")
 	elif run != null:
 		pause()
+	elif is_instance_valid(hub):
+		_transition(show_title)        # Back in the camp: to the title
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -6,6 +6,7 @@ extends Control
 
 const UI = preload("res://scripts/ui/theme.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
+const Hands = preload("res://scripts/entities/hands.gd")
 const RoomLook = preload("res://scripts/run/room_look.gd")
 const SET := "crypt"                     ## the Pixel Crawler tile set the backdrop is built from
 
@@ -16,6 +17,8 @@ const LIGHT_RADIUS := 62.0               ## where the light has faded to black, 
 var _scene: Node2D
 var _hero: AnimatedSprite2D
 var _weapon: Sprite2D
+var _off_hand: RefCounted        ## the hero's free hand (hands.gd), like in a run
+var _off_hand_id := ""
 var _light: Sprite2D
 var _dim: ColorRect
 var _time := 0.0
@@ -200,6 +203,19 @@ func set_hero(hero: Dictionary, locked: bool = false) -> void:
 		HeroLook.set_weapon(_weapon, hero)
 		HeroLook.rest(_weapon, 1.0)
 		_weapon.position += HERO_FEET
+	# the free hand: rebuilt when the hero changes, hidden for a locked (black) hero
+	var hand_id := String(hero.get("hand", ""))
+	if hand_id != _off_hand_id or _off_hand == null:
+		if _off_hand != null and is_instance_valid(_off_hand.far):
+			_off_hand.far.queue_free()
+		_off_hand_id = hand_id
+		_off_hand = Hands.new()
+		if hand_id != "":
+			var m := Art.meta(sprite_id)
+			_off_hand.build(_scene, _hero, hand_id, float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)), true)
+	if _off_hand.far != null:
+		_off_hand.update(0.0, false, 1.0, 0.0, not locked)
+		_off_hand.far.position += HERO_FEET
 
 
 ## Darkens the whole picture so panels on top are easy to read (collection, settings, ...).

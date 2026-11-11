@@ -49,6 +49,7 @@ const TYPE_NAMES := ["start", "combat", "treasure", "shop", "secret", "boss", "a
 # ------------------------------------------------------------------ what the shell may read (see g.gd)
 var hero_id := "knight"
 var floor_index := 0
+const STAGE_ITEMS := 2          ## items handed out per skipped floor when the camp starts a later stage
 var floor_name := ""
 var floor_count := 4
 var time_s := 0.0
@@ -188,7 +189,9 @@ func _begin() -> void:
 	_has_pending = false
 	_floor_change = 0.0
 	_shot_counts = {}
-	floor_index = clampi(int(G.arg("floor", "1")) - 1, 0, floor_count - 1)
+	var asked: Dictionary = G.next_run          # set by the camp; used once
+	G.next_run = {}
+	floor_index = clampi(int(G.arg("floor", str(asked.get("floor", 1)))) - 1, 0, floor_count - 1)
 	theme = Floors.get_floor(floor_index)
 	effects = ItemEffects.new(self)
 	_generate_floor()
@@ -208,6 +211,20 @@ func _begin() -> void:
 		if Items.ALL.has(item_id):
 			used_items[item_id] = true
 			player.add_item(item_id)
+	# from the camp: a later stage starts with what the skipped floors would roughly have given,
+	# and the hero carries the supplies earned from quests
+	if not asked.is_empty():
+		var kit := RandomNumberGenerator.new()
+		kit.seed = hash([seed_value, "stage kit"])
+		for i in STAGE_ITEMS * floor_index:
+			var item_id := take_item("treasure", kit)
+			if item_id != "":
+				player.add_item(item_id)
+		var pack: Dictionary = asked.get("pack", {})
+		player.coins += int(pack.get("coins", 0))
+		player.bombs += int(pack.get("bombs", 0))
+		player.keys += int(pack.get("keys", 0))
+		G.hud_changed.emit()
 
 
 ## Autotest only: throws the finished run away and starts a fresh one in the same node.

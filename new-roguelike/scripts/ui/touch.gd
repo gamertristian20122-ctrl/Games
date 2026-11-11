@@ -21,6 +21,7 @@ const BUTTON_R := 14.0          ## visible button radius (28 px across)
 const HIT_PAD := 9.0            ## invisible extra reach around every button
 const PAUSE_SIZE := 20.0
 const ALPHA := 0.35
+const TALK_LABEL := "TALK"                     ## the same button in the camp (hub_mode)
 const CALL_LABEL := "CALL"                     ## the word under the second button
 const CALL_GOLD := Color(0.98, 0.90, 0.58)     ## the Hungry Curse's pale gold
 
@@ -31,6 +32,7 @@ var _knob := {"move": Vector2.ZERO, "aim": Vector2.ZERO}
 var _held := {"move": false, "aim": false}
 var _swapped := false
 var _bombs := 0
+var hub_mode := false           ## in the camp: one stick to walk and the second button says TALK (main.gd sets this)
 var _action_shown := false
 var _canvas: Control
 var _bomb_tex: Texture2D
@@ -120,6 +122,8 @@ func _read_call(delta: float) -> void:
 	var fill := 1.0
 	var ready := false
 	var pulse := false
+	if hub_mode:
+		ready = G.hub_near
 	if is_instance_valid(G.run):
 		var f: Variant = G.run.get("call_fill")
 		if f is float:
@@ -161,7 +165,7 @@ func _button_at(pos: Vector2) -> String:
 	var p := _button_centre("pause")
 	if absf(pos.x - p.x) <= PAUSE_SIZE / 2.0 + HIT_PAD and absf(pos.y - p.y) <= PAUSE_SIZE / 2.0 + HIT_PAD:
 		return "pause"
-	if pos.distance_to(_button_centre("bomb")) <= BUTTON_R + HIT_PAD:
+	if not hub_mode and pos.distance_to(_button_centre("bomb")) <= BUTTON_R + HIT_PAD:
 		return "bomb"
 	if Controls.action_enabled and pos.distance_to(_button_centre("action")) <= BUTTON_R + HIT_PAD:
 		return "action"
@@ -268,7 +272,7 @@ func _draw_controls() -> void:
 			_canvas.draw_arc(o, RADIUS, 0.0, TAU, 40, Color(1, 1, 1, ALPHA), 1.5, true)
 			_canvas.draw_circle(k, KNOB, Color(1, 1, 1, ALPHA))
 			_canvas.draw_arc(k, KNOB, 0.0, TAU, 24, Color(1, 1, 1, ALPHA + 0.15), 1.0, true)
-		else:
+		elif not (hub_mode and role == "aim"):
 			# a faint ring where each thumb usually rests, so new players know where to touch
 			var left := (role == "move") != _swapped
 			var x := ins.x + 52.0 if left else s.x - ins.z - 62.0
@@ -277,15 +281,16 @@ func _draw_controls() -> void:
 			_canvas.draw_circle(rest, KNOB, Color(1, 1, 1, 0.09))
 
 	# bomb: the pack's bomb sprite and how many are left
-	var bc := _button_centre("bomb")
-	var dim := 1.0 if _bombs > 0 else 0.4
-	_round_button(bc, _pressed_flash["bomb"], dim)
-	_canvas.draw_texture(_bomb_tex, (bc - _bomb_tex.get_size() / 2.0 + Vector2(-1, -1)).round(), Color(1, 1, 1, 0.9 * dim))
 	var font := UI.font_body
-	var text := str(_bombs)
-	var tp := bc + Vector2(5, 12)
-	_canvas.draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * dim))
-	_canvas.draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(UI.C_BONE, dim))
+	if not hub_mode:
+		var bc := _button_centre("bomb")
+		var dim := 1.0 if _bombs > 0 else 0.4
+		_round_button(bc, _pressed_flash["bomb"], dim)
+		_canvas.draw_texture(_bomb_tex, (bc - _bomb_tex.get_size() / 2.0 + Vector2(-1, -1)).round(), Color(1, 1, 1, 0.9 * dim))
+		var text := str(_bombs)
+		var tp := bc + Vector2(5, 12)
+		_canvas.draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * dim))
+		_canvas.draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(UI.C_BONE, dim))
 
 	# CALL: the pack's skull (drawn at twice its size), lit only while a call would work,
 	# with a ring that fills up again while the cooldown runs
@@ -294,7 +299,11 @@ func _draw_controls() -> void:
 		var lit := 1.0 if _call_ready else 0.4
 		_round_button(ac, _pressed_flash["action"], lit)
 		var skull_size := _skull_region.size * 2.0
-		_canvas.draw_texture_rect_region(_skull_tex, Rect2((ac - skull_size / 2.0).round(), skull_size), _skull_region, Color(CALL_GOLD, 0.95 * lit))
+		if hub_mode:
+			for k in 3:       # three dots: "speak"
+				_canvas.draw_rect(Rect2(ac.x - 7.0 + 5.0 * k, ac.y - 1.0, 3, 3), Color(UI.C_BONE, 0.95 * lit))
+		else:
+			_canvas.draw_texture_rect_region(_skull_tex, Rect2((ac - skull_size / 2.0).round(), skull_size), _skull_region, Color(CALL_GOLD, 0.95 * lit))
 		if _call_fill < 1.0:
 			_canvas.draw_arc(ac, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _call_fill, 32, Color(CALL_GOLD, 0.85), 2.0, true)
 		elif _call_ready:
@@ -303,10 +312,11 @@ func _draw_controls() -> void:
 			# the first-run lesson: a ring closes in on the button again and again
 			var k := fmod(_pulse_t * 1.4, 1.0)
 			_canvas.draw_arc(ac, BUTTON_R + 10.0 * (1.0 - k), 0.0, TAU, 32, Color(CALL_GOLD, 0.25 + 0.6 * k), 2.0, true)
-		var lw := font.get_string_size(CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
+		var label_text := TALK_LABEL if hub_mode else CALL_LABEL
+		var lw := font.get_string_size(label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
 		var lp := Vector2(roundf(ac.x - lw / 2.0), ac.y - BUTTON_R - 3.0)      # above the button: the bomb button is right below
-		_canvas.draw_string_outline(font, lp, CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))
-		_canvas.draw_string(font, lp, CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(CALL_GOLD, lit))
+		_canvas.draw_string_outline(font, lp, label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))
+		_canvas.draw_string(font, lp, label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(CALL_GOLD, lit))
 
 	# pause: two bars in a small square
 	var pc := _button_centre("pause")

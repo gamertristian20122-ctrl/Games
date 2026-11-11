@@ -61,6 +61,12 @@ enum RoomType { START, COMBAT, TREASURE, SHOP, SECRET, BOSS, ALTAR }
 ##   run.queue_free()               ends it (the run cleans up after itself and sets G.run = null)
 ## Pausing: the shell sets get_tree().paused. World nodes keep the default process mode, so they stop.
 var run: Node = null
+## What the camp (scripts/hub/hub.gd) asks of the NEXT run; the run reads it once and empties it:
+##   "floor": 1-4    the stage to start on (a later stage also hands out STAGE_ITEMS items per skipped floor)
+##   "pack": {"coins": n, "bombs": n, "keys": n}    quest rewards the hero sets out with
+var next_run := {}
+## True while the hero in the camp stands next to someone (the touch TALK button lights up).
+var hub_near := false
 
 # ------------------------------------------------------------------ event bus (world -> shell)
 signal run_started(run: Node)

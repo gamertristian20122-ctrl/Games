@@ -4,6 +4,8 @@ extends Node
 ##   stats     lifetime counters (runs, wins, total_kills, "boss_killed:<id>", "secret_found" ...)
 ##   seen      item ids the player has picked up at least once (for the collection screen)
 ##   flags     one-time things this profile has already seen, e.g. the first-run lessons ("taught:curse_intro")
+##   hub       numbers the camp keeps: quest progress ("q:<id>:base", "q:<id>:done") and the supplies
+##             waiting for the next run ("boon:coins" ...). See scripts/data/quests.gd.
 ##   settings  sfx_volume, music_volume, vibration, swap_sticks, last_hero
 ## It also keeps score by itself: it listens to the game's events (G.stat, G.run_ended,
 ## G.item_acquired), adds them to the counters and checks the unlock rules in
@@ -27,6 +29,7 @@ const DEFAULTS := {
 	"stats": {},
 	"seen": {},
 	"flags": {},
+	"hub": {},
 	"settings": DEFAULT_SETTINGS,
 }
 
@@ -89,12 +92,13 @@ func _absorb(loaded: Dictionary) -> void:
 		for k: Variant in keys:
 			if k is String and k != "":
 				data[section][k] = true
-	var stats: Variant = loaded.get("stats")
-	if stats is Dictionary:
-		for k: Variant in stats:
-			var v: Variant = stats[k]
-			if k is String and (v is float or v is int) and is_finite(float(v)):
-				data["stats"][k] = int(v)
+	for section: String in ["stats", "hub"]:
+		var stats: Variant = loaded.get(section)
+		if stats is Dictionary:
+			for k: Variant in stats:
+				var v: Variant = stats[k]
+				if k is String and (v is float or v is int) and is_finite(float(v)):
+					data[section][k] = int(v)
 	var settings: Variant = loaded.get("settings")
 	if settings is Dictionary:
 		for k: Variant in settings:
@@ -224,9 +228,22 @@ func reset_progress() -> void:
 	data["stats"] = {}
 	data["seen"] = {}
 	data["flags"] = {}
+	data["hub"] = {}
 	run_unlocks.clear()
 	_dirty = true
 	flush()
+
+
+# ------------------------------------------------------------------ the camp's numbers
+func hub_get(key: String) -> int:
+	return int(data["hub"].get(key, 0))
+
+
+func hub_set(key: String, value: int) -> void:
+	if not data.has("hub"):
+		data["hub"] = {}
+	data["hub"][key] = value
+	_dirty = true
 
 
 # ------------------------------------------------------------------ writing the file

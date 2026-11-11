@@ -67,6 +67,11 @@ func setup(hero: String, seed_value: int) -> void:
 	var held := HeroLook.make_weapon(h)          # carried at the side, like in a real run
 	player.add_child(held)
 	HeroLook.rest(held, 1.0)
+	if String(h.get("hand", "")) != "":
+		var hm := Art.meta(String(h["sprite"]))
+		var off: RefCounted = load("res://scripts/entities/hands.gd").new()
+		off.build(player, _sprite, String(h["hand"]), float(hm.get("body_width", 16.0)), float(hm.get("body_height", 28.0)), true)
+		off.update(0.0, false, 1.0)
 	_make_map()
 	Controls.bomb_pressed.connect(_on_bomb)
 	G.run_started.emit(self)

@@ -367,9 +367,41 @@ and the Tyrant are too big for pillars).
   (no redistribution: one more reason the repo stays private); chierit "Demon Slime" CC-BY 4.0
   (credit required). Evidence: `assets_raw/bosses/*/SOURCE.txt`.
 
-## What's next (written 11 Nov 2026, after v0.3.0)
-Everything on the v0.3.0 fix list is done. Ideas for the next passes, most useful first:
-1. The owner plays v0.3.0 on the phone and says what feels wrong (bosses above all). Their notes come first.
+## The camp (hub) — v0.4.0
+The owner asked on 11 Nov 2026 for a hub after Play: a small map to walk around, NPCs, stages and quests,
+built from the purchased packs. Flow now: title -> Play -> CAMP -> (Warden at the gate) -> run -> end
+screen -> "Camp" (or "Try again"). Back / pause in the camp goes to the title.
+
+- **Files:** `scripts/hub/hub.gd` (the scene: ground, props, people, hero, camera, lights, fireflies),
+  `scripts/data/hub.gd` (the map, every prop position, the people and their words),
+  `scripts/data/quests.gd` (quests and the pack), `scripts/ui/hub_talk.gd` (the talk window),
+  `tools/import_hub.py` (cuts `assets/art/hub/hub_*.png`; `--sheet <dir>` writes a labelled sheet to look at).
+- **Art used:** Fairy Forest (grass, earth patches, trees, bushes, flowers, rune stones, rocks), Cemetery
+  (crypt gate, graves, statues), Free Pack Exterior (fire pit, flame, grill, anvil, bench, scarecrow), and
+  the pack's characters with their hand pieces. Many cut pieces are not placed yet (see the sheet).
+- **People (`role` in `scripts/data/hub.gd`):** Warden `gate` (pick a stage), Druid `quests`, Chronicler
+  `collection`, Cook `pack` (what waits for the next run), Smith and two elves `chat` (a tip each). The two
+  heroes you are not playing stand by the fire: talk to one to play as them (locked ones are dark and
+  give their unlock hint). The hero-select screen is no longer in the flow (the UI tour still shows it).
+- **Stages:** stage N opens once `best_floor` >= N. Starting on a later stage hands out
+  `run.STAGE_ITEMS` (2) treasure items per skipped floor. The camp passes this in `G.next_run`.
+- **Quests:** 13 rows; the Druid offers the first 3 not done. Each counts a `Save` counter from the moment
+  it is first offered. Rewards are supplies (coins, bombs, keys) that wait in the save (`hub` section,
+  keys `boon:*`, capped by `Quests.BOON_CAP`) and are all taken on the next run. A gold "!" over the
+  Druid means a quest can be handed in.
+- **Controls:** left stick walks; the second touch button says TALK and lights up next to someone
+  (`touch.hub_mode`, `G.hub_near`). Keyboard / gamepad: the CALL key.
+- **Test flags:** `--hub` (open the camp at once), `--hub --shots=<dir>` (a short walk, five pictures),
+  `--hubtalk=<npc id>` (also a picture of that talk window; heroes are `hero:witch` ...),
+  `--hubstage=<n>` (start that stage after a second), `--allstages`.
+- **Not done yet:** no stage or quest has been played end to end by a person; quest rewards are a first
+  guess; NPCs stand still; the camp has no music of its own (it plays the title music).
+
+## What's next (written 11 Nov 2026, after v0.4.0)
+Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
+0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces
+   (Sewer, Desert, Library, Garden and Hideout tiles are still only used in dungeon rooms or not at all).
+1. The owner plays the newest build on the phone and says what feels wrong (bosses above all). Their notes come first.
 2. Grave Robber against floors 2 and 3 bosses: still the weakest hero (see the Bosses table).
 3. Forge Warden: the lanes (arm throw, beam) hit the bot most; maybe a longer warning.
 4. Starved King: only measured with one 7-item kit; needs a real play-through from floor 1.

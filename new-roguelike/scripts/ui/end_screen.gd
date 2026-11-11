@@ -36,7 +36,7 @@ func build() -> void:
 	var again := UI.button("Try again", func() -> void: send("retry"), "Big", "ui_start")
 	again.custom_minimum_size.y = 26
 	left.add_child(again)
-	var menu := UI.button("Menu", func() -> void: send("menu"))
+	var menu := UI.button("Camp", func() -> void: send("menu"))
 	menu.custom_minimum_size.y = 22
 	left.add_child(menu)
 	default_focus = again
