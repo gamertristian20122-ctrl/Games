@@ -32,7 +32,7 @@ func _load_ai() -> RefCounted:
 func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	super.setup(the_room, enemy_id, opts)
 	mass = 40.0
-	hit_grow = 1.0
+	hit_grow = maxf(hit_grow, 1.0)
 	# a bigger warning than a normal enemy gets
 	run.fx.warn_circle(position, radius * 2.2, appear)
 
@@ -58,7 +58,7 @@ func _physics_process(delta: float) -> void:
 		lift = 0.0
 		tell(0.7)
 		run.shake(0.5)
-		run.fx.ring(position - Vector2(0, 10), 6.0, 60.0, 0.5, Color(1.0, 0.3, 0.2), 3.0)
+		run.fx.ring(position - Vector2(0, _mid), 6.0, 60.0, 0.5, Color(1.0, 0.3, 0.2), 3.0)
 		Sfx.play("boss_roar", 0.0, 0.0)
 		if ai.has_method("phase_changed"):
 			ai.phase_changed(self, 2)
@@ -86,6 +86,10 @@ func die(_drops: bool = true) -> void:
 	harmful = false
 	dying = DEATH_TIME
 	lift = 0.0
+	if _has_death:
+		# the pack's own fall, stretched over the whole slow-motion death
+		sprite.speed_scale = Art.anim_time(_sprite_id, "death") / DEATH_TIME
+		sprite.play("death")
 	run.fx.hazards.clear()
 	run.shots.clear()
 	run.slowmo(0.3, 0.3)
@@ -104,13 +108,13 @@ func _tick_death(delta: float) -> void:
 	sprite.position.x = randf_range(-1.5, 1.5)
 	if _death_puff <= 0.0:
 		_death_puff = 0.12
-		var at := position + Vector2(randf_range(-10, 10), randf_range(-24, 0))
-		run.fx.burst(at, Art.palette(String(data["sprite"])), 8, 70.0, 0.5, 2.6)
+		var at := position + Vector2(randf_range(-radius, radius), randf_range(-_mid * 2.0, 0))
+		run.fx.burst(at, Art.palette(_sprite_id), 8, 70.0, 0.5, 2.6)
 		run.fx.ring(at, 2.0, 12.0, 0.2, Color(1, 0.9, 0.7), 1.5)
 		run.shake(0.25)
 	if dying <= 0.0:
-		run.fx.burst(position - Vector2(0, 12), Art.palette(String(data["sprite"])), 70, 150.0, 0.9, 3.4)
-		run.fx.ring(position - Vector2(0, 10), 6.0, 90.0, 0.5, Color(1, 1, 1), 4.0)
+		run.fx.burst(position - Vector2(0, _mid), Art.palette(_sprite_id), 70, 150.0, 0.9, 3.4)
+		run.fx.ring(position - Vector2(0, _mid), 6.0, 90.0, 0.5, Color(1, 1, 1), 4.0)
 		run.fx.flash(Color(1, 1, 1, 0.5), 0.2)
 		run.shake(1.0)
 		Sfx.play("explosion")

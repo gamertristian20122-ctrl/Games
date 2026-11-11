@@ -1,0 +1,13 @@
+PACK     : 16x16 RPG Item Pack
+URL      : https://alexs-assets.itch.io/16x16-rpg-item-pack
+AUTHOR   : Alex's Assets
+PRICE    : free
+CONTENT  : 72 item sprites on a 16x16 grid (one sheet 128x144 + single files): 4 amulets, 4 rings, scrolls, helmets,
+           hats, boots, gloves, shields, wands, 2 keys, candle, goblet, food, weapons. DawnBringer-32 palette.
+LICENCE  : CC0 1.0. Exact text, itch.io info panel: "Asset license: Creative Commons Zero v1.0 Universal".
+           No credit required.
+DATES    : uploaded 2016-11-16 (.rar) and 2018-12-20 (.zip); downloaded 2026-11-11 11:54 UTC
+HUMAN-MADE EVIDENCE : published 2016, years before image generators; itch.io info panel "Content: No generative AI
+           was used"; hand-pixelled in the DB32 palette ("All sprites are done with DawnBringer's 32 color palette.
+           Each sprite has a black outline.").
+MATCH    : see comparison_icons_vs_pixel_crawler.png (row 3). Same density, black outline; mixes freely with Kyrise.

@@ -1,11 +1,12 @@
 extends Node2D
-## Shopkeeper: "the Peddler", who stands behind the shop stands (the pack's "doc" sprite).
-## He only stands there and looks at you; the stands do the selling (see pedestal.gd).
+## Shopkeeper: "the Peddler", who stands behind the shop stands (a Pixel Crawler tavern keeper).
+## She only stands there and looks at you; the stands do the selling (see pedestal.gd).
 ## desc: {"pos": Vector2}
 
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 
 const BLOCK_RADIUS := 6.0
+const SPRITE := "pc_npc_tavern_a"       ## idle only; other choices: pc_npc_tavern_b, pc_npc_peasant_a
 
 var kind := "shopkeeper"
 var solid := true
@@ -16,8 +17,8 @@ var sprite: AnimatedSprite2D
 func setup(the_room: Node, desc: Dictionary) -> void:
 	room = the_room
 	position = desc.get("pos", G.ROOM_CENTER)
-	add_child(EnemyScript.make_shadow(13.0))
-	sprite = Art.sprite("doc", "idle")
+	add_child(EnemyScript.make_shadow(14.0))
+	sprite = Art.sprite(SPRITE, "idle")
 	sprite.position = Vector2(0, 2)
 	add_child(sprite)
 

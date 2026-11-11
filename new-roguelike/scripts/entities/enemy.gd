@@ -30,6 +30,9 @@ extends Node2D
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Shots = preload("res://scripts/run/shots.gd")
 
+const CORPSE_FADE := 0.45       ## seconds a fallen body takes to fade after its death animation
+const SHOT_PLANE := 7.0         ## shots are drawn this far above the floor (see shot_look.gd)
+
 const FLASH_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(1.0, 1.0, 1.0, c.a);\n}\n"
 
 static var _ai_cache := {}
@@ -95,6 +98,16 @@ var _aura_t := 0.0
 var _eaten_by: Node2D          ## the Hungry Curse that is swallowing this enemy (see devour())
 var _eaten_t := 0.0
 var _eaten_dur := 0.0
+var _sprite_id := ""
+var _idle_anim := "idle"       ## the row's "idle": bats use their flying loop ("run") while they hang in the air
+var _hover := 0.0              ## the row's "hover": px the sprite floats above its shadow
+var _mid := 6.0                ## how far above the feet the middle of the body is drawn (effects aim at it)
+var _has_hit := false
+var _has_attack := false
+var _has_death := false
+var _hit_t := 0.0
+var _attack_t := 0.0
+var _corpse_t := 0.0           ## > 0 while the dead body plays its death animation and fades
 
 
 static func ai_for(ai_name: String, folder: String = "ai") -> RefCounted:
@@ -157,26 +170,39 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 		elite = run.floor_index + 1 >= Enemies.ELITE_FROM_FLOOR and randf() < run.elite_chance
 	max_hp = float(data["hp"]) * _hp_scale()
 	speed = float(data["speed"])
-	radius = float(data["radius"])
 	touch = int(data.get("touch", 1))
 	flying = data.get("flying", false)
 	shot_type = String(data.get("shot", "enemy"))
-	hit_up = float(data.get("hit_up", 0.0))
 	_base_scale = float(data.get("scale", 1.0))
 	_tint = data.get("tint", Color(1, 1, 1))
+	_sprite_id = String(data["sprite"])
+	_idle_anim = String(data.get("idle", "idle"))
+	_hover = float(data.get("hover", 0.0))
+	_has_hit = Art.has_anim(_sprite_id, "hit")
+	_has_attack = Art.has_anim(_sprite_id, "attack")
+	_has_death = Art.has_anim(_sprite_id, "death")
+	# Size: from the sprite's own measurements (assets/art/pc/pc_cast.json) unless the row says otherwise.
+	# The body circle stays under a tile wide so everything fits through a one-tile gap.
+	var m := Art.meta(_sprite_id)
+	var body_w := float(m.get("body_width", 12.0)) * _base_scale
+	var body_h := float(m.get("body_height", 14.0)) * _base_scale
+	radius = float(data.get("radius", clampf(float(m.get("radius", 5.0)), 5.0, 7.5) * _base_scale))
+	_mid = body_h * 0.5 + _hover
+	hit_up = float(data.get("hit_up", clampf(_mid - SHOT_PLANE, 0.0, 26.0) if not m.is_empty() else 0.0))
+	hit_grow = clampf(body_w * 0.5 - radius, 0.0, 3.0 * _base_scale) if not m.is_empty() else 0.0
 	if minion:
 		max_hp *= Enemies.MINION_HP
 	if elite:
 		max_hp *= Enemies.ELITE_HP
 		speed *= Enemies.ELITE_SPEED
-		_base_scale *= 1.12
+		_tint = _tint.lerp(Enemies.ELITE_COLOR, 0.3)      # elites: a gold wash and the ring (no odd-size pixels)
 	hp = max_hp
-	mass = radius * radius / 25.0
+	mass = radius * radius / 45.0
 	ai = _load_ai()
-	shadow = make_shadow(radius * 2.6 * _base_scale)
+	shadow = make_shadow(clampf(body_w * 0.85, radius * 2.2, radius * 3.6))
 	add_child(shadow)
-	sprite = Art.sprite(String(data["sprite"]))
-	sprite.position = Vector2(0, 2)
+	sprite = Art.sprite(_sprite_id, _idle_anim)
+	sprite.position = Vector2(0, 2.0 - _hover)
 	sprite.scale = Vector2(_base_scale, _base_scale)
 	sprite.modulate = _tint
 	add_child(sprite)
@@ -207,7 +233,7 @@ func _appear() -> void:
 	shadow.visible = true
 	hittable = true
 	_pop = 0.18
-	run.fx.burst(position - Vector2(0, 5), Art.palette(String(data["sprite"])), 6, 45.0, 0.3, 2.0)
+	run.fx.burst(position - Vector2(0, _mid), Art.palette(_sprite_id), 6, 45.0, 0.3, 2.0)
 	if ai.has_method("start"):
 		ai.start(self)
 
@@ -216,6 +242,8 @@ func _physics_process(delta: float) -> void:
 	if dead:
 		if _eaten_dur > 0.0:
 			_tick_eaten(delta)
+		elif _corpse_t > 0.0:
+			_tick_corpse(delta)
 		return
 	if appear > 0.0:
 		appear -= delta
@@ -245,10 +273,15 @@ func _physics_process(delta: float) -> void:
 
 func _update_look(delta: float) -> void:
 	sprite.flip_h = _face < 0.0
-	var want := "run" if _moved else "idle"
-	if sprite.animation != want:
-		sprite.play(want)
-	sprite.position.y = 2.0 - lift
+	if _attack_t > 0.0:
+		_attack_t -= delta               # the pack's attack animation, started by tell()
+	elif _hit_t > 0.0:
+		_hit_t -= delta                  # the pack's hit animation, started by hurt()
+	else:
+		var want := "run" if _moved else _idle_anim
+		if sprite.animation != want:
+			sprite.play(want)
+	sprite.position.y = 2.0 - lift - _hover
 	var sc := _base_scale
 	if _pop > 0.0:
 		_pop -= delta
@@ -384,7 +417,11 @@ func shoot_ring(amount: int, shot_speed: float, type: String = "", angle_offset:
 func tell(seconds: float) -> void:
 	_tell = seconds
 	_tell_dur = seconds
-	run.fx.ring(position - Vector2(0, 6), radius * 3.0, radius * 0.8, seconds, Color(1.0, 0.9, 0.5, 0.95), 1.5)
+	if _has_attack:
+		_attack_t = Art.anim_time(_sprite_id, "attack")
+		_hit_t = 0.0
+		sprite.play("attack")
+	run.fx.ring(position - Vector2(0, _mid), radius * 3.0, radius * 0.8, seconds, Color(1.0, 0.9, 0.5, 0.95), 1.5)
 
 
 func warn_line(d: Vector2, length: float, seconds: float) -> void:
@@ -415,6 +452,11 @@ func hurt(amount: float, from_dir: Vector2 = Vector2.ZERO, knock_mult: float = 1
 		return
 	hp -= amount
 	_flash = 0.09
+	if _has_hit and _attack_t <= 0.0:
+		_flash = 0.05
+		_hit_t = Art.anim_time(_sprite_id, "hit")
+		sprite.play("hit")
+		sprite.frame = 0
 	knock += from_dir * 85.0 * knock_mult / maxf(mass, 0.6)
 	Sfx.play("enemy_hit", -9.0)
 	if ai.has_method("hurt"):
@@ -432,15 +474,44 @@ func die(drops: bool = true) -> void:
 	room.enemy_died(self)
 	if ai.has_method("died"):
 		ai.died(self)
-	var colors := Art.palette(String(data["sprite"]))
-	run.fx.death_puff(position - Vector2(0, 6), colors, radius)      # smoke, bits and a ring, in its own colours
+	var colors := Art.palette(_sprite_id)
+	if _has_death:
+		# the body falls by itself: only a few bits in its own colours fly off
+		run.fx.burst(position - Vector2(0, _mid), colors, 5 + int(radius * 0.5), 60.0, 0.4, 2.2, Vector2.ZERO, 70.0)
+	else:
+		run.fx.death_puff(position - Vector2(0, 6), colors, radius)      # smoke, bits and a ring, in its own colours
 	Sfx.play("enemy_die", -6.0)
-	if elite or radius >= 5.5:
+	if elite or data.get("big", false):
 		run.shake(0.22)
 	run.enemy_killed(self)
 	if drops and not minion:
 		_drop_loot()
-	queue_free()
+	if _has_death:
+		_start_corpse()
+	else:
+		queue_free()
+
+
+## The dead body plays the pack's death animation once, then fades. It is already out of
+## room.enemies (dead = true), so shots, the Curse and other monsters ignore it.
+func _start_corpse() -> void:
+	_corpse_t = Art.anim_time(_sprite_id, "death") + CORPSE_FADE
+	lift = 0.0
+	sprite.material = null
+	sprite.scale = Vector2(_base_scale, _base_scale)
+	sprite.position.y = 2.0 - _hover
+	sprite.play("death")
+	queue_redraw()
+
+
+func _tick_corpse(delta: float) -> void:
+	_corpse_t -= delta
+	if _corpse_t < CORPSE_FADE:
+		var k := clampf(_corpse_t / CORPSE_FADE, 0.0, 1.0)
+		sprite.modulate.a = k
+		shadow.modulate.a = k
+	if _corpse_t <= 0.0:
+		queue_free()
 
 
 ## Swallowed whole by the Hungry Curse (scripts/entities/curse.gd): the enemy shrinks into the
@@ -467,7 +538,7 @@ func _tick_eaten(delta: float) -> void:
 	if is_instance_valid(_eaten_by):
 		position = position.lerp(_eaten_by.position, 1.0 - exp(-14.0 * delta))
 	sprite.scale = Vector2(_base_scale * k, _base_scale * k)
-	sprite.position.y = 2.0 - lift * k
+	sprite.position.y = 2.0 - (lift + _hover) * k
 	sprite.modulate = _tint.darkened(1.0 - k)
 	if _eaten_t <= 0.0:
 		queue_free()

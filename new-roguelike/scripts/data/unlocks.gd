@@ -30,13 +30,13 @@ extends RefCounted
 
 const RULES := [
 	# ---------------------------------------------------------------- heroes
-	{"id": "hero:witch", "name": "Mirelle, the Young Witch", "hint": "Defeat the first boss.", "stat": "boss_killed", "at_least": 1},
+	{"id": "hero:witch", "name": "Ozric, the Old Hexer", "hint": "Defeat the first boss.", "stat": "boss_killed", "at_least": 1},
 	{"id": "hero:robber", "name": "Tobin, the Grave Robber", "hint": "Find two secret rooms.", "stat": "secret_found", "at_least": 2},
 
 	# ---------------------------------------------------------------- achievements
 	{"id": "ach:first_win", "name": "Daylight", "hint": "Win a run.", "stat": "wins", "at_least": 1},
 	{"id": "ach:win_knight", "name": "Oath Kept", "hint": "Win a run as Aldous.", "stat": "wins:knight", "at_least": 1},
-	{"id": "ach:win_witch", "name": "Top of the Class", "hint": "Win a run as Mirelle.", "stat": "wins:witch", "at_least": 1},
+	{"id": "ach:win_witch", "name": "Old Tricks", "hint": "Win a run as Ozric.", "stat": "wins:witch", "at_least": 1},
 	{"id": "ach:win_robber", "name": "Clean Getaway", "hint": "Win a run as Tobin.", "stat": "wins:robber", "at_least": 1},
 	{"id": "ach:kills_500", "name": "Grave Filler", "hint": "Defeat 500 monsters in total.", "stat": "total_kills", "at_least": 500},
 	{"id": "ach:coins_300", "name": "Heavy Purse", "hint": "Collect 300 coins in total.", "stat": "total_coins", "at_least": 300},
@@ -52,7 +52,7 @@ const RULES := [
 	#   {"id": "item:glass_blade", "name": "Glass Blade", "hint": "Win a run as Aldous.", "stat": "wins:knight", "at_least": 1},
 	# An item with a row here stays out of the item pools until Save.is_unlocked("item:<id>") is true.
 	{"id": "item:spiked_goad", "name": "Spiked Goad", "hint": "Let your Curse swallow 100 monsters in total.", "stat": "curse_meals", "at_least": 100},
-	{"id": "item:tithe_imp", "name": "Tithe Imp", "hint": "Feed your Curse 3 monsters in one lunge.", "stat": "curse_feast", "at_least": 1},
+	{"id": "item:tithe_imp", "name": "Tithe Bat", "hint": "Feed your Curse 3 monsters in one lunge.", "stat": "curse_feast", "at_least": 1},
 	{"id": "item:gilded_fang", "name": "Gilded Fang", "hint": "Make your Curse cough up 10 coins with one bomb.", "stat": "belly_burst_10", "at_least": 1},
 	{"id": "item:iron_leash", "name": "Iron Leash", "hint": "Let your Curse bite 30% off one boss.", "stat": "boss_bitten_30", "at_least": 1},
 	# ---------------------------------------------------------------- end of item unlocks

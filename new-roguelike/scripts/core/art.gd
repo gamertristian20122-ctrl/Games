@@ -9,18 +9,38 @@ extends Node
 ##   <id>_run_anim_f0.png ...         animation "run"
 ##   <id>_hit_anim_f0.png ...         animation "hit"
 ##   <id>_anim_f0.png or <id>_f0.png  animation "default"
-## Every SpriteFrames it returns has all four names; missing ones reuse what exists.
+##   <id>_death_anim_f0.png ...       animation "death"  (plays once; only where the pack has one)
+##   <id>_attack_anim_f0.png ...      animation "attack" (plays once; only where the pack has one)
+## Every SpriteFrames it returns has the first four names; missing ones reuse what exists.
+## "death" and "attack" are never faked: ask Art.has_anim(id, "death") before playing them
+## (the same question works for "hit": true only when the pack really drew one).
+##
+## The purchased Pixel Crawler cast (ids pc_*, written by tools/pc_import_cast.py) also comes with
+## measurements in assets/art/pc/pc_cast.json. Art.meta(id) hands them out: "feet" (where the
+## feet are on the canvas; Art.sprite() stands the sprite on that point), "body_height",
+## "body_width", "radius", "frames". Ids without measurements get an empty Dictionary.
 
 ## dungeon = the main pack (0x72). niji, forest and fx are written by tools/import_assets.py.
+## pc = the purchased Pixel Crawler cast and weapons (tools/pc_import_cast.py).
 const DIRS: Array[String] = [
 	"res://assets/art/dungeon/", "res://assets/art/niji/", "res://assets/art/forest/", "res://assets/art/fx/",
+	"res://assets/art/pc/",
 ]
-const ANIMS := [["idle", "_idle_anim"], ["run", "_run_anim"], ["hit", "_hit_anim"], ["default", "_anim"], ["default", ""]]
-const FPS := {"idle": 6.0, "run": 10.0, "hit": 8.0, "default": 8.0}
+const ANIMS := [["idle", "_idle_anim"], ["run", "_run_anim"], ["hit", "_hit_anim"], ["default", "_anim"], ["default", ""],
+	["death", "_death_anim"], ["attack", "_attack_anim"]]
+const FPS := {"idle": 6.0, "run": 10.0, "hit": 8.0, "default": 8.0, "death": 10.0, "attack": 12.0}
+const PC_FPS := {"hit": 14.0}                 ## the Pixel Crawler hit animations are 4 frames: play them quickly
+const ONCE := ["hit", "death", "attack"]       ## these never loop
+const EXTRA := ["death", "attack"]             ## only added when the pack has them
+const META_FILE := "res://assets/art/pc/pc_cast.json"
+const NO_META := {}
 
 var _tex := {}
 var _frames := {}
+var _real := {}          ## id -> the animation names the pack really has
 var _palette := {}
+var _meta := {}
+var _meta_loaded := false
 var _missing: Texture2D
 
 
@@ -79,19 +99,64 @@ func frames(id: String) -> SpriteFrames:
 		sf = SpriteFrames.new()
 		sf.remove_animation("default")
 		var fallback: Array = found.values()[0]
-		for anim in ["idle", "run", "hit", "default"]:
+		var pc := id.begins_with("pc_")
+		for anim in ["idle", "run", "hit", "default", "death", "attack"]:
+			if EXTRA.has(anim) and not found.has(anim):
+				continue
 			var source: Array = found.get(anim, found.get("idle", found.get("default", fallback)))
 			sf.add_animation(anim)
-			sf.set_animation_speed(anim, FPS[anim])
-			sf.set_animation_loop(anim, anim != "hit")
+			sf.set_animation_speed(anim, PC_FPS.get(anim, FPS[anim]) if pc else FPS[anim])
+			sf.set_animation_loop(anim, not ONCE.has(anim))
 			for t in source:
 				sf.add_frame(anim, t)
 	_frames[id] = sf
+	_real[id] = found.keys()
 	return sf
 
 
-## A ready-to-use sprite node whose origin is the FEET (bottom-centre of the image),
-## so entities can be y-sorted by position. Animated ids play `anim`; stills just show.
+## True when the pack really has this animation for the id ("hit", "death", "attack", ...).
+func has_anim(id: String, anim: String) -> bool:
+	if not _real.has(id):
+		frames(id)
+	return (_real[id] as Array).has(anim)
+
+
+## How long one play of an animation lasts, in seconds (0 when the id does not have it).
+func anim_time(id: String, anim: String) -> float:
+	var sf := frames(id)
+	if sf == null or not sf.has_animation(anim):
+		return 0.0
+	return float(sf.get_frame_count(anim)) / maxf(sf.get_animation_speed(anim), 0.01)
+
+
+## Measurements for a Pixel Crawler id (see the top of this file). Empty for every other id.
+## The file is read once, the first time anybody asks.
+func meta(id: String) -> Dictionary:
+	if not _meta_loaded:
+		_meta_loaded = true
+		var f := FileAccess.open(META_FILE, FileAccess.READ)
+		if f != null:
+			var parsed: Variant = JSON.parse_string(f.get_as_text())
+			if parsed is Dictionary:
+				_meta = parsed
+		else:
+			push_warning("Art: cannot read %s" % META_FILE)
+	return _meta.get(id, NO_META)
+
+
+## Where the top-left corner of the image goes so that the FEET sit on the node's origin.
+## Measured ids use their "feet" point; everything else stands on the bottom-centre of the image.
+func feet_offset(id: String) -> Vector2:
+	var m := meta(id)
+	if m.has("feet"):
+		return Vector2(-float(m["feet"][0]), -float(m["feet"][1]))
+	var sz := size(id)
+	return Vector2(-sz.x / 2.0, -sz.y)
+
+
+## A ready-to-use sprite node whose origin is the FEET (bottom-centre of the image, or the
+## measured "feet" point of a Pixel Crawler id), so entities can be y-sorted by position.
+## Animated ids play `anim`; stills just show.
 func sprite(id: String, anim: String = "idle") -> AnimatedSprite2D:
 	var s := AnimatedSprite2D.new()
 	var sf := frames(id)
@@ -103,8 +168,7 @@ func sprite(id: String, anim: String = "idle") -> AnimatedSprite2D:
 			sf.add_frame(a, tex(id))
 	s.sprite_frames = sf
 	s.centered = false
-	var sz := size(id)
-	s.offset = Vector2(-sz.x / 2.0, -sz.y)
+	s.offset = feet_offset(id)
 	s.play(anim)
 	return s
 

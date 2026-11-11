@@ -1,0 +1,22 @@
+PACK     : Ninja Adventure - Asset Pack (file "Ninja Adventure - Asset Pack.zip", 94 MB)
+URL      : https://pixel-boy.itch.io/ninja-adventure-asset-pack
+AUTHOR   : Pixel-boy and AAA
+PRICE    : free (name your own price, 0 accepted; nothing paid)
+CONTENT USED HERE (the pack is huge; only these folders are of interest for Cursebait):
+  FX/Projectile : Fireball 4f, EnergyBall 4f, BigEnergyBall, CanonBall, Kunai (knife), Arrow, PlantSpike, Rock, IceSpike
+  FX/Elemental  : Explosion (9 frames, 40x40), Flam, Thunder, Ice, Rock, Water...   FX/Smoke: Smoke 6f, SmokeCircular
+  FX/Magic      : Aura, Spark, Spirit, Circle, Shield, Boost                        FX/Particle: Spark (pickup shine), Fire...
+  Items         : Bomb, Dynamite, GoldCoin, SilverCoin, Coin2 (4f spin), Gold/Silver key, 2 chests (closed/open), Heart
+  Ui/Receptacle : Heart.png = 5 heart states (empty, 1/4, 1/2, 3/4, full) 16x16
+LICENCE  : CC0 1.0. Exact text:
+  itch.io page / README.md: "They are released under the Creative Commons Zero (CC0) license. You can use any and all
+           of the assets found in this package in your own games, even commercial ones. Attribution is not required
+           but appreciated."
+  itch.io info panel: "Asset license: Creative Commons Zero v1.0 Universal". LICENSE.txt in the zip = CC0 1.0 text.
+DATES    : on itch.io since at least 2021-05-03 (upload "Godot project V3 (old).zip"); main zip last updated 2026-03-29;
+           downloaded 2026-11-11 11:54 UTC
+HUMAN-MADE EVIDENCE : itch.io info panel "Content: No generative AI was used", "Made with Aseprite, Godot, FL Studio";
+           two named artists, public since 2021, 268 ratings (4.9); strict small palette and 16px grid throughout.
+MATCH    : effects match well (same pixel density, 3-4 tone shading, no outline like Pixel Crawler's own fire).
+           Items are small and cuter than Pixel Crawler (bomb/dynamite fine, chests too small); UI hearts have a WHITE
+           outline (HUD only); wood UI theme is too cheerful for dark fantasy.

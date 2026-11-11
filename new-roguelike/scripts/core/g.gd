@@ -13,10 +13,11 @@ const ROOM_ROWS := 7                     ## floor tiles down
 const ROOM_W := ROOM_COLS * TILE         ## 272
 const ROOM_H := ROOM_ROWS * TILE         ## 112
 ## World space: the room FLOOR spans (0,0)..(ROOM_W,ROOM_H). Walls sit outside that rectangle
-## (two tiles of wall above, one tile left, right and below). One room is on screen at a time.
+## (a back wall 48 px tall above, 16 px of wall left, right and below: 304 x 176 in all).
+## One room is on screen at a time.
 const ROOM_CENTER := Vector2(ROOM_W / 2.0, ROOM_H / 2.0)
 ## Where the camera looks so floor + walls are centred on a 180 px tall screen.
-const CAMERA_CENTER := Vector2(ROOM_W / 2.0, ROOM_H / 2.0 - 8.0)
+const CAMERA_CENTER := Vector2(ROOM_W / 2.0, ROOM_H / 2.0 - 16.0)
 ## The viewport is always 180 game-pixels tall; its width grows with the screen
 ## (320 on a 16:9 screen, 400 on a 20:9 phone). Never assume 320 wide.
 const BASE_H := 180

@@ -1,6 +1,8 @@
 extends Node2D
 ## Player: the hero you control. One node that lives for the whole run and is moved from room to room.
 ##   position      the middle of a small circle at the FEET (radius 5). The sprite stands on it.
+##   look          body = a hero sprite (idle / run / death), weapon = a separate still held in the
+##                 hand and turned toward the aim (scripts/entities/hero_look.gd). Hurt = white flash + blink.
 ##   hp, max_hp, armor   in HALF hearts.   coins, keys, bombs   plain counts.   items   ids in pickup order.
 ##   stats         all the numbers (see scripts/run/stats.gd). Items change them through layers.
 ## It reads Controls.move / Controls.aim every physics frame, fires by itself while aiming,
@@ -14,6 +16,7 @@ const Shots = preload("res://scripts/run/shots.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const FamiliarScript = preload("res://scripts/entities/familiar.gd")
 const Curse = preload("res://scripts/entities/curse.gd")
+const HeroLook = preload("res://scripts/entities/hero_look.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -62,6 +65,11 @@ var _step_t := 0.0
 var _spike_cd := 0.0
 var _shot_extra := {}
 var _dead_t := 0.0
+var _flash := 0.0
+var _sprite_id := ""
+var _has_hit := false
+var _has_death := false
+var _mid := 8.0             ## how far above the feet the middle of the body is (effects aim at it)
 
 
 func setup(the_run: Node, hero_id: String) -> void:
@@ -78,24 +86,28 @@ func setup(the_run: Node, hero_id: String) -> void:
 	keys = int(start.get("keys", 0))
 	coins = int(start.get("coins", 0))
 	god = G.flag("god")
-	shadow = EnemyScript.make_shadow(13.0)
+	_sprite_id = String(hero.get("sprite", "pc_knight"))
+	_has_hit = Art.has_anim(_sprite_id, "hit")
+	_has_death = Art.has_anim(_sprite_id, "death")
+	var m := Art.meta(_sprite_id)
+	_mid = float(m.get("body_height", 16.0)) * 0.4
+	shadow = EnemyScript.make_shadow(clampf(float(m.get("body_width", 16.0)) * 0.85, 13.0, 18.0))
 	add_child(shadow)
-	weapon = Sprite2D.new()
-	weapon.texture = Art.tex(String(hero.get("weapon", "weapon_knife")))
-	weapon.centered = false
-	var ws := weapon.texture.get_size()
-	weapon.offset = Vector2(-ws.x * 0.5, -ws.y + 3.0)
+	# the weapon is a child just before or just after the body: behind it when aiming up
+	weapon = HeroLook.make_weapon(hero)
 	add_child(weapon)
-	body = Art.sprite(String(hero.get("sprite", "knight_m")))
+	body = Art.sprite(_sprite_id)
 	body.position = Vector2(0, 2)
 	add_child(body)
+	HeroLook.rest(weapon, 1.0)
+	HeroLook.layer(weapon, body, true)
 	if run.LIGHTING:
 		light = PointLight2D.new()
 		light.texture = run.light_tex
 		light.texture_scale = 3.2
 		light.energy = 0.55
 		light.color = run.theme.get("light", Color(1, 0.9, 0.7))
-		light.position = Vector2(0, -8)
+		light.position = Vector2(0, -_mid)
 		add_child(light)
 	stats.changed.connect(_stats_changed)
 	_stats_changed()
@@ -150,8 +162,11 @@ func _physics_process(delta: float) -> void:
 		return
 	if dead:
 		_dead_t += delta
-		body.rotation = minf(_dead_t * 6.0, PI * 0.5) * _face
-		body.modulate.a = clampf(1.6 - _dead_t, 0.0, 1.0)
+		if _has_death:
+			body.modulate.a = clampf(2.2 - _dead_t, 0.0, 1.0)      # the pack's own fall, then a slow fade
+		else:
+			body.rotation = minf(_dead_t * 6.0, PI * 0.5) * _face
+			body.modulate.a = clampf(1.6 - _dead_t, 0.0, 1.0)
 		return
 	invuln = maxf(0.0, invuln - delta)
 	_spike_cd = maxf(0.0, _spike_cd - delta)
@@ -199,7 +214,12 @@ func _update_look(delta: float) -> void:
 	elif absf(vel.x) > 12.0:
 		_face = signf(vel.x)
 	body.flip_h = _face < 0.0
-	if _hit_anim > 0.0:
+	if _flash > 0.0:
+		_flash -= delta
+		body.material = EnemyScript.white_material()
+	elif body.material != null:
+		body.material = null
+	if _hit_anim > 0.0 and _has_hit:
 		_hit_anim -= delta
 		if body.animation != "hit":
 			body.play("hit")
@@ -213,13 +233,10 @@ func _update_look(delta: float) -> void:
 	# the weapon: held in the hand, pointing where you aim, kicking back with each shot
 	_kick = maxf(0.0, _kick - delta * 9.0)
 	if firing:
-		weapon.rotation = aim_dir.angle() + PI * 0.5
-		weapon.position = Vector2(0, -7) + aim_dir * (5.0 - 3.5 * _kick)
-		weapon.show_behind_parent = aim_dir.y < -0.35
+		HeroLook.layer(weapon, body, HeroLook.aim(weapon, aim_dir, _kick))
 	else:
-		weapon.rotation = lerp_angle(weapon.rotation, 0.55 * _face, minf(1.0, delta * 14.0))
-		weapon.position = Vector2(5.0 * _face, -5.0)
-		weapon.show_behind_parent = false
+		HeroLook.rest(weapon, _face, delta)
+		HeroLook.layer(weapon, body, true)
 	if moving:
 		_step_t -= delta
 		if _step_t <= 0.0:
@@ -234,12 +251,12 @@ func _draw() -> void:
 	# the knight's ward: a faint ring while it is ready, a bright flash when it blocks a hit
 	if _ward_flash > 0.0:
 		var k := _ward_flash / 0.45
-		draw_arc(Vector2(0, -8), 11.0 + (1.0 - k) * 8.0, 0.0, TAU, 24, Color(0.6, 0.85, 1.0, k), 2.0)
-		draw_circle(Vector2(0, -8), 11.0, Color(0.6, 0.85, 1.0, 0.25 * k))
+		draw_arc(Vector2(0, -_mid), _mid + 4.0 + (1.0 - k) * 8.0, 0.0, TAU, 24, Color(0.6, 0.85, 1.0, k), 2.0)
+		draw_circle(Vector2(0, -_mid), _mid + 4.0, Color(0.6, 0.85, 1.0, 0.25 * k))
 	elif ward_ready and not dead:
 		# a quiet circle on the floor around the feet (flattened, like the shadows)
 		draw_set_transform(Vector2(0, 1), 0.0, Vector2(1.0, 0.5))
-		draw_arc(Vector2.ZERO, 10.0, 0.0, TAU, 24, Color(0.6, 0.85, 1.0, 0.30), 1.0)
+		draw_arc(Vector2.ZERO, 11.0, 0.0, TAU, 24, Color(0.6, 0.85, 1.0, 0.30), 1.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -252,7 +269,7 @@ func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 		ward_ready = false
 		_ward_flash = 0.45
 		invuln = 0.5
-		run.fx.ring(position - Vector2(0, 8), 6.0, 22.0, 0.3, Color(0.6, 0.85, 1.0), 2.0)
+		run.fx.ring(position - Vector2(0, _mid), 6.0, 24.0, 0.3, Color(0.6, 0.85, 1.0), 2.0)
 		Sfx.play("shot_hit_wall", -2.0)
 		queue_redraw()
 		return
@@ -264,11 +281,12 @@ func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 	last_cause = cause
 	invuln = stats.v("invuln")
 	_hit_anim = 0.3
+	_flash = 0.12
 	var away := position - from
 	knock = (away.normalized() if away.length() > 0.5 else Vector2.DOWN) * 150.0
 	run.shake(0.55)
 	run.hitstop(0.05)
-	run.fx.burst(position - Vector2(0, 8), [Color(1, 0.3, 0.3), Color(1, 1, 1)], 8, 70.0, 0.4, 2.2)
+	run.fx.burst(position - Vector2(0, _mid), [Color(1, 0.3, 0.3), Color(1, 1, 1)], 8, 70.0, 0.4, 2.2)
 	run.fx.flash(Color(1, 0.1, 0.1, 0.18), 0.15)
 	Sfx.play("player_hurt", -3.0)
 	G.player_hurt.emit(amount)
@@ -287,10 +305,11 @@ func _die() -> void:
 	vel = Vector2.ZERO
 	weapon.visible = false
 	body.visible = true
-	body.play("hit")
+	body.material = null
+	body.play("death" if _has_death else "hit")
 	if light != null:
 		light.energy = 0.25
-	run.fx.burst(position - Vector2(0, 8), Art.palette(String(hero.get("sprite", "knight_m"))), 26, 90.0, 0.9, 2.8)
+	run.fx.burst(position - Vector2(0, _mid), Art.palette(_sprite_id), 14 if _has_death else 26, 90.0, 0.9, 2.8)
 	run.shake(1.0)
 	Sfx.play("player_die")
 	G.player_died.emit()
@@ -360,7 +379,7 @@ func add_item(item_id: String) -> void:
 		run.fx.flash(Color(0.5, 0.0, 0.3, 0.3), 0.3)
 	else:
 		Sfx.play("item_pickup")
-	run.fx.ring(position - Vector2(0, 8), 4.0, 30.0, 0.45, Color(1, 0.95, 0.6), 2.0)
+	run.fx.ring(position - Vector2(0, _mid), 4.0, 30.0, 0.45, Color(1, 0.95, 0.6), 2.0)
 	run.effects.item_added(item_id)
 	G.item_acquired.emit(item_id)
 	G.hud_changed.emit()

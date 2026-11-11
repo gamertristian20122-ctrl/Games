@@ -1,0 +1,18 @@
+CANDIDATE (not yet used in the game): Boss: Mecha-Stone Golem [FREE]
+Downloaded: 2026-11-11 (free, name-your-own-price page, 0 USD)
+Author: Kronovi-  https://darkpixel-kronovi.itch.io/mecha-golem-free
+
+Contents (page): "idle / moving (4 frames) glowing (8 frames) ranged attack (9 frames) melee attack (7 frames)
+Special attack : laser (casting: 7 frames, laser beam: 14 frames) armor buff (11 frames) defeated / appearance
+(14 frames) Block (9 frames)"; 100x100 cells, drawn sprite about 48x46 px; Aseprite sources, laser and projectile.
+
+Licence (page): "You can use this asset pack with your commercial or non-commercial projects and credits are always
+appreciated (if you like giving credits). You can edit the sprites Reselling and redistributing this asset pack is
+prohibited."
+
+Human-made evidence: itch.io label "No generative AI was used"; layered .aseprite project files in the zip.
+(The page does not show a publish date.)
+
+Match with Pixel Crawler: same pixel density; grey, less saturated, thinner outline; passable as a forge construct.
+Picture:
+/tmp/claude-0/-home-user/5364784e-e756-5c67-b396-0f57c4c58bac/scratchpad/match/pics/cmp_chierit_kronovi_free_bosses.png

@@ -17,8 +17,16 @@ const NOTES := [
 ]
 
 const LIST := [
+	# ---- bought by the owner (Nov 2026). The licence allows commercial games; the art itself may not
+	#      be resold or shared. Each pack's Terms.txt is kept in assets_raw/paid_pixel_crawler/.
 	{
-		"what": "DungeonTileset II (all pixel art)",
+		"what": "Pixel Crawler - Complete Collection (heroes, monsters, bosses, weapons, the shopkeeper, dungeon rooms)",
+		"author": "Anokolisa",
+		"licence": "Purchased licence (commercial use allowed)",
+		"url": "https://anokolisa.itch.io/",
+	},
+	{
+		"what": "DungeonTileset II (items, pickups and other small pixel art)",
 		"author": "0x72",
 		"licence": "CC0",
 		"url": "https://0x72.itch.io/dungeontileset-ii",

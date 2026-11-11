@@ -1,0 +1,16 @@
+PACK     : Kyrise's Free 16x16 RPG Icon Pack V1.3
+URL      : https://kyrise.itch.io/kyrises-free-16x16-rpg-icon-pack
+AUTHOR   : Kyrise
+PRICE    : free
+CONTENT  : 350 icons (70+ designs with recolours) as 16x16, 32x32, 48x48 PNG + spritesheets (16x16 sheet 256x352).
+           Coins/coin stacks, 10 keys, rings, 16 amulets, gems, orbs, ~40 tomes, potions, 2 skulls, candles, masks...
+LICENCE  : CC BY 4.0 (commercial use and modification allowed, CREDIT REQUIRED). Exact text:
+  itch.io page: "Kyrise's Free 16x16 RPG Icon Pack (c) 2018 by Kyrise is licensed under CC BY 4.0"
+  readme.txt  : "License Type: Creative Commons Attribution 4.0 International (CC BY 4.0)"
+  REQUIRED CREDIT (put in the Credits screen):
+           "Kyrise's Free 16x16 RPG Icon Pack (c) 2018 by Kyrise - CC BY 4.0 - https://kyrise.itch.io/" (say if recoloured)
+DATES    : copyright 2018; V1.3 uploaded 2020-05-12; downloaded 2026-11-11 11:54 UTC
+HUMAN-MADE EVIDENCE : made 2018-2020, before image generators; itch.io info panel "Content: No generative AI was
+           used"; 45 ratings (4.9); strict 16x16 grid, black 1px outline on every sprite.
+MATCH    : see comparison pictures. Same pixel density and dark outline; outline is pure black and colours a bit
+           flatter than Pixel Crawler but it sits next to the characters without looking pasted in.

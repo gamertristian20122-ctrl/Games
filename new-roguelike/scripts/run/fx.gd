@@ -358,7 +358,7 @@ func set_atmosphere(theme: Dictionary, room_type: int = G.RoomType.COMBAT) -> vo
 		_mote_theme = id
 		_mote_count = want
 		for i in want:
-			_mote_pos[i] = Vector2(randf_range(-10.0, G.ROOM_W + 10.0), randf_range(-26.0, G.ROOM_H + 8.0))
+			_mote_pos[i] = Vector2(randf_range(-10.0, G.ROOM_W + 10.0), randf_range(-44.0, G.ROOM_H + 8.0))
 			_mote_phase[i] = randf() * 40.0
 
 
@@ -433,11 +433,11 @@ func _step_motes(delta: float) -> void:
 		var ph := _mote_phase[i]
 		p.x += sin(_time * 0.45 + ph) * _mote_drift * delta
 		p.y -= _mote_rise * (0.6 + 0.4 * sin(ph * 3.1)) * delta + cos(_time * 0.3 + ph * 1.3) * 1.2 * delta
-		if p.y < -28.0:
+		if p.y < -46.0:
 			p.y = h + 8.0
 			p.x = randf_range(-10.0, w + 10.0)
 		elif p.y > h + 10.0:
-			p.y = -26.0
+			p.y = -44.0
 			p.x = randf_range(-10.0, w + 10.0)
 		if p.x < -14.0:
 			p.x = w + 12.0

@@ -1,0 +1,29 @@
+CANDIDATE (not yet used in the game): free boss sprites by chierit
+Downloaded: 2026-11-11 (free tiers only; nothing was bought)
+Author: chierit  https://chierit.itch.io/
+
+Files and pages
+- boss_demon_slime_FREE_v1.0.zip  https://chierit.itch.io/boss-demon-slime   (free version posted Oct 26, 2021)
+    demon form only: idle 6, walk 12, cleave 15, take_hit 5, death 22 frames; 288x160 canvas, sprite about 80x105 px
+- Frost_Guardian_FREE_v1.0.zip    https://chierit.itch.io/boss-frost-guardian (v1.0 Jun 28, 2022)
+    idle 6, walk 10, 1_atk 14, take_hit 7, death 16 frames; 192x128 canvas, sprite about 79x92 px
+- mino_v1.1_free.zip              https://chierit.itch.io/boss-minotaur       (released Mar 29, 2025; free version May 2025)
+    idle 16, walk 12, atk_1 16 frames (NO hurt/death in the free version); 288x160 canvas, sprite about 104x100 px
+- free_cthulu_v1.zip              https://chierit.itch.io/free-cthulu         (released Nov 01, 2023)
+    idle 15, walk 12, fly 6, 1atk 7, 2atk 9, hurt 5, death 11 frames; 192x112 canvas, sprite about 60x63 px
+Full versions (more attacks, hurt, death): 8 USD each on the same pages. Not bought.
+
+Licence (itch.io metadata on every page): "Asset license: Creative Commons Attribution v4.0 International"
+Author's own words (Frost Guardian, Minotaur and Cthulu pages):
+  "License CC-BY 4.0 - can be edited to fit your game (aseprite file included), can also be used commercially,
+   only credit "chierit" in your game's credits or add a link somewhere to my itch page."
+  "Please don't resell."
+REQUIRED CREDIT if used: chierit (https://chierit.itch.io) in the game's credits.
+NOTE: this is CC-BY, not CC0. The project rule says CC-BY only for music and fonts, so the owner must agree first.
+
+Human-made evidence: every page carries itch.io's "No generative AI was used" label; each zip includes the
+layered .aseprite source; devlogs and playable Godot demo games since 2021; long-running Elementals series.
+
+Match with Pixel Crawler: same pixel density, dark coloured outlines, saturated colours; proportions are more
+muscular/realistic and shading finer than Pixel Crawler's chibi look. Picture:
+/tmp/claude-0/-home-user/5364784e-e756-5c67-b396-0f57c4c58bac/scratchpad/match/pics/cmp_chierit_kronovi_free_bosses.png

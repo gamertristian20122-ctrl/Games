@@ -117,11 +117,21 @@ static func all() -> Array[String]:
 			out.append("hero %s: unknown shot type '%s'" % [h["id"], h.get("shot", "")])
 		if h.has("familiar") and not Familiars.ALL.has(h["familiar"]):
 			out.append("hero %s: unknown familiar '%s'" % [h["id"], h["familiar"]])
+		# the Pixel Crawler heroes: measured (so the feet stand right) and with a walking animation
+		var hero_sprite := String(h.get("sprite", ""))
+		if hero_sprite.begins_with("pc_") and (Art.meta(hero_sprite).is_empty() or not Art.has_anim(hero_sprite, "run")):
+			out.append("hero %s: sprite '%s' has no measurements or no run animation" % [h["id"], hero_sprite])
 	# ---- enemies, bosses, familiars
 	for id: String in Enemies.ALL:
 		var e: Dictionary = Enemies.ALL[id]
 		if not Art.has(String(e["sprite"])):
 			out.append("enemy %s: sprite '%s' does not exist" % [id, e["sprite"]])
+		elif not Art.frames(String(e["sprite"])).has_animation(String(e.get("idle", "idle"))):
+			out.append("enemy %s: sprite '%s' has no animation '%s'" % [id, e["sprite"], e.get("idle", "idle")])
+		if String(e["sprite"]).begins_with("pc_") and Art.meta(String(e["sprite"])).is_empty():
+			out.append("enemy %s: sprite '%s' is not in pc_cast.json (no size)" % [id, e["sprite"]])
+		if fmod(float(e.get("scale", 1.0)), 1.0) != 0.0:
+			out.append("enemy %s: scale must be a whole number (pixel art)" % id)
 		if not ResourceLoader.exists("res://scripts/entities/ai/%s.gd" % e["ai"]):
 			out.append("enemy %s: no AI file '%s.gd'" % [id, e["ai"]])
 		if e.has("shot") and not ShotTypes.ALL.has(e["shot"]):
@@ -133,12 +143,16 @@ static func all() -> Array[String]:
 		var b: Dictionary = Bosses.ALL[id]
 		if not Art.has(String(b["sprite"])):
 			out.append("boss %s: sprite '%s' does not exist" % [id, b["sprite"]])
+		if fmod(float(b.get("scale", 1.0)), 1.0) != 0.0:
+			out.append("boss %s: scale must be a whole number (pixel art)" % id)
 		if not ResourceLoader.exists("res://scripts/entities/bosses/%s.gd" % b["script"]):
 			out.append("boss %s: no file bosses/%s.gd" % [id, b["script"]])
 	for id: String in Familiars.ALL:
 		var f: Dictionary = Familiars.ALL[id]
 		if not Art.has(String(f["sprite"])):
 			out.append("familiar %s: sprite '%s' does not exist" % [id, f["sprite"]])
+		elif not Art.frames(String(f["sprite"])).has_animation(String(f.get("anim", "idle"))):
+			out.append("familiar %s: sprite '%s' has no animation '%s'" % [id, f["sprite"], f.get("anim", "idle")])
 		if not ResourceLoader.exists("res://scripts/entities/familiars/%s.gd" % f["behaviour"]):
 			out.append("familiar %s: no file familiars/%s.gd" % [id, f["behaviour"]])
 	# ---- floors: every floor needs enemies and a boss

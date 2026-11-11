@@ -1,0 +1,24 @@
+PACK     : Raven Fantasy Icons - FREE version (file "Free - Raven Fantasy Icons.zip", 8.3 MB)
+URL      : https://clockworkraven.itch.io/raven-fantasy-icons
+AUTHOR   : Clockwork Raven (Caio Carlos, Clockwork Raven Studios)
+PRICE    : free file (the "Premium" 8000+ icon file costs 35 USD and was NOT downloaded)
+CONTENT  : 2192 item icons, each as 16x16, 32x32 and 64x64 PNG + full spritesheets (16x16 sheet = 256x2192).
+           Skulls, bones, keys, gems, chalices, lamps, tomes, orbs, scrolls, rune stones, potions, food, ores...
+LICENCE  : custom, commercial use allowed, credit optional. Exact text:
+  itch.io page: "This asset can be modified to match any of your needs. This asset can be used in any project,
+                 even commercial and physical(print or tabletop) ones, but it cannot be distributed or sold as a
+                 separate product without the creator's permission (me)."
+                "Attribution is not necessary but welcome."
+  Licence PDF (linked from the page, saved here as "Clockwork Raven General Licence v.1.2.pdf"), section 3a:
+                "Acknowledges that this asset(s) can be used as part of any personal or commercial digital and
+                 physical/print Product, this include: Video Games ..."
+                section 2: "If you download, purchase, or have obtained it via Patreon or the Itch.io store you are
+                 subject to all terms and conditions in this License."
+  Not allowed: reselling/redistributing the icons as assets, NFTs, training AI on them.
+DATES    : free file uploaded to itch.io 2025-02-24; downloaded 2026-11-11 11:54 UTC
+HUMAN-MADE EVIDENCE : itch.io info panel "Content: No generative AI was used"; one named artist with a multi-year
+           catalogue of icon sets in the same hand ("two years of work together in a single evergrowing pack"),
+           86 ratings (4.9); fixed small palette, clean 16x16 pixel grid, dark purple 1px outlines; the licence
+           itself forbids AI training on the art.
+MATCH    : see comparison_icons_vs_pixel_crawler.png (rows 4-5). Same pixel density, dark coloured outline, warm
+           saturated palette: the closest icon match to Pixel Crawler found.

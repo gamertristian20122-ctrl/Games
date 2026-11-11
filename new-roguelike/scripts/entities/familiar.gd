@@ -27,6 +27,7 @@ var mem := {}
 var block_radius := 0.0
 var sprite: AnimatedSprite2D
 var _bob := 0.0
+var _hover := 5.0
 var _started := false
 
 
@@ -41,8 +42,9 @@ func setup(the_run: Node, the_player: Node, familiar_id: String, index: int) -> 
 	behaviour = EnemyScript.ai_for(String(data.get("behaviour", "shooter")), "familiars")
 	var shadow := EnemyScript.make_shadow(9.0)
 	add_child(shadow)
-	sprite = Art.sprite(String(data.get("sprite", "angel")))
+	sprite = Art.sprite(String(data.get("sprite", "pc_bat_small")), String(data.get("anim", "idle")))
 	sprite.modulate = data.get("tint", Color(1, 1, 1))
+	_hover = float(data.get("hover", 5.0))
 	add_child(sprite)
 	_bob = randf() * 6.0
 
@@ -55,7 +57,7 @@ func _physics_process(delta: float) -> void:
 		if behaviour.has_method("start"):
 			behaviour.start(self)
 	# trail behind the player, each familiar a little further back
-	var back := Vector2(-12.0 - 9.0 * slot, -3.0)
+	var back := Vector2(-15.0 - 11.0 * slot, -3.0)
 	if player.body.flip_h:
 		back.x = -back.x
 	var want: Vector2 = player.position + back
@@ -66,7 +68,7 @@ func _physics_process(delta: float) -> void:
 	if absf(position.x - before.x) > 0.02:
 		sprite.flip_h = position.x < before.x
 	_bob += delta
-	sprite.position.y = -5.0 + sin(_bob * 4.0) * 1.5
+	sprite.position.y = -_hover + sin(_bob * 4.0) * 1.5
 	behaviour.tick(self, delta)
 
 
@@ -96,4 +98,4 @@ func shoot_at(enemy: Node, shot_speed: float, damage: float, type: String = "wis
 
 ## A shot just hit this familiar (only happens when block_radius > 0 and it is in room.blockers).
 func blocked_shot() -> void:
-	run.fx.ring(position - Vector2(0, 6), 2.0, 9.0, 0.2, Color(0.8, 1.0, 1.0), 1.5)
+	run.fx.ring(position - Vector2(0, _hover + 6.0), 2.0, 9.0, 0.2, Color(0.8, 1.0, 1.0), 1.5)

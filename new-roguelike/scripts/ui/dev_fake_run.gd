@@ -118,7 +118,9 @@ func start_boss() -> void:
 		return
 	var b := FakeBoss.new()
 	b.position = G.ROOM_CENTER + Vector2(60, -10)
-	b.add_child(Art.sprite("big_demon"))
+	var boss_sprite := Art.sprite("pc_zombie_muscle")      # like a real boss: a floor creature at double size
+	boss_sprite.scale = Vector2(2, 2)
+	b.add_child(boss_sprite)
 	add_child(b)
 	boss = b
 	G.boss_started.emit(b)

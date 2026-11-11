@@ -5,6 +5,7 @@ extends Control
 ## the hero-select screen swaps the hero that stands in it.
 
 const UI = preload("res://scripts/ui/theme.gd")
+const HeroLook = preload("res://scripts/entities/hero_look.gd")
 
 const ZOOM := 2.0
 const HERO_FEET := Vector2(8, 30)        ## where the hero stands, in tile-space pixels
@@ -99,15 +100,16 @@ func _build_room() -> void:
 	var shadow := Node2D.new()
 	shadow.position = HERO_FEET
 	shadow.draw.connect(func() -> void:
-		shadow.draw_rect(Rect2(-6, -2, 12, 3), Color(0, 0, 0, 0.3))
-		shadow.draw_rect(Rect2(-4, -3, 8, 5), Color(0, 0, 0, 0.3)))
+		shadow.draw_rect(Rect2(-8, -2, 16, 3), Color(0, 0, 0, 0.3))
+		shadow.draw_rect(Rect2(-6, -3, 12, 5), Color(0, 0, 0, 0.3)))
 	_scene.add_child(shadow)
+	_hero = Art.sprite("pc_knight")
+	_hero.position = HERO_FEET
+	_scene.add_child(_hero)
+	# the weapon is held in front of the body, the same way the hero carries it in a run
 	_weapon = Sprite2D.new()
 	_weapon.centered = false
 	_scene.add_child(_weapon)
-	_hero = Art.sprite("knight_m")
-	_hero.position = HERO_FEET
-	_scene.add_child(_hero)
 
 	# slow dust in the light: a few single pixels drifting up
 	var dust := CPUParticles2D.new()
@@ -176,21 +178,19 @@ func _process(delta: float) -> void:
 
 ## Puts a hero (a row from scripts/data/heroes.gd) in the light. Locked heroes are a black shape.
 func set_hero(hero: Dictionary, locked: bool = false) -> void:
-	var sprite_id := String(hero.get("sprite", "knight_m"))
+	var sprite_id := String(hero.get("sprite", "pc_knight"))
 	if sprite_id != _hero_id:
 		_hero_id = sprite_id
 		_hero.sprite_frames = Art.frames(sprite_id)
-		var sz := Art.size(sprite_id)
-		_hero.offset = Vector2(-sz.x / 2.0, -sz.y)
+		_hero.offset = Art.feet_offset(sprite_id)      # feet on the same spot whatever the hero
 		_hero.play("idle")
 	_hero.modulate = Color(0.02, 0.02, 0.04) if locked else Color.WHITE
 	var weapon_id := String(hero.get("weapon", ""))
 	_weapon.visible = weapon_id != "" and not locked and Art.has(weapon_id)
 	if _weapon.visible:
-		_weapon.texture = Art.tex(weapon_id)
-		var wsz := _weapon.texture.get_size()
-		# held upright at the hero's side, pommel at hand height
-		_weapon.position = HERO_FEET + Vector2(6, -7 - wsz.y + 4)
+		HeroLook.set_weapon(_weapon, hero)
+		HeroLook.rest(_weapon, 1.0)
+		_weapon.position += HERO_FEET
 
 
 ## Darkens the whole picture so panels on top are easy to read (collection, settings, ...).

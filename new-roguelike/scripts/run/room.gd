@@ -145,12 +145,10 @@ func setup(the_run: Node, at: Vector2i) -> void:
 func _build_nodes() -> void:
 	tiles = Node2D.new()
 	tiles.z_index = -10
-	tiles.modulate = theme["tile_tint"]
 	add_child(tiles)
 	tiles.draw.connect(_draw_tiles)
 	spikes_node = Node2D.new()
 	spikes_node.z_index = -9
-	spikes_node.modulate = theme["tile_tint"]
 	add_child(spikes_node)
 	spikes_node.draw.connect(_draw_spikes)
 	ysort = Node2D.new()
@@ -158,7 +156,6 @@ func _build_nodes() -> void:
 	add_child(ysort)
 	front = Node2D.new()
 	front.z_index = 1
-	front.modulate = theme["tile_tint"]
 	add_child(front)
 	front.draw.connect(_draw_front)
 	door_fx = Node2D.new()
@@ -245,46 +242,19 @@ func _build_obstacle_sprites() -> void:
 			_make_obstacle_sprite(i)
 
 
-## STAND-IN: the pack has no rock picture. A "rock" is a broken pillar stump, put together from
-## two pieces of the pack's own column sprite (its cap and its foot).
+## What a rock, a crate, a column or a standing torch looks like is the tile set's business
+## (tombstones, urns, statues...): the look puts the picture into the obstacle's y-sorted node.
 func _make_obstacle_sprite(i: int) -> void:
 	var cx := i % COLS
 	var cy := i / COLS
 	var node := Node2D.new()
 	node.position = Vector2(cx * T + 8, cy * T + 15)
-	match grid[i]:
-		ROCK:
-			var top := Sprite2D.new()
-			top.texture = Art.tex("column")
-			top.region_enabled = true
-			top.region_rect = Rect2(0, 4, 16, 12)
-			top.centered = false
-			top.position = Vector2(-8, -19)
-			node.add_child(top)
-			var foot := Sprite2D.new()
-			foot.texture = Art.tex("column")
-			foot.region_enabled = true
-			foot.region_rect = Rect2(0, 30, 16, 9)
-			foot.centered = false
-			foot.position = Vector2(-8, -7)
-			node.add_child(foot)
-		CRATE:
-			var s := Sprite2D.new()
-			s.texture = Art.tex("crate")
-			s.centered = false
-			s.position = Vector2(-8, -22)
-			node.add_child(s)
-		COLUMN:
-			if torch_cells.has(i):
-				look.build_floor_torch(node)
-			else:
-				var s2 := Sprite2D.new()
-				s2.texture = Art.tex("column")
-				s2.centered = false
-				s2.position = Vector2(-8, -36)
-				node.add_child(s2)
-	if not torch_cells.has(i):
-		look.tint_obstacle(node)
+	var kind := "rock"
+	if grid[i] == CRATE:
+		kind = "crate"
+	elif grid[i] == COLUMN:
+		kind = "torch" if torch_cells.has(i) else "pillar"
+	look.build_obstacle(node, kind, cx, cy)
 	ysort.add_child(node)
 	cell_nodes[i] = node
 
@@ -299,13 +269,9 @@ func _draw_front() -> void:
 	look.draw_front(front)
 
 
+## Pits and spikes lie flat on the floor, under everything that stands.
 func _draw_spikes() -> void:
-	if not has_spikes:
-		return
-	var tex: Texture2D = Art.frames("floor_spikes").get_frame_texture("default", _spike_frame)
-	for i in grid.size():
-		if grid[i] == SPIKES:
-			spikes_node.draw_texture(tex, Vector2((i % COLS) * T, (i / COLS) * T))
+	look.draw_flat(spikes_node, _spike_frame)
 
 
 ## Door states (open, shut, locked, boss, hidden, blown open) are explained at the top of room_look.gd.
@@ -315,6 +281,8 @@ func _draw_doors() -> void:
 
 func _refresh_door_art() -> void:
 	look.refresh_door_art()
+	tiles.queue_redraw()
+	front.queue_redraw()
 	door_fx.queue_redraw()
 
 
@@ -453,8 +421,6 @@ func _draw_cracks() -> void:
 		var into := Vector2(dir)                 # from the floor's edge into the wall
 		var along := Vector2(absf(into.y), absf(into.x))
 		var from := door_pos(dir) + into * (1.0 if dir == UP or dir == LEFT else 0.0)
-		if dir == DOWN:
-			from.y -= 2.0                        # the bottom wall's top edge overlaps the floor
 		for step: Vector2i in CRACK_SHAPE:
 			var p := from + into * float(step.x) + along * float(step.y)
 			_crack_fx.draw_rect(Rect2(floorf(p.x) + 1.0, floorf(p.y), 1, 1), CRACK_LIGHT)
@@ -743,12 +709,12 @@ func break_cell(i: int) -> void:
 		cell_nodes.erase(i)
 	var at := _cell_center(i)
 	if what == CRATE:
-		run.fx.burst(at - Vector2(0, 6), Art.palette("crate"), 12, 60.0, 0.5, 2.4)
+		run.fx.burst(at - Vector2(0, 6), look.debris("crate"), 12, 60.0, 0.5, 2.4)
 		Sfx.play("rock_break", -8.0, 0.2)
 		if randf() < 0.3:
 			drop("coin", at)
 	else:
-		run.fx.burst(at - Vector2(0, 6), Art.palette("column"), 14, 70.0, 0.55, 2.6)
+		run.fx.burst(at - Vector2(0, 6), look.debris("rock"), 14, 70.0, 0.55, 2.6)
 		Sfx.play("rock_break", -3.0)
 
 
