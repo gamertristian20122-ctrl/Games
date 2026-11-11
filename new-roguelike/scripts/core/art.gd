@@ -19,6 +19,14 @@ extends Node
 ## measurements in assets/art/pc/pc_cast.json. Art.meta(id) hands them out: "feet" (where the
 ## feet are on the canvas; Art.sprite() stands the sprite on that point), "body_height",
 ## "body_width", "radius", "frames". Ids without measurements get an empty Dictionary.
+##
+## The boss art (ids boss_* and boss_fx_*, cut by tools/import_bosses.py) is described by
+## assets/art/boss/boss_cast.json. For a boss id Art loads EVERY animation that file lists under
+## "frames" (attack2, cast, buff, block, glow, nofire, idle_unarmed, spawn ...), at the pack's own
+## frame rate and frame holds where the file gives them (BOSS_GIFS below says which preview GIF
+## times which animation), looping only the stand / walk kind. Art.meta(id) hands out the whole
+## entry: "feet", "canvas", "hover_px", "radius", "hit_frames", "projectile_spawn", "fx", "notes".
+## Art.frame_time(id, anim, frame) says how long after its start an animation reaches a frame.
 
 ## dungeon = the main pack (0x72). niji, forest and fx are written by tools/import_assets.py.
 ## pc = the purchased Pixel Crawler cast and weapons (tools/pc_import_cast.py).
@@ -33,6 +41,18 @@ const PC_FPS := {"hit": 14.0}                 ## the Pixel Crawler hit animation
 const ONCE := ["hit", "death", "attack"]       ## these never loop
 const EXTRA := ["death", "attack"]             ## only added when the pack has them
 const META_FILE := "res://assets/art/pc/pc_cast.json"
+const BOSS_META_FILE := "res://assets/art/boss/boss_cast.json"
+const BOSS_FPS := 10.0                       ## boss animations without a stated rate
+const BOSS_LOOPS := ["glow", "fly", "nofire", "walk"]   ## boss animations that loop, besides idle* and run*
+## Which preview GIF (the keys of "source_fps" in boss_cast.json) times which animation, where
+## the pack has one GIF per animation. Bosses not listed here use "all_gifs" or BOSS_FPS.
+const BOSS_GIFS := {
+	"boss_ogre": {"attack": "ogre-attack.gif", "idle": "ogre-idle.gif", "idle_unarmed": "ogre-idle-unarmed.gif",
+		"run": "ogre-walk.gif", "run_unarmed": "ogre-walk-unarmed.gif"},
+	"boss_fire_skull": {"idle": "fire-skull.gif", "nofire": "fire-skull-no-fire.gif"},
+	"boss_death": {"spawn": "death-lamp-rise.gif", "run": "death-lamp-walk.gif", "run_nolamp": "death-walk.gif"},
+	"boss_demon": {"attack": "demon-attack-no-breath.gif", "attack2": "demon-attack.gif", "idle": "demon-idle.gif"},
+}
 const NO_META := {}
 
 var _tex := {}
@@ -79,7 +99,18 @@ func frames(id: String) -> SpriteFrames:
 	if _frames.has(id):
 		return _frames[id]
 	var found := {}
-	for pair in ANIMS:
+	var pairs: Array = ANIMS
+	var boss := id.begins_with("boss_")
+	var extras: Array = []                   # boss animations beyond the six standard names
+	if boss:
+		var listed: Variant = meta(id).get("frames")
+		if listed is Dictionary:
+			pairs = ANIMS.duplicate()
+			for extra_name: String in listed:
+				if not FPS.has(extra_name):
+					pairs.append([extra_name, "_%s_anim" % extra_name])
+					extras.append(extra_name)
+	for pair in pairs:
 		var anim: String = pair[0]
 		if found.has(anim):
 			continue
@@ -98,13 +129,23 @@ func frames(id: String) -> SpriteFrames:
 	if not found.is_empty():
 		sf = SpriteFrames.new()
 		sf.remove_animation("default")
-		var fallback: Array = found.values()[0]
+		var fallback_name: String = "idle" if found.has("idle") else ("default" if found.has("default") else String(found.keys()[0]))
 		var pc := id.begins_with("pc_")
-		for anim in ["idle", "run", "hit", "default", "death", "attack"]:
-			if EXTRA.has(anim) and not found.has(anim):
+		for anim: String in ["idle", "run", "hit", "default", "death", "attack"] + extras:
+			if (EXTRA.has(anim) or extras.has(anim)) and not found.has(anim):
 				continue
-			var source: Array = found.get(anim, found.get("idle", found.get("default", fallback)))
+			var from: String = anim if found.has(anim) else fallback_name
+			var source: Array = found[from]
 			sf.add_animation(anim)
+			if boss:
+				var timing := _boss_timing(id, from)
+				var fps: float = timing[0]
+				var holds: Array = timing[1]
+				sf.set_animation_speed(anim, fps)
+				sf.set_animation_loop(anim, not ONCE.has(anim) if FPS.has(anim) else (anim.begins_with("idle") or anim.begins_with("run") or BOSS_LOOPS.has(anim)))
+				for i in source.size():
+					sf.add_frame(anim, source[i], float(holds[i]) * fps / 1000.0 if holds.size() == source.size() else 1.0)
+				continue
 			sf.set_animation_speed(anim, PC_FPS.get(anim, FPS[anim]) if pc else FPS[anim])
 			sf.set_animation_loop(anim, not ONCE.has(anim))
 			for t in source:
@@ -126,21 +167,50 @@ func anim_time(id: String, anim: String) -> float:
 	var sf := frames(id)
 	if sf == null or not sf.has_animation(anim):
 		return 0.0
-	return float(sf.get_frame_count(anim)) / maxf(sf.get_animation_speed(anim), 0.01)
+	return frame_time(id, anim, sf.get_frame_count(anim))
 
 
-## Measurements for a Pixel Crawler id (see the top of this file). Empty for every other id.
-## The file is read once, the first time anybody asks.
+## Seconds from the start of an animation until `frame` begins (frame holds counted), at normal
+## speed. Boss fights use it to time a floor warning so it fills exactly when the blow lands.
+func frame_time(id: String, anim: String, frame: int) -> float:
+	var sf := frames(id)
+	if sf == null or not sf.has_animation(anim):
+		return 0.0
+	var total := 0.0
+	for i in mini(frame, sf.get_frame_count(anim)):
+		total += sf.get_frame_duration(anim, i)
+	return total / maxf(sf.get_animation_speed(anim), 0.01)
+
+
+## [frames per second, the pack's hold of each frame in ms (empty = every frame the same)] for a
+## boss animation, from "source_fps" in boss_cast.json.
+func _boss_timing(id: String, anim: String) -> Array:
+	var src: Variant = meta(id).get("source_fps")
+	if not (src is Dictionary):
+		return [BOSS_FPS, []]
+	var v: Variant = src.get(String((BOSS_GIFS.get(id, {}) as Dictionary).get(anim, "")), src.get("all_gifs"))
+	if v is Dictionary:
+		return [float(v.get("fps", BOSS_FPS)), v.get("frame_ms", [])]
+	if v is float or v is int:
+		return [float(v), []]
+	return [BOSS_FPS, []]
+
+
+## Measurements for a Pixel Crawler id or a boss id (see the top of this file). Empty for every
+## other id. The two files are read once, the first time anybody asks.
 func meta(id: String) -> Dictionary:
 	if not _meta_loaded:
 		_meta_loaded = true
-		var f := FileAccess.open(META_FILE, FileAccess.READ)
-		if f != null:
+		for file: String in [META_FILE, BOSS_META_FILE]:
+			var f := FileAccess.open(file, FileAccess.READ)
+			if f == null:
+				push_warning("Art: cannot read %s" % file)
+				continue
 			var parsed: Variant = JSON.parse_string(f.get_as_text())
 			if parsed is Dictionary:
-				_meta = parsed
-		else:
-			push_warning("Art: cannot read %s" % META_FILE)
+				for key: String in parsed:
+					if parsed[key] is Dictionary and not key.begins_with("_"):
+						_meta[key] = parsed[key]
 	return _meta.get(id, NO_META)
 
 
