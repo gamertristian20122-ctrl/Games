@@ -246,8 +246,8 @@ const ALL := [
 	]},
 ]
 
-const LEGAL := ".#o^cIe"
-const BLOCKERS := "#ocI"
+const LEGAL := ".#o^cIeT"
+const BLOCKERS := "#ocIT"
 ## Door tiles and the tile in front of each: these must stay free.
 const KEEP_FREE: Array[Vector2i] = [
 	Vector2i(8, 0), Vector2i(8, 1), Vector2i(8, 6), Vector2i(8, 5),
@@ -262,12 +262,16 @@ static func by_name(layout_name: String) -> Dictionary:
 	return {}
 
 
-## All layouts of a kind whose difficulty is between lo and hi.
-static func pick_list(kind: String, lo: int = 1, hi: int = 3) -> Array:
+## All layouts of a kind whose difficulty is between lo and hi. floor_number (1 = first floor)
+## leaves out layouts whose "floors" list does not name that floor; 0 = any floor.
+static func pick_list(kind: String, lo: int = 1, hi: int = 3, floor_number: int = 0) -> Array:
 	var out: Array = []
 	for l in ALL:
-		if l["kind"] == kind and int(l["diff"]) >= lo and int(l["diff"]) <= hi:
-			out.append(l)
+		if l["kind"] != kind or int(l["diff"]) < lo or int(l["diff"]) > hi:
+			continue
+		if floor_number > 0 and l.has("floors") and not (l["floors"] as Array).has(floor_number):
+			continue
+		out.append(l)
 	return out
 
 
