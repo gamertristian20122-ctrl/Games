@@ -35,7 +35,8 @@ item makes it bigger.
 - **The GitHub repo must stay PRIVATE.** It holds the purchased "Pixel Crawler" art by Anokolisa
   (`assets_raw/paid_pixel_crawler/zips/`, bought by the owner in Nov 2026: commercial use allowed, no
   reselling or sharing of the art itself; terms are in each pack's Terms.txt). Never copy it anywhere public.
-  The signing key is not in the repo.
+  The release signing key is in `keystore/` (the owner chose this on 11 Nov 2026 after the first key was
+  lost with a cloud session): one more reason the repo stays private. Never make a new key.
 - Original game: no names, items, enemies, bosses, layouts or text copied from existing games.
   Do not reuse ideas from the owner's older games in this repo (no "echo", no recorded past self).
 - No `class_name`; use `const X = preload("res://...")`.
@@ -53,8 +54,8 @@ item makes it bigger.
   tools from dl.google.com + `sdkmanager`, `apt-get install openjdk-17-jdk-headless`.
 - The APK is 64-bit only (`architectures/arm64-v8a` in `export_presets.cfg`), about 42 MB: the owner's
   phone could not download the 69 MB two-architecture build.
-- The signing key is NOT in the repo: `tools/build_apk.sh` reads `KEYSTORE`, `KEY_ALIAS`, `KEY_PASS`.
-  Every APK must be signed with the same key or phones refuse to update.
+- The signing key is `keystore/cursebait.keystore` (alias and password in `keystore/key.env`, read by
+  `tools/build_apk.sh`). Every APK must be signed with this same key or phones refuse to update.
 
 ## Everyday commands (run from this folder)
 ```
@@ -64,7 +65,7 @@ godot --headless --path . -- --autotest --nosave --hero=knight --seed=3 --speed=
 xvfb-run -a -s "-screen 0 1600x720x24" godot --path . --rendering-driver opengl3 --resolution 1600x720 \
     -- --autotest --nosave --god --goto=shop --speed=2 --time=14 --shots=/abs/dir     # screenshots; LOOK at them
 xvfb-run ... -- --uitour --shots=/abs/dir               # every menu and HUD state
-KEY_PASS=... ./tools/build_apk.sh                       # signed APK in build/
+./tools/build_apk.sh                                    # signed APK in build/
 ```
 Flags (after `--`): `--autotest` (a bot plays), `--hero=`, `--seed=`, `--speed=`, `--time=<game seconds>`,
 `--god`, `--floor=<1-4>`, `--give=id,id`, `--goto=boss|shop|treasure|secret`, `--shots=<dir>`, `--nosave`,

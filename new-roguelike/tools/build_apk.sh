@@ -2,14 +2,18 @@
 # build_apk.sh: makes the signed Android APK in build/.
 #   ./tools/build_apk.sh
 # Needs: godot 4.7.2 + Android export templates, the Android SDK, JDK 17, and the signing key.
-# The signing key is NOT in this repo (the repo is PRIVATE, but a signing key still never goes in git). It is read from these environment
-# variables, or from /root/keys/game.keystore with the values below when they are not set:
-#   KEYSTORE=/path/to/game.keystore   KEY_ALIAS=game   KEY_PASS=...
+# The signing key is keystore/cursebait.keystore; its alias and password are in keystore/key.env
+# (the repo is PRIVATE). KEYSTORE, KEY_ALIAS and KEY_PASS in the environment overrule that file.
 # Every build must be signed with the SAME key, or phones refuse to install it over the old one.
 set -eu
 cd "$(dirname "$0")/.."
 GODOT="${GODOT:-godot}"
-KEYSTORE="${KEYSTORE:-/root/keys/game.keystore}"
+if [ -f keystore/key.env ]; then
+	KEYSTORE="${KEYSTORE:-$(pwd)/$(grep '^KEYSTORE=' keystore/key.env | cut -d= -f2-)}"
+	KEY_ALIAS="${KEY_ALIAS:-$(grep '^KEY_ALIAS=' keystore/key.env | cut -d= -f2-)}"
+	KEY_PASS="${KEY_PASS:-$(grep '^KEY_PASS=' keystore/key.env | cut -d= -f2-)}"
+fi
+KEYSTORE="${KEYSTORE:-}"
 KEY_ALIAS="${KEY_ALIAS:-game}"
 KEY_PASS="${KEY_PASS:-}"
 if [ ! -f "$KEYSTORE" ] || [ -z "$KEY_PASS" ]; then
