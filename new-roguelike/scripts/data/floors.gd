@@ -55,7 +55,7 @@ const LIST := [
 	},
 	{
 		"id": "ashen", "name": "The Ashen Halls", "rooms": 11, "enemies": [],
-		"ambient": Color(1.0, 0.86, 0.80), "tile_tint": Color(0.84, 0.64, 0.56), "light": Color(1.0, 0.80, 0.55),
+		"ambient": Color(1.0, 0.90, 0.84), "tile_tint": Color(0.80, 0.68, 0.64), "light": Color(1.0, 0.80, 0.55),
 		"torch_light": Color(1.0, 0.55, 0.22), "flame_tint": Color(1.1, 0.95, 0.85), "torch_power": 1.15,
 		"fountain": "red", "banners": ["wall_banner_red", "wall_banner_yellow"],
 		"cracks": 0.38,

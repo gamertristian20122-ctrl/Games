@@ -13,6 +13,7 @@ extends RefCounted
 ##            Put it on the tip or the bright head so the shot does not seem to sink into walls.
 ##   tint     a colour wash over the art              gap     pixels between the trail copies
 ##   under    a dark disc drawn under the head: every ENEMY shot has one, so it reads on any floor
+##   dot      a bright dot drawn on the head (the "bright core" of an enemy shot)
 ##   spin     turns per second (a thrown, tumbling thing) instead of pointing where it flies
 ##   fps      animation speed
 ## Rules of thumb: hero shots are long, thin and cool-coloured with a trail; enemy shots are fat,
@@ -32,19 +33,19 @@ const ALL := {
 		"sprite": "weapon_cleaver", "points": "up", "spin": 2.5, "tint": Color(1.0, 1.0, 1.0, 0.9)},
 	# --- enemies
 	"enemy": {"color": Color(1.0, 0.86, 0.40), "edge": Color(0.85, 0.16, 0.10), "radius": 3.0, "trail": 0,
-		"sprite": "fx_fireball", "points": "right", "anchor": Vector2(12, 8), "under": Color(0.30, 0.03, 0.05, 0.9), "fps": 12.0,
-		"tint": Color(1.15, 1.1, 1.0)},
+		"sprite": "fx_fireball", "points": "right", "anchor": Vector2(12, 8), "under": Color(0.16, 0.01, 0.03, 1.0), "dot": Color(1.0, 0.97, 0.74), "fps": 12.0,
+		"tint": Color(1.2, 1.2, 1.0)},
 	"enemy_small": {"color": Color(1.0, 0.80, 0.50), "edge": Color(0.80, 0.20, 0.10), "radius": 2.3, "trail": 0,
-		"sprite": "fx_fireball", "points": "right", "anchor": Vector2(12, 8), "under": Color(0.30, 0.03, 0.05, 0.9), "fps": 12.0,
-		"tint": Color(1.2, 1.2, 0.8)},
+		"sprite": "fx_fireball", "points": "right", "anchor": Vector2(12, 8), "under": Color(0.16, 0.01, 0.03, 1.0), "dot": Color(1.0, 0.97, 0.74), "fps": 12.0,
+		"tint": Color(1.2, 1.25, 0.8)},
 	"enemy_big": {"color": Color(1.0, 0.70, 0.30), "edge": Color(0.75, 0.10, 0.10), "radius": 4.5, "trail": 0,
-		"sprite": "fx_firebomb", "points": "right", "anchor": Vector2(12, 9), "under": Color(0.30, 0.03, 0.05, 0.9), "fps": 12.0,
-		"tint": Color(1.15, 1.1, 1.0)},
+		"sprite": "fx_firebomb", "points": "right", "anchor": Vector2(12, 9), "under": Color(0.16, 0.01, 0.03, 1.0), "dot": Color(1.0, 0.97, 0.74), "fps": 12.0,
+		"tint": Color(1.2, 1.2, 1.0)},
 	"hex_enemy": {"color": Color(1.0, 0.70, 0.95), "edge": Color(0.75, 0.10, 0.55), "radius": 3.0, "trail": 0,
-		"sprite": "fx_fireball", "points": "right", "anchor": Vector2(12, 8), "under": Color(0.26, 0.02, 0.16, 0.9), "fps": 12.0,
+		"sprite": "fx_fireball", "points": "right", "anchor": Vector2(12, 8), "under": Color(0.14, 0.0, 0.10, 1.0), "dot": Color(1.0, 0.88, 0.98), "fps": 12.0,
 		"tint": Color(1.2, 0.62, 1.9)},
 	"frost": {"color": Color(0.95, 1.0, 1.0), "edge": Color(0.85, 0.25, 0.45), "radius": 3.0, "trail": 0,
-		"sprite": "fx_star", "points": "up", "under": Color(0.32, 0.04, 0.14, 0.9), "spin": 0.6, "fps": 10.0},
+		"sprite": "fx_star", "points": "up", "under": Color(0.20, 0.02, 0.10, 1.0), "spin": 0.6, "fps": 10.0},
 	"rock": {"color": Color(0.74, 0.70, 0.66), "edge": Color(0.22, 0.18, 0.18), "radius": 5.0, "trail": 0,
 		"sprite": "fx_rock", "points": "up", "spin": 0.8, "tint": Color(1.5, 1.4, 1.35)},
 }

@@ -7,7 +7,8 @@ extends RefCounted
 ## How it stays cheap with 200 shots on screen:
 ##   - shots are drawn type by type, and every shot of a type shows the same animation frame,
 ##     so the renderer can batch a whole type into one draw call
-##   - only hero shots have a trail (a few fading copies); enemy shots are one dark disc + one sprite
+##   - only hero shots have a trail (a few fading copies); enemy shots are a dark disc, one sprite
+##     and a bright dot, each drawn for the whole type in one go
 
 const ShotTypes = preload("res://scripts/data/shot_types.gd")
 
@@ -24,6 +25,7 @@ var _gap := PackedFloat32Array()
 var _trail := PackedInt32Array()
 var _tint := PackedColorArray()
 var _under := PackedColorArray()         ## alpha 0 = no disc under the head
+var _dot := PackedColorArray()           ## alpha 0 = no bright dot on the head
 var _core := PackedColorArray()
 var _edge := PackedColorArray()
 var _radius := PackedFloat32Array()
@@ -58,6 +60,7 @@ func register(id: String) -> void:
 	_trail.append(int(row.get("trail", 0)))
 	_tint.append(row.get("tint", Color(1, 1, 1)))
 	_under.append(row.get("under", Color(0, 0, 0, 0)))
+	_dot.append(row.get("dot", Color(0, 0, 0, 0)))
 	_core.append(row["color"])
 	_edge.append(row["edge"])
 	_radius.append(float(row["radius"]))
@@ -98,7 +101,7 @@ func draw(c: Node2D, s: Node) -> void:
 					if kind[i] != t:
 						continue
 					var q := pos[i] - up
-					var o := rad[i] + 2.0
+					var o := rad[i] + 2.5
 					c.draw_texture_rect(disc, Rect2(q.x - o, q.y - o, o * 2.0, o * 2.0), false, under)
 			# pass 2: the sprites, all on the same frame
 			var tex: Texture2D = list[int(_time * _fps[t]) % list.size()]
@@ -123,6 +126,16 @@ func draw(c: Node2D, s: Node) -> void:
 					tc.a *= 0.46 - 0.12 * k
 					c.draw_texture(tex, origin + back * k, tc)
 				c.draw_texture(tex, origin, tint)
+			var dot := _dot[t]
+			if dot.a > 0.0:
+				# pass 3: the bright core on every head
+				c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				for i in count:
+					if kind[i] != t:
+						continue
+					var q2 := pos[i] - up
+					var o3 := rad[i] * 0.62
+					c.draw_texture_rect(disc, Rect2(q2.x - o3, q2.y - o3, o3 * 2.0, o3 * 2.0), false, dot)
 		c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for l: Dictionary in s.lobs:
 		var u: float = clampf(l["t"] / l["dur"], 0.0, 1.0)

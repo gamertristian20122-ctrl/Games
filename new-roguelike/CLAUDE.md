@@ -70,12 +70,50 @@ Flags (after `--`): `--autotest` (a bot plays), `--hero=`, `--seed=`, `--speed=`
 - The top of each data file explains how to add a row. Sections below are added by whoever built each part.
 
 ## Look, effects and layouts
-(Written by the look builder. Being filled in; see the bottom of this section for what is still to do.)
-- **Importing art:** `python3 tools/import_assets.py` cuts the add-on art out of `assets_raw/` into
-  `assets/art/niji/` (ids `niji_*`), `assets/art/forest/` (ids `sdf_*`) and `assets/art/fx/` (ids `fx_*`),
-  then run `godot --headless --path . --import`. It never draws anything: it only cuts, renames and swaps
-  one outline colour. `--sheet /tmp/dir` also writes contact sheets to look at. To add an effect, add one
-  row to `FX` at the top of that script. New folders must also be listed in `Art.DIRS` (`scripts/core/art.gd`).
+How the game is dressed. None of it changes the rules; all of it is data plus four small files.
+
+**Who draws what**
+- `scripts/run/room_look.gd` draws a room: floor, walls, the four doors in every state, torches and
+  their lights, wall and floor decoration. `room.gd` only calls it (`look.draw_tiles()` and friends).
+- `scripts/run/shot_look.gd` draws every shot from the rows in `scripts/data/shot_types.gd`
+  (still one node for all shots; shots of one type share an animation frame so they batch).
+- `scripts/run/fx.gd` is the one node for effects: square particles, rings, floor warnings, pooled
+  sprite animations (`impact`, `pop`, `death_puff`, `explosion`, `sparkle`, `flourish`, `dust`),
+  the drifting specks in the air and the vignette. Item and pickup sparkles hook `G.item_acquired`
+  and `G.pickup_collected` by themselves.
+- `scripts/data/floors.gd` holds each floor's look: `tile_tint` (dark tiles = mood), `ambient`
+  (keep it bright so monsters read), torch and flame colours, wall and floor bits, specks, vignette.
+
+**Recipes**
+- *Import art:* `python3 tools/import_assets.py` cuts the add-on art out of `assets_raw/` into
+  `assets/art/niji/` (ids `niji_*`), `assets/art/forest/` (ids `sdf_*`, outline recoloured to match)
+  and `assets/art/fx/` (ids `fx_*`), then run `godot --headless --path . --import`. It only cuts,
+  renames and swaps one outline colour; it never draws. `--sheet /tmp/dir` writes contact sheets to
+  LOOK at. A new folder must be added to `Art.DIRS` (`scripts/core/art.gd`) and a pack that ships
+  in the game needs a row in `scripts/data/credits.gd`.
+- *Add an effect:* add a row to `FX` at the top of `tools/import_assets.py` (frame sizes are in
+  `assets_raw/fx/manifest.json`), import, then write a small function in `fx.gd` that calls `anim()`.
+- *Change a shot:* edit its row in `scripts/data/shot_types.gd` (sprite, which way the art points,
+  anchor pixel, tint, trail). Enemy shots always get `under` (dark rim) and `dot` (bright core).
+- *Add a wall decoration:* give it a kind name, roll it in `_roll_walls()` and draw it in
+  `_draw_back_wall()` (a still) or `build()` (animated or lit), all in `room_look.gd`.
+  *Floor decoration:* append to `decals` in `_roll_floor_bits()`; keep it dim.
+- *Add a room layout:* copy a block in `scripts/data/room_layouts.gd`, redraw it, rename it.
+  Letters: `.` floor `#` rock `o` pit `^` spikes `c` crate `I` column `T` standing torch `e` enemy spot.
+  Tag set pieces with `"floors": [3]`. `./tools/check.sh` rejects a layout that blocks a door, seals
+  off a tile or leaves no 3-tile-wide lane between the four doors. `--layout=<name>` forces one.
+- *Add or retune a floor theme:* edit its row in `scripts/data/floors.gd`; every field is explained there.
+
+**Rules of the look**
+- No AI art: decoration is pack sprites; code only draws flat shapes (door jambs seen from above,
+  bars, discs, squares) in the pack's own colours (constants at the top of `room_look.gd`).
+- The floor must stay readable for the Hungry Curse: no pale-gold rings and no pale stripes on the
+  floor, floor decoration dim, carpets only in rooms without fights (shop, treasure, start).
+- Lights cost on phones: `RoomLook.MAX_LIGHTS` (6) caps real lights per room, torches past it only
+  get an additive glow. `run.LIGHTING = false` still turns all real lights off.
+- Doors read the same in all four walls: open = dark doorway in a frame, shut = wooden door,
+  locked = golden keyhole plate, boss = red wood + skulls, blown-open secret = ragged hole.
+- Screenshots to judge it: `--goto=shop|treasure|secret|boss`, `--floor=N`, `--shot_every=<sec>`.
 
 ## The Hungry Curse
 The game's twist (built by the twist builder). Rules and EVERY number: `scripts/entities/curse.gd`
