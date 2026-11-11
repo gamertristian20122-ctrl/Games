@@ -11,7 +11,8 @@ const Unlocks = preload("res://scripts/data/unlocks.gd")
 const Icon = preload("res://scripts/ui/icon.gd")
 
 const TABS := ["Items", "Feats", "Stats"]
-const CELL := Vector2(20, 34)
+## One item: a 16 px picture with 2 px of air, and a thin purple line under cursed ones.
+const CELL := Vector2(20, 22)
 
 var _tab := 0
 var _tab_buttons: Array[Button] = []
@@ -93,8 +94,12 @@ func _items_page() -> Control:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	left_col.add_child(scroll)
+	# all the items in rows that wrap; the list scrolls (drag it, or move the focus) when it is
+	# taller than the screen, so any number of items fits
 	var flow := HFlowContainer.new()
 	flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	flow.add_theme_constant_override("h_separation", 2)
+	flow.add_theme_constant_override("v_separation", 2)
 	scroll.add_child(flow)
 	var first: Control = null
 	for id: String in ids:
@@ -142,15 +147,15 @@ func _item_cell(id: String) -> Control:
 	b.focus_mode = Control.FOCUS_ALL
 	if state == "seen":
 		var ic := Icon.new()
-		ic.setup(String(info.get("icon", "skull")), CELL - Vector2(4, 4))
+		ic.setup(String(info.get("icon", "skull")), Vector2(16, 16))
 		ic.position = Vector2(2, 2)
 		b.add_child(ic)
 		if bool(info.get("cursed", false)):
-			# a purple corner marks cursed items
+			# a purple line under the picture marks cursed items
 			var mark := ColorRect.new()
 			mark.color = UI.C_CURSE
-			mark.size = Vector2(3, 3)
-			mark.position = Vector2(CELL.x - 6, 3)
+			mark.size = Vector2(10, 1)
+			mark.position = Vector2(5, CELL.y - 3)
 			mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			b.add_child(mark)
 	else:

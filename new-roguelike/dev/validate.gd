@@ -6,6 +6,11 @@ extends RefCounted
 
 const Layouts = preload("res://scripts/data/room_layouts.gd")
 const Items = preload("res://scripts/data/items.gd")
+const ItemEffects = preload("res://scripts/run/item_effects.gd")
+const Unlocks = preload("res://scripts/data/unlocks.gd")
+## Every item pool must hold at least this many items on a brand-new save (locked ones not counted),
+## so a four-floor run never runs dry.
+const POOL_MIN := 10
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
@@ -91,14 +96,20 @@ static func all() -> Array[String]:
 		for field in ["name", "desc", "icon", "cursed", "pools"]:
 			if not it.has(field):
 				out.append("item %s: missing '%s'" % [id, field])
-		if not Art.has(String(it.get("icon", ""))):
-			out.append("item %s: icon '%s' is not a sprite" % [id, it.get("icon", "")])
+		# every item has its own picture: icon_<item id>, copied in by tools/import_icons.py
+		if String(it.get("icon", "")) != "icon_" + id:
+			out.append("item %s: its icon must be 'icon_%s' (add a row in tools/import_icons.py and run it)" % [id, id])
+		elif not Art.has("icon_" + id):
+			out.append("item %s: assets/art/icons/icon_%s.png is missing (run tools/import_icons.py, then the Godot import)" % [id, id])
+		if bool(it.get("locked", false)) != Unlocks.is_gated("item:" + id):
+			out.append("item %s: 'locked' and its row in scripts/data/unlocks.gd do not agree" % id)
 		if it.get("cursed", false) and String(it.get("curse", "")) == "":
 			out.append("item %s: cursed items need a 'curse' line" % id)
 		for pool in it.get("pools", []):
 			if not POOLS.has(pool):
 				out.append("item %s: unknown pool '%s'" % [id, pool])
-			pool_sizes[pool] = int(pool_sizes.get(pool, 0)) + 1
+			if not bool(it.get("locked", false)):       # count what a brand-new save can be offered
+				pool_sizes[pool] = int(pool_sizes.get(pool, 0)) + 1
 		var mods: Dictionary = it.get("mods", {})
 		for part in ["flat", "pct", "mult"]:
 			for stat in mods.get(part, {}):
@@ -107,8 +118,18 @@ static func all() -> Array[String]:
 		if it.has("familiar") and not Familiars.ALL.has(it["familiar"]):
 			out.append("item %s: unknown familiar '%s'" % [id, it["familiar"]])
 	for pool in POOLS:
-		if int(pool_sizes.get(pool, 0)) == 0:
-			out.append("item pool '%s' is empty" % pool)
+		if int(pool_sizes.get(pool, 0)) < POOL_MIN:
+			out.append("item pool '%s' has %d items before any unlock; a run needs at least %d" % [pool, int(pool_sizes.get(pool, 0)), POOL_MIN])
+	# every smart effect is a function <item id>_<hook> in item_effects.gd: both halves must be real
+	for m: Dictionary in (ItemEffects as Script).get_script_method_list():
+		var fn := String(m["name"])
+		var cut := fn.rfind("_on_")
+		if fn.begins_with("_") or cut < 1:
+			continue
+		if not Items.ALL.has(fn.substr(0, cut)):
+			out.append("item_effects.gd: %s() belongs to no item ('%s' is not in items.gd)" % [fn, fn.substr(0, cut)])
+		if not ItemEffects.HOOKS.has(fn.substr(cut + 1)):
+			out.append("item_effects.gd: %s() uses a hook that does not exist ('%s')" % [fn, fn.substr(cut + 1)])
 	# ---- heroes
 	for h: Dictionary in Heroes.LIST:
 		for field in ["sprite", "weapon"]:

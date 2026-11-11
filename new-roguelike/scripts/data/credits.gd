@@ -215,4 +215,28 @@ const LIST := [
 		"licence": "CC0",
 		"url": "https://managore.itch.io/m5x7",
 	},
+	{
+		"what": "Kings and Pigs (hearts, bomb with lit fuse)",
+		"author": "Pixel Frog",
+		"licence": "CC0",
+		"url": "https://pixelfrog-assets.itch.io/kings-and-pigs",
+	},
+	{
+		"what": "Treasure Hunters (key, gem, golden skull)",
+		"author": "Pixel Frog",
+		"licence": "CC0",
+		"url": "https://pixelfrog-assets.itch.io/treasure-hunters",
+	},
+	{
+		"what": "Zelda-like tilesets and sprites (coin)",
+		"author": "ArMM1998",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/zelda-like-tilesets-and-sprites",
+	},
+	{
+		"what": "Raven Fantasy Icons, free version (the picture of every item)",
+		"author": "Clockwork Raven",
+		"licence": "Clockwork Raven General Licence (free, commercial use allowed)",
+		"url": "https://clockworkraven.itch.io/raven-fantasy-icons",
+	},
 ]

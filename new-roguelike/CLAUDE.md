@@ -261,3 +261,14 @@ layout letters in that section still hold.
   `dress` / `no_floor_deco` name real pieces.
 - Known gaps (need the tile importer, not code): the crypt has ONE pillar picture (the hooded
   statue), the ashen halls one; blown-open side doors are a floor tile with rubble (no ragged hole).
+
+## Props and pickups (ids "prop_*")
+- Pictures in `assets/art/props/`, cut by `python3 -I tools/import_props.py` (re-run after changing it, then
+  `godot --headless --path . --import`; output is byte-identical on re-runs). Never reuse the old ids `coin`, `bomb`, `key`.
+- Sources: chests from Pixel Crawler (crypt Hideout, warrens Sewer, ashen Forge, pit Library; locked = Desert gold),
+  stand = Pixel Crawler column capital, exit = Pixel Crawler stairwell (48x48, placed on 3x3 free tiles).
+  Free CC0 packs, archives + SOURCE.txt in `assets_raw/props/<slug>/`: Kings and Pigs (hearts, armour, bomb + lit fuse),
+  Treasure Hunters (key, gem = 5 coins, golden skull), ArMM1998 Zelda-like (coin, warmed to gold).
+- Still old: HUD hearts (0x72, the only full/half/empty set), explosions (ansimuz), the 6 px Curse skull badge.
+- Pickup rows: `scripts/data/pickups.gd` (sprite list: the first id that exists wins). HUD icons: `UI.hud_icon` in theme.gd.
+- Test flag `--lockchests`: every chest is locked (to look at the locked chest).

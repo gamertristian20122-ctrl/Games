@@ -2,7 +2,7 @@ extends Control
 ## Icon: shows one sprite from the art pack inside a fixed-size cell, centred, with the empty
 ## space around the drawing trimmed off. Used for item icons everywhere (HUD, cards, pause,
 ## collection, end screen) and for the coin and bomb counters.
-##   var ic = Icon.new(); ic.setup("flask_big_red", Vector2(16, 16))
+##   var ic = Icon.new(); ic.setup("icon_whetstone", Vector2(16, 16))
 ## Sprites are only ever drawn at whole sizes (1x, 2x, 3x) or exactly half, so pixels stay square.
 
 const UI = preload("res://scripts/ui/theme.gd")

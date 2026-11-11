@@ -456,10 +456,13 @@ static func pop_in(c: Control, from: Vector2 = Vector2(0, 6)) -> void:
 static func hud_icon(kind: String) -> Control:
 	match kind:
 		"coin":
-			return _sprite_icon("coin", Vector2(8, 9))
+			return _sprite_icon("prop_coin", Vector2(11, 11))
 		"bomb":
-			return _sprite_icon("bomb", Vector2(14, 13))
+			return _sprite_icon("prop_bomb", Vector2(13, 16))
 		"key":
+			# The props key (Treasure Hunters, see tools/import_props.py); the old art below is the fallback.
+			if Art.has("prop_key"):
+				return _sprite_icon("prop_key", Vector2(8, 15))
 			# The key is Niji's golden key (assets/art/niji, see tools/import_assets.py). Without it,
 			# an icon file is tried, then a plain geometric stand-in drawn by key_glyph.gd.
 			if Art.has("niji_key_gold_long"):

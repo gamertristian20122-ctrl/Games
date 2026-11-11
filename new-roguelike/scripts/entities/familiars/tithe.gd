@@ -44,7 +44,7 @@ func tick(f, delta: float) -> void:
 				if f.run.belly > 0:
 					f.run.belly -= 1
 					G.hud_changed.emit()
-					var coin: AnimatedSprite2D = Art.sprite("coin", "default")
+					var coin: AnimatedSprite2D = Art.sprite("prop_coin", "default")
 					coin.position = Vector2(0, -15)
 					f.add_child(coin)
 					f.mem["coin"] = coin

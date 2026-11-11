@@ -1,0 +1,195 @@
+{
+ "archive": "assets_raw/icons/raven_fantasy_icons/Free - Raven Fantasy Icons.zip",
+ "icons": {
+  "barrow_stone": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa314.png",
+   "shows": "cracked grave stone"
+  },
+  "bitter_marrow": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa231.png",
+   "shows": "marrow bone"
+  },
+  "blood_porter": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa659.png",
+   "shows": "red heart"
+  },
+  "bone_thistle": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa234.png",
+   "shows": "three bone spikes"
+  },
+  "breaking_wheel": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2125.png",
+   "shows": "purple spoked wheel"
+  },
+  "carrion_bat": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa852.png",
+   "shows": "rotting meat"
+  },
+  "crimson_draught": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa281.png",
+   "shows": "round red potion"
+  },
+  "cry_of_knives": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1796.png",
+   "shows": "crossed knives"
+  },
+  "eclipse_shard": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa335.png",
+   "shows": "dark orb with a glowing rim"
+  },
+  "fasting_vow": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa54.png",
+   "shows": "empty wooden cup"
+  },
+  "frenzy_saw": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1755.png",
+   "shows": "pink saw-toothed sword"
+  },
+  "gilded_blade": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1708.png",
+   "shows": "golden sword"
+  },
+  "gilded_fang": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1693.png",
+   "shows": "golden fang on a purple grip"
+  },
+  "glass_blade": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1716.png",
+   "shows": "purple glass blade"
+  },
+  "grave_cleaver": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1442.png",
+   "shows": "cleaver"
+  },
+  "hollow_bolt": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2155.png",
+   "shows": "bolt"
+  },
+  "howling_scar": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa863.png",
+   "shows": "scarred skull"
+  },
+  "iron_leash": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa128.png",
+   "shows": "iron shackles"
+  },
+  "knocker_bat": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa116.png",
+   "shows": "iron door knocker"
+  },
+  "leaden_maul": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1707.png",
+   "shows": "dark maul with a purple head"
+  },
+  "longbow_string": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1484.png",
+   "shows": "wooden longbow"
+  },
+  "misers_flask": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa136.png",
+   "shows": "golden flask"
+  },
+  "moth_mantle": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1954.png",
+   "shows": "purple hooded mantle"
+  },
+  "needle_spear": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1461.png",
+   "shows": "spear"
+  },
+  "ossuary_chain": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2067.png",
+   "shows": "ring of bone beads"
+  },
+  "oxbone_cudgel": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa239.png",
+   "shows": "heavy horn bone"
+  },
+  "pyre_kindling": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa911.png",
+   "shows": "small pyre"
+  },
+  "ransom_plate": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1927.png",
+   "shows": "golden breastplate"
+  },
+  "reaping_hook": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1682.png",
+   "shows": "reaping hook"
+  },
+  "ricochet_mallet": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1477.png",
+   "shows": "mallet"
+  },
+  "seeker_staff": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1690.png",
+   "shows": "staff with a blue orb"
+  },
+  "sextons_satchel": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa158.png",
+   "shows": "leather pouch"
+  },
+  "sinners_locket": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2181.png",
+   "shows": "locket on a chain"
+  },
+  "sour_gullet": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa59.png",
+   "shows": "cup of green bile"
+  },
+  "sparking_tonic": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1025.png",
+   "shows": "lightning bolt"
+  },
+  "spiked_goad": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1506.png",
+   "shows": "spiked mace head"
+  },
+  "starveling_blade": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1714.png",
+   "shows": "dark blade with a bone edge"
+  },
+  "stonebiter": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1458.png",
+   "shows": "pickaxe"
+  },
+  "storm_axes": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1702.png",
+   "shows": "blue storm axe"
+  },
+  "swift_tonic": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa121.png",
+   "shows": "green bottle"
+  },
+  "tethered_sickle": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1474.png",
+   "shows": "blade on a chain"
+  },
+  "tithe_imp": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa131.png",
+   "shows": "gold coin"
+  },
+  "twin_hatchets": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1467.png",
+   "shows": "double-bladed axe"
+  },
+  "undertakers_due": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1471.png",
+   "shows": "gravedigger's shovel"
+  },
+  "wardwater": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa123.png",
+   "shows": "blue bottle"
+  },
+  "whetstone": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa219.png",
+   "shows": "grey whetstone bar"
+  },
+  "winter_nail": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1017.png",
+   "shows": "icicle"
+  }
+ },
+ "pack": "Raven Fantasy Icons (free version) by Clockwork Raven",
+ "url": "https://clockworkraven.itch.io/raven-fantasy-icons"
+}

@@ -13,6 +13,7 @@ extends Node2D
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 
 const BLOCK_RADIUS := 7.0
+const BLOCK_HALF_WIDTH := 12.0     ## the chest pictures are 28-32 px wide
 ## What can pop out, and how likely (weights).
 const LOOT := {"coin": 60, "coin5": 5, "half_heart": 12, "key": 8, "bomb": 10, "armor": 3}
 const LOOT_RICH := {"coin": 40, "coin5": 16, "heart": 12, "key": 10, "bomb": 12, "armor": 10}
@@ -94,10 +95,12 @@ func _physics_process(delta: float) -> void:
 	var player: Node = room.run.player
 	if player == null or player.dead:
 		return
+	# An oval as wide as the art (about 30 px) and BLOCK_RADIUS deep, so the hero stops at its sides.
 	var d: Vector2 = player.position - position
-	var reach: float = BLOCK_RADIUS + player.radius
-	if d.length() < reach:
-		player.position = position + (d.normalized() if d.length() > 0.1 else Vector2.DOWN) * reach
+	var reach := Vector2(BLOCK_HALF_WIDTH, BLOCK_RADIUS) + Vector2.ONE * float(player.radius)
+	var q := d / reach
+	if q.length() < 1.0:
+		player.position = position + (q.normalized() if q.length() > 0.01 else Vector2.DOWN) * reach
 		if not opened and _open_t < 0.0:
 			_try_open(player)
 

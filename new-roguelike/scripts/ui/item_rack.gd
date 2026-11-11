@@ -1,6 +1,7 @@
 extends Control
-## Item rack: a low row of item pictures in pickup order that wraps onto more rows.
-## Long things (swords, staffs) lie on their side so every picture keeps its real pixel size.
+## Item rack: a row of item pictures in pickup order that wraps onto more rows.
+## Item pictures are 16 px (assets/art/icons/) and are shown at their real pixel size, so a row is
+## 16 px high; what does not fit in max_rows rows is summed up as "+N".
 ## Used on the HUD (bottom left), the end screen and the pause screen.
 ##   rack.set_items(["whetstone", "swift_tonic"], 200.0, 2)
 
@@ -8,8 +9,8 @@ const UI = preload("res://scripts/ui/theme.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Icon = preload("res://scripts/ui/icon.gd")
 
-const ROW := 12.0       ## height of one row
-const GAP := 3.0
+const ROW := 16.0       ## height of one row (an item picture is 16 px)
+const GAP := 2.0
 
 ## true: the first row is at the bottom and later rows stack upwards (HUD).
 var grow_up := false

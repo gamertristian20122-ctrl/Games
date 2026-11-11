@@ -58,7 +58,8 @@ func _clear_spot(at: Vector2) -> Vector2:
 
 
 func _nine_free(c: Vector2i) -> bool:
-	for oy in range(-1, 2):
+	# one more row below too: a torch or rock standing there is drawn tall, up over the picture
+	for oy in range(-1, 3):
 		for ox in range(-1, 2):
 			if not room.is_free_cell(c + Vector2i(ox, oy)):
 				return false

@@ -112,7 +112,7 @@ func _item_row(id: String) -> Control:
 	var cursed := bool(info.get("cursed", false))
 	var b := Button.new()
 	b.theme_type_variation = "Flat"
-	b.custom_minimum_size = Vector2(0, maxf(15.0, UI.font_body.get_height(UI.size_body) + 4.0))
+	b.custom_minimum_size = Vector2(0, maxf(18.0, UI.font_body.get_height(UI.size_body) + 4.0))
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var row := UI.hbox(4)
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -120,13 +120,13 @@ func _item_row(id: String) -> Control:
 	row.offset_right = -4
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(row)
-	# the picture sits in a fixed 32 px slot so the names line up
+	# the picture sits in a fixed 18 px slot so the names line up
 	var slot := CenterContainer.new()
-	slot.custom_minimum_size = Vector2(32, 0)
+	slot.custom_minimum_size = Vector2(18, 0)
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(slot)
 	var ic := Icon.new()
-	ic.setup(String(info.get("icon", "skull")), Vector2.ZERO, 12.0)
+	ic.setup(String(info.get("icon", "skull")), Vector2.ZERO, 16.0)
 	slot.add_child(ic)
 	var name_label := UI.label(String(info.get("name", id)), "Curse" if cursed else "")
 	row.add_child(name_label)
