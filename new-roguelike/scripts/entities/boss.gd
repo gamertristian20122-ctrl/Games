@@ -852,3 +852,10 @@ func _tick_death(delta: float) -> void:
 		room.enemy_died(self)
 		run.boss_killed(self)
 		queue_free()
+
+
+## Ground that hurts like burn_ground() but is NOT drawn here: the fight file draws its own puddle
+## (the Gutter King's green slime). The test bot keeps out of it. Cleared when the boss dies.
+func hurt_ground(at: Vector2, r: float, seconds: float, arm: float = 0.4) -> void:
+	_burns.append([at, r, seconds, arm])
+	run.fx.hazards.append([0, at, at, r - 6.0, seconds, get_instance_id(), 0.0])
