@@ -35,7 +35,7 @@ const LIST := [
 		"id": "pit", "name": "The Pit", "rooms": 12, "enemies": [],
 		"ambient": Color(0.70, 0.56, 0.78), "tile_tint": Color(0.92, 0.76, 0.96), "light": Color(1.0, 0.72, 0.72),
 		"fountain": "red", "banners": ["wall_banner_red", "wall_banner_blue"],
-		"music": "floor4", "boss_music": "boss",
+		"music": "floor4", "boss_music": "final_boss",
 	},
 ]
 
