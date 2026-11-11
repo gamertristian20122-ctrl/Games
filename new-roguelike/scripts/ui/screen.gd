@@ -11,6 +11,8 @@ const Confirm = preload("res://scripts/ui/confirm.gd")
 ## A request for main.gd, e.g. ("play", null), ("start", "knight"), ("back", null).
 signal action(what: String, arg: Variant)
 
+## The dungeon picture behind the menus (scripts/ui/backdrop.gd); main.gd fills this in.
+var backdrop: Control
 ## The control that gets keyboard / gamepad focus when the screen appears.
 var default_focus: Control
 var _last_focus: Control

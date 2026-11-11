@@ -12,7 +12,7 @@ const ROW := 12
 const BLUE_SHADER := "shader_type canvas_item;
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
-	COLOR = vec4(c.b, min(c.g * 0.9 + c.r * 0.25, 1.0), c.r, c.a) * COLOR;
+	COLOR = vec4(c.b, min(c.g * 0.9 + c.r * 0.25, 1.0), c.r, c.a);
 }"
 
 var hp := 0

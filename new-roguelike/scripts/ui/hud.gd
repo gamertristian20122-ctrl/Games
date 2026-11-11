@@ -2,8 +2,9 @@ extends CanvasLayer
 ## HUD: everything drawn on top of the game while you play.
 ##   top left      hearts (half-heart steps, armour in blue), then coins / keys / bombs
 ##   top right     minimap (the touch pause button sits in the very corner, see touch.gd)
+##   top middle    boss health bar with the boss's name
 ##   bottom left   the items you carry, lying in a row
-##   bottom middle boss health bar, and the card that pops up when you pick up an item
+##   bottom middle the card that pops up when you pick up an item
 ##   middle        short banners: floor name, toasts, "Unlocked: ..."
 ## It listens to the event bus in scripts/core/g.gd and only redraws when G.hud_changed
 ## says something changed. Nothing here sits on the room's floor: the top 42 and the
@@ -20,7 +21,7 @@ const ItemRack = preload("res://scripts/ui/item_rack.gd")
 const CARD_TIME := 2.5           ## seconds an item card stays up
 const PAUSE_GAP := 23.0          ## room kept free in the top right corner for the pause button
 const RACK_ROWS := 2              ## the carried items wrap into at most this many rows
-const BOSS_BAR := Vector2(140, 7)
+const BOSS_BAR := Vector2(112, 7)
 
 var run: Node
 var _root: Control
@@ -183,7 +184,7 @@ func _layout() -> void:
 		_rack_width = right - left
 		_rack_ids = [-1]
 		_dirty = true
-	_boss_box.position = Vector2(roundf((s.x - _boss_box.size.x) / 2.0), bottom - _boss_box.size.y)
+	_boss_box.position = Vector2(roundf((s.x - _boss_box.size.x) / 2.0), top - 2.0)
 	_place_card()
 
 

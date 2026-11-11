@@ -407,7 +407,7 @@ static func hud_icon(kind: String) -> Control:
 		"coin":
 			return _sprite_icon("coin", Vector2(8, 9))
 		"bomb":
-			return _sprite_icon("bomb", Vector2(12, 11))
+			return _sprite_icon("bomb", Vector2(14, 13))
 		"key":
 			# The art pack has no key. If an icon pack adds one, it is used; until then a plain
 			# geometric stand-in (a ring and a bar) drawn by key_glyph.gd.

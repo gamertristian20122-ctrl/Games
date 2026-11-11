@@ -2,6 +2,8 @@ extends "res://scripts/ui/screen.gd"
 ## Title screen: the game's name, Play / Collection / Settings / Credits, and the version.
 ## The dungeon picture behind it is scripts/ui/backdrop.gd (main.gd keeps it).
 
+const Heroes = preload("res://scripts/data/heroes.gd")
+
 var _name_label: Label
 var _column: VBoxContainer
 
@@ -34,8 +36,8 @@ func build() -> void:
 	_column.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
 	_column.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_column.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_column.offset_top = 16
-	_column.offset_bottom = 16
+	_column.offset_top = 12
+	_column.offset_bottom = 12
 	_column.offset_right = -2
 	_column.offset_left = -2
 	area.add_child(_column)
@@ -59,8 +61,19 @@ func build() -> void:
 
 	resized.connect(_fit)
 	_fit.call_deferred()
+	refresh()
 	UI.pop_in(_column, Vector2(8, 0))
 	UI.pop_in(_name_label, Vector2(0, -6))
+
+
+## The hero you played last stands in the picture (the first hero on a fresh save).
+func refresh() -> void:
+	if not is_instance_valid(backdrop):
+		return
+	var hero := Heroes.by_id(String(Save.setting("last_hero")))
+	if bool(hero.get("locked", false)) and not Save.is_unlocked("hero:" + String(hero["id"])):
+		hero = Heroes.LIST[0]
+	backdrop.call("set_hero", hero, false)
 
 
 func _fit() -> void:

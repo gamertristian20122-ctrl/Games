@@ -16,7 +16,6 @@ const STATS := [
 	["Fire rate", "rate", 1.6, 3.2],
 ]
 
-var backdrop: Control                 ## set by main.gd
 var _index := 0
 var _panel: PanelContainer
 var _name: Label
@@ -71,6 +70,11 @@ func build() -> void:
 	col.add_child(_desc)
 	_passive = UI.label("", "Dim", 10.0)
 	col.add_child(_passive)
+	_locked_box = UI.vbox(3)
+	col.add_child(_locked_box)
+	_locked_box.add_child(UI.label("Locked", "Red"))
+	_hint = UI.label("", "", 10.0)
+	_locked_box.add_child(_hint)
 	col.add_child(UI.spacer(0, 0, true))
 	_stats = GridContainer.new()
 	_stats.columns = 4
@@ -85,28 +89,22 @@ func build() -> void:
 		p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_stats.add_child(p)
 		_pips.append(p)
-	_locked_box = UI.vbox(3)
-	_locked_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	col.add_child(_locked_box)
-	_locked_box.add_child(UI.label("Locked", "Red"))
-	_hint = UI.label("", "", 10.0)
-	_locked_box.add_child(_hint)
 
 	_start = UI.button("Start", _on_start, "Big", "")
 	_start.custom_minimum_size = Vector2(0, 26)
 	right.add_child(_start)
 	default_focus = _start
 
-	# arrows either side of the hero, page dots below
+	# under the hero: previous arrow, page dots, next arrow
 	_prev = Arrow.new()
 	_prev.direction = -1
-	_prev.custom_minimum_size = Vector2(22, 34)
+	_prev.custom_minimum_size = Vector2(26, 22)
 	_prev.focus_mode = Control.FOCUS_NONE
 	_prev.pressed.connect(_step.bind(-1))
 	add_child(_prev)
 	_next = Arrow.new()
 	_next.direction = 1
-	_next.custom_minimum_size = Vector2(22, 34)
+	_next.custom_minimum_size = Vector2(26, 22)
 	_next.focus_mode = Control.FOCUS_NONE
 	_next.pressed.connect(_step.bind(1))
 	add_child(_next)
@@ -127,16 +125,16 @@ func _layout() -> void:
 	var spot: Vector2 = backdrop.call("hero_spot")
 	var insets := UI.safe_insets(self)
 	var right: Control = _panel.get_parent()
-	# the panel starts a little to the right of the hero's pool of light
-	var left_edge := maxf(spot.x + 64.0, size.x * 0.47)
+	# the panel starts a little to the right of the hero
+	var left_edge := maxf(spot.x + 50.0, size.x * 0.44)
 	right.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	right.offset_left = roundf(left_edge) - 6.0 - insets.x
 	right.offset_top = 0
 	_prev.size = _prev.custom_minimum_size
 	_next.size = _next.custom_minimum_size
-	_prev.position = Vector2(maxf(spot.x - 50.0 - _prev.size.x, insets.x + 4.0), spot.y - 46.0)
-	_next.position = Vector2(spot.x + 50.0, spot.y - 46.0)
-	_dots.position = Vector2(spot.x, spot.y + 16.0)
+	_prev.position = Vector2(spot.x - 22.0 - _prev.size.x, spot.y + 10.0)
+	_next.position = Vector2(spot.x + 22.0, spot.y + 10.0)
+	_dots.position = Vector2(spot.x, spot.y + 19.0)
 	_dots.queue_redraw()
 
 

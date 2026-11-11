@@ -170,7 +170,7 @@ func _refresh_layers() -> void:
 	backdrop.visible = not in_run
 	backdrop.call("set_dimmed", not _names.is_empty() and not (_names.back() in BRIGHT))
 	_shade.visible = in_run and not _stack.is_empty()
-	hud.visible = in_run
+	hud.visible = in_run and _stack.is_empty()      # the pause menu shows its own numbers
 	touch.call("set_active", in_run and _stack.is_empty() and not _ending)
 
 
@@ -230,9 +230,9 @@ func start_run(hero_id: String, seed_value: int) -> void:
 	if G.flag("uitour") or G.flag("fakerun") or not ResourceLoader.exists(RUN_SCRIPT):
 		path = FAKE_RUN_SCRIPT
 	run = (load(path) as Script).new()
+	hud.call("begin", run)          # before setup(), so the HUD hears the run's first signals
 	_world.add_child(run)
 	run.call("setup", hero_id, seed_value)
-	hud.call("begin", run)
 	_refresh_layers()
 
 
