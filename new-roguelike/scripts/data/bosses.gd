@@ -35,8 +35,9 @@ const ALL := {
 			"swoop_warn": 0.9, "rebound_warn": 0.65, "swoop_speed": 185.0, "candles": 5, "candles2": 7, "candle_radius": 15.0,
 			"candle_warn": 0.9, "candle_gap": 0.4, "gutter_seconds": 3.0, "sink": 20.0, "helper": "bone_walker", "helpers": 2}},
 	"red_sexton": {"name": "The Red Sexton", "sprite": "boss_death", "floors": [1], "hp": 270.0,
-		"speed": 46.0, "touch": 1, "shot": "enemy", "idle": "run", "enter": "spawn",
-		"params": {}},
+		"speed": 46.0, "touch": 1, "shot": "enemy", "idle": "run", "enter": "spawn", "hit_frames": {"spawn": [2]},
+		"params": {"step_warn": 0.8, "step2_warn": 0.6, "blade_radius": 16.0, "step_far": 28.0, "fan_warn": 0.7, "fan_blades": 5,
+			"fan_angle": 0.42, "fan_speed": 105.0, "helper": "shambler", "helpers": 2, "helpers2": 3, "near": 46.0, "far": 85.0, "lamp_burn": 3.5}},
 	# ---- floor 2, the Warrens
 	"stonejaw": {"name": "Stonejaw", "sprite": "boss_ogre", "floors": [2], "hp": 420.0,
 		"speed": 30.0, "touch": 1, "shot": "enemy", "stagger_dmg": 1.25,

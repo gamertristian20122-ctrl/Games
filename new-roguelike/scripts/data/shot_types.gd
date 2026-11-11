@@ -52,6 +52,10 @@ const ALL := {
 		"sprite": "fx_star", "points": "up", "under": Color(0.20, 0.02, 0.10, 1.0), "spin": 0.6, "fps": 10.0},
 	"rock": {"color": Color(0.74, 0.70, 0.66), "edge": Color(0.22, 0.18, 0.18), "radius": 5.0, "trail": 0,
 		"sprite": "fx_rock", "points": "up", "spin": 0.8, "tint": Color(1.5, 1.4, 1.35)},
+	# the Red Sexton's thrown knives (the dagger of the same ansimuz pack, CC0)
+	"sexton_blade": {"color": Color(1.0, 0.86, 0.80), "edge": Color(0.80, 0.12, 0.10), "radius": 3.0, "trail": 0,
+		"sprite": "boss_fx_terrible_knight_dagger", "points": "right", "anchor": Vector2(20, 4), "under": Color(0.16, 0.01, 0.03, 1.0),
+		"dot": Color(1.0, 0.92, 0.80), "tint": Color(1.35, 0.85, 0.8)},
 }
 
 const FALLBACK := "enemy"

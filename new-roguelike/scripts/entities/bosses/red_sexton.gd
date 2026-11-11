@@ -49,8 +49,14 @@ func phase_changed(e, _phase: int) -> void:
 	e.run.fx.burst(e.at_feet(Vector2(6.0, -8.0)), EMBERS, 18, 80.0, 0.5, 2.4)
 	e.burn_ground(e.position, 20.0, float(e.p.get("lamp_burn", 3.5)), 0.9)
 	Sfx.play("rock_break", -5.0, 0.05, 1.6)
+	e.harmful = false                      # the hero may be right beside it, hitting it as it climbed out
+	e.after(0.9, _harm_on)
 	e.state = WALK
 	e.t = 0.9
+
+
+func _harm_on(e) -> void:
+	e.harmful = true
 
 
 func tick(e, delta: float) -> void:
@@ -125,6 +131,7 @@ func _begin_sink(e, from: int, seconds: float) -> void:
 	e.state = SINK
 	e.t = seconds
 	e.mem["from"] = from
+	e._say("GRAVE STEP" if from == 10 else "second step")
 	e.mem["sink"] = seconds
 	e.harmful = false
 	e.run.fx.burst(e.position, EMBERS, 8, 40.0, 0.4, 2.0)
@@ -139,7 +146,7 @@ func _spot(e) -> Vector2:
 	var base: float = vel.angle() if vel.length() > 20.0 else e.rng.randf() * TAU
 	for k in 8:
 		# straight ahead first, then further and further to the sides
-		var a := base + float((k + 1) / 2) * (PI / 4.0) * (1.0 if k % 2 == 1 else -1.0)
+		var a := base + ceilf(float(k) * 0.5) * (PI / 4.0) * (1.0 if k % 2 == 1 else -1.0)
 		var q := hero + Vector2.from_angle(a) * far
 		if q.x < 12.0 or q.x > G.ROOM_W - 12.0 or q.y < 12.0 or q.y > G.ROOM_H - 10.0:
 			continue
@@ -191,6 +198,7 @@ func _risen(e) -> void:
 func _begin_fan(e, warn: float, blades: int, fans: int) -> void:
 	e.state = BUSY
 	e.mem["fans"] = fans
+	e._say("BLADE FAN")
 	e.mem["blades"] = blades
 	e.face_player()
 	e.dir = e.to_player().normalized() if e.dist_to_player() > 1.0 else Vector2(e.facing, 0.0)
@@ -221,6 +229,7 @@ func _fan_again(e) -> void:
 # ------------------------------------------------------------------------------ RAISE
 func _begin_raise(e, mean: bool) -> void:
 	e.state = BUSY
+	e._say("RAISE")
 	e.face_player()
 	e.pose(e.run_anim, 0)
 	e.tell(0.9)

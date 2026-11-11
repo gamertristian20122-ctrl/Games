@@ -126,6 +126,7 @@ func _attack_done(e) -> void:
 # ------------------------------------------------------------------------------ EMBER RING
 func _begin_ring(e) -> void:
 	e.state = BUSY
+	e._say("EMBER RING")
 	var warn := float(e.p.get("warn", 0.8))
 	e.tell(warn)
 	e.mark_circle(e.position, float(e.p.get("flare_radius", 30.0)), warn)
@@ -178,6 +179,7 @@ func _begin_swoop(e, warn: float) -> void:
 	e.mem["left"] = reach + 6.0
 	e.tell(warn)
 	e.mark_charge(e.dir, reach + 10.0, warn)
+	e._say("SWOOP")
 	Sfx.play("boss_roar", -9.0, 0.05, 1.5)
 	e.after(warn, _swoop_go)
 
@@ -202,6 +204,7 @@ func _swoop_ends(e, mean: bool) -> void:
 # ------------------------------------------------------------------------------ CANDLE RAIN
 func _begin_rain(e, mean: bool) -> void:
 	e.state = BUSY
+	e._say("CANDLE RAIN")
 	e.mem["drops"] = int(e.p.get("candles2", 7)) if mean else int(e.p.get("candles", 5))
 	e.mem["pending"] = []
 	e.tell(0.5)
