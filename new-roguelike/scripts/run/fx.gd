@@ -19,6 +19,12 @@ extends Node2D
 ##                                      (the numbers are in scripts/data/floors.gd: "motes", "vignette")
 ##
 ## The warn_* calls also fill `hazards`, a list the test bot reads so it can step out of the way.
+##
+## Boss marks (boss.gd's e.mark_* helpers call these): warn_cone() and warn_ring() besides the
+## circle and the line (a line with a big half_width is a lane). Every mark fills up in RED over
+## its warning time. A mark can carry a `tag` (its owner's instance id) so the owner can take its
+## marks back (drop_warns) or freeze them while it is stunned (hold_warns). zone() draws ground
+## that keeps burning for a while (the damage is dealt by whoever made it).
 ## Everything except the atmosphere is cleared when the room changes.
 ##
 ## To add a sprite effect: add its frames with tools/import_assets.py, then write a small function
@@ -54,8 +60,14 @@ var p_count := 0
 
 ## Rings: [pos, r_from, r_to, t, dur, color, width, on_ground]
 var rings: Array = []
-## Floor warnings: [kind (0 circle, 1 line), a, b, size, t, dur, color]
+## Floor warnings: [kind (0 circle, 1 line, 2 cone, 3 ring), a, b, size, t, dur, color, tag, extra]
+##   circle: a = centre, size = radius            line: a to b, size = half width
+##   cone:   a = tip, b = far end of the middle line, size = half angle (radians)
+##   ring:   a = centre, size = outer radius, extra = inner radius (safe inside and outside)
 var warns: Array = []
+## Ground that keeps burning: [centre, radius, t, dur, color, tag]
+var zones: Array = []
+var _zone_cd := 0.0
 ## For the bot: [kind, a, b, size, seconds_left]. kind 0 = circle at a with radius size; 1 = line a-b, half width size.
 var hazards: Array = []
 
@@ -132,6 +144,7 @@ func clear() -> void:
 	rings.clear()
 	warns.clear()
 	hazards.clear()
+	zones.clear()
 	queue_redraw()
 	ground.queue_redraw()
 
@@ -163,15 +176,60 @@ func ring(at: Vector2, r_from: float, r_to: float, dur: float, color: Color, wid
 
 
 ## The tell before an area attack: a circle on the floor that fills up over `dur` seconds.
-func warn_circle(at: Vector2, radius: float, dur: float, color: Color = Color(1.0, 0.22, 0.16)) -> void:
-	warns.append([0, at, at, radius, 0.0, dur, color])
-	hazards.append([0, at, at, radius, dur + 0.1])
+func warn_circle(at: Vector2, radius: float, dur: float, color: Color = Color(1.0, 0.22, 0.16), tag: int = 0) -> void:
+	warns.append([0, at, at, radius, 0.0, dur, color, tag, 0.0])
+	hazards.append([0, at, at, radius, dur + 0.1, tag, 0.0])
 
 
 ## The tell before a charge: a line on the floor from a to b.
-func warn_line(a: Vector2, b: Vector2, half_width: float, dur: float, color: Color = Color(1.0, 0.22, 0.16)) -> void:
-	warns.append([1, a, b, half_width, 0.0, dur, color])
-	hazards.append([1, a, b, half_width, dur + 0.35])
+func warn_line(a: Vector2, b: Vector2, half_width: float, dur: float, color: Color = Color(1.0, 0.22, 0.16), tag: int = 0) -> void:
+	warns.append([1, a, b, half_width, 0.0, dur, color, tag, 0.0])
+	hazards.append([1, a, b, half_width, dur + 0.35, tag, 0.0])
+
+
+## The tell before a sweep or a breath: a wedge from `tip` along `dir`, `half_angle` radians to each side.
+func warn_cone(tip: Vector2, dir: Vector2, length: float, half_angle: float, dur: float, color: Color = Color(1.0, 0.22, 0.16), tag: int = 0) -> void:
+	var far := tip + dir.normalized() * length
+	warns.append([2, tip, far, half_angle, 0.0, dur, color, tag, 0.0])
+	hazards.append([2, tip, far, half_angle, dur + 0.1, tag, 0.0])
+
+
+## The tell before a shockwave band: everything between r_inner and r_outer round `at` gets hit.
+func warn_ring(at: Vector2, r_inner: float, r_outer: float, dur: float, color: Color = Color(1.0, 0.22, 0.16), tag: int = 0) -> void:
+	warns.append([3, at, at, r_outer, 0.0, dur, color, tag, r_inner])
+	hazards.append([3, at, at, r_outer, dur + 0.1, tag, r_inner])
+
+
+## Takes back every mark (and bot hazard, and burning ground) an owner made with its tag.
+func drop_warns(tag: int, and_zones: bool = true) -> void:
+	for k in range(warns.size() - 1, -1, -1):
+		if warns[k][7] == tag:
+			warns.remove_at(k)
+	for k in range(hazards.size() - 1, -1, -1):
+		if hazards[k][5] == tag:
+			hazards.remove_at(k)
+	if and_zones:
+		for k in range(zones.size() - 1, -1, -1):
+			if zones[k][5] == tag:
+				zones.remove_at(k)
+
+
+## Freezes an owner's marks for `delta` seconds (call it every frame while the owner is stunned),
+## so a mark never runs out before the blow it warns of.
+func hold_warns(tag: int, delta: float) -> void:
+	for w in warns:
+		if w[7] == tag:
+			w[4] -= delta
+	for h in hazards:
+		if h[5] == tag:
+			h[4] += delta
+
+
+## Ground that keeps burning for `dur` seconds: a flickering disc in `color` with embers. Only the
+## look and the bot's hazard; whoever calls this deals the damage (boss.gd's e.burn_ground()).
+func zone(at: Vector2, radius: float, dur: float, color: Color = Color(1.0, 0.42, 0.12), tag: int = 0) -> void:
+	zones.append([at, radius, 0.0, dur, color, tag])
+	hazards.append([0, at, at, radius - 6.0, dur, tag, 0.0])
 
 
 func flash(color: Color, dur: float = 0.12) -> void:
@@ -414,6 +472,18 @@ func _physics_process(delta: float) -> void:
 		hazards[k][4] -= delta
 		if hazards[k][4] <= 0.0:
 			hazards.remove_at(k)
+	_zone_cd -= delta
+	var embers := _zone_cd <= 0.0
+	if embers:
+		_zone_cd = 0.09
+	for k in range(zones.size() - 1, -1, -1):
+		var z: Array = zones[k]
+		z[2] += delta
+		if z[2] >= z[3]:
+			zones.remove_at(k)
+		elif embers:
+			var zc: Color = z[4]
+			burst(z[0] + Vector2.RIGHT.rotated(randf() * TAU) * randf() * float(z[1]) * 0.85, [zc, zc.lightened(0.35)], 1, 8.0, 0.5, 1.6, Vector2.UP, -30.0)
 	if _flash_t > 0.0:
 		_flash_t -= delta
 	_step_motes(delta)
@@ -498,11 +568,44 @@ func _draw() -> void:
 
 
 func _draw_ground() -> void:
+	for z in zones:
+		var zc: Color = z[4]
+		var zr: float = z[1]
+		var fade := clampf((float(z[3]) - float(z[2])) / 0.5, 0.0, 1.0) * clampf(float(z[2]) / 0.12, 0.0, 1.0)
+		var flick := 0.8 + 0.2 * sin(float(z[2]) * 19.0 + zr)
+		ground.draw_circle(z[0], zr, Color(zc.r * 0.45, zc.g * 0.2, zc.b * 0.2, 0.42 * fade))
+		ground.draw_circle(z[0], zr * 0.72, Color(zc.r, zc.g, zc.b, 0.30 * fade * flick))
+		ground.draw_arc(z[0], zr, 0.0, TAU, 28, Color(0.75, 0.10, 0.06, 0.8 * fade), 1.0)
 	for w in warns:
 		var k: float = clampf(w[4] / w[5], 0.0, 1.0)
 		var col: Color = w[6]
 		var pulse := 0.75 + 0.25 * sin(w[4] * 26.0)
-		if w[0] == 0:
+		if w[0] == 2:
+			var tip: Vector2 = w[1]
+			var mid: Vector2 = (w[2] as Vector2) - tip
+			var reach := mid.length()
+			var a0 := mid.angle() - float(w[3])
+			var full := PackedVector2Array([tip])
+			var part := PackedVector2Array([tip])
+			for n in 13:
+				var d := Vector2.RIGHT.rotated(a0 + float(w[3]) * 2.0 * float(n) / 12.0)
+				full.append(tip + d * reach)
+				part.append(tip + d * reach * k)
+			ground.draw_colored_polygon(full, Color(col.r, col.g, col.b, 0.12))
+			if k > 0.04:
+				ground.draw_colored_polygon(part, Color(col.r, col.g, col.b, 0.24 * pulse))
+			full.append(tip)
+			ground.draw_polyline(full, Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
+		elif w[0] == 3:
+			var r_in: float = w[8]
+			var r_out: float = w[3]
+			var band := r_out - r_in
+			ground.draw_arc(w[1], (r_in + r_out) * 0.5, 0.0, TAU, 40, Color(col.r, col.g, col.b, 0.12), band)
+			if k > 0.04:
+				ground.draw_arc(w[1], r_in + band * k * 0.5, 0.0, TAU, 40, Color(col.r, col.g, col.b, 0.24 * pulse), band * k)
+			ground.draw_arc(w[1], r_in, 0.0, TAU, 32, Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
+			ground.draw_arc(w[1], r_out, 0.0, TAU, 40, Color(col.r, col.g, col.b, 0.85 * pulse), 1.0)
+		elif w[0] == 0:
 			var rad: float = w[3]
 			ground.draw_circle(w[1], rad, Color(col.r, col.g, col.b, 0.10))
 			ground.draw_circle(w[1], rad * k, Color(col.r, col.g, col.b, 0.22 * pulse))

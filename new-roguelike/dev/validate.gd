@@ -163,12 +163,55 @@ static func all() -> Array[String]:
 			out.append("enemy %s: unknown minion '%s'" % [id, minion])
 	for id: String in Bosses.ALL:
 		var b: Dictionary = Bosses.ALL[id]
-		if not Art.has(String(b["sprite"])):
-			out.append("boss %s: sprite '%s' does not exist" % [id, b["sprite"]])
-		if fmod(float(b.get("scale", 1.0)), 1.0) != 0.0:
-			out.append("boss %s: scale must be a whole number (pixel art)" % id)
-		if not ResourceLoader.exists("res://scripts/entities/bosses/%s.gd" % b["script"]):
-			out.append("boss %s: no file bosses/%s.gd" % [id, b["script"]])
+		var boss_sprite := String(b["sprite"])
+		var boss_file := String(b.get("script", id))
+		if not ResourceLoader.exists("res://scripts/entities/bosses/%s.gd" % boss_file):
+			out.append("boss %s: no file bosses/%s.gd" % [id, boss_file])
+		else:
+			var fight: GDScript = load("res://scripts/entities/bosses/%s.gd" % boss_file)
+			if fight == null or not fight.new().has_method("tick"):
+				out.append("boss %s: bosses/%s.gd does not load or has no tick()" % [id, boss_file])
+		if b.has("scale"):
+			out.append("boss %s: bosses are drawn at their real size (remove \"scale\")" % id)
+		if float(b.get("hp", 0.0)) <= 0.0 or (b.get("floors", []) as Array).is_empty():
+			out.append("boss %s: needs hp and floors" % id)
+		if b.has("shot") and not ShotTypes.ALL.has(b["shot"]):
+			out.append("boss %s: unknown shot type '%s'" % [id, b["shot"]])
+		if b.has("layout") and Layouts.by_name(String(b["layout"])).get("kind", "") != "boss":
+			out.append("boss %s: layout '%s' is not a boss room layout" % [id, b["layout"]])
+		if not Art.has(boss_sprite):
+			out.append("boss %s: sprite '%s' does not exist" % [id, boss_sprite])
+			continue
+		# its art is measured, and every animation the measurements list was really loaded
+		var cast: Dictionary = Art.meta(boss_sprite)
+		if cast.is_empty() or not cast.has("feet") or not cast.has("radius"):
+			out.append("boss %s: sprite '%s' is not in boss_cast.json (no feet point, no size)" % [id, boss_sprite])
+			continue
+		var boss_frames := Art.frames(boss_sprite)
+		var listed: Dictionary = cast.get("frames", {})
+		for anim: String in listed:
+			if not Art.has_anim(boss_sprite, anim) or boss_frames.get_frame_count(anim) != int(listed[anim]):
+				out.append("boss %s: animation '%s' of '%s' is missing frames" % [id, anim, boss_sprite])
+		for key: String in ["idle", "run", "enter"]:
+			if b.has(key) and not Art.has_anim(boss_sprite, String(b[key])):
+				out.append("boss %s: \"%s\" names the animation '%s', which '%s' does not have" % [id, key, b[key], boss_sprite])
+		for anim: String in (b.get("hit_frames", {}) as Dictionary):
+			if not Art.has_anim(boss_sprite, anim):
+				out.append("boss %s: hit_frames names the animation '%s', which '%s' does not have" % [id, anim, boss_sprite])
+		for fx_id: String in cast.get("fx", []):
+			if Art.frames(fx_id) == null:
+				out.append("boss %s: effect sprite '%s' is missing" % [id, fx_id])
+		for threshold in b.get("phases", [0.5]):
+			if float(threshold) <= 0.0 or float(threshold) >= 1.0:
+				out.append("boss %s: phases must be shares of its health between 0 and 1" % id)
+	for old_id: String in Bosses.RENAMED:
+		if not Bosses.ALL.has(Bosses.RENAMED[old_id]):
+			out.append("bosses.gd RENAMED: '%s' points at '%s', which is not a boss" % [old_id, Bosses.RENAMED[old_id]])
+	# unlock rules that name one boss must name a boss that exists (or existed: Bosses.RENAMED)
+	for rule: Dictionary in Unlocks.RULES:
+		var stat := String(rule.get("stat", ""))
+		if stat.begins_with("boss_killed:") and not Bosses.known(stat.trim_prefix("boss_killed:")):
+			out.append("unlock %s: '%s' names no boss" % [rule.get("id", "?"), stat])
 	for id: String in Familiars.ALL:
 		var f: Dictionary = Familiars.ALL[id]
 		if not Art.has(String(f["sprite"])):
@@ -188,6 +231,12 @@ static func all() -> Array[String]:
 		for id in pool:
 			if not Enemies.ALL.has(id):
 				out.append("floor %d: unknown enemy '%s'" % [i + 1, id])
+		var guarded := false
+		for boss_key: String in Bosses.ALL:
+			if (Bosses.ALL[boss_key]["floors"] as Array).has(i + 1):
+				guarded = true
+		if not guarded:
+			out.append("floor %d: no boss guards it (bosses.gd \"floors\")" % (i + 1))
 	# ---- the look of each floor: its tile set exists, is complete, and floors.gd names real pieces
 	for i in Floors.count():
 		var fl: Dictionary = Floors.get_floor(i)

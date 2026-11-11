@@ -345,6 +345,25 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 			if off.length() < r:
 				move += (off.normalized() if off.length() > 0.5 else Vector2.RIGHT.rotated(randf() * TAU)) * 3.5
 				_danger += 2.0
+		elif h[0] == 2:
+			# a boss's cone: leave it over the nearer edge
+			var tip: Vector2 = h[1]
+			var mid: Vector2 = (h[2] as Vector2) - tip
+			var rel2 := pos - tip
+			var turn := mid.angle_to(rel2)
+			if rel2.length() < mid.length() + 14.0 and absf(turn) < float(h[3]) + 14.0 / maxf(rel2.length(), 14.0):
+				move += mid.normalized().orthogonal() * (1.0 if turn >= 0.0 else -1.0) * 3.5
+				_danger += 2.0
+		elif h[0] == 3:
+			# a boss's ring: step inside it or outside it, whichever edge is nearer
+			var off3 := pos - (h[1] as Vector2)
+			var r_in := float(h[6])
+			var r_out := float(h[3])
+			var d4 := off3.length()
+			if d4 > r_in - 12.0 and d4 < r_out + 12.0:
+				var inward := r_in > 16.0 and d4 - r_in < r_out - d4
+				move += (off3.normalized() if d4 > 0.5 else Vector2.RIGHT) * (-3.5 if inward else 3.5)
+				_danger += 2.0
 		else:
 			var a: Vector2 = h[1]
 			var b: Vector2 = h[2]
@@ -721,10 +740,36 @@ func _bfs_no_spikes(room: Node, from: Vector2i) -> PackedInt32Array:
 
 ## The door to walk through next: toward the nearest room not visited yet (the boss room last).
 func _next_door(p: Node) -> Vector2i:
+	# --goto=boss: a boss test. Walk straight in (once per floor) instead of clearing the floor first.
+	if G.arg("goto") == "boss" and run.bosses_beaten.size() <= run.floor_index:
+		var straight := _boss_step(p)
+		if straight != Vector2i.ZERO:
+			return straight
 	var first := _search(p, false)
 	if first != Vector2i.ZERO:
 		return first
 	return _search(p, true)
+
+
+## The first step of the shortest way to the boss room that is not beaten yet (ZERO = none).
+func _boss_step(p: Node) -> Vector2i:
+	var rooms: Dictionary = run.rooms
+	var seen := {run.cur: Vector2i.ZERO}
+	var queue: Array[Vector2i] = [run.cur]
+	while not queue.is_empty():
+		var c: Vector2i = queue.pop_front()
+		for d: Vector2i in rooms[c]["doors"]:
+			var door: Dictionary = rooms[c]["doors"][d]
+			var n: Vector2i = door["to"]
+			if seen.has(n) or (door["hidden"] and not door["revealed"]) or (door["locked"] and p.keys <= 0):
+				continue
+			seen[n] = d if c == run.cur else seen[c]
+			if rooms[n]["type"] == G.RoomType.BOSS:
+				if not rooms[n]["cleared"]:
+					return seen[n]
+				continue
+			queue.append(n)
+	return Vector2i.ZERO
 
 
 ## Breadth-first search over the rooms we may walk through; returns the first step's direction.

@@ -239,4 +239,24 @@ const LIST := [
 		"licence": "Clockwork Raven General Licence (free, commercial use allowed)",
 		"url": "https://clockworkraven.itch.io/raven-fantasy-icons",
 	},
+	# ---- boss art (cut out of assets_raw/bosses/ by tools/import_bosses.py; SOURCE.txt beside each pack)
+	{
+		"what": "Legacy Collection (bosses: the Pyre Saint, the Red Sexton, Stonejaw, the Gutter King, the Starved King)",
+		"author": "ansimuz (Luis Zuno)",
+		"licence": "CC0",
+		"url": "https://ansimuz.itch.io/gothicvania-patreon-collection",
+	},
+	{
+		"what": "Boss: Mecha-Stone Golem (the Forge Warden)",
+		"author": "Kronovi-",
+		"licence": "Free for commercial use (author's statement on the page; the art itself may not be redistributed)",
+		"url": "https://darkpixel-kronovi.itch.io/mecha-golem-free",
+	},
+	# CC-BY 4.0: this credit is REQUIRED for as long as the Cinder Tyrant (bosses.gd) is in the game
+	{
+		"what": "Boss: Demon Slime, free version (the Cinder Tyrant)",
+		"author": "chierit",
+		"licence": "CC-BY 4.0",
+		"url": "https://chierit.itch.io/boss-demon-slime",
+	},
 ]

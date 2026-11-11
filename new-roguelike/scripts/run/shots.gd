@@ -52,11 +52,14 @@ const ECLIPSE_DAMAGE := 2.0    ## Eclipse Shard
 const SHOVE_PX := 5.0          ## Oxbone Cudgel: px per shot (times the shot's knockback), at most SHOVE_MAX
 const SHOVE_MAX := 10.0
 const SHOVE_PER_SEC := 60.0    ## ... and this much in one second, all shots together
+const MAX_HERO_SHOTS := 600    ## safety net: past this many live shots the hero's side throws no more (never reached in tests)
 
 var run: Node
 var room: Node
 
 var count := 0
+var peak := 0                        ## the most shots alive at once this run (tests print it with --shotpeak)
+var end_victim := 0                  ## while on_shot_end runs: the monster that shot died on (instance id), else 0
 var _cap := 0
 var pos := PackedVector2Array()
 var vel := PackedVector2Array()
@@ -161,8 +164,11 @@ func _grow() -> void:
 
 
 ## Launches a shot. `extra` may hold: pierce (int), bounce (int), homing (rad/s), knock (float),
-## size (radius multiplier), src (who fired it, for the death screen), bits (the B_ flags above).
+## size (radius multiplier), src (who fired it, for the death screen), bits (the B_ flags above),
+## skip (instance id of a monster it flies through without hitting, until it has hit another).
 func fire(p: Vector2, v: Vector2, shot_side: int, damage: float, range_px: float, type_name: String, extra: Dictionary = NO_EXTRA) -> void:
+	if count >= MAX_HERO_SHOTS and shot_side == SIDE_PLAYER:
+		return
 	if count >= _cap:
 		_grow()
 	var t: int = _type_index.get(type_name, -1)
@@ -170,6 +176,10 @@ func fire(p: Vector2, v: Vector2, shot_side: int, damage: float, range_px: float
 		t = _type_index[ShotTypes.FALLBACK]
 	var i := count
 	count += 1
+	if count > peak:
+		peak = count
+		if peak % 20 == 0 and G.flag("shotpeak"):
+			print("SHOTS peak=%d" % peak)
 	pos[i] = p
 	vel[i] = v
 	rad[i] = _t_radius[t] * float(extra.get("size", 1.0))
@@ -181,7 +191,7 @@ func fire(p: Vector2, v: Vector2, shot_side: int, damage: float, range_px: float
 	bounce[i] = int(extra.get("bounce", 0))
 	homing[i] = float(extra.get("homing", 0.0))
 	knock[i] = float(extra.get("knock", 1.0))
-	last_hit[i] = 0
+	last_hit[i] = int(extra.get("skip", 0))
 	src[i] = String(extra.get("src", ""))
 	bits[i] = int(extra.get("bits", 0))
 	fed[i] = 0
@@ -230,24 +240,30 @@ func _puff(i: int) -> void:
 	_look.puff(self, i)
 
 
-## A hero shot ran out of range, hit a wall with no bounce left, or came home. Tethered Sickle
-## turns it round once; otherwise it is over, and items hear about it (hook on_shot_end).
-func _finish(i: int, at: Vector2, dir: Vector2) -> void:
+## A hero shot ran out of range, hit a wall with no bounce left, was used up on a monster
+## (`victim` = that monster's instance id) or came home. Tethered Sickle turns it round once.
+## Items hear about the FIRST end of every shot (hook on_shot_end): for a shot that flies back
+## that is the turning point, not the catch.
+func _finish(i: int, at: Vector2, dir: Vector2, victim: int = 0) -> void:
 	var b := bits[i]
+	var damage := dmg[i]
+	var first := b & B_BACK == 0
 	pos[i] = at
-	if b & B_RETURN != 0 and b & B_BACK == 0:
+	if b & B_RETURN != 0 and first:
 		bits[i] = b | B_BACK
 		vel[i] = -dir * vel[i].length() * RETURN_SPEED      # re-aimed at the hero every frame
 		dmg[i] *= RETURN_DAMAGE
 		left[i] = reach[i] * RETURN_REACH
 		homing[i] = 0.0
-		last_hit[i] = 0
-		return
-	_puff(i)
-	var damage := dmg[i]
-	_kill(i)
-	if b & B_HERO != 0 and b & B_CHILD == 0:
+		last_hit[i] = victim                                 # it never cuts the same monster twice in a row
+	else:
+		if victim == 0:
+			_puff(i)                                         # (a hit already showed its own effect)
+		_kill(i)
+	if first and b & B_HERO != 0 and b & B_CHILD == 0:
+		end_victim = victim
 		run.effects.fire("on_shot_end", [at, dir, damage, b & B_HIT != 0])
+		end_victim = 0
 
 
 func _swell(i: int, damage_mult: float, size_mult: float, more_reach: float) -> void:
@@ -394,18 +410,19 @@ func _step_shots(delta: float) -> void:
 		var r := rad[i]
 		if side[i] == SIDE_PLAYER:
 			if c_on and np.distance_squared_to(c_pos) < (r + c_rad) * (r + c_rad):
+				var fresh := b & B_DARK == 0
 				if b & B_ECLIPSE != 0:
-					if b & B_DARK == 0:
+					if fresh:
 						# Eclipse Shard: through the Curse once = double damage, one more pierce, a dark shot
-						b |= B_DARK
 						dmg[i] *= ECLIPSE_DAMAGE
 						pierce[i] += 1
 						kind[i] = _dark_kind
 						run.fx.burst(np - Vector2(0, HEIGHT), [Color(0.75, 0.45, 1.0), Color(0.2, 0.05, 0.3)], 5, 50.0, 0.3, 2.0)
 				else:
 					curse.flinch()
-					if b & B_SHOVE != 0 and b & B_DARK == 0:
-						b |= B_DARK
+				if fresh and b & (B_SHOVE | B_ECLIPSE) != 0:
+					b |= B_DARK
+					if b & B_SHOVE != 0:
 						_shove(curse, v.normalized(), knock[i])
 				bits[i] = b
 			var dead := false
@@ -432,7 +449,10 @@ func _step_shots(delta: float) -> void:
 						dead = true
 						break
 			if dead:
-				_kill(i)
+				if b & B_HERO != 0 and b & B_CHILD == 0:
+					_finish(i, np, v.normalized(), last_hit[i])     # Tethered Sickle turns it round; items hear of its end
+				else:
+					_kill(i)
 		else:
 			var hit := false
 			for wall in blockers:

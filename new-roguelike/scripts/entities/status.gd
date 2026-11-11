@@ -35,6 +35,7 @@ const RELIGHT_GUARD := 2.0       ## a monster that burned out cannot catch fire 
 
 const STEAM_RADIUS := 24.0
 const STEAM_DAMAGE := 2.0        ## times the hero's damage
+const STEAM_GUARD := 1.5         ## seconds after a steam burst in which that monster takes neither chill nor fire
 
 const TINT_CHILL := Color(0.62, 0.80, 1.25)
 const TINT_FROZEN := Color(0.80, 1.05, 1.5)
@@ -50,6 +51,7 @@ var burning := 0.0
 var burn_damage := 0.0
 var burn_tick := 0.0
 var relight := 0.0
+var steamed := 0.0
 var _tinted := false
 
 
@@ -68,6 +70,8 @@ static func chill(e: Node) -> void:
 	if e.dead:
 		return
 	var s: RefCounted = of(e)
+	if s.steamed > 0.0:
+		return
 	if s.burning > 0.0:
 		s._steam(e)
 		return
@@ -91,6 +95,8 @@ static func burn(e: Node, damage_per_tick: float, leaped: bool = false) -> void:
 	if e.dead:
 		return
 	var s: RefCounted = of(e)
+	if s.steamed > 0.0:
+		return
 	if s.chills > 0 or s.frozen > 0.0:
 		s.burn_damage = damage_per_tick
 		s._steam(e)
@@ -108,6 +114,7 @@ static func burn(e: Node, damage_per_tick: float, leaped: bool = false) -> void:
 func tick(e: Node, delta: float) -> void:
 	guard = maxf(0.0, guard - delta)
 	relight = maxf(0.0, relight - delta)
+	steamed = maxf(0.0, steamed - delta)
 	var dirty := false
 	if frozen > 0.0:
 		frozen -= delta
@@ -136,8 +143,8 @@ func tick(e: Node, delta: float) -> void:
 
 func _burn_tick(e: Node) -> void:
 	e.run.fx.burst(e.position - Vector2(0, 7), [Color(1.0, 0.65, 0.2), Color(1.0, 0.9, 0.5), Color(0.9, 0.3, 0.1)], 4, 45.0, 0.4, 2.0, Vector2(0, -0.6))
-	for o in e.room.enemies:
-		if o != e and not o.dead and o.hittable and (o.position as Vector2).distance_to(e.position) < o.radius + e.radius + LEAP_REACH:
+	for o in e.room.enemies.duplicate():       # (a leap can end in steam, and steam can kill)
+		if o != e and is_instance_valid(o) and not o.dead and o.hittable and (o.position as Vector2).distance_to(e.position) < o.radius + e.radius + LEAP_REACH:
 			burn(o, burn_damage, true)
 	e.hurt(burn_damage, Vector2.ZERO, 0.0)
 
@@ -148,6 +155,7 @@ func _steam(e: Node) -> void:
 	chill_t = 0.0
 	burning = 0.0
 	relight = RELIGHT_GUARD
+	steamed = STEAM_GUARD
 	_refresh(e)
 	var damage: float = e.player.stats.v("damage") * STEAM_DAMAGE
 	e.run.fx.ring(e.position - Vector2(0, 6), 4.0, STEAM_RADIUS, 0.3, Color(1, 1, 1), 2.5)

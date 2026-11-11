@@ -8,6 +8,7 @@ extends Node2D
 ## The same seed gives the same floors, rooms, items and shop stock.
 ## Test flags (after "--" on the command line): --autotest --hero= --seed= --speed= --time= --god
 ##   --floor=<1-4> --give=id,id --goto=boss|shop|treasure|secret --layout=<name> --shots=<dir> --shot_every=<sec>
+##   --boss=<id>  this boss (a row key of scripts/data/bosses.gd) guards the floor, whichever floor it is
 ##   --curse=<0-5> start at this Curse Level   --belly=<n> coins already in its belly   --nocurse no Curse at all
 ## summary()["floor"] counts from 1 (floor_index counts from 0).
 
@@ -270,6 +271,16 @@ func _generate_floor() -> void:
 			enemy_pool.append(String(id))
 	var guards := Bosses.for_floor(floor_index + 1)
 	boss_id = guards[rng.randi() % guards.size()]
+	# --boss=<id>: this boss guards the floor, whichever floor it is (for tests and screenshots)
+	var forced_boss := G.arg("boss")
+	if forced_boss != "" and Bosses.known(forced_boss):
+		boss_id = Bosses.real_id(forced_boss)
+	# a boss too big for pillars brings its own room (the row's "layout")
+	var arena := String(Bosses.info(boss_id).get("layout", ""))
+	if arena != "":
+		for c: Vector2i in rooms:
+			if rooms[c]["type"] == G.RoomType.BOSS:
+				rooms[c]["layout"] = arena
 	rooms_cleared_floor = 0
 	_secret_counted = false
 	boss = null
@@ -475,10 +486,11 @@ func boss_killed(b: Node) -> void:
 	G.stat.emit("boss_killed:" + id, 1)
 	G.boss_defeated.emit(id)
 	Sfx.music(String(theme.get("music", "")))
-	if floor_index >= floor_count - 1:
+	# the run is won when the final boss falls (the row's "final"), or whatever boss guards the last floor
+	if floor_index >= floor_count - 1 or Bosses.info(id).get("final", false):
 		victory = true
 		over = true
-		_end_t = 1.6
+		_end_t = 2.6
 		Sfx.play("victory_sting")
 
 

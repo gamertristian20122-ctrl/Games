@@ -19,13 +19,15 @@ extends RefCounted
 ##     on_tick(run, player, delta)                  every physics frame while the hero lives (keep it tiny)
 ##     on_shot_end(run, player, pos, dir, damage, hit_anything)
 ##                                                  one of the hero's own shots ran out of range, died on a
-##                                                  wall (dir = the way it would bounce) or flew home
+##                                                  wall (dir = the way it would bounce) or was used up on a
+##                                                  monster (run.shots.end_victim = its instance id, else 0).
+##                                                  A shot that flies back (Tethered Sickle) ends where it turns.
 ## The Hungry Curse (these are fed by its G.stat counters, see _on_stat below; curse.gd is untouched):
 ##     on_call(run, player, curse)                  a CALL was accepted
 ##     on_meal(run, player, curse)                  it swallowed a monster (or bit an elite, a big one, a boss)
 ##     on_curse_block(run, player, curse)           an enemy shot died on it
 ## A bite on the hero is  on_hurt  with cause == Curse.CAUSE; half_hearts is 0 when nothing was lost
-## (Ransom Plate paid for the hit).
+## (Ransom Plate paid for the hit). It still counts as a bite for every item that speaks of bites.
 ## Shots made by an effect should carry {"bits": Shots.B_CHILD} so they never start on_hit / on_shot_end again.
 ## Words an effect shows on screen live in the item's row ("text") in scripts/data/items.gd.
 ## `counters` is free memory that lasts for the run (for "every third room" style effects).
@@ -126,8 +128,8 @@ func _gilded_refresh(player: Node) -> void:
 	player.stats.set_layer("gilded_blade_bonus", {"pct": {"damage": minf(1.0, float(player.coins) * 0.02)}})
 
 
-func _bitten(half_hearts: int, cause: String) -> bool:
-	return half_hearts > 0 and cause == Curse.CAUSE
+func _bitten(_half_hearts: int, cause: String) -> bool:
+	return cause == Curse.CAUSE
 
 
 func _mid(player: Node) -> Vector2:
@@ -135,9 +137,12 @@ func _mid(player: Node) -> Vector2:
 
 
 # =============================================================================== Bone Thistle
+## Three splinters (40% damage each) where a shot ends: at the end of its reach, on a wall, or on the
+## monster it was used up on (they fly on past that monster and never hurt it).
 func bone_thistle_on_shot_end(_run: Node, _player: Node, pos: Vector2, dir: Vector2, damage: float, _hit: bool) -> void:
+	var extra := {"knock": 0.3, "bits": Shots.B_CHILD, "skip": run.shots.end_victim}
 	for turn: float in [-0.45, 0.0, 0.45]:
-		run.shots.fire(pos, dir.rotated(turn) * 150.0, Shots.SIDE_PLAYER, maxf(0.5, damage * 0.4), 44.0, "shard", CHILD)
+		run.shots.fire(pos, dir.rotated(turn) * 150.0, Shots.SIDE_PLAYER, maxf(0.5, damage * 0.4), 44.0, "shard", extra)
 
 
 # =============================================================================== Winter Nail / Pyre Kindling
