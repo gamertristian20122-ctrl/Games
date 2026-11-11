@@ -17,6 +17,7 @@ const FPS := {"idle": 6.0, "run": 10.0, "hit": 8.0, "default": 8.0}
 
 var _tex := {}
 var _frames := {}
+var _palette := {}
 var _missing: Texture2D
 
 
@@ -62,6 +63,9 @@ func frames(id: String) -> SpriteFrames:
 		var list: Array[Texture2D] = []
 		while true:
 			var path := _find("%s%s_f%d.png" % [id, pair[1], list.size()])
+			if path == "" and list.is_empty():
+				# pack quirk: the plain zombie's first frame is called "_f10" instead of "_f0"
+				path = _find("%s%s_f10.png" % [id, pair[1]])
 			if path == "":
 				break
 			list.append(load(path))
@@ -104,6 +108,34 @@ func sprite(id: String, anim: String = "idle") -> AnimatedSprite2D:
 
 func size(id: String) -> Vector2:
 	return tex(id).get_size()
+
+
+## The main colours of a sprite (most used first, outlines left out). Used for death particles,
+## so every enemy bursts into bits of its own colours.
+func palette(id: String, max_colors: int = 5) -> Array:
+	if _palette.has(id):
+		return _palette[id]
+	var out: Array = []
+	var img := tex(id).get_image()
+	if img != null:
+		if img.is_compressed():
+			img.decompress()
+		var counts := {}
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a < 0.9 or c.v < 0.22:
+					continue
+				var key := c.to_rgba32()
+				counts[key] = int(counts.get(key, 0)) + 1
+		var keys := counts.keys()
+		keys.sort_custom(func(a, b): return counts[a] > counts[b])
+		for i in mini(max_colors, keys.size()):
+			out.append(Color.hex(keys[i]))
+	if out.is_empty():
+		out.append(Color(0.8, 0.8, 0.8))
+	_palette[id] = out
+	return out
 
 
 func _placeholder() -> Texture2D:
