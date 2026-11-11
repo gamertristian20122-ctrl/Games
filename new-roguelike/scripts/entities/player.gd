@@ -193,6 +193,8 @@ func _physics_process(delta: float) -> void:
 		return
 	invuln = maxf(0.0, invuln - delta)
 	_spike_cd = maxf(0.0, _spike_cd - delta)
+	if G.flag("dbgpos") and Engine.get_physics_frames() % 300 == 0:   # TEMP-DEBUG
+		print("DBG pos=%s room=%s type=%s fighting=%s speed=%.0f busy=%s paused=%s things=%s" % [position.round(), room.coord, room.type, room.fighting, stats.v("speed"), run.busy(), get_tree().paused, room.things.map(func(t): return t.kind) if "things" in room else "?"])   # TEMP-DEBUG
 	# ---- walking
 	var want: Vector2 = Controls.move * stats.v("speed")
 	vel = vel.move_toward(want, (ACCEL if want != Vector2.ZERO else DECEL) * delta)
