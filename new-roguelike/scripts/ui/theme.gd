@@ -335,6 +335,16 @@ static func title_sizes() -> Array[int]:
 	return out
 
 
+## The look of the biggest words (game name, Victory, Fallen): a solid drop shadow two pixels down.
+static func style_title(lab: Label, colour: Color, shadow: Color) -> void:
+	lab.add_theme_color_override("font_color", colour)
+	lab.add_theme_color_override("font_shadow_color", shadow)
+	lab.add_theme_constant_override("shadow_offset_x", 0)
+	lab.add_theme_constant_override("shadow_offset_y", 2)
+	lab.add_theme_constant_override("shadow_outline_size", 0)
+	lab.add_theme_constant_override("outline_size", 0)
+
+
 ## Shrinks a title label step by step until its text fits in max_width (then lets it wrap).
 static func fit_title(lab: Label, max_width: float) -> void:
 	var sizes := title_sizes()

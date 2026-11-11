@@ -23,11 +23,7 @@ func build() -> void:
 
 	_name_label = UI.label(game_name(), "Title")
 	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name_label.add_theme_color_override("font_shadow_color", UI.C_BLOOD)
-	_name_label.add_theme_constant_override("shadow_offset_x", 0)
-	_name_label.add_theme_constant_override("shadow_offset_y", 2)
-	_name_label.add_theme_color_override("font_outline_color", UI.C_INK)
-	_name_label.add_theme_constant_override("outline_size", 4)
+	UI.style_title(_name_label, UI.C_BONE, UI.C_BLOOD)
 	_name_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	_name_label.offset_top = 2
 	area.add_child(_name_label)
@@ -53,6 +49,7 @@ func build() -> void:
 
 	var version := UI.label("v" + String(ProjectSettings.get_setting("application/config/version", "0")), "Small")
 	version.add_theme_color_override("font_color", UI.C_FAINT)
+	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	version.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	version.grow_vertical = Control.GROW_DIRECTION_BEGIN

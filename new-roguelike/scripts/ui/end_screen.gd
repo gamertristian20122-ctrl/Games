@@ -27,12 +27,7 @@ func build() -> void:
 	left.custom_minimum_size.x = 112
 	cols.add_child(left)
 	var title := UI.label("Victory" if victory else "Fallen", "Title")
-	title.add_theme_color_override("font_color", UI.C_GOLD if victory else UI.C_RED)
-	title.add_theme_color_override("font_shadow_color", Color("6b4a12") if victory else Color("4a1420"))
-	title.add_theme_constant_override("shadow_offset_x", 0)
-	title.add_theme_constant_override("shadow_offset_y", 2)
-	title.add_theme_color_override("font_outline_color", UI.C_INK)
-	title.add_theme_constant_override("outline_size", 4)
+	UI.style_title(title, UI.C_GOLD if victory else UI.C_RED, Color("7a4a12") if victory else Color("5a1626"))
 	UI.fit_title(title, 112.0)
 	left.add_child(title)
 	var line := UI.label(_story(), "", 100.0)

@@ -172,11 +172,12 @@ func _begin() -> void:
 	floor_index = clampi(int(G.arg("floor", "1")) - 1, 0, floor_count - 1)
 	theme = Floors.get_floor(floor_index)
 	effects = ItemEffects.new(self)
+	_generate_floor()
 	player = PlayerScript.new()
 	player.setup(self, hero_id)
 	G.stat.emit("runs", 1)
 	G.run_started.emit(self)
-	_start_floor()
+	_enter_floor()
 	for item_id in G.arg("give").split(",", false):
 		if Items.ALL.has(item_id):
 			used_items[item_id] = true
@@ -223,6 +224,13 @@ func font() -> Font:
 
 # =============================================================================== floors
 func _start_floor() -> void:
+	_generate_floor()
+	_enter_floor()
+
+
+## Builds the map of the current floor (no signals yet, nothing on screen).
+func _generate_floor() -> void:
+	cur = Vector2i.ZERO
 	theme = Floors.get_floor(floor_index)
 	floor_name = String(theme["name"])
 	var rng := RandomNumberGenerator.new()
@@ -239,6 +247,10 @@ func _start_floor() -> void:
 	rooms_cleared_floor = 0
 	_secret_counted = false
 	boss = null
+
+
+## Announces the floor and puts the player into its first room.
+func _enter_floor() -> void:
 	ambient.color = theme["ambient"] if LIGHTING else Color(1, 1, 1)
 	Sfx.music(String(theme.get("music", "")))
 	G.floor_started.emit(floor_index, floor_name)

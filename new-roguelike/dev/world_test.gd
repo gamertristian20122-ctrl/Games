@@ -91,8 +91,9 @@ func _refresh() -> void:
 	var text := "HP %d/%d" % [p.hp, p.max_hp]
 	if p.armor > 0:
 		text += " +%d" % p.armor
+	var here: Dictionary = run.rooms.get(run.cur, {})
 	text += "   coins %d   keys %d   bombs %d   floor %d %s   %s" % [p.coins, p.keys, p.bombs, run.floor_index + 1, run.floor_name,
-		run.TYPE_NAMES[run.rooms[run.cur]["type"]]]
+		run.TYPE_NAMES[int(here.get("type", 0))]]
 	if not p.items.is_empty():
 		text += "\n" + ", ".join(p.items)
 	info.text = text

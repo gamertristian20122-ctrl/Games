@@ -225,7 +225,10 @@ func _draw() -> void:
 		draw_arc(Vector2(0, -8), 11.0 + (1.0 - k) * 8.0, 0.0, TAU, 24, Color(0.6, 0.85, 1.0, k), 2.0)
 		draw_circle(Vector2(0, -8), 11.0, Color(0.6, 0.85, 1.0, 0.25 * k))
 	elif ward_ready and not dead:
-		draw_arc(Vector2(0, -8), 11.0, 0.0, TAU, 24, Color(0.6, 0.85, 1.0, 0.28), 1.0)
+		# a quiet circle on the floor around the feet (flattened, like the shadows)
+		draw_set_transform(Vector2(0, 1), 0.0, Vector2(1.0, 0.5))
+		draw_arc(Vector2.ZERO, 10.0, 0.0, TAU, 24, Color(0.6, 0.85, 1.0, 0.30), 1.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 # =============================================================================== getting hurt
@@ -357,7 +360,7 @@ func add_familiar(familiar_id: String) -> void:
 	if room != null:
 		f.position = position + Vector2(-10, -2)
 		room.ysort.add_child(f)
-	G.hud_changed.emit()
+		G.hud_changed.emit()
 
 
 func place_bomb() -> void:
