@@ -1,3 +1,6 @@
 .godot/
 *.apk
+*.idsig
 build/
+# Raw downloads stay out of the public repo until every licence has been double-checked.
+assets_raw/
