@@ -13,6 +13,8 @@ extends RefCounted
 ##   cost     how much of a room's spawn budget it uses (bigger = rarer, stronger)
 ##   coin / heart   chance to drop a coin / half a heart when it dies
 ## Optional: "tint" (Color), "scale" (float), "shot" (a shot type from shot_types.gd), "minion": true (no drops)
+##   "big": true   too big for the Hungry Curse to swallow whole: it loses half its health per bite instead
+##                 (elites count as big too; see scripts/entities/curse.gd)
 
 const ALL := {
 	# ---- floor 1 and up
@@ -25,7 +27,7 @@ const ALL := {
 	"bone_archer": {"name": "Bone Archer", "sprite": "skelet", "hp": 8.0, "speed": 34.0, "radius": 4.5,
 		"ai": "shooter", "params": {"keep": 70.0, "cooldown": 2.2, "shot_speed": 72.0}, "touch": 1, "flying": false, "floors": [1, 2, 3], "cost": 2.0, "coin": 0.20, "heart": 0.04, "shot": "enemy"},
 	"rot_hulk": {"name": "Rot Hulk", "sprite": "zombie", "hp": 30.0, "speed": 20.0, "radius": 5.5, "scale": 1.25,
-		"ai": "brute", "params": {"slam_range": 30.0, "slam_radius": 26.0}, "touch": 1, "flying": false, "floors": [1, 2], "cost": 3.0, "coin": 0.35, "heart": 0.06},
+		"ai": "brute", "params": {"slam_range": 30.0, "slam_radius": 26.0}, "touch": 1, "flying": false, "floors": [1, 2], "cost": 3.0, "coin": 0.35, "heart": 0.06, "big": true},
 	# ---- floor 2 and up
 	"bogling": {"name": "Bogling", "sprite": "swampy", "hp": 14.0, "speed": 78.0, "radius": 6.0,
 		"ai": "hopper", "params": {"rest": 0.8, "hop": 0.45, "land_shots": 4}, "touch": 1, "flying": false, "floors": [2, 3, 4], "cost": 2.5, "coin": 0.20, "heart": 0.04, "shot": "enemy_small"},
@@ -43,7 +45,7 @@ const ALL := {
 	"lantern_head": {"name": "Lantern Head", "sprite": "pumpkin_dude", "hp": 11.0, "speed": 58.0, "radius": 5.0,
 		"ai": "exploder", "params": {"fuse": 0.6, "trigger": 26.0, "shots": 10, "shot_speed": 78.0}, "touch": 1, "flying": false, "floors": [3, 4], "cost": 2.5, "coin": 0.20, "heart": 0.04, "shot": "enemy"},
 	"frost_hulk": {"name": "Frost Hulk", "sprite": "ice_zombie", "hp": 40.0, "speed": 22.0, "radius": 5.5, "scale": 1.25,
-		"ai": "brute", "params": {"slam_range": 34.0, "slam_radius": 28.0, "slam_shots": 8}, "touch": 1, "flying": false, "floors": [3, 4], "cost": 4.0, "coin": 0.35, "heart": 0.06, "shot": "frost"},
+		"ai": "brute", "params": {"slam_range": 34.0, "slam_radius": 28.0, "slam_shots": 8}, "touch": 1, "flying": false, "floors": [3, 4], "cost": 4.0, "coin": 0.35, "heart": 0.06, "shot": "frost", "big": true},
 }
 
 ## How much stronger enemies get per floor (hp x (1 + this x floor_index)).

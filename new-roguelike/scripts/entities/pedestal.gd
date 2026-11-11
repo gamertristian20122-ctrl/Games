@@ -3,14 +3,31 @@ extends Node2D
 ## The same script is the SHOP STAND: give it a "price" and it shows a price tag and sells instead.
 ## desc: {"pos": Vector2, "item": item id  OR  "pickup": pickup id, "price": coins (0 = free), "taken": bool}
 ## Cursed items glow dark red-purple, and the first time you come close a banner warns you.
+## They also wear a small badge, "+1" and a skull: taking one raises the Curse Level (the Hungry
+## Curse grows). At Curse Level 2 the badge adds teeth: the next level makes its bite a full heart.
+## Two more desc fields:
+##   "pair": n        two pedestals with the same number are a choice: take one and the other crumbles
+##   "service": "starve"   the shop's "Starve the Curse" stand: no goods, it takes one Curse Level
+##                    off for coins (prices in scripts/data/pickups.gd). It only shows from Curse
+##                    Level 1 and can be used again while its price list lasts.
 ## STAND-IN: the pack has no pedestal picture; the stand is the cap of the pack's column sprite.
 
 const Items = preload("res://scripts/data/items.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
+const Curse = preload("res://scripts/entities/curse.gd")
 
 const BLOCK_RADIUS := 7.0
 const WARN_RANGE := 36.0
+## Words the player sees (the Starve stand and the badges).
+const STARVE_NAME := "Starve the Curse"
+const STARVE_HINT := "One Curse Level less."
+const STARVE_DONE := "Your Curse shrinks."
+const BADGE_GROW := "+1"
+const BADGE_SHRINK := "-1"
+const BADGE_GROW_COLOR := Color(1.0, 0.62, 0.50)
+const BADGE_SHRINK_COLOR := Color(0.66, 0.96, 0.62)
+const CURSE_GOLD := Color(0.98, 0.90, 0.58)      ## the Hungry Curse's own pale gold
 
 var kind := "pedestal"
 var solid := true
@@ -25,6 +42,14 @@ var icon: Sprite2D
 var glow: Sprite2D
 var light: PointLight2D
 var tag: Node2D
+var service := ""
+var pair := 0
+var crumbled := false
+var badge: Node2D
+var _price_label: Label
+var _away := true                ## the hero stepped away since the last purchase (service stands)
+var _badge_level := -1
+static var _skull_rect := Rect2()
 var _bob := 0.0
 var _deny_cd := 0.0
 var _shake := 0.0
@@ -39,6 +64,8 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	price = int(desc.get("price", 0))
 	taken = desc.get("taken", false)
 	warned = desc.get("warned", false)
+	service = String(desc.get("service", ""))
+	pair = int(desc.get("pair", 0))
 	add_child(EnemyScript.make_shadow(18.0))
 	var base := Sprite2D.new()
 	base.texture = Art.tex("column")

@@ -3,12 +3,16 @@ extends RefCounted
 ## Fields every item has (the shell's item card, pause list and collection screen rely on these):
 ##   name, desc (one short line, what it does), icon (an Art id), cursed (bool), pools (Array of pool names)
 ## Cursed items also have "curse" (one short line describing the downside).
+## EVERY cursed item also raises the Curse Level by 1 when taken (the Hungry Curse grows; see
+## scripts/entities/curse.gd). That needs no field here: "cursed": true is enough.
 ##
 ## HOW AN ITEM WORKS (the world half reads these extra fields; all are optional):
 ##   mods      stat changes, added as one layer in scripts/run/stats.gd:
 ##               {"flat": {"damage": 1.0}, "pct": {"speed": 0.15}, "mult": {"damage": 2.0}, "flags": {"pierce": 1}}
 ##             stats: speed damage rate range shot_speed shot_size knockback shots spread homing
 ##                    hurt_mult coin_mult luck invuln bomb_damage      flags: pierce bounce (and any you invent)
+##             the Hungry Curse reads three more stats: call_cooldown (seconds), curse_creep (speed
+##             multiplier), belly_mult (coins a bombed Curse coughs up) and the flag curse_eats_coins
 ##   give      handed over once when picked up: {"max_hp": 2, "hp": 2, "armor": 2, "coins": 5, "keys": 1, "bombs": 1}
 ##             (hp, max_hp and armor are HALF hearts)
 ##   familiar  an id from familiars.gd that joins the player
@@ -50,6 +54,23 @@ const ALL := {
 	"frenzy_saw": {"name": "Frenzy Saw", "desc": "Fire almost twice as fast.", "curse": "Your shots fly wild and fall short.", "icon": "weapon_saw_sword", "cursed": true, "pools": ["cursed"],
 		"mods": {"pct": {"rate": 0.85, "range": -0.25}, "flat": {"spread": 0.30}}},
 	"gilded_blade": {"name": "Gilded Blade", "desc": "Every coin you carry adds damage.", "curse": "Getting hit knocks 5 coins out of your purse.", "icon": "weapon_golden_sword", "cursed": true, "pools": ["cursed"]},
+	"leaden_maul": {"name": "Leaden Maul", "desc": "Damage nearly doubled.", "curse": "You walk slower.", "icon": "weapon_big_hammer", "cursed": true, "pools": ["cursed"],
+		"mods": {"pct": {"damage": 0.80, "speed": -0.20}}},
+	"storm_axes": {"name": "Storm Axes", "desc": "Throw two more shots at once.", "curse": "They spray wide and fall short.", "icon": "weapon_throwing_axe", "cursed": true, "pools": ["cursed"],
+		"mods": {"flat": {"shots": 2.0, "spread": 0.35}, "pct": {"range": -0.20}}},
+	"misers_flask": {"name": "Miser's Flask", "desc": "Every coin counts double.", "curse": "Half as long to recover after a hit.", "icon": "flask_yellow", "cursed": true, "pools": ["cursed"],
+		"mods": {"mult": {"coin_mult": 2.0, "invuln": 0.5}}},
+	"hollow_bolt": {"name": "Hollow Bolt", "desc": "Shots pass through two more enemies and fly farther.", "curse": "You fire slower.", "icon": "weapon_arrow", "cursed": true, "pools": ["cursed"],
+		"mods": {"flags": {"pierce": 2}, "pct": {"range": 0.40, "rate": -0.25}}},
+	"gilded_fang": {"name": "Gilded Fang", "desc": "A bombed Curse coughs up double.", "curse": "Your Curse also eats coins lying on the floor.", "icon": "weapon_lavish_sword", "cursed": true, "pools": ["cursed"], "locked": true,
+		"mods": {"mult": {"belly_mult": 2.0}, "flags": {"curse_eats_coins": 1}}},
+	# ---------------------------------------------------------------- items that handle the Hungry Curse (not cursed)
+	"spiked_goad": {"name": "Spiked Goad", "desc": "CALL is ready again much sooner.", "icon": "weapon_baton_with_spikes", "cursed": false, "pools": ["treasure", "shop", "secret"], "locked": true,
+		"mods": {"flat": {"call_cooldown": -1.5}}},
+	"iron_leash": {"name": "Iron Leash", "desc": "Your Curse creeps slower.", "icon": "weapon_mace", "cursed": false, "pools": ["treasure", "shop", "boss"], "locked": true,
+		"mods": {"mult": {"curse_creep": 0.615}}},
+	"tithe_imp": {"name": "Tithe Imp", "desc": "After each meal it fetches you a coin from the Curse's belly.", "icon": "imp", "cursed": false, "pools": ["treasure", "shop", "secret"], "locked": true,
+		"familiar": "tithe_imp"},
 }
 
 

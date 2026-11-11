@@ -19,6 +19,10 @@ extends RefCounted
 ##     boss_killed and boss_killed:<boss id>, secret_found, chest_opened, rooms_cleared, key_used,
 ##     bomb_used, shop_buy, kills, coins, floor_reached:<n> ... and anything else it likes
 ##     (kills and coins also feed total_kills / total_coins at once; floor_reached feeds best_floor)
+##   sent by the Hungry Curse (scripts/entities/curse.gd):
+##     curse_meals (enemies swallowed), curse_feast (3 or more in one lunge), belly_burst_10 (10 or more
+##     coins coughed up by one bomb), boss_bitten_30 (one boss lost 30% of its health to bites),
+##     win_curse_0 / win_curse_5 (won a run at Curse Level 0 / 5), curse_bites, curse_calls, belly_coins ...
 ## A rule that watches "boss_killed" also counts every "boss_killed:<something>".
 ##
 ## To add an unlock: add one row. Nothing else needs to change.
@@ -40,11 +44,17 @@ const RULES := [
 	{"id": "ach:cursed_5", "name": "Bad Habits", "hint": "Take 5 cursed items in total.", "stat": "cursed_taken", "at_least": 5},
 	{"id": "ach:floor_3", "name": "Further Down", "hint": "Reach the third floor.", "stat": "best_floor", "at_least": 3},
 	{"id": "ach:secrets_5", "name": "Wall Knocker", "hint": "Find 5 secret rooms in total.", "stat": "secret_found", "at_least": 5},
+	{"id": "ach:paid_in_full", "name": "Paid in Full", "hint": "Win a run at Curse Level 0.", "stat": "win_curse_0", "at_least": 1},
+	{"id": "ach:bottomless", "name": "Bottomless", "hint": "Win a run at Curse Level 5.", "stat": "win_curse_5", "at_least": 1},
 
 	# ---------------------------------------------------------------- ITEM UNLOCKS
 	# Content agents: add item rows BELOW this line, one per locked item, for example
 	#   {"id": "item:glass_blade", "name": "Glass Blade", "hint": "Win a run as Aldous.", "stat": "wins:knight", "at_least": 1},
 	# An item with a row here stays out of the item pools until Save.is_unlocked("item:<id>") is true.
+	{"id": "item:spiked_goad", "name": "Spiked Goad", "hint": "Let your Curse swallow 100 monsters in total.", "stat": "curse_meals", "at_least": 100},
+	{"id": "item:tithe_imp", "name": "Tithe Imp", "hint": "Feed your Curse 3 monsters in one lunge.", "stat": "curse_feast", "at_least": 1},
+	{"id": "item:gilded_fang", "name": "Gilded Fang", "hint": "Make your Curse cough up 10 coins with one bomb.", "stat": "belly_burst_10", "at_least": 1},
+	{"id": "item:iron_leash", "name": "Iron Leash", "hint": "Let your Curse bite 30% off one boss.", "stat": "boss_bitten_30", "at_least": 1},
 	# ---------------------------------------------------------------- end of item unlocks
 ]
 

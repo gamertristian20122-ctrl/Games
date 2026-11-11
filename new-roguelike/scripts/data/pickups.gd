@@ -30,6 +30,9 @@ const PRICE_HEART := 3
 const PRICE_SUPPLY := 5
 const PRICE_ITEM := 15
 const PRICE_CURSED := 7
+## "Starve the Curse" (the shop's skull stand, shown from Curse Level 1): one level off per
+## purchase. The first one in a run costs 15, the second 25, the third 35; then it is sold out.
+const PRICE_STARVE := [15, 25, 35]
 
 
 static func info(id: String) -> Dictionary:

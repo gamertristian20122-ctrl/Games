@@ -13,6 +13,7 @@ const Items = preload("res://scripts/data/items.gd")
 const Shots = preload("res://scripts/run/shots.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const FamiliarScript = preload("res://scripts/entities/familiar.gd")
+const Curse = preload("res://scripts/entities/curse.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -342,6 +343,7 @@ func add_item(item_id: String) -> void:
 	Save.mark_seen(item_id)
 	G.stat.emit("item_taken", 1)
 	if info.get("cursed", false):
+		Curse.change_level(run, 1)           # every cursed item makes the Hungry Curse bigger
 		G.stat.emit("cursed_taken", 1)
 		Sfx.play("cursed_item_pickup")
 		run.fx.flash(Color(0.5, 0.0, 0.3, 0.3), 0.3)
