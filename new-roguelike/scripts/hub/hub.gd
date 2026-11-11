@@ -12,13 +12,14 @@ extends Node2D
 ## The hub never changes the flow itself: it sends requests to main.gd (signal `action`).
 ##
 ## Test flags: --hub (open the camp at once), with --shots=<dir> it walks a short tour and saves
-## pictures; --hubtalk=<npc id> also opens that person's window; --hubstage=<n> starts that stage after
-## a second; --allstages opens every stage at the gate.
+## pictures; --hubtalk=<npc id> also opens that person's window; --hublevel=<level id> goes down into
+## that story level after a second.
 
 const Hub = preload("res://scripts/data/hub.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Quests = preload("res://scripts/data/quests.gd")
+const Story = preload("res://scripts/data/story.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
@@ -47,6 +48,7 @@ var _time := 0.0
 var _tour: Array = []
 var _tour_t := 0.0
 var _news := false              ## a quest is waiting to be handed in
+var _talked := {}               ## npc ids spoken to during this visit
 
 
 func _ready() -> void:
@@ -82,8 +84,12 @@ func _ready() -> void:
 	_prompt.add_theme_constant_override("outline_size", 3)
 	add_child(_prompt)
 	Controls.action_pressed.connect(_on_talk_pressed)
-	if G.arg("hubstage") != "":          # test: walk through the gate after a second
-		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_stage", int(G.arg("hubstage"))))
+	if G.arg("hublevel") != "":          # test: go down into that level after a second
+		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_level", G.arg("hublevel")))
+	elif Save.hub_get("seen:intro") == 0 and G.arg("shots") == "":
+		# the very first visit: the Druid speaks first
+		Save.hub_set("seen:intro", 1)
+		get_tree().create_timer(0.7).timeout.connect(func() -> void: action.emit("talk", Story.INTRO.duplicate(true)))
 	if G.arg("shots") != "" and G.flag("hub"):
 		_tour = [Vector2(322, 160), Vector2(150, 226), Vector2(300, 250), Vector2(440, 290), Vector2(180, 300)]
 
@@ -288,6 +294,8 @@ func refresh_heroes() -> void:
 		if String(h["id"]) == String(mine["id"]) or spot >= Hub.HERO_SPOTS.size():
 			continue
 		var locked: bool = bool(h.get("locked", false)) and not Save.is_unlocked("hero:" + String(h["id"]))
+		if locked:
+			continue                   # not met yet: the story brings them to the fire (story.gd "joins")
 		var row := {"id": "hero:" + String(h["id"]), "name": String(h["name"]), "title": String(h["title"]), "sprite": String(h["sprite"]),
 			"hands": String(h.get("hand", "")), "weapon": String(h.get("weapon", "")), "grip": h.get("grip", 4), "hand": String(h.get("hand", "")),
 			"pos": Hub.HERO_SPOTS[spot], "face": 1 if spot == 0 else -1, "role": "hero", "hero": h, "locked": locked}
@@ -331,7 +339,11 @@ func _physics_process(delta: float) -> void:
 func _update_people(delta: float) -> void:
 	var best := -1
 	var best_d := Hub.TALK_REACH
-	var news := Quests.any_complete() if int(_time * 2.0) != int((_time - delta) * 2.0) or _time < 0.1 else _news
+	var news := _news
+	if int(_time * 2.0) != int((_time - delta) * 2.0) or _time < 0.1:
+		news = Quests.any_complete()
+		for q: Dictionary in _people:
+			q["news"] = Story.has_news(String(q["row"]["id"]))
 	_news = news
 	for i in _people.size():
 		var p: Dictionary = _people[i]
@@ -343,7 +355,7 @@ func _update_people(delta: float) -> void:
 			best_d = d
 			best = i
 		var mark: Label = p["mark"]
-		mark.visible = news and String(p["row"].get("role", "")) == "quests"
+		mark.visible = (news and String(p["row"].get("role", "")) == "quests") or bool(p.get("news", false))
 		mark.position.y = -float(p["top"]) - 16.0 + roundf(sin(_time * 5.0) * 1.5)
 	_near = best
 	G.hub_near = best >= 0 and not frozen
@@ -379,18 +391,29 @@ func talk_to(npc_id: String) -> void:
 func _talk(index: int) -> void:
 	_last_talk = index
 	var row: Dictionary = _people[index]["row"]
-	var info := {"name": row["name"], "title": row.get("title", ""), "text": row.get("text", ""), "lines": [], "options": []}
+	var id := String(row["id"])
+	var said: Array = Story.pages_for(id)[0]
+	var pages: Array = said.duplicate()
+	if pages.is_empty() and String(row.get("text", "")) != "":
+		pages = [String(row["text"])]
+	if not Story.has_news(id) and _talked.has(id) and String(row.get("role", "chat")) != "chat":
+		pages = []                     # heard it already this visit: straight to the choices
+	_talked[id] = true
+	var info := {"name": row["name"], "title": row.get("title", ""), "sprite": row["sprite"], "pages": pages, "heard": id,
+		"lines": [], "options": []}
 	match String(row.get("role", "chat")):
 		"gate":
-			var best := maxi(Save.stat_get("best_floor"), 1)
-			for i in Floors.count():
-				var open := i == 0 or best >= i + 1 or G.flag("allstages")
-				var label := "Stage %d: %s" % [i + 1, String(Floors.get_floor(i)["name"])]
-				if not open:
-					label += "  (reach it first)"
-				elif i > 0:
-					label += "  (+%d items)" % (2 * i)
-				info["options"].append({"text": label, "what": "hub_stage", "arg": i + 1, "off": not open})
+			var next := Story.next_level()
+			if next.is_empty():
+				info["lines"].append(["Every seal is mended. You may walk any level again.", UI.C_GOLD])
+			else:
+				info["options"].append({"text": "Go down: %s" % String(next["name"]), "what": "hub_level", "arg": next["id"]})
+			# the last few cleared levels can be walked again
+			var c := Story.chapter()
+			for i in range(c - 1, maxi(c - 4, -1), -1):
+				var lv: Dictionary = Story.LEVELS[i]
+				info["options"].append({"text": "Again: %s" % String(lv["name"]), "what": "hub_level", "arg": lv["id"]})
+			info["lines"].append(["Levels cleared: %d of %d" % [c, Story.LEVELS.size()], UI.C_DIM])
 			info["lines"].append([_pack_line(), UI.C_GOLD])
 		"quests":
 			var offered := Quests.offered()
@@ -407,14 +430,13 @@ func _talk(index: int) -> void:
 			info["options"].append({"text": "Open the Collection", "what": "collection"})
 		"pack":
 			info["lines"].append([_pack_line(), UI.C_GOLD])
+			var kit := Story.kit()
+			info["lines"].append(["You carry %d item%s from the hill." % [kit.size(), "" if kit.size() == 1 else "s"], UI.C_DIM])
 		"hero":
 			var h: Dictionary = row["hero"]
-			info["text"] = String(h.get("desc", ""))
-			if bool(row.get("locked", false)):
-				info["lines"].append(["Not with you yet: " + String(h.get("unlock_hint", "")), UI.C_FAINT])
-			else:
-				info["lines"].append([String(h.get("passive", "")), UI.C_DIM])
-				info["options"].append({"text": "Play as %s" % String(h["name"]), "what": "hub_hero", "arg": h["id"]})
+			info["lines"].append([String(h.get("desc", "")), UI.C_DIM])
+			info["lines"].append([String(h.get("passive", "")), UI.C_DIM])
+			info["options"].append({"text": "Play as %s" % String(h["name"]), "what": "hub_hero", "arg": h["id"]})
 	action.emit("talk", info)
 
 

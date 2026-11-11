@@ -303,6 +303,8 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 		# ---- keep a comfortable distance and circle
 		# (a short-range hero fights near the end of his reach instead of in the monsters' faces)
 		var want := clampf(maxf(shot_range * 0.62, minf(shot_range - 22.0, 64.0)), 42.0, 78.0)
+		if p.hero.has("melee"):
+			want = 24.0               # a sword: stand at the end of the blade
 		var to: Vector2 = (tp - pos).normalized()
 		if dist > shot_range * 0.85 or not room.sight_clear(pos, see_at):
 			move += _path_dir(room, pos, see_at) * 1.0

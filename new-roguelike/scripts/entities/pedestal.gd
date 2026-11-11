@@ -122,7 +122,7 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 		add_child(light)
 	if price > 0:
 		_build_tag()
-	if cursed or service != "":
+	if (cursed or service != "") and G.curse_on():
 		_build_badge()
 	_bob = randf() * 6.0
 	if taken:

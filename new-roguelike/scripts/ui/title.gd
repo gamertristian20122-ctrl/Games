@@ -5,7 +5,7 @@ extends "res://scripts/ui/screen.gd"
 const Heroes = preload("res://scripts/data/heroes.gd")
 
 ## The one line under the game's name: what makes this game different.
-const TAGLINE := "Your Curse is awake. It eats everything. Make it eat them."
+const TAGLINE := "Four seals are breaking under the hill."
 
 var _name_label: Label
 var _tag_label: Label

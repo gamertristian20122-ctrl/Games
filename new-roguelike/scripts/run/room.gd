@@ -873,7 +873,8 @@ func _first_visit_content() -> void:
 				supply = "bomb"
 			add_thing("pedestal", {"pickup": supply, "price": Pickups.PRICE_SUPPLY, "pos": Vector2(W * 0.5 - 20, y)})
 			# "Starve the Curse": it only shows itself from Curse Level 1 (see pedestal.gd)
-			add_thing("pedestal", {"service": "starve", "pos": _spot_or_near(Vector2(W * 0.5 + 100, y))})
+			if G.curse_on():
+				add_thing("pedestal", {"service": "starve", "pos": _spot_or_near(Vector2(W * 0.5 + 100, y))})
 			var item2: String = run.take_item("shop", rng)
 			if item2 != "":
 				add_thing("pedestal", {"item": item2, "price": Pickups.PRICE_ITEM, "pos": Vector2(W * 0.5 + 20, y)})
@@ -952,7 +953,7 @@ func _start_fight() -> void:
 ## Every locked room gets the Hungry Curse. It waits a second, rises, and sinks again when the
 ## fight is won (it watches room.fighting and room.enemies by itself).
 func _spawn_curse() -> void:
-	if G.flag("nocurse"):
+	if G.flag("nocurse") or not G.curse_on():
 		return
 	curse = CurseScript.new()
 	add_child(curse)

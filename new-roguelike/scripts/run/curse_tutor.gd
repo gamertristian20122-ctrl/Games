@@ -41,6 +41,8 @@ var _pulse_t := 0.0
 
 ## Is there still something to teach on this profile?
 static func wanted() -> bool:
+	if not G.curse_on():
+		return false
 	if G.flag("autotest") and not G.flag("teach"):
 		return false
 	for key in KEYS:

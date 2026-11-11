@@ -21,12 +21,16 @@ extends RefCounted
 
 const LIST := [
 	{
-		"id": "knight", "name": "Aldous", "title": "The Cursed Knight", "sprite": "pc_knight", "weapon": "pc_weapon_castle_13", "grip": 3, "hand": "pc_hand_castle_16",
-		"desc": "A fallen knight who hurls spectral blades. Slow, sturdy, hits hard.",
+		"id": "knight", "name": "Aldous", "title": "The Last Knight", "sprite": "pc_knight", "weapon": "pc_weapon_castle_13", "grip": 3, "hand": "pc_hand_castle_16",
+		"desc": "A knight with a sword and nothing else. He cuts down what stands close and bats shots out of the air.",
 		"passive": "Oath Ward: the first hit in every room is blocked.",
 		"locked": false, "unlock_hint": "",
-		"hp": 8, "armor": 0, "speed": 86.0, "damage": 4.0, "rate": 1.9, "range": 115.0, "shot_speed": 150.0,
+		"hp": 8, "armor": 0, "speed": 94.0, "damage": 6.0, "rate": 2.3, "range": 44.0, "shot_speed": 150.0,
 		"shot": "blade", "shoot_sfx": "player_shoot_blade", "ward": true,
+		# a SWORD SWING instead of shots (player.gd _swing): everything inside the arc in front of him is hit
+		# at once and enemy shots inside it are cut down. reach px from his middle, arc in radians.
+		# Shot items still count: more shots = harder swings, more range = a little more reach.
+		"melee": {"reach": 34.0, "arc": 2.3, "knock": 1.6},
 	},
 	{
 		"id": "witch", "name": "Ozric", "title": "The Old Hexer", "sprite": "pc_wizard", "weapon": "pc_weapon_hideout_14", "grip": 11, "hand": "pc_hand_base_0",

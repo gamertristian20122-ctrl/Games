@@ -84,6 +84,8 @@ static func layout_checks() -> Array[String]:
 ## where it appears, the level table, lunges and meals, bites, shots, bombs, CALL, secret walls,
 ## cursed items and the Starve stand, the belly being kept, the treasure pair.
 static func curse(host: Node) -> Array[String]:
+	if not G.curse_on():
+		return []          # the Curse is switched off (g.gd curse_on); --withcurse runs its tests
 	return CurseTests.run_all(host)
 
 

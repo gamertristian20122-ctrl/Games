@@ -220,6 +220,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _fire() -> void:
+	if hero.has("melee"):
+		_swing()
+		return
 	var n := maxi(1, int(stats.v("shots")))
 	var spread := stats.v("spread")
 	var speed := stats.v("shot_speed")
@@ -236,6 +239,76 @@ func _fire() -> void:
 	_kick = 1.0
 	Sfx.play(String(hero.get("shoot_sfx", "player_shoot_blade")), -12.0)
 	run.effects.fire("on_shot_fired", [from, aim_dir])
+
+
+## The knight's sword: one sweep through the arc in front of him. Every monster inside is hit at
+## once (a boss's guard still stops it) and enemy shots inside are cut out of the air.
+const SWING_TIME := 0.14
+var _swing_t := 0.0
+var _swing_side := 1.0
+var _swing_arc := 2.3
+var _swing_reach := 34.0
+var _slash: Node2D
+
+func _swing() -> void:
+	var m: Dictionary = hero["melee"]
+	var arc := float(m.get("arc", 2.3))
+	var reach := float(m.get("reach", 34.0)) + maxf(stats.v("range") - float(hero.get("range", 44.0)), 0.0) * 0.12
+	var extra := maxi(1, int(stats.v("shots"))) - 1
+	var damage: float = stats.v("damage") * (1.0 + 0.5 * float(extra))
+	var from := position
+	for e in room.enemies.duplicate():
+		if not is_instance_valid(e) or e.dead or not e.hittable or e.get("shielded") == true:
+			continue
+		var to: Vector2 = (e.position as Vector2) - Vector2(0.0, float(e.hit_up) * 0.5) - from
+		var far: float = to.length() - float(e.radius) - float(e.hit_grow)
+		if far > reach:
+			continue
+		if far > 4.0 and absf(angle_difference(aim_dir.angle(), to.angle())) > arc * 0.5:
+			continue
+		e.hurt(damage, to.normalized(), float(m.get("knock", 1.6)))
+		run.effects.fire("on_hit", [e, damage, e.position])
+		run.fx.burst((e.position as Vector2) - Vector2(0, float(e.hit_up)), [Color(1, 1, 1), Color(0.8, 0.9, 1.0)], 4, 70.0, 0.2, 2.0, to.normalized())
+	var shots: Node = run.shots
+	for i in shots.count:
+		if shots.side[i] != Shots.SIDE_ENEMY or shots.left[i] <= 0.0:
+			continue
+		var to2: Vector2 = shots.pos[i] - Vector2(0.0, 7.0) - from
+		if to2.length() <= reach + 2.0 and absf(angle_difference(aim_dir.angle(), to2.angle())) <= arc * 0.5:
+			shots.left[i] = 0.0
+			run.fx.burst(shots.pos[i] - Vector2(0.0, 7.0), [Color(1, 1, 1)], 3, 50.0, 0.18, 2.0)
+	_swing_t = SWING_TIME
+	_swing_side = -_swing_side
+	_swing_arc = arc
+	_swing_reach = reach
+	if _slash == null:
+		_slash = Node2D.new()
+		_slash.z_index = 2
+		_slash.draw.connect(_draw_slash)
+		add_child(_slash)
+	_slash.queue_redraw()
+	Sfx.play(String(hero.get("shoot_sfx", "player_shoot_blade")), -10.0, 0.08, 0.8)
+	run.effects.fire("on_shot_fired", [position + aim_dir * 7.0, aim_dir])
+
+
+## The white crescent a swing leaves for a moment (a flat code-drawn shape, like the other effects).
+func _draw_slash() -> void:
+	if _swing_t <= 0.0:
+		return
+	var k := 1.0 - _swing_t / SWING_TIME                    # 0 -> 1 through the swing
+	var mid := aim_dir.angle()
+	var a0 := mid - _swing_arc * 0.5 * _swing_side
+	var a1 := a0 + _swing_arc * _swing_side * clampf(k * 1.4 + 0.25, 0.0, 1.0)
+	var pts := PackedVector2Array()
+	var steps := 12
+	for i in steps + 1:
+		var a := lerpf(a0, a1, float(i) / float(steps))
+		pts.append(Vector2(0, -9) + Vector2.RIGHT.rotated(a) * _swing_reach)
+	for i in range(steps, -1, -1):
+		var a := lerpf(a0, a1, float(i) / float(steps))
+		var thick := 7.0 * sin(PI * float(i) / float(steps))
+		pts.append(Vector2(0, -9) + Vector2.RIGHT.rotated(a) * (_swing_reach - thick))
+	_slash.draw_colored_polygon(pts, Color(1.0, 1.0, 1.0, 0.75 * (1.0 - k)))
 
 
 func _update_look(delta: float) -> void:
@@ -266,7 +339,14 @@ func _update_look(delta: float) -> void:
 		off_hand.update(delta, moving, _face, 0.0, body.visible, body.material)
 	# the weapon: held in the hand, pointing where you aim, kicking back with each shot
 	_kick = maxf(0.0, _kick - delta * 9.0)
-	if firing:
+	if _swing_t > 0.0:
+		# the blade sweeps through the arc
+		_swing_t -= delta
+		var k := 1.0 - maxf(_swing_t, 0.0) / SWING_TIME
+		var dir := aim_dir.rotated((k - 0.5) * _swing_arc * _swing_side)
+		HeroLook.layer(weapon, body, HeroLook.aim(weapon, dir, 0.0, _face))
+		_slash.queue_redraw()
+	elif firing:
 		HeroLook.layer(weapon, body, HeroLook.aim(weapon, aim_dir, _kick, _face))
 	else:
 		HeroLook.rest(weapon, _face, delta)

@@ -26,7 +26,8 @@ func build() -> void:
 	var left := UI.vbox(4)
 	left.custom_minimum_size.x = 112
 	cols.add_child(left)
-	var title := UI.label("Victory" if victory else "Fallen", "Title")
+	var in_level := String(summary.get("level", "")) != ""
+	var title := UI.label(("Cleared" if in_level else "Victory") if victory else "Fallen", "Title")
 	UI.style_title(title, UI.C_GOLD if victory else UI.C_RED, Color("7a4a12") if victory else Color("5a1626"))
 	UI.fit_title(title, 112.0)
 	left.add_child(title)
@@ -40,6 +41,10 @@ func build() -> void:
 	menu.custom_minimum_size.y = 22
 	left.add_child(menu)
 	default_focus = again
+	if in_level and victory:
+		again.visible = false          # the level is done: back to the camp for the next one
+		menu.custom_minimum_size.y = 26
+		default_focus = menu
 
 	# right: the numbers, the items, and anything new
 	var panel := UI.panel("panel")
@@ -142,6 +147,10 @@ func _fit_rack() -> void:
 func _story() -> String:
 	var hero := String(Heroes.by_id(String(summary.get("hero", "knight")))["name"])
 	var where := String(summary.get("floor_name", ""))
+	if victory and String(summary.get("level", "")) != "":
+		var joined := String(summary.get("joined", ""))
+		var extra := "" if joined == "" else " %s comes up with him." % String(Heroes.by_id(joined)["name"])
+		return "%s carries a seal shard out of %s.%s" % [hero, String(summary.get("level_name", where)), extra]
 	if victory:
 		return "%s climbs back into the light. The dungeon is quiet." % hero
 	var cause := String(summary.get("cause", ""))

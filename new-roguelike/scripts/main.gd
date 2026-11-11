@@ -35,6 +35,7 @@ const RUN_SCRIPT := "res://scripts/run/run.gd"
 const FAKE_RUN_SCRIPT := "res://scripts/ui/dev_fake_run.gd"
 const HUB_SCRIPT := "res://scripts/hub/hub.gd"
 const Quests = preload("res://scripts/data/quests.gd")
+const Story = preload("res://scripts/data/story.gd")
 
 var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
@@ -50,6 +51,7 @@ var _names: Array[String] = []
 var _busy := false               ## a fade is running: ignore buttons
 var _ending := false             ## the run is over and the end screen is on its way
 var _hero_id := "knight"
+var _level_id := ""              ## the story level being played ("" = none)
 var _seed := 0
 var _clock := 0.0
 var _time_limit := 0.0
@@ -74,6 +76,8 @@ func _ready() -> void:
 		tour.set("main", self)
 		add_child(tour)
 	elif G.flag("autotest"):
+		if G.arg("level") != "":       # --level=<story level id>: the bot plays that level
+			G.next_run = {"level": Story.level(G.arg("level")), "kit": []}
 		start_run(G.arg("hero", "knight"), int(G.arg("seed", "1")))
 	elif G.flag("hub"):
 		show_hub()
@@ -234,9 +238,9 @@ func _on_action(what: String, arg: Variant) -> void:
 			_transition(show_hub)
 		"talk":
 			open("hub_talk", {"info": arg})
-		"hub_stage":
-			G.next_run = {"floor": int(arg), "pack": Quests.take_pack()}
-			_transition(start_run.bind(String(Save.setting("last_hero")), _fresh_seed()))
+		"hub_level":
+			_level_id = String(arg)
+			_transition(_start_level)
 		"hub_hero":
 			Save.set_setting("last_hero", String(arg))
 			close_top()
@@ -253,8 +257,10 @@ func _on_action(what: String, arg: Variant) -> void:
 		"start":
 			_transition(start_run.bind(String(arg), _fresh_seed()))
 		"retry":
-			G.next_run = {"floor": 1, "pack": Quests.take_pack()}
-			_transition(start_run.bind(_hero_id, _fresh_seed()))
+			if _level_id != "":
+				_transition(_start_level)
+			else:
+				_transition(start_run.bind(_hero_id, _fresh_seed()))
 		"menu":
 			_transition(show_hub)         # after a run you are back in the camp
 		"title":
@@ -294,6 +300,18 @@ func start_run(hero_id: String, seed_value: int) -> void:
 	_refresh_layers()
 
 
+## Goes down into the story level `_level_id` with the gear kept from earlier levels.
+func _start_level() -> void:
+	var lv := Story.level(_level_id)
+	if lv.is_empty():
+		return
+	G.next_run = {"level": lv, "kit": Story.kit(), "pack": Quests.take_pack()}
+	var hero := String(Save.setting("last_hero"))
+	if bool(Heroes.by_id(hero).get("locked", false)) and not Save.is_unlocked("hero:" + hero):
+		hero = "knight"
+	await start_run(hero, _fresh_seed())
+
+
 ## Frees the current run and waits a frame so it is really gone before anything new starts.
 func _drop_run() -> void:
 	if run == null:
@@ -312,6 +330,11 @@ func _on_run_ended(victory: bool, summary: Dictionary) -> void:
 		return
 	_ending = true
 	_refresh_layers()
+	# a story level was won: it stays cleared, the items are kept, a rescued hero may join the camp
+	if victory and String(summary.get("level", "")) != "":
+		summary["joined"] = Story.clear(String(summary["level"]), summary.get("items", []))
+	if G.flag("autotest") and String(summary.get("level", "")) != "":
+		print("[main] level %s victory=%s chapter=%d kit=%s joined=%s" % [summary["level"], victory, Story.chapter(), Story.kit(), summary.get("joined", "")])
 	if G.flag("autotest"):
 		print("[main] run ended: victory=%s floor=%s time=%ds kills=%s" % [
 			victory, summary.get("floor", "?"), int(summary.get("time_s", 0)), summary.get("kills", "?")])

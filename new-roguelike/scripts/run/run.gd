@@ -29,7 +29,7 @@ const CurseTutor = preload("res://scripts/run/curse_tutor.gd")
 ## Mood lighting. Set to false if a phone struggles: the game then draws flat and bright.
 const LIGHTING := true
 ## A fight room's enemy budget: BASE + PER_FLOOR x floor_index + PER_ROOM x rooms already cleared on this floor.
-const SPAWN_BUDGET_BASE := 6.5
+const SPAWN_BUDGET_BASE := 6.0      ## 6.5 while the Hungry Curse ate a third of the monsters
 const SPAWN_BUDGET_PER_FLOOR := 3.0
 const SPAWN_BUDGET_PER_ROOM := 0.5
 const MAX_ENEMIES_PER_ROOM := 10
@@ -49,7 +49,10 @@ const TYPE_NAMES := ["start", "combat", "treasure", "shop", "secret", "boss", "a
 # ------------------------------------------------------------------ what the shell may read (see g.gd)
 var hero_id := "knight"
 var floor_index := 0
-const STAGE_ITEMS := 2          ## items handed out per skipped floor when the camp starts a later stage
+## Story mode (scripts/data/story.gd): the level being played, or {} for the old endless descent.
+## A level is ONE small floor that ends when its boss falls. The camp passes it in G.next_run:
+##   {"level": <row of Story.LEVELS>, "kit": [item ids the hero carries], "pack": {coins, bombs, keys}}
+var level := {}
 var floor_name := ""
 var floor_count := 4
 var time_s := 0.0
@@ -119,7 +122,7 @@ func setup(hero: String, run_seed: int) -> void:
 	hero_id = hero
 	seed_value = run_seed
 	G.run = self
-	Controls.action_enabled = true        # the second button is CALL (the Hungry Curse)
+	Controls.action_enabled = G.curse_on()        # the second button was CALL (the Hungry Curse, switched off)
 	floor_count = Floors.count()
 	if not _built:
 		_build_nodes()
@@ -191,6 +194,9 @@ func _begin() -> void:
 	_shot_counts = {}
 	var asked: Dictionary = G.next_run          # set by the camp; used once
 	G.next_run = {}
+	level = asked.get("level", {})
+	if not level.is_empty():
+		asked["floor"] = int(level.get("floor", 1))
 	floor_index = clampi(int(G.arg("floor", str(asked.get("floor", 1)))) - 1, 0, floor_count - 1)
 	theme = Floors.get_floor(floor_index)
 	effects = ItemEffects.new(self)
@@ -211,15 +217,13 @@ func _begin() -> void:
 		if Items.ALL.has(item_id):
 			used_items[item_id] = true
 			player.add_item(item_id)
-	# from the camp: a later stage starts with what the skipped floors would roughly have given,
-	# and the hero carries the supplies earned from quests
+	# from the camp: the hero carries what earlier levels gave him, and the supplies earned from quests
 	if not asked.is_empty():
-		var kit := RandomNumberGenerator.new()
-		kit.seed = hash([seed_value, "stage kit"])
-		for i in STAGE_ITEMS * floor_index:
-			var item_id := take_item("treasure", kit)
-			if item_id != "":
-				player.add_item(item_id)
+		for item_id: Variant in asked.get("kit", []):
+			if Items.ALL.has(String(item_id)) and not used_items.has(String(item_id)):
+				used_items[String(item_id)] = true
+				player.add_item(String(item_id))
+		player.hp = player.max_hp
 		var pack: Dictionary = asked.get("pack", {})
 		player.coins += int(pack.get("coins", 0))
 		player.bombs += int(pack.get("bombs", 0))
@@ -279,7 +283,7 @@ func _generate_floor() -> void:
 	floor_name = String(theme["name"])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed_value, floor_index, "floor"])
-	rooms = FloorGen.generate(rng, int(theme["rooms"]))
+	rooms = FloorGen.generate(rng, int(level.get("rooms", theme["rooms"])))
 	var listed: Array = theme.get("enemies", [])
 	enemy_pool = Enemies.pool_for_floor(floor_index + 1)
 	if not listed.is_empty():
@@ -288,6 +292,9 @@ func _generate_floor() -> void:
 			enemy_pool.append(String(id))
 	var guards := Bosses.for_floor(floor_index + 1)
 	boss_id = guards[rng.randi() % guards.size()]
+	if not level.is_empty() and Bosses.known(String(level.get("boss", ""))):
+		boss_id = String(level["boss"])
+		floor_name = String(level.get("name", floor_name))
 	# --boss=<id>: this boss guards the floor, whichever floor it is (for tests and screenshots)
 	var forced_boss := G.arg("boss")
 	if forced_boss != "" and Bosses.known(forced_boss):
@@ -453,7 +460,7 @@ func take_item(pool: String, rng: RandomNumberGenerator) -> String:
 	var options: Array[String] = []
 	for id: String in Items.ALL:
 		var info: Dictionary = Items.ALL[id]
-		if used_items.has(id) or not (info.get("pools", []) as Array).has(pool):
+		if used_items.has(id) or not (info.get("pools", []) as Array).has(pool) or _needs_curse(info):
 			continue
 		if info.get("locked", false) and not Save.is_unlocked("item:" + id):
 			continue
@@ -462,7 +469,7 @@ func take_item(pool: String, rng: RandomNumberGenerator) -> String:
 		# the pool ran dry: any normal item that is still unused
 		for id: String in Items.ALL:
 			var info2: Dictionary = Items.ALL[id]
-			if used_items.has(id) or info2.get("cursed", false):
+			if used_items.has(id) or info2.get("cursed", false) or _needs_curse(info2):
 				continue
 			if info2.get("locked", false) and not Save.is_unlocked("item:" + id):
 				continue
@@ -472,6 +479,13 @@ func take_item(pool: String, rng: RandomNumberGenerator) -> String:
 	var pick: String = options[rng.randi() % options.size()]
 	used_items[pick] = true
 	return pick
+
+
+## Items that only do something with the Hungry Curse are not offered while it is switched off.
+func _needs_curse(info: Dictionary) -> bool:
+	if G.curse_on():
+		return false
+	return (String(info.get("desc", "")) + String(info.get("curse", ""))).contains("Curse")
 
 
 # =============================================================================== kills, death, victory
@@ -504,7 +518,7 @@ func boss_killed(b: Node) -> void:
 	G.boss_defeated.emit(id)
 	Sfx.music(String(theme.get("music", "")))
 	# the run is won when the final boss falls (the row's "final"), or whatever boss guards the last floor
-	if floor_index >= floor_count - 1 or Bosses.info(id).get("final", false):
+	if floor_index >= floor_count - 1 or Bosses.info(id).get("final", false) or not level.is_empty():
 		victory = true
 		over = true
 		_end_t = 2.6
@@ -522,7 +536,7 @@ func player_died(cause: String) -> void:
 
 
 func _finish() -> void:
-	if victory:
+	if victory and (level.is_empty() or bool(level.get("final", false))):
 		G.stat.emit("wins", 1)
 		G.stat.emit("wins:" + hero_id, 1)
 		if curse_level <= 0:
@@ -541,7 +555,7 @@ func summary() -> Dictionary:
 		"items": player.items.duplicate() if player != null else [],
 		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
-		"curse_level": curse_level,
+		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")),
 	}
 
 

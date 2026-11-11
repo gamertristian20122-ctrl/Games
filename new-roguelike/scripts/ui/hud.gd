@@ -97,6 +97,7 @@ func _ready() -> void:
 	_curse_meter = CurseMeter.new()
 	_curse_meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_counters.add_child(_curse_meter)
+	_curse_meter.visible = G.curse_on()
 	_counters.resized.connect(func() -> void:
 		if _boss_box != null:
 			_place_boss_bar())

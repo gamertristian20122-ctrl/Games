@@ -62,6 +62,7 @@ const SCATTER := {"hub_tuft": [24, 70], "hub_flower": [26, 36], "hub_pebble": [2
 const FIRE := Vector2(288, 214)
 
 ## The people. "role" decides what talking does (hub.gd): gate, quests, collection, pack, chat.
+## What they SAY is in scripts/data/story.gd (TALK, by chapter); "text" here is only a fallback.
 ## Names and lines are placeholders the owner may rewrite.
 const NPCS := [
 	{"id": "warden", "name": "Warden Hale", "title": "Keeper of the Gate", "sprite": "pc_royal_knight", "hands": "pc_hand_castle_17",
@@ -78,13 +79,13 @@ const NPCS := [
 		"text": "I keep your pack by the fire. Whatever the Druid pays you goes in it, and you take it all on your next run."},
 	{"id": "smith", "name": "Tam", "title": "Smith", "sprite": "pc_npc_peasant_a", "hands": "pc_hand_base_2",
 		"pos": Vector2(452, 212), "face": 1, "role": "chat",
-		"text": "Bombs crack the Curse open. Stand close when it bursts and the coins are yours."},
+		"text": ""},
 	{"id": "hunter", "name": "Fen", "title": "Forest Elf", "sprite": "pc_elf_base", "hands": "pc_hand_elf_23",
 		"pos": Vector2(504, 268), "face": -1, "role": "chat",
-		"text": "The black disc runs in a straight line. Put a monster between you and it, then call it."},
+		"text": ""},
 	{"id": "ranger", "name": "Ilse", "title": "Elf Ranger", "sprite": "pc_elf_ranger", "hands": "pc_hand_elf_23",
 		"pos": Vector2(76, 132), "face": 1, "role": "chat",
-		"text": "Cursed things make you strong and the Curse fat. The shop below can starve it, for a price."},
+		"text": ""},
 ]
 ## Where the heroes you are NOT playing stand (by the fire).
 const HERO_SPOTS := [Vector2(256, 214), Vector2(322, 216)]

@@ -17,18 +17,18 @@ const BOON_CAP := {"coins": 30, "bombs": 5, "keys": 3}      ## the most the pack
 
 const LIST := [
 	{"id": "thin_the_crypt", "name": "Thin the Crypt", "text": "Slay 25 monsters.", "stat": "total_kills", "need": 25, "reward": {"coins": 5}},
-	{"id": "feed_it", "name": "Feed It", "text": "Let the Curse swallow 10 monsters.", "stat": "curse_meals", "need": 10, "reward": {"bombs": 1}},
-	{"id": "saint_or_sexton", "name": "The First Seal", "text": "Beat the guardian of the Crypt.", "stat": "boss_killed", "need": 1, "reward": {"keys": 1}},
+	{"id": "first_shard", "name": "The First Shard", "text": "Clear a level.", "stat": "levels_cleared", "need": 1, "abs": true, "reward": {"bombs": 1}},
+	{"id": "open_doors", "name": "Open Doors", "text": "Use 2 keys.", "stat": "key_used", "need": 2, "reward": {"keys": 1}},
 	{"id": "deep_pockets", "name": "Deep Pockets", "text": "Collect 100 coins.", "stat": "total_coins", "need": 100, "reward": {"coins": 8}},
-	{"id": "into_the_warrens", "name": "Into the Warrens", "text": "Reach the second floor.", "stat": "best_floor", "need": 2, "abs": true, "reward": {"bombs": 1}},
-	{"id": "crack_it_open", "name": "Crack It Open", "text": "Stun the Curse with a bomb 3 times.", "stat": "curse_stunned", "need": 3, "reward": {"bombs": 2}},
+	{"id": "first_seal", "name": "The First Seal", "text": "Clear both levels of the Crypt.", "stat": "levels_cleared", "need": 2, "abs": true, "reward": {"keys": 1, "bombs": 1}},
 	{"id": "hidden_things", "name": "Hidden Things", "text": "Find 3 secret rooms.", "stat": "secret_found", "need": 3, "reward": {"keys": 1}},
 	{"id": "culling", "name": "The Culling", "text": "Slay 150 monsters.", "stat": "total_kills", "need": 150, "reward": {"coins": 10}},
-	{"id": "ashen_road", "name": "The Ashen Road", "text": "Reach the third floor.", "stat": "best_floor", "need": 3, "abs": true, "reward": {"keys": 1, "bombs": 1}},
-	{"id": "fat_curse", "name": "A Fat Curse", "text": "Let the Curse swallow 60 monsters.", "stat": "curse_meals", "need": 60, "reward": {"coins": 10}},
-	{"id": "three_seals", "name": "Three Seals", "text": "Beat 3 more guardians.", "stat": "boss_killed", "need": 3, "reward": {"keys": 1, "coins": 5}},
-	{"id": "the_pit", "name": "The Pit", "text": "Reach the fourth floor.", "stat": "best_floor", "need": 4, "abs": true, "reward": {"bombs": 2, "coins": 5}},
-	{"id": "starve_the_king", "name": "Starve the King", "text": "Win a run.", "stat": "wins", "need": 1, "reward": {"coins": 15, "keys": 1, "bombs": 1}},
+	{"id": "blast_work", "name": "Blast Work", "text": "Use 6 bombs.", "stat": "bomb_used", "need": 6, "reward": {"bombs": 2}},
+	{"id": "second_seal", "name": "The Second Seal", "text": "Clear both levels of the Warrens.", "stat": "levels_cleared", "need": 4, "abs": true, "reward": {"coins": 10, "keys": 1}},
+	{"id": "treasure_hunter", "name": "Treasure Hunter", "text": "Open 12 chests.", "stat": "chest_opened", "need": 12, "reward": {"keys": 1, "coins": 5}},
+	{"id": "third_seal", "name": "The Third Seal", "text": "Clear both levels of the Ashen Halls.", "stat": "levels_cleared", "need": 6, "abs": true, "reward": {"bombs": 2, "coins": 10}},
+	{"id": "great_culling", "name": "The Great Culling", "text": "Slay 400 monsters.", "stat": "total_kills", "need": 400, "reward": {"coins": 15}},
+	{"id": "starve_the_king", "name": "End the Hunger", "text": "Beat the Starved King.", "stat": "levels_cleared", "need": 7, "abs": true, "reward": {"coins": 15, "keys": 1, "bombs": 1}},
 ]
 
 

@@ -65,6 +65,12 @@ var run: Node = null
 ##   "floor": 1-4    the stage to start on (a later stage also hands out STAGE_ITEMS items per skipped floor)
 ##   "pack": {"coins": n, "bombs": n, "keys": n}    quest rewards the hero sets out with
 var next_run := {}
+
+
+## The Hungry Curse (the black disc) was taken out of the game on 11 Nov 2026 at the owner's request.
+## Its code and tests are kept but switched off; --withcurse turns it back on for the old tests.
+func curse_on() -> bool:
+	return flag("withcurse")
 ## True while the hero in the camp stands next to someone (the touch TALK button lights up).
 var hub_near := false
 

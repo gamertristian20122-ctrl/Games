@@ -1,13 +1,23 @@
 # Notes for Claude
 
-**Cursebait** (working title): an original Android-first pixel-art game made in **Godot 4.7.2**
-(GL Compatibility, landscape, GDScript only). Top-down, one-screen-per-room, twin-stick dark-fantasy
-dungeon shooter roguelike. Four floors, a boss on each, three unlockable heroes.
+**Cursebait** (working title; the owner will pick a new name, see "Direction") is an original
+Android-first pixel-art game made in **Godot 4.7.2** (GL Compatibility, landscape, GDScript only).
 
-The twist is **the Hungry Curse**: a black disc that hunts the hero through every locked room and
-swallows whatever it touches (monsters, their shots, or the hero). You steer it by where you stand,
-call it with the second button, crack it open with bombs for the coins in its belly, and every cursed
-item makes it bigger.
+## Direction (set by the owner on 11 Nov 2026 — this overrules older sections below)
+The game is now a **story adventure in the spirit of old 2D adventure games**, not an endless roguelike:
+1. Open the game, press Play, you are in **the camp** (a small map to walk around, people to talk to).
+2. Talking is a **dialogue box** along the bottom: picture, name, words letter by letter, tap for the next page.
+3. The story moves on by **clearing levels in order** (`scripts/data/story.gd`): 7 levels in 4 areas, each a
+   small dungeon that ends at a boss. **Dying only repeats that level**; cleared levels stay cleared and the
+   hero **keeps his items** from level to level.
+4. **Aldous the knight is the story hero and SWINGS his sword** (no flying blade). Tobin (rogue) and Ozric
+   (wizard) are met in the story, join the camp, and can then be played; they keep ranged attacks.
+5. **The Hungry Curse (the black orb) is REMOVED.** The owner did not understand why it was there. Its code
+   and tests still exist but are switched off (`G.curse_on()`, only `--withcurse` turns it on). Do not bring
+   it back, and do not build on it. Items that only worked with it are no longer offered.
+6. Use the purchased Pixel Crawler packs wherever possible; the owner paid for them and wants them seen.
+7. The owner wants to be **interviewed**: ask clear multiple-choice questions before big decisions.
+Top-down, one screen per room, twin-stick. Four dungeon looks, seven bosses, three heroes.
 
 ## About the owner
 - Limited coding experience and works from an Android phone: explain in plain, phone-friendly language,
@@ -129,8 +139,8 @@ How the game is dressed. None of it changes the rules; all of it is data plus fo
   locked = golden keyhole plate, boss = red wood + skulls, blown-open secret = ragged hole.
 - Screenshots to judge it: `--goto=shop|treasure|secret|boss`, `--floor=N`, `--shot_every=<sec>`.
 
-## The Hungry Curse
-The game's twist (built by the twist builder). Rules and EVERY number: `scripts/entities/curse.gd`
+## The Hungry Curse (SWITCHED OFF since v0.5.0, see "Direction"; kept only as a record)
+It was the game's twist (built by the twist builder). Rules and EVERY number: `scripts/entities/curse.gd`
 (one block of consts at the top). How it is drawn: `scripts/entities/curse_look.gd`.
 
 The rules in ten lines:
@@ -380,11 +390,9 @@ screen -> "Camp" (or "Try again"). Back / pause in the camp goes to the title.
   (crypt gate, graves, statues), Free Pack Exterior (fire pit, flame, grill, anvil, bench, scarecrow), and
   the pack's characters with their hand pieces. Many cut pieces are not placed yet (see the sheet).
 - **People (`role` in `scripts/data/hub.gd`):** Warden `gate` (pick a stage), Druid `quests`, Chronicler
-  `collection`, Cook `pack` (what waits for the next run), Smith and two elves `chat` (a tip each). The two
-  heroes you are not playing stand by the fire: talk to one to play as them (locked ones are dark and
-  give their unlock hint). The hero-select screen is no longer in the flow (the UI tour still shows it).
-- **Stages:** stage N opens once `best_floor` >= N. Starting on a later stage hands out
-  `run.STAGE_ITEMS` (2) treasure items per skipped floor. The camp passes this in `G.next_run`.
+  `collection`, Cook `pack` (what waits for the next run), Smith and two elves `chat` (a tip each). The
+  heroes who have joined (and are not being played) stand by the fire: talk to one to play as them. The hero-select screen is no longer in the flow (the UI tour still shows it).
+- **Stages:** replaced in v0.5.0 by story levels (see "Story, levels and dialogue").
 - **Quests:** 13 rows; the Druid offers the first 3 not done. Each counts a `Save` counter from the moment
   it is first offered. Rewards are supplies (coins, bombs, keys) that wait in the save (`hub` section,
   keys `boon:*`, capped by `Quests.BOON_CAP`) and are all taken on the next run. A gold "!" over the
@@ -396,6 +404,26 @@ screen -> "Camp" (or "Try again"). Back / pause in the camp goes to the title.
   `--hubstage=<n>` (start that stage after a second), `--allstages`.
 - **Not done yet:** no stage or quest has been played end to end by a person; quest rewards are a first
   guess; NPCs stand still; the camp has no music of its own (it plays the title music).
+
+## Story, levels and dialogue — v0.5.0
+- **`scripts/data/story.gd`** holds all of it: the story in short (top of the file), `LEVELS` (id, area, name,
+  floor look, boss, rooms, who joins), `INTRO` (spoken once on the first camp visit) and `TALK` (what each
+  camp person says, by chapter). Chapter = number of levels cleared. All words are placeholders to rewrite.
+- **Progress is in the save's `hub` section:** `lvl:<id>` (cleared), `kit:<item id>` (items carried, in
+  order), `heard:<npc id>` (which lines were heard; a gold "!" marks unheard ones), `seen:intro`.
+- **A level run:** `G.next_run = {"level": row, "kit": [...], "pack": {...}}`; `run.gd` builds ONE floor with
+  that look, room count and boss, and the run is won when the boss falls. `main.gd` then calls
+  `Story.clear()` (keeps the items, lets a hero join) and the end screen says "Cleared" with only "Camp".
+  On death the end screen offers "Try again" (same level, same kit) or "Camp".
+- **The gate (Warden):** "Go down: <next level>" plus the last three cleared levels to walk again.
+- **Dialogue box:** `scripts/ui/hub_talk.gd` (pages first, then the person's choices as buttons).
+- **Sword swing:** `"melee"` in the knight's row of `heroes.gd`, `player.gd` `_swing()`: an arc in front of
+  him hits everything at once and cuts enemy shots down; a boss's guard (`shielded`) stops it. Shot items
+  still help: extra shots = harder swings, extra range = a little reach. The white crescent is code-drawn.
+- **Test flags:** `--autotest --level=<id>` (the bot plays that level; add `--goto=boss --bosshp=40` to
+  finish it fast; prints the chapter and kit), `--hub --hublevel=<id>`, `--hub --hubtalk=<npc id>`.
+- **Not balanced yet:** the knight's sword against all seven bosses, level length, and how strong a kit of
+  kept items makes the later levels. The bot swings at air a lot; judge by playing.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
