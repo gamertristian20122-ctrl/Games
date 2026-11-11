@@ -9,8 +9,7 @@ extends RefCounted
 ##   licence  the licence name (CC0, MIT, OFL ...)
 ##   url      where it came from
 ##
-## SOUND, MUSIC AND FONT CREDITS ARE APPENDED HERE LATER, when those files are added to
-## assets/audio and assets/fonts. Every asset in the game must have a row.
+## Every asset in the game must have a row. Licence evidence for each one is kept in assets_raw/.
 
 ## Short lines shown at the top of the Credits screen. Edit freely.
 const NOTES := [
@@ -30,7 +29,145 @@ const LIST := [
 		"licence": "MIT",
 		"url": "https://godotengine.org",
 	},
-	# ---- sound effects: add rows here
-	# ---- music: add rows here
-	# ---- fonts: add rows here
+	# ---- sound effects
+	{
+		"what": "Sound effects: 80 CC0 RPG SFX",
+		"author": "rubberduck",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/80-cc0-rpg-sfx",
+	},
+	{
+		"what": "Sound effects: 80 CC0 creature SFX",
+		"author": "rubberduck",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/80-cc0-creature-sfx",
+	},
+	{
+		"what": "Sound effects: 80 CC0 creture SFX #2",
+		"author": "rubberduck",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/80-cc0-creture-sfx-2",
+	},
+	{
+		"what": "Sound effects: 75 CC0 breaking / falling / hit sfx",
+		"author": "rubberduck",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+	},
+	{
+		"what": "Sound effects: 25 CC0 bang / firework SFX",
+		"author": "rubberduck",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/25-cc0-bang-firework-sfx",
+	},
+	{
+		"what": "Sound effects: 100 CC0 SFX",
+		"author": "rubberduck",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/100-cc0-sfx",
+	},
+	{
+		"what": "Sound effects: 100 CC0 metal and wood SFX",
+		"author": "rubberduck",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+	},
+	{
+		"what": "Sound effects: RPG Sound Pack",
+		"author": "artisticdude",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/rpg-sound-pack",
+	},
+	{
+		"what": "Sound effects: 50 RPG sound effects (Kenney RPG Audio)",
+		"author": "Kenney",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/50-rpg-sound-effects",
+	},
+	{
+		"what": "Sound effects: 85 Short music jingles (Kenney Music Jingles)",
+		"author": "Kenney",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/85-short-music-jingles",
+	},
+	{
+		"what": "Sound effects: 512 Sound Effects (8-bit style)",
+		"author": "Juhani Junkala",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+	},
+	{
+		"what": "Sound effects: Big scary troll sounds",
+		"author": "Darsycho",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/big-scary-troll-sounds",
+	},
+	{
+		"what": "Sound effects: Fire Crackling",
+		"author": "AntumDeluge",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/fire-crackling",
+	},
+	{
+		"what": "Sound effects: Ghost breath",
+		"author": "qubodup",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/ghost-breath",
+	},
+	{
+		"what": "Sound effects: Win Jingle",
+		"author": "Fupi",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/win-jingle",
+	},
+	# ---- music
+	{
+		"what": "Music: JRPG Pack 3 Evil (title, floor1, floor2, floor3, spare floor loop)",
+		"author": "Juhani Junkala",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/jrpg-pack-3-evil",
+	},
+	{
+		"what": "Music: JRPG Pack 2 Towns (shop)",
+		"author": "Juhani Junkala",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/jrpg-pack-2-towns",
+	},
+	{
+		"what": "Music: JRPG Pack 5 Action (boss, spare boss loop)",
+		"author": "Juhani Junkala",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/jrpg-pack-5-action",
+	},
+	{
+		"what": "Music: Boss Battle Music: Epic Boss Battle (final_boss)",
+		"author": "Juhani Junkala",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/boss-battle-music",
+	},
+	{
+		"what": "Music: Victory Fanfare Short (victory)",
+		"author": "cynicmusic / The Cynic Project",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/victory-fanfare-short",
+	},
+	{
+		"what": "Music: Game Over Theme: No Hope (gameover)",
+		"author": "Cleyton Kauffman",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/game-over-theme",
+	},
+	# ---- fonts
+	{
+		"what": "Font: Alkhemikal (titles)",
+		"author": "jeti (Font End Dev)",
+		"licence": "CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+		"url": "https://fontenddev.com/fonts/alkhemikal/",
+	},
+	{
+		"what": "Font: m5x7 (text)",
+		"author": "Daniel Linssen",
+		"licence": "CC0",
+		"url": "https://managore.itch.io/m5x7",
+	},
 ]
