@@ -1,0 +1,540 @@
+extends Node2D
+## Run: one playthrough, from floor 1 down to the last boss. This node owns everything in the
+## world half: the current room, the player, the shot and effect managers, the camera and the lights.
+## It is what G.run points to (see scripts/core/g.gd for what the menus and HUD may read).
+##
+##   var run = load("res://scripts/run/run.gd").new(); parent.add_child(run); run.setup("knight", 1234)
+##
+## The same seed gives the same floors, rooms, items and shop stock.
+## Test flags (after "--" on the command line): --autotest --hero= --seed= --speed= --time= --god
+##   --floor=<1-4> --give=id,id --goto=boss|shop|treasure|secret --layout=<name> --shots=<dir> --shot_every=<sec>
+## summary()["floor"] counts from 1 (floor_index counts from 0).
+
+const Floors = preload("res://scripts/data/floors.gd")
+const Enemies = preload("res://scripts/data/enemies.gd")
+const Bosses = preload("res://scripts/data/bosses.gd")
+const Items = preload("res://scripts/data/items.gd")
+const FloorGen = preload("res://scripts/run/floor_gen.gd")
+const RoomScript = preload("res://scripts/run/room.gd")
+const ShotsScript = preload("res://scripts/run/shots.gd")
+const FxScript = preload("res://scripts/run/fx.gd")
+const ItemEffects = preload("res://scripts/run/item_effects.gd")
+const PlayerScript = preload("res://scripts/entities/player.gd")
+
+# ------------------------------------------------------------------ tuning (one place for the big numbers)
+## Mood lighting. Set to false if a phone struggles: the game then draws flat and bright.
+const LIGHTING := true
+## A fight room's enemy budget: BASE + PER_FLOOR x floor_index + PER_ROOM x rooms already cleared on this floor.
+const SPAWN_BUDGET_BASE := 6.0
+const SPAWN_BUDGET_PER_FLOOR := 3.0
+const SPAWN_BUDGET_PER_ROOM := 0.5
+const MAX_ENEMIES_PER_ROOM := 10
+## Chance for each enemy to be an elite (from floor 2). Other systems may raise run.elite_chance.
+const ELITE_CHANCE := 0.08
+## Bombs (px): blast that hurts enemies / hurts the player / breaks rocks and crates / reveals secret doors.
+const BOMB_RADIUS := 30.0
+const BOMB_HURT_RADIUS := 24.0
+const BOMB_BREAK_RADIUS := 26.0
+const BOMB_REVEAL_RADIUS := 22.0
+const ROOM_FADE := 0.25
+const HITSTOP_MAX := 0.08
+const SHAKE_PIXELS := 3.5
+
+const TYPE_NAMES := ["start", "combat", "treasure", "shop", "secret", "boss", "altar"]
+
+# ------------------------------------------------------------------ what the shell may read (see g.gd)
+var hero_id := "knight"
+var floor_index := 0
+var floor_name := ""
+var floor_count := 4
+var time_s := 0.0
+var kills := 0
+var cur := Vector2i.ZERO
+var rooms := {}
+var player: Node2D
+var boss: Node = null
+
+# ------------------------------------------------------------------ world internals
+var seed_value := 0
+var theme: Dictionary
+var room: Node2D
+var world: Node2D
+var shots: Node2D
+var fx: Node2D
+var effects: RefCounted
+var camera: Camera2D
+var ambient: CanvasModulate
+var light_tex: GradientTexture2D
+var bot: Node
+var elite_chance := ELITE_CHANCE
+var enemy_pool: Array[String] = []
+var boss_id := ""
+var rooms_cleared := 0
+var rooms_cleared_floor := 0
+var secrets_found := 0
+var bosses_beaten: Array[String] = []
+var used_items := {}
+var over := false
+var victory := false
+var death_cause := ""
+
+var _built := false
+var _pending_dir := Vector2i.ZERO
+var _has_pending := false
+var _floor_change := 0.0       # > 0 while fading out to the next floor
+var _end_t := -1.0
+var _trauma := 0.0
+var _hitstop := 0.0
+var _slow_left := 0.0
+var _slow_base := 0.0
+var _fade: ColorRect
+var _fade_alpha := 0.0
+var _slide := Vector2.ZERO
+var _secret_counted := false
+var _shot_queue: Array = []
+var _shot_counts := {}
+var _shot_every := 0.0
+var _shot_every_t := 0.0
+var _fight_shot_done := true
+static var _font: Font
+
+
+# =============================================================================== starting
+## Starts a run. Call once, right after adding the node to the scene.
+func setup(hero: String, run_seed: int) -> void:
+	hero_id = hero
+	seed_value = run_seed
+	G.run = self
+	floor_count = Floors.count()
+	if not _built:
+		_build_nodes()
+	_begin()
+	if G.flag("autotest") and bot == null:
+		bot = load("res://scripts/run/bot.gd").new()
+		add_child(bot)
+		bot.setup(self)
+
+
+func _build_nodes() -> void:
+	_built = true
+	light_tex = GradientTexture2D.new()
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(0.35, 0.35, 0.35, 1), Color(0, 0, 0, 1)])
+	light_tex.gradient = g
+	light_tex.fill = GradientTexture2D.FILL_RADIAL
+	light_tex.fill_from = Vector2(0.5, 0.5)
+	light_tex.fill_to = Vector2(1.0, 0.5)
+	light_tex.width = 64
+	light_tex.height = 64
+	world = Node2D.new()
+	world.name = "World"
+	add_child(world)
+	ambient = CanvasModulate.new()
+	add_child(ambient)
+	shots = ShotsScript.new()
+	shots.run = self
+	world.add_child(shots)
+	fx = FxScript.new()
+	world.add_child(fx)
+	camera = Camera2D.new()
+	camera.position = G.CAMERA_CENTER
+	add_child(camera)
+	camera.make_current()
+	var layer := CanvasLayer.new()
+	layer.layer = 5
+	add_child(layer)
+	_fade = ColorRect.new()
+	_fade.color = Color(0.02, 0.02, 0.04, 0.0)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(_fade)
+	_shot_every = float(G.arg("shot_every", "0"))
+
+
+## (Re)starts everything that belongs to one playthrough.
+func _begin() -> void:
+	time_s = 0.0
+	kills = 0
+	rooms_cleared = 0
+	secrets_found = 0
+	bosses_beaten = []
+	used_items = {}
+	over = false
+	victory = false
+	death_cause = ""
+	boss = null
+	elite_chance = ELITE_CHANCE
+	_end_t = -1.0
+	_has_pending = false
+	_floor_change = 0.0
+	_shot_counts = {}
+	floor_index = clampi(int(G.arg("floor", "1")) - 1, 0, floor_count - 1)
+	theme = Floors.get_floor(floor_index)
+	effects = ItemEffects.new(self)
+	player = PlayerScript.new()
+	player.setup(self, hero_id)
+	G.stat.emit("runs", 1)
+	G.run_started.emit(self)
+	_start_floor()
+	for item_id in G.arg("give").split(",", false):
+		if Items.ALL.has(item_id):
+			used_items[item_id] = true
+			player.add_item(item_id)
+
+
+## Autotest only: throws the finished run away and starts a fresh one in the same node.
+func restart(new_seed: int) -> void:
+	seed_value = new_seed
+	_leave_room()
+	for f in player.familiars:
+		if is_instance_valid(f):
+			f.free()
+	player.free()
+	player = null
+	shots.clear()
+	fx.clear()
+	_begin()
+
+
+func _exit_tree() -> void:
+	if _slow_base > 0.0:
+		Engine.time_scale = _slow_base
+		_slow_base = 0.0
+	if G.run == self:
+		G.run = null
+
+
+## The font for the few numbers the world draws itself (shop prices). Uses the first font file
+## in res://assets/fonts/ if there is one.
+func font() -> Font:
+	if _font == null:
+		var dir := DirAccess.open("res://assets/fonts")
+		if dir != null:
+			for f in dir.get_files():
+				var file := f.trim_suffix(".import").trim_suffix(".remap")
+				if file.get_extension() in ["ttf", "otf", "fnt"] and ResourceLoader.exists("res://assets/fonts/" + file):
+					_font = load("res://assets/fonts/" + file)
+					break
+		if _font == null:
+			_font = ThemeDB.fallback_font
+	return _font
+
+
+# =============================================================================== floors
+func _start_floor() -> void:
+	theme = Floors.get_floor(floor_index)
+	floor_name = String(theme["name"])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([seed_value, floor_index, "floor"])
+	rooms = FloorGen.generate(rng, int(theme["rooms"]))
+	var listed: Array = theme.get("enemies", [])
+	enemy_pool = Enemies.pool_for_floor(floor_index + 1)
+	if not listed.is_empty():
+		enemy_pool.clear()
+		for id in listed:
+			enemy_pool.append(String(id))
+	var guards := Bosses.for_floor(floor_index + 1)
+	boss_id = guards[rng.randi() % guards.size()]
+	rooms_cleared_floor = 0
+	_secret_counted = false
+	boss = null
+	ambient.color = theme["ambient"] if LIGHTING else Color(1, 1, 1)
+	Sfx.music(String(theme.get("music", "")))
+	G.floor_started.emit(floor_index, floor_name)
+	G.stat.emit("floor_reached:%d" % (floor_index + 1), 1)
+	effects.fire("on_floor_start", [])
+	var start := Vector2i.ZERO
+	var from := Vector2i.ZERO
+	var goto := G.arg("goto")
+	if goto != "":
+		var want: int = TYPE_NAMES.find(goto)
+		for c: Vector2i in rooms:
+			if rooms[c]["type"] != want:
+				continue
+			start = c
+			if want == G.RoomType.BOSS:
+				# stand in the room next door, facing the boss door
+				for d: Vector2i in rooms[c]["doors"]:
+					var n: Vector2i = rooms[c]["doors"][d]["to"]
+					if rooms[n]["type"] != G.RoomType.SECRET:
+						start = n
+						from = -d
+						rooms[n]["cleared"] = true
+			elif want == G.RoomType.TREASURE:
+				for d2: Vector2i in rooms[c]["doors"]:
+					rooms[c]["doors"][d2]["locked"] = false
+					var back: Dictionary = rooms[rooms[c]["doors"][d2]["to"]]["doors"]
+					if back.has(-d2):
+						back[-d2]["locked"] = false
+			break
+	_enter_room(start, from)
+	if from != Vector2i.ZERO:
+		# --goto=boss: stand in front of the boss door instead of at the opposite one
+		player.position = room.door_pos(from) - Vector2(from) * 22.0
+	G.toast.emit(floor_name, "Floor %d" % (floor_index + 1))
+
+
+## Walk onto the exit: fade out, then build the next floor.
+func next_floor() -> void:
+	if _floor_change > 0.0 or over:
+		return
+	_floor_change = 0.4
+	Sfx.play("stairs_descend")
+
+
+func treasure_locked() -> bool:
+	for c in rooms:
+		if rooms[c]["type"] == G.RoomType.TREASURE:
+			for d in rooms[c]["doors"]:
+				if rooms[c]["doors"][d]["locked"]:
+					return true
+	return false
+
+
+# =============================================================================== rooms
+## The player walked through the door on side `dir`. The change happens at the start of the next frame.
+func go(dir: Vector2i) -> void:
+	if _has_pending or over:
+		return
+	_has_pending = true
+	_pending_dir = dir
+
+
+## True while the world should leave the player alone (changing rooms or floors, run finished).
+func busy() -> bool:
+	return _has_pending or _floor_change > 0.0 or over
+
+
+func _leave_room() -> void:
+	if room == null:
+		return
+	room.save_state()
+	if player.get_parent() != null:
+		player.get_parent().remove_child(player)
+	for f in player.familiars:
+		if is_instance_valid(f) and f.get_parent() != null:
+			f.get_parent().remove_child(f)
+	world.remove_child(room)
+	room.queue_free()
+	room = null
+
+
+func _enter_room(coord: Vector2i, from_dir: Vector2i) -> void:
+	_leave_room()
+	shots.clear()
+	fx.clear()
+	cur = coord
+	var rs: Dictionary = rooms[coord]
+	room = RoomScript.new()
+	world.add_child(room)
+	world.move_child(room, 0)
+	room.setup(self, coord)
+	shots.room = room
+	room.ysort.add_child(player)
+	if from_dir == Vector2i.ZERO:
+		player.position = G.ROOM_CENTER + Vector2(0, 14)
+	else:
+		player.position = room.door_pos(-from_dir) + Vector2(from_dir) * 11.0
+	player.entered_room(room)
+	for f in player.familiars:
+		if is_instance_valid(f):
+			room.ysort.add_child(f)
+			f.entered_room()
+	var first: bool = not rs["visited"]
+	rs["visited"] = true
+	rs["seen"] = true
+	for d: Vector2i in rs["doors"]:
+		var door: Dictionary = rs["doors"][d]
+		if not door["hidden"] or door["revealed"]:
+			rooms[door["to"]]["seen"] = true
+	G.room_entered.emit(coord, rs["type"], first)
+	room.begin(first)
+	effects.fire("on_room_enter", [room])
+	G.hud_changed.emit()
+	_fade_alpha = 1.0
+	_slide = Vector2(from_dir) * 26.0
+	_fight_shot_done = not room.fighting
+	if first and G.flag("shots"):
+		var key := "floor%d_%s" % [floor_index + 1, TYPE_NAMES[rs["type"]]]
+		_shot_counts[key] = int(_shot_counts.get(key, 0)) + 1
+		_shot_queue.append([0.45, "%s_%d.png" % [key, _shot_counts[key]]])
+
+
+func on_room_cleared(the_room: Node) -> void:
+	rooms_cleared += 1
+	rooms_cleared_floor += 1
+	G.room_cleared.emit(the_room.coord)
+	G.stat.emit("rooms_cleared", 1)
+	effects.fire("on_room_clear", [the_room])
+	Save.flush()
+	G.hud_changed.emit()
+
+
+## A hidden door was blown open. Counts once per floor.
+func secret_revealed() -> void:
+	if _secret_counted:
+		return
+	_secret_counted = true
+	secrets_found += 1
+	G.stat.emit("secret_found", 1)
+	G.toast.emit("Secret found!", "")
+
+
+## Picks an item for a pedestal or shop stand from a pool ("treasure", "boss", "shop", "secret",
+## "cursed"). An item is offered only once per run. Returns "" when nothing is left.
+func take_item(pool: String, rng: RandomNumberGenerator) -> String:
+	var options: Array[String] = []
+	for id: String in Items.ALL:
+		var info: Dictionary = Items.ALL[id]
+		if used_items.has(id) or not (info.get("pools", []) as Array).has(pool):
+			continue
+		if info.get("locked", false) and not Save.is_unlocked("item:" + id):
+			continue
+		options.append(id)
+	if options.is_empty() and pool != "cursed":
+		# the pool ran dry: any normal item that is still unused
+		for id: String in Items.ALL:
+			var info2: Dictionary = Items.ALL[id]
+			if used_items.has(id) or info2.get("cursed", false):
+				continue
+			if info2.get("locked", false) and not Save.is_unlocked("item:" + id):
+				continue
+			options.append(id)
+	if options.is_empty():
+		return ""
+	var pick: String = options[rng.randi() % options.size()]
+	used_items[pick] = true
+	return pick
+
+
+# =============================================================================== kills, death, victory
+func enemy_killed(e: Node) -> void:
+	kills += 1
+	G.stat.emit("kills", 1)
+	effects.fire("on_kill", [e])
+
+
+func boss_killed(b: Node) -> void:
+	kills += 1
+	var id: String = b.boss_id
+	bosses_beaten.append(id)
+	boss = null
+	G.stat.emit("kills", 1)
+	G.stat.emit("boss_killed", 1)
+	G.stat.emit("boss_killed:" + id, 1)
+	G.boss_defeated.emit(id)
+	Sfx.music(String(theme.get("music", "")))
+	if floor_index >= floor_count - 1:
+		victory = true
+		over = true
+		_end_t = 1.6
+		Sfx.play("victory_sting")
+
+
+func player_died(cause: String) -> void:
+	if over:
+		return
+	over = true
+	victory = false
+	death_cause = cause if cause != "" else "the dark"
+	_end_t = 1.4
+	Sfx.play("death_sting")
+
+
+func _finish() -> void:
+	if victory:
+		G.stat.emit("wins", 1)
+		G.stat.emit("wins:" + hero_id, 1)
+	Save.flush()
+	G.run_ended.emit(victory, summary())
+
+
+## What the death / victory screen shows.
+func summary() -> Dictionary:
+	return {
+		"victory": victory, "hero": hero_id, "floor": floor_index + 1, "floor_name": floor_name,
+		"time_s": time_s, "kills": kills, "coins": player.coins_collected if player != null else 0,
+		"items": player.items.duplicate() if player != null else [],
+		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
+		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
+	}
+
+
+# =============================================================================== juice
+## Screen shake. amount 0..1 (0.2 a tap, 0.5 a hit, 1.0 an explosion). It adds up and fades by itself.
+func shake(amount: float) -> void:
+	_trauma = minf(1.0, _trauma + amount)
+
+
+## Freezes the action for a few frames on a big hit (never more than 0.08 s).
+func hitstop(seconds: float) -> void:
+	_hitstop = maxf(_hitstop, minf(seconds, HITSTOP_MAX))
+
+
+## Slow motion for a dramatic beat (boss deaths). `seconds` is game time.
+func slowmo(scale: float, seconds: float) -> void:
+	if _slow_base <= 0.0:
+		_slow_base = Engine.time_scale
+	Engine.time_scale = _slow_base * scale
+	_slow_left = seconds
+
+
+func _physics_process(delta: float) -> void:
+	if player == null:
+		return
+	# ---- slow motion and hit-stop
+	if _slow_left > 0.0:
+		_slow_left -= delta
+		if _slow_left <= 0.0 and _slow_base > 0.0:
+			Engine.time_scale = _slow_base
+			_slow_base = 0.0
+	if _hitstop > 0.0:
+		_hitstop -= delta
+		world.process_mode = Node.PROCESS_MODE_DISABLED
+	elif world.process_mode != Node.PROCESS_MODE_INHERIT:
+		world.process_mode = Node.PROCESS_MODE_INHERIT
+	# ---- room and floor changes
+	if _has_pending:
+		_has_pending = false
+		var door: Dictionary = rooms[cur]["doors"].get(_pending_dir, {})
+		if not door.is_empty():
+			_enter_room(door["to"], _pending_dir)
+	if _floor_change > 0.0:
+		_floor_change -= delta
+		_fade_alpha = clampf(1.0 - _floor_change / 0.4, 0.0, 1.0)
+		if _floor_change <= 0.0:
+			_floor_change = 0.0
+			floor_index += 1
+			_start_floor()
+	else:
+		_fade_alpha = maxf(0.0, _fade_alpha - delta / ROOM_FADE)
+	_fade.color.a = _fade_alpha
+	_slide = _slide.lerp(Vector2.ZERO, 1.0 - exp(-14.0 * delta))
+	# ---- camera
+	_trauma = maxf(0.0, _trauma - delta * 1.7)
+	var s := _trauma * _trauma * SHAKE_PIXELS
+	camera.position = G.CAMERA_CENTER - _slide + Vector2(randf_range(-s, s), randf_range(-s, s))
+	# ---- the clock, the end of the run
+	if not over:
+		time_s += delta
+	elif _end_t > 0.0:
+		_end_t -= delta
+		if _end_t <= 0.0:
+			_finish()
+	# ---- screenshots for tests
+	if room != null and room.fighting and not _fight_shot_done and room.fight_time >= 1.5:
+		_fight_shot_done = true
+		if G.flag("shots"):
+			var key := "floor%d_%s" % [floor_index + 1, TYPE_NAMES[room.type]]
+			G.save_shot("%s_%d_fight.png" % [key, int(_shot_counts.get(key, 1))])
+	for i in range(_shot_queue.size() - 1, -1, -1):
+		_shot_queue[i][0] -= delta
+		if _shot_queue[i][0] <= 0.0:
+			G.save_shot(_shot_queue[i][1])
+			_shot_queue.remove_at(i)
+	if _shot_every > 0.0:
+		_shot_every_t -= delta
+		if _shot_every_t <= 0.0:
+			_shot_every_t = _shot_every
+			G.save_shot("t_%06.1f.png" % time_s)

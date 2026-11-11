@@ -8,7 +8,7 @@ const UI = preload("res://scripts/ui/theme.gd")
 
 const ZOOM := 2.0
 const HERO_FEET := Vector2(8, 30)        ## where the hero stands, in tile-space pixels
-const LIGHT_RADIUS := 84.0               ## where the light has faded to black, in tile-space pixels
+const LIGHT_RADIUS := 62.0               ## where the light has faded to black, in tile-space pixels
 
 var _scene: Node2D
 var _hero: AnimatedSprite2D
@@ -19,7 +19,7 @@ var _time := 0.0
 var _hero_id := ""
 var _dim_tween: Tween
 ## Where the hero stands, as a fraction of the screen width.
-var hero_x := 0.27
+var hero_x := 0.29
 
 
 func _ready() -> void:

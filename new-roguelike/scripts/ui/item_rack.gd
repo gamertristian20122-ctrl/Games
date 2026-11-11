@@ -64,5 +64,6 @@ func set_items(ids: Array, width: float, max_rows: int) -> void:
 		for c: Control in row:
 			c.position = Vector2(c.position.x + shift, y)
 			add_child(c)
-	custom_minimum_size = Vector2(width, rows.size() * (ROW + 1.0) - 1.0)
-	size = custom_minimum_size
+	var height := rows.size() * (ROW + 1.0) - 1.0
+	custom_minimum_size = Vector2(0, height)
+	size = Vector2(width, height)

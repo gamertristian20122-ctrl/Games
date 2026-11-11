@@ -10,43 +10,49 @@ const ItemRack = preload("res://scripts/ui/item_rack.gd")
 var victory := false             ## set by main.gd
 var summary := {}                ## set by main.gd
 var unlocks: Array = []          ## ids unlocked during this run, set by main.gd
+var _rack: Control
 
 
 func build() -> void:
 	var safe := UI.safe_margin(self, 6)
 	add_child(safe)
-	var col := UI.vbox(3)
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	safe.add_child(col)
+	var cols := UI.hbox(8)
+	safe.add_child(cols)
 
+	# left: the big word, one line about what happened, and the two buttons
+	var left := UI.vbox(4)
+	left.custom_minimum_size.x = 112
+	cols.add_child(left)
 	var title := UI.label("Victory" if victory else "Fallen", "Title")
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", UI.C_GOLD if victory else UI.C_RED)
 	title.add_theme_color_override("font_shadow_color", Color("6b4a12") if victory else Color("4a1420"))
 	title.add_theme_constant_override("shadow_offset_x", 0)
 	title.add_theme_constant_override("shadow_offset_y", 2)
 	title.add_theme_color_override("font_outline_color", UI.C_INK)
 	title.add_theme_constant_override("outline_size", 4)
-	col.add_child(title)
+	UI.fit_title(title, 112.0)
+	left.add_child(title)
+	var line := UI.label(_story(), "", 100.0)
+	left.add_child(line)
+	left.add_child(UI.spacer(0, 0, true))
+	var again := UI.button("Try again", func() -> void: send("retry"), "Big", "ui_start")
+	again.custom_minimum_size.y = 26
+	left.add_child(again)
+	var menu := UI.button("Menu", func() -> void: send("menu"))
+	menu.custom_minimum_size.y = 22
+	left.add_child(menu)
+	default_focus = again
 
-	var line := UI.label(_story(), "Dim")
-	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(line)
-
+	# right: the numbers, the items, and anything new
 	var panel := UI.panel("panel")
-	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	panel.custom_minimum_size.x = 252
-	col.add_child(panel)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cols.add_child(panel)
 	var inner := UI.vbox(4)
 	panel.add_child(inner)
-
-	# the four numbers
-	var tiles := UI.hbox(4)
+	var tiles := UI.hbox(3)
 	inner.add_child(tiles)
-	var floor_no := int(summary.get("floor", 1))
 	for pair: Array in [
-			["Floor", str(floor_no)],
+			["Floor", str(int(summary.get("floor", 1)))],
 			["Time", UI.time_text(float(summary.get("time_s", 0.0)))],
 			["Kills", str(int(summary.get("kills", 0)))],
 			["Coins", str(int(summary.get("coins", 0)))]]:
@@ -64,23 +70,46 @@ func build() -> void:
 		t.add_child(v)
 		tiles.add_child(tile)
 
+	# the smaller numbers, when the world sent them
+	var extras := GridContainer.new()
+	extras.columns = 2
+	extras.add_theme_constant_override("h_separation", 12)
+	extras.add_theme_constant_override("v_separation", 1)
+	extras.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	for pair: Array in [["Rooms", "rooms_cleared"], ["Secrets", "secrets_found"], ["Bosses", "bosses"], ["Hits taken", "damage_taken"]]:
+		if not summary.has(pair[1]):
+			continue
+		var value: Variant = summary[pair[1]]
+		var cell := UI.hbox(3)
+		cell.add_child(UI.label(pair[0], "Small"))
+		cell.add_child(UI.label(str(value.size()) if value is Array else str(int(value))))
+		extras.add_child(cell)
+	if extras.get_child_count() > 0:
+		inner.add_child(extras)
+	else:
+		extras.free()
+
 	# the items carried at the end
 	var ids: Variant = summary.get("items", [])
 	if ids is Array and not ids.is_empty():
-		var rack := ItemRack.new()
-		rack.centred = true
-		rack.set_items(ids, 238.0, 1)
-		inner.add_child(rack)
+		inner.add_child(HSeparator.new())
+		_rack = ItemRack.new()
+		_rack.centred = true
+		_rack.set_items(ids, 140.0, 2)
+		inner.add_child(_rack)
+		panel.resized.connect(_fit_rack)
 
-	# new unlocks, most important first
+	# new unlocks
+	if not unlocks.is_empty():
+		inner.add_child(UI.spacer(0, 0, true))
 	var shown := 0
-	var max_rows := 2
+	var max_rows := 3 if unlocks.size() <= 3 else 2
 	for id: Variant in unlocks:
 		if shown >= max_rows:
 			break
 		var rule := Unlocks.by_id(String(id))
-		var kind := {"hero": "New hero", "item": "New item", "ach": "Achievement"}.get(Unlocks.kind(String(id)), "Unlocked") as String
-		var row := UI.panel("gold")
+		var kind := {"hero": "New hero", "item": "New item", "ach": "Feat"}.get(Unlocks.kind(String(id)), "Unlocked") as String
+		var row := UI.panel("tag")
 		var h := UI.hbox(5)
 		row.add_child(h)
 		h.add_child(UI.label(kind, "Gold"))
@@ -91,21 +120,18 @@ func build() -> void:
 		inner.add_child(row)
 		shown += 1
 	if unlocks.size() > shown:
-		var more := UI.label("+%d more unlocked. See the Collection." % (unlocks.size() - shown), "Gold")
+		var more := UI.label("and %d more: see the Collection" % (unlocks.size() - shown), "Gold")
 		more.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		inner.add_child(more)
+	UI.pop_in(cols)
 
-	var buttons := UI.hbox(6)
-	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_child(buttons)
-	var again := UI.button("Try again", func() -> void: send("retry"), "Big", "ui_start")
-	again.custom_minimum_size = Vector2(110, 26)
-	buttons.add_child(again)
-	var menu := UI.button("Menu", func() -> void: send("menu"), "Big")
-	menu.custom_minimum_size = Vector2(80, 26)
-	buttons.add_child(menu)
-	default_focus = again
-	UI.pop_in(col)
+
+## The item row is as wide as the panel turns out to be.
+func _fit_rack() -> void:
+	var ids: Variant = summary.get("items", [])
+	var w := _rack.get_parent_control().size.x
+	if ids is Array and absf(w - _rack.size.x) > 1.0 and w > 40.0:
+		_rack.set_items(ids, w, 2)
 
 
 ## One line about what happened.
@@ -121,7 +147,7 @@ func _story() -> String:
 	elif cause != "":
 		text = "%s was slain by %s." % [hero["name"], cause]
 	if where != "":
-		text += "  " + where + "."
+		text += " " + where + "."
 	return text
 
 

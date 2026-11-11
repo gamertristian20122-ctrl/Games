@@ -21,7 +21,8 @@ const ItemRack = preload("res://scripts/ui/item_rack.gd")
 const CARD_TIME := 2.5           ## seconds an item card stays up
 const PAUSE_GAP := 23.0          ## room kept free in the top right corner for the pause button
 const RACK_ROWS := 2              ## the carried items wrap into at most this many rows
-const BOSS_BAR := Vector2(112, 7)
+const BOSS_MAX_W := 132.0        ## the boss bar is at most this wide
+const BOSS_BAR_H := 7.0
 
 var run: Node
 var _root: Control
@@ -184,8 +185,24 @@ func _layout() -> void:
 		_rack_width = right - left
 		_rack_ids = [-1]
 		_dirty = true
-	_boss_box.position = Vector2(roundf((s.x - _boss_box.size.x) / 2.0), top - 2.0)
+	_place_boss_bar()
 	_place_card()
+
+
+## The boss bar sits in the middle of the top edge. If the hearts or the minimap reach that
+## far in, it moves (and shrinks) into the free gap between them.
+func _place_boss_bar() -> void:
+	var s := UI.screen_size(self)
+	var gap_left := maxf(_hearts.position.x + _hearts.size.x, _counters.position.x + _counters.size.x) + 4.0
+	if _hearts.size.y > 14.0:
+		gap_left = _hearts.position.x + float(_hearts.get("per_row")) * 13.0 + 4.0
+	var gap_right := _minimap.position.x - 4.0
+	var w := clampf(gap_right - gap_left, 60.0, BOSS_MAX_W)
+	var x := clampf(roundf((s.x - w) / 2.0), gap_left, maxf(gap_right - w, gap_left))
+	_boss_box.position = Vector2(x, _hearts.position.y - 2.0)
+	_boss_box.size.x = w
+	_boss_bar.size.x = w
+	_boss_bar.queue_redraw()
 
 
 # ------------------------------------------------------------------ redraw when told
@@ -218,6 +235,7 @@ func _refresh() -> void:
 		return
 	if _hearts.call("set_values", _num(p, "hp"), _num(p, "max_hp"), _num(p, "armor")):
 		_counters.position.y = _hearts.position.y + _hearts.size.y + 1.0
+		_place_boss_bar()
 	_coins_target = _num(p, "coins")
 	if _coins_shown < 0:
 		_coins_shown = _coins_target
@@ -264,25 +282,26 @@ func _on_pickup(kind: String, _amount: int) -> void:
 func _build_boss_bar() -> void:
 	_boss_box = Control.new()
 	_boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_boss_box.size = Vector2(BOSS_BAR.x, 22)
+	_boss_box.size = Vector2(BOSS_MAX_W, 22)
 	_boss_box.visible = false
 	_root.add_child(_boss_box)
 	_boss_name = UI.label("", "Hud")
 	_boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss_name.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	_boss_name.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_boss_name.clip_text = true
+	_boss_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_boss_box.add_child(_boss_name)
 	_boss_bar = Control.new()
 	_boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_boss_bar.size = BOSS_BAR
-	_boss_bar.position = Vector2(0, _boss_box.size.y - BOSS_BAR.y - 1.0)
+	_boss_bar.size = Vector2(BOSS_MAX_W, BOSS_BAR_H)
+	_boss_bar.position = Vector2(0, _boss_box.size.y - BOSS_BAR_H - 1.0)
 	_boss_bar.draw.connect(_draw_boss_bar)
 	_boss_box.add_child(_boss_bar)
 
 
 func _draw_boss_bar() -> void:
-	var w := BOSS_BAR.x
-	var h := BOSS_BAR.y
+	var w := _boss_bar.size.x
+	var h := BOSS_BAR_H
 	_boss_bar.draw_rect(Rect2(1, 0, w - 2, h), UI.C_INK)
 	_boss_bar.draw_rect(Rect2(0, 1, w, h - 2), UI.C_INK)
 	_boss_bar.draw_rect(Rect2(1, 1, w - 2, h - 2), Color("3a1620"))

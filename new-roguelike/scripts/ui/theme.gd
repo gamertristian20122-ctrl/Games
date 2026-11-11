@@ -106,6 +106,7 @@ static func _stone(fill: Color, edge: Color, margin_x: float, margin_y: float, t
 ##   "panel"  normal dark stone        "well"   sunken area (lists, slots)
 ##   "card"   pop-up cards             "curse"  cursed item card
 ##   "hud"    see-through HUD backing  "gold"   highlighted (new unlock)
+##   "tag"    a thin gold row          "slot"   one row in a list ("slot_focus" when selected)
 static func box(kind: String) -> StyleBox:
 	if _boxes.has(kind):
 		return _boxes[kind]
@@ -119,6 +120,8 @@ static func box(kind: String) -> StyleBox:
 			sb = _stone(C_CURSE_DARK, C_CURSE, 5, 4, Color("1b0d22"))
 		"gold":
 			sb = _stone(Color("2b2616"), C_GOLD, 5, 4, Color("1a160c"))
+		"tag":
+			sb = _stone(Color("2b2616"), C_GOLD, 4, 2, Color("1a160c"))
 		"hud":
 			sb = _stone(Color(0.05, 0.05, 0.08, 0.62), Color(0.42, 0.48, 0.56, 0.7), 3, 2)
 			sb.outline = Color(0, 0, 0, 0.5)

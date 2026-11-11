@@ -17,13 +17,15 @@ func build() -> void:
 	add_child(safe)
 	var cols := UI.hbox(6)
 	safe.add_child(cols)
+	var player: Variant = run.get("player") if is_instance_valid(run) else null
+	var hero := Heroes.by_id(String(run.get("hero_id"))) if is_instance_valid(run) else Heroes.LIST[0]
 
-	# left: the three buttons
+	# left: the three buttons, with the hero waiting in between
 	var left := UI.vbox(4)
-	left.custom_minimum_size.x = 92
+	left.custom_minimum_size.x = 88
 	cols.add_child(left)
 	var head := UI.label("Paused", "Head")
-	head.custom_minimum_size.y = 20
+	head.custom_minimum_size.y = 18
 	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	left.add_child(head)
 	var resume := UI.button("Resume", func() -> void: send("resume"), "Big")
@@ -32,40 +34,43 @@ func build() -> void:
 	var settings := UI.button("Settings", func() -> void: send("settings"))
 	settings.custom_minimum_size.y = 22
 	left.add_child(settings)
-	left.add_child(UI.spacer(0, 0, true))
+	var stage := Control.new()
+	stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	left.add_child(stage)
+	var sprite := Art.sprite(String(hero["sprite"]))
+	sprite.scale = Vector2(2, 2)
+	stage.add_child(sprite)
+	stage.resized.connect(func() -> void:
+		sprite.position = Vector2(roundf(stage.size.x / 2.0), roundf(stage.size.y / 2.0 + Art.size(String(hero["sprite"])).y) - 2.0))
 	var give_up := UI.button("Give up", _ask_give_up)
 	give_up.custom_minimum_size.y = 22
 	left.add_child(give_up)
 	default_focus = resume
 
-	# right: run stats and items
+	# right: how the run is going, and what you carry
 	var panel := UI.panel("panel")
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cols.add_child(panel)
 	var col := UI.vbox(3)
 	panel.add_child(col)
-	var player: Variant = run.get("player") if is_instance_valid(run) else null
-	var hero := Heroes.by_id(String(run.get("hero_id"))) if is_instance_valid(run) else Heroes.LIST[0]
 	var floor_no := int(run.get("floor_index")) + 1 if is_instance_valid(run) else 1
-	var where := UI.label("%s  -  Floor %d of %d" % [hero["name"], floor_no, maxi(int(run.get("floor_count")), floor_no)], "Gold")
+	var where := UI.label("Floor %d of %d  -  %s" % [floor_no, maxi(int(run.get("floor_count")), floor_no), String(run.get("floor_name"))], "Gold")
+	where.clip_text = true
 	col.add_child(where)
-	var place := UI.label(String(run.get("floor_name")), "Dim")
-	place.clip_text = true
-	col.add_child(place)
+	var ids: Array = []
+	if is_instance_valid(player) and player.get("items") is Array:
+		ids = player.get("items")
 	var stats := UI.hbox(10)
 	col.add_child(stats)
 	var coins := int(player.get("coins")) if is_instance_valid(player) else 0
-	for pair: Array in [["Time", UI.time_text(float(run.get("time_s")))], ["Kills", str(int(run.get("kills")))], ["Coins", str(coins)]]:
+	for pair: Array in [["Time", UI.time_text(float(run.get("time_s")))], ["Kills", str(int(run.get("kills")))], ["Coins", str(coins)], ["Items", str(ids.size())]]:
 		var cell := UI.hbox(3)
 		cell.add_child(UI.label(pair[0], "Small"))
 		cell.add_child(UI.label(pair[1]))
 		stats.add_child(cell)
 	col.add_child(HSeparator.new())
 
-	var ids: Array = []
-	if is_instance_valid(player) and player.get("items") is Array:
-		ids = player.get("items")
-	col.add_child(UI.label("Items (%d)" % ids.size(), "Small"))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -73,17 +78,15 @@ func build() -> void:
 	col.add_child(scroll)
 	var grid := GridContainer.new()
 	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 2)
+	grid.add_theme_constant_override("v_separation", 1)
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(grid)
 	for id: Variant in ids:
 		grid.add_child(_item_row(String(id)))
-	if ids.is_empty():
-		var none := UI.label("Nothing yet.", "Dim")
-		grid.add_child(none)
 
 	# what the highlighted item does
 	var foot := UI.panel("well")
-	foot.custom_minimum_size.y = 26
 	col.add_child(foot)
 	var foot_col := UI.vbox(0)
 	foot.add_child(foot_col)
@@ -91,11 +94,13 @@ func build() -> void:
 	_detail_name.clip_text = true
 	foot_col.add_child(_detail_name)
 	_detail = UI.label("", "", 10.0)
+	_detail.custom_minimum_size.y = 2.0 * UI.font_body.get_height(UI.size_body)
 	_detail.max_lines_visible = 2
 	foot_col.add_child(_detail)
 	if ids.is_empty():
-		_detail_name.text = ""
-		_detail.text = "Items you pick up are listed here."
+		_detail_name.text = "No items yet"
+		_detail_name.add_theme_color_override("font_color", UI.C_DIM)
+		_detail.text = "Things you pick up are listed here. Tap one to read what it does."
 		_detail.add_theme_color_override("font_color", UI.C_DIM)
 	else:
 		_show_item(String(ids[ids.size() - 1]))
@@ -107,8 +112,9 @@ func _item_row(id: String) -> Control:
 	var cursed := bool(info.get("cursed", false))
 	var b := Button.new()
 	b.theme_type_variation = "Flat"
-	b.custom_minimum_size = Vector2(0, 16)
+	b.custom_minimum_size = Vector2(0, 15)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.add_theme_font_size_override("font_size", UI.size_small)
 	b.text = String(info.get("name", id))
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.clip_text = true
@@ -122,8 +128,8 @@ func _item_row(id: String) -> Control:
 	ic.setup(String(info.get("icon", "skull")), Vector2.ZERO, 12.0)
 	ic.position = Vector2(3 + roundf((32 - ic.size.x) / 2.0), 2)
 	b.add_child(ic)
-	for state: String in ["normal", "hover", "pressed", "focus", "disabled"]:
-		var sb: StyleBox = UI.theme().get_stylebox(state, "Flat").duplicate()
+	for state: String in ["normal", "hover", "pressed", "focus"]:
+		var sb: StyleBox = b.get_theme_stylebox(state).duplicate()
 		sb.content_margin_left = 38
 		sb.content_margin_right = 3
 		sb.content_margin_top = 1
