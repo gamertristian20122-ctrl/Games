@@ -61,7 +61,10 @@ const ALL := {
 	# ---- floor 4, the Pit: the final boss
 	"starved_king": {"name": "The Starved King", "sprite": "boss_demon", "floors": [4], "hp": 1100.0,
 		"speed": 24.0, "touch": 1, "shot": "enemy", "radius": 20.0, "flying": true, "final": true, "layout": "boss_arena",
-		"params": {}},
+		"hover": -9.0, "bob": 1.0, "phases": [0.5, 0.2], "stagger_dmg": 1.25,
+		"params": {"home_y": 66.0, "sway": 44.0, "volley_warn": 0.6, "volley_speed": 105.0, "ember_radius": 13.0, "ember_warn": 0.85,
+			"great_radius": 30.0, "great_warn": 1.0, "breath_warn": 1.4, "turn_warn": 0.7, "winded": 2.0, "ripple_warn": 0.8,
+			"guard": "pit_guard", "guards": 2, "curse_fill": 3.5, "dark": 0.78}},
 }
 
 ## Boss ids from older versions of the game and the boss that took their place, so an old save's
