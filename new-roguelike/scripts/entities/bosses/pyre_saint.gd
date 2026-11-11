@@ -67,7 +67,7 @@ func tick(e, delta: float) -> void:
 			if e.t <= 0.0:
 				_next_attack(e, mean)
 		SWOOP:
-			var v := float(e.p.get("swoop_speed", 185.0)) * (1.15 if mean else 1.0) * e.status_speed()
+			var v: float = float(e.p.get("swoop_speed", 185.0)) * (1.15 if mean else 1.0) * e.status_speed()
 			var blocked: bool = e.dash(e.dir * v, delta)
 			e.mem["left"] = float(e.mem["left"]) - v * delta
 			e.run.fx.burst(e.body_point() - e.dir * 18.0, FIRE, 1, 30.0, 0.4, 2.6)
