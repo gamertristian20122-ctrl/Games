@@ -3,12 +3,53 @@ extends RefCounted
 ## Fields every item has (the shell's item card, pause list and collection screen rely on these):
 ##   name, desc (one short line, what it does), icon (an Art id), cursed (bool), pools (Array of pool names)
 ## Cursed items also have "curse" (one short line describing the downside).
-## The world half adds whatever effect fields it needs (stat changes, flags, hooks).
+##
+## HOW AN ITEM WORKS (the world half reads these extra fields; all are optional):
+##   mods      stat changes, added as one layer in scripts/run/stats.gd:
+##               {"flat": {"damage": 1.0}, "pct": {"speed": 0.15}, "mult": {"damage": 2.0}, "flags": {"pierce": 1}}
+##             stats: speed damage rate range shot_speed shot_size knockback shots spread homing
+##                    hurt_mult coin_mult luck invuln bomb_damage      flags: pierce bounce (and any you invent)
+##   give      handed over once when picked up: {"max_hp": 2, "hp": 2, "armor": 2, "coins": 5, "keys": 1, "bombs": 1}
+##             (hp, max_hp and armor are HALF hearts)
+##   familiar  an id from familiars.gd that joins the player
+##   locked    true = only appears after Save.is_unlocked("item:<id>")
+##   Anything smarter (on kill, on hit, when hurt ...) is a function in scripts/run/item_effects.gd
+##   named <item id>_<hook>, for example  grave_cleaver_on_kill.  No other file needs to change.
+## POOLS: "treasure" (treasure rooms), "boss" (boss reward), "shop", "secret", "cursed" (cursed
+## pedestals and the shop's bargain stand). An item never appears twice in one run.
+## TO ADD AN ITEM: add a row. The icon must be an existing sprite id.
 
 const ALL := {
-	"whetstone": {"name": "Whetstone", "desc": "Damage up.", "icon": "weapon_regular_sword", "cursed": false, "pools": ["treasure", "shop", "boss"]},
-	"swift_tonic": {"name": "Swift Tonic", "desc": "Move faster.", "icon": "flask_big_green", "cursed": false, "pools": ["treasure", "shop"]},
-	"glass_blade": {"name": "Glass Blade", "desc": "Damage doubled.", "curse": "You take double damage.", "icon": "weapon_red_gem_sword", "cursed": true, "pools": ["cursed"]},
+	# ---------------------------------------------------------------- plain stat items
+	"whetstone": {"name": "Whetstone", "desc": "Damage up.", "icon": "weapon_regular_sword", "cursed": false, "pools": ["treasure", "shop", "boss"],
+		"mods": {"flat": {"damage": 1.0}}},
+	"swift_tonic": {"name": "Swift Tonic", "desc": "Move faster.", "icon": "flask_big_green", "cursed": false, "pools": ["treasure", "shop"],
+		"mods": {"pct": {"speed": 0.18}}},
+	"sparking_tonic": {"name": "Sparking Tonic", "desc": "Fire faster.", "icon": "flask_big_yellow", "cursed": false, "pools": ["treasure", "shop", "boss"],
+		"mods": {"pct": {"rate": 0.30}}},
+	"longbow_string": {"name": "Longbow String", "desc": "Shots fly farther and faster.", "icon": "weapon_bow", "cursed": false, "pools": ["treasure", "shop"],
+		"mods": {"pct": {"range": 0.35, "shot_speed": 0.25}}},
+	"crimson_draught": {"name": "Crimson Draught", "desc": "One more heart, and it comes full.", "icon": "flask_big_red", "cursed": false, "pools": ["treasure", "boss", "shop", "secret"],
+		"give": {"max_hp": 2, "hp": 2}},
+	# ---------------------------------------------------------------- shot changers
+	"twin_hatchets": {"name": "Twin Hatchets", "desc": "Throw two shots at once, each a little weaker.", "icon": "weapon_double_axe", "cursed": false, "pools": ["treasure", "boss"],
+		"mods": {"flat": {"shots": 1.0, "spread": 0.05}, "pct": {"damage": -0.25}}},
+	"needle_spear": {"name": "Needle Spear", "desc": "Shots pass through one more enemy.", "icon": "weapon_spear", "cursed": false, "pools": ["treasure", "shop", "secret"],
+		"mods": {"flags": {"pierce": 1}, "pct": {"shot_speed": 0.10}}},
+	"ricochet_mallet": {"name": "Ricochet Mallet", "desc": "Shots bounce off walls twice.", "icon": "weapon_hammer", "cursed": false, "pools": ["treasure", "secret"],
+		"mods": {"flags": {"bounce": 2}, "pct": {"range": 0.30}}},
+	"seeker_staff": {"name": "Seeker Staff", "desc": "Shots curve toward enemies.", "icon": "weapon_green_magic_staff", "cursed": false, "pools": ["treasure", "boss"],
+		"mods": {"flat": {"homing": 2.6}}},
+	# ---------------------------------------------------------------- items with hooks (see item_effects.gd)
+	"wardwater": {"name": "Wardwater", "desc": "A blue heart now, and half of one every third room you clear.", "icon": "flask_big_blue", "cursed": false, "pools": ["treasure", "shop", "secret"],
+		"give": {"armor": 2}},
+	"grave_cleaver": {"name": "Grave Cleaver", "desc": "Slain enemies burst into bone shards that hurt others.", "icon": "weapon_cleaver", "cursed": false, "pools": ["treasure", "boss", "secret"]},
+	# ---------------------------------------------------------------- cursed: stronger, with a price
+	"glass_blade": {"name": "Glass Blade", "desc": "Damage doubled.", "curse": "You take double damage.", "icon": "weapon_red_gem_sword", "cursed": true, "pools": ["cursed"],
+		"mods": {"mult": {"damage": 2.0, "hurt_mult": 2.0}}},
+	"frenzy_saw": {"name": "Frenzy Saw", "desc": "Fire almost twice as fast.", "curse": "Your shots fly wild and fall short.", "icon": "weapon_saw_sword", "cursed": true, "pools": ["cursed"],
+		"mods": {"pct": {"rate": 0.85, "range": -0.25}, "flat": {"spread": 0.30}}},
+	"gilded_blade": {"name": "Gilded Blade", "desc": "Every coin you carry adds damage.", "curse": "Getting hit knocks 5 coins out of your purse.", "icon": "weapon_golden_sword", "cursed": true, "pools": ["cursed"]},
 }
 
 

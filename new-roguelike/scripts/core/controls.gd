@@ -8,6 +8,8 @@ extends Node
 signal bomb_pressed
 signal action_pressed        ## the second button (reserved for the game's twist)
 signal pause_pressed
+## The player switched between the touch screen and a keyboard / gamepad.
+signal device_changed(touch: bool)
 
 var move := Vector2.ZERO      ## length 0..1
 var aim := Vector2.ZERO       ## length 0..1; the player fires while aim.length() > AIM_DEADZONE
@@ -19,6 +21,12 @@ var touch_move_active := false
 var touch_aim := Vector2.ZERO
 var touch_aim_active := false
 
+## The on-screen Action button stays hidden until this is true (the game's twist turns it on).
+var action_enabled := false
+## True while the touch screen is the input in use. The touch controls hide themselves when a
+## key or gamepad is used and come back on the next touch.
+var using_touch := false
+
 # written by the test bot (when bot == true these replace all other input)
 var bot := false
 var bot_move := Vector2.ZERO
@@ -27,6 +35,30 @@ var bot_aim := Vector2.ZERO
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	using_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+
+
+func _set_touch(on: bool) -> void:
+	if on != using_touch:
+		using_touch = on
+		device_changed.emit(on)
+
+
+## Only watches WHICH device is in use; the real handling is below and in scripts/ui/touch.gd.
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			_set_touch(true)
+	elif event is InputEventKey:
+		# (the phone's Back and volume keys are keys too, and must not hide the touch controls)
+		if event.pressed and not event.echo and event.keycode not in [KEY_BACK, KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_VOLUMEMUTE, KEY_MENU]:
+			_set_touch(false)
+	elif event is InputEventJoypadButton:
+		if event.pressed:
+			_set_touch(false)
+	elif event is InputEventJoypadMotion:
+		if absf(event.axis_value) > 0.5:
+			_set_touch(false)
 
 
 func press_bomb() -> void:
