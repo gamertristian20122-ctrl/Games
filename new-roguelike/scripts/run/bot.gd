@@ -555,8 +555,10 @@ func _wants_pedestal(p: Node, t: Node) -> bool:
 	if t.item != "":
 		# cursed items: only when healthy enough to pay the price
 		if t.cursed:
-			return p.hp + p.armor >= 6 and not p.items.has("glass_blade")
+			return p.hp + p.armor >= 6 and not p.items.has("glass_blade") and run.curse_level < CURSED_UP_TO
 		return true
+	if t.service == "starve":
+		return t.visible and run.curse_level >= STARVE_FROM
 	if t.pickup == "heart" or t.pickup == "half_heart":
 		return p.hp <= p.max_hp - 2
 	if t.pickup == "key":
