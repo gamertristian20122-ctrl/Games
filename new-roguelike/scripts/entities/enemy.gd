@@ -30,6 +30,7 @@ extends Node2D
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Shots = preload("res://scripts/run/shots.gd")
 
+const Hands = preload("res://scripts/entities/hands.gd")
 const CORPSE_FADE := 0.45       ## seconds a fallen body takes to fade after its death animation
 const SHOT_PLANE := 7.0         ## shots are drawn this far above the floor (see shot_look.gd)
 
@@ -91,6 +92,7 @@ var vel_est := Vector2.ZERO  ## measured velocity (the bot uses it to lead its s
 var appear := 0.0
 var sprite: AnimatedSprite2D
 var shadow: Sprite2D
+var hands: RefCounted          ## the pack's hand pieces at its sides (hands.gd); null when the row names none
 var _flash := 0.0
 var _flash_gap := 0.0
 var _tell := 0.0
@@ -228,6 +230,10 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	sprite.scale = Vector2(_base_scale, _base_scale)
 	sprite.modulate = _tint
 	add_child(sprite)
+	if String(data.get("hands", "")) != "":
+		hands = Hands.new()
+		hands.build(self, sprite, String(data["hands"]), body_w, body_h)
+		hands.hide()
 	_last_pos = position
 	appear = float(opts.get("delay", room.SPAWN_DELAY))
 	sprite.visible = false
@@ -315,6 +321,7 @@ func _update_look(delta: float) -> void:
 	sprite.scale = Vector2(sc, sc)
 	shadow.modulate.a = clampf(1.0 - lift / 40.0, 0.35, 1.0)
 	_flash_gap -= delta
+	_update_hands(delta)
 	if _flash > 0.0:
 		_flash -= delta
 		sprite.material = white_material()
@@ -328,6 +335,15 @@ func _update_look(delta: float) -> void:
 	if elite:
 		_aura_t += delta
 		queue_redraw()
+
+
+## The hands follow the body: same flash, same tint, hidden while the pack's own hit or attack
+## animation plays (those frames move the whole body) and when it dies.
+func _update_hands(delta: float) -> void:
+	if hands == null:
+		return
+	var steady := _attack_t <= 0.0 and _hit_t <= 0.0
+	hands.update(delta, _moved, _face, -lift - _hover, sprite.visible and steady, sprite.material, _tint)
 
 
 func _draw() -> void:
@@ -507,6 +523,8 @@ func die(drops: bool = true) -> void:
 	if dead:
 		return
 	dead = true
+	if hands != null:
+		hands.hide()
 	hittable = false
 	room.enemy_died(self)
 	if ai.has_method("died"):
@@ -558,6 +576,8 @@ func devour(into: Node2D, seconds: float = 0.2) -> void:
 	if dead:
 		return
 	dead = true
+	if hands != null:
+		hands.hide()
 	hittable = false
 	room.enemy_died(self)
 	run.enemy_devoured(self)

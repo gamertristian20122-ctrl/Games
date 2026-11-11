@@ -235,6 +235,12 @@ Added by the cast builder. Every character on screen is a purchased Pixel Crawle
 - **Flashes:** a hit = a bright flash that keeps the drawing, `HIT_FLASH` (0.05 s) then at least `FLASH_GAP`
   (0.1 s) unflashed. A wind-up (`tell()`) blinks PALE, not white
   (`TELL_SHADER`), so tall sprites never turn into a blank white shape.
+- **Hands (`scripts/entities/hands.gd`, v0.3.1):** the pack draws every body WITHOUT arms and ships the
+  hands as separate pieces (`pc_hand_*`, one colour set per creature family). The owner said "nothing has
+  arms" on 11 Nov 2026, so every monster with a `"hands"` id in `enemies.gd` gets one at each side
+  (swinging while it walks, hidden during the pack's own hit / attack frames and on death), and a hero's
+  free hand uses his `"hand"` piece. Bats have none; bosses are other packs' art, drawn with arms.
+  Pieces were picked by matching colours with the body sprite; nothing is drawn or recoloured.
 - **Bosses:** no longer Pixel Crawler creatures at double size. See the "Bosses" section.
 - **Helpers:** familiars are tinted `pc_bat_small` using the flying loop (`scripts/data/familiars.gd`;
   row keys `wisp`, `tithe_imp` must stay). The shopkeeper is `pc_npc_tavern_a` (`shopkeeper.gd`).

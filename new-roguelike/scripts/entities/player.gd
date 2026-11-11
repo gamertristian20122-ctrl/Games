@@ -19,6 +19,7 @@ const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const FamiliarScript = preload("res://scripts/entities/familiar.gd")
 const Curse = preload("res://scripts/entities/curse.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
+const Hands = preload("res://scripts/entities/hands.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -56,6 +57,7 @@ var last_cause := ""
 
 var body: AnimatedSprite2D
 var weapon: Sprite2D
+var off_hand: RefCounted        ## the free hand (hands.gd); the other one holds the weapon
 var shadow: Sprite2D
 var light: PointLight2D
 var _fire_cd := 0.0
@@ -103,6 +105,9 @@ func setup(the_run: Node, hero_id: String) -> void:
 	add_child(body)
 	HeroLook.rest(weapon, 1.0)
 	HeroLook.layer(weapon, body, true)
+	if String(hero.get("hand", "")) != "":
+		off_hand = Hands.new()
+		off_hand.build(self, body, String(hero["hand"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)), true)
 	if run.LIGHTING:
 		light = PointLight2D.new()
 		light.texture = run.light_tex
@@ -257,6 +262,8 @@ func _update_look(delta: float) -> void:
 	# blink while safe after a hit
 	body.visible = invuln <= 0.0 or fmod(invuln * 12.0, 1.0) < 0.6
 	weapon.visible = body.visible
+	if off_hand != null:
+		off_hand.update(delta, moving, _face, 0.0, body.visible, body.material)
 	# the weapon: held in the hand, pointing where you aim, kicking back with each shot
 	_kick = maxf(0.0, _kick - delta * 9.0)
 	if firing:
@@ -339,6 +346,8 @@ func _die() -> void:
 	dead = true
 	vel = Vector2.ZERO
 	weapon.visible = false
+	if off_hand != null:
+		off_hand.hide()
 	body.visible = true
 	body.material = null
 	body.play("death" if _has_death else "hit")
