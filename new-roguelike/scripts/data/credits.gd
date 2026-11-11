@@ -23,6 +23,43 @@ const LIST := [
 		"licence": "CC0",
 		"url": "https://0x72.itch.io/dungeontileset-ii",
 	},
+	# ---- add-on art and effects (cut out of assets_raw/ by tools/import_assets.py)
+	{
+		"what": "Dungeon Tileset II Extended (torches, keys, doors, rugs, signs)",
+		"author": "Niji (nijikokun)",
+		"licence": "CC0",
+		"url": "https://nijikokun.itch.io/dungeontileset-ii-extended",
+	},
+	{
+		"what": "16x16 Enchanted Forest Characters (extra creatures)",
+		"author": "Superdark",
+		"licence": "Free for commercial use, no credit required (author's statement on the page)",
+		"url": "https://superdark.itch.io/enchanted-forest-characters",
+	},
+	{
+		"what": "Pixel Art Spells (shots and sparkles)",
+		"author": "DevWizard",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/pixel-art-spells",
+	},
+	{
+		"what": "Warped Shooting Fx (hit sparks)",
+		"author": "ansimuz (Luis Zuno)",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/warped-shooting-fx",
+	},
+	{
+		"what": "Explosion Animations Pack (the bomb blast)",
+		"author": "ansimuz (Luis Zuno)",
+		"licence": "CC0",
+		"url": "https://ansimuz.itch.io/explosion-animations-pack",
+	},
+	{
+		"what": "Smoke Puff (dust and death puffs)",
+		"author": "Aidan_Walker",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/smoke-puff",
+	},
 	{
 		"what": "Godot Engine",
 		"author": "Juan Linietsky, Ariel Manzur and the Godot contributors",

@@ -11,7 +11,10 @@ extends Node
 ##   <id>_anim_f0.png or <id>_f0.png  animation "default"
 ## Every SpriteFrames it returns has all four names; missing ones reuse what exists.
 
-const DIRS: Array[String] = ["res://assets/art/dungeon/"]
+## dungeon = the main pack (0x72). niji, forest and fx are written by tools/import_assets.py.
+const DIRS: Array[String] = [
+	"res://assets/art/dungeon/", "res://assets/art/niji/", "res://assets/art/forest/", "res://assets/art/fx/",
+]
 const ANIMS := [["idle", "_idle_anim"], ["run", "_run_anim"], ["hit", "_hit_anim"], ["default", "_anim"], ["default", ""]]
 const FPS := {"idle": 6.0, "run": 10.0, "hit": 8.0, "default": 8.0}
 

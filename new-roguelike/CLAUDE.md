@@ -64,3 +64,11 @@ Flags (after `--`): `--autotest` (a bot plays), `--hero=`, `--seed=`, `--speed=`
 - `scripts/ui/` menus, HUD, touch controls, theme (`theme.gd` holds all colours, fonts and styles)
 - `dev/` test scene and data validation; `tools/` check and build scripts
 - The top of each data file explains how to add a row. Sections below are added by whoever built each part.
+
+## Look, effects and layouts
+(Written by the look builder. Being filled in; see the bottom of this section for what is still to do.)
+- **Importing art:** `python3 tools/import_assets.py` cuts the add-on art out of `assets_raw/` into
+  `assets/art/niji/` (ids `niji_*`), `assets/art/forest/` (ids `sdf_*`) and `assets/art/fx/` (ids `fx_*`),
+  then run `godot --headless --path . --import`. It never draws anything: it only cuts, renames and swaps
+  one outline colour. `--sheet /tmp/dir` also writes contact sheets to look at. To add an effect, add one
+  row to `FX` at the top of that script. New folders must also be listed in `Art.DIRS` (`scripts/core/art.gd`).
