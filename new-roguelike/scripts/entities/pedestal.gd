@@ -10,7 +10,10 @@ extends Node2D
 ##   "service": "starve"   the shop's "Starve the Curse" stand: no goods, it takes one Curse Level
 ##                    off for coins (prices in scripts/data/pickups.gd). It only shows from Curse
 ##                    Level 1 and can be used again while its price list lasts.
-## STAND-IN: the pack has no pedestal picture; the stand is the cap of the pack's column sprite.
+## The stand is "prop_plinth": a stone column capital from the purchased Pixel Crawler Castle pack.
+## The coin on the price tag is "prop_coin" and the skull on the Starve stand is "prop_skull_mark"
+## (the golden skull): all three are cut by tools/import_props.py. The tiny skull in the "+1" badge
+## stays the HUD's own skull, so the badge reads as "+1 on the Curse meter" at the top of the screen.
 
 const Items = preload("res://scripts/data/items.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
@@ -28,6 +31,11 @@ const BADGE_SHRINK := "-1"
 const BADGE_GROW_COLOR := Color(1.0, 0.62, 0.50)
 const BADGE_SHRINK_COLOR := Color(0.66, 0.96, 0.62)
 const CURSE_GOLD := Color(0.98, 0.90, 0.58)      ## the Hungry Curse's own pale gold
+const STAND := "prop_plinth"
+const STAND_TOP := 11.0          ## how far the top edge of the stand is above the spot it stands on
+const COIN := "prop_coin"
+const SKULL := "prop_skull_mark"
+const BADGE_SKULL := "skull"     ## the same small skull the HUD's Curse meter is made of
 
 var kind := "pedestal"
 var solid := true
@@ -68,18 +76,16 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	pair = int(desc.get("pair", 0))
 	add_child(EnemyScript.make_shadow(18.0))
 	var base := Sprite2D.new()
-	base.texture = Art.tex("column")
-	base.region_enabled = true
-	base.region_rect = Rect2(0, 4, 16, 11)
+	base.texture = Art.tex(STAND)
 	base.centered = false
-	base.position = Vector2(-8, -7)
+	base.position = Vector2(-roundf(base.texture.get_size().x / 2.0), -STAND_TOP)
 	add_child(base)
-	var icon_id := "skull"
+	var icon_id := SKULL
 	var tint := Color(1, 1, 1)
 	var glow_color := Color(1.0, 0.85, 0.45)
 	if item != "":
 		var info: Dictionary = Items.info(item)
-		icon_id = String(info.get("icon", "skull"))
+		icon_id = String(info.get("icon", SKULL))
 		cursed = info.get("cursed", false)
 		if cursed:
 			glow_color = Color(0.85, 0.12, 0.45)
@@ -88,8 +94,7 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 		tint = Pickups.info(pickup).get("tint", Color(1, 1, 1))
 		glow_color = Color(0.9, 0.9, 1.0)
 	elif service != "":
-		tint = CURSE_GOLD
-		glow_color = CURSE_GOLD
+		glow_color = CURSE_GOLD      # the golden skull is already the Curse's colour
 		price = _service_price()
 	glow = Sprite2D.new()
 	glow.texture = room.run.light_tex
@@ -104,7 +109,7 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	icon.texture = Art.tex(icon_id)
 	icon.modulate = tint
 	add_child(icon)
-	_icon_y = -10.0 - icon.texture.get_size().y * 0.5
+	_icon_y = -STAND_TOP - 2.0 - icon.texture.get_size().y * 0.5
 	glow.position = Vector2(0, _icon_y)
 	if room.run.LIGHTING:
 		light = PointLight2D.new()
@@ -127,12 +132,12 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 
 func _build_tag() -> void:
 	tag = Node2D.new()
-	tag.position = Vector2(0, 10)
+	tag.position = Vector2(0, 12)
 	tag.z_index = 1
 	add_child(tag)
 	var coin := Sprite2D.new()
-	coin.texture = Art.tex("coin")
-	coin.position = Vector2(-5, 0)
+	coin.texture = Art.tex(COIN)
+	coin.position = Vector2(-6, 0)
 	tag.add_child(coin)
 	var label := Label.new()
 	label.text = str(price)
@@ -141,7 +146,7 @@ func _build_tag() -> void:
 	label.add_theme_color_override("font_color", Color(1, 0.95, 0.6))
 	label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.08))
 	label.add_theme_constant_override("outline_size", 3)
-	label.position = Vector2(-1, -7)
+	label.position = Vector2(1, -7)
 	tag.add_child(label)
 	_price_label = label
 
@@ -149,10 +154,10 @@ func _build_tag() -> void:
 ## The small "+1 skull" (or "-1 skull") under a cursed item or the Starve stand.
 func _build_badge() -> void:
 	if _skull_rect.size == Vector2.ZERO:
-		var img := Art.tex("skull").get_image()
+		var img := Art.tex(BADGE_SKULL).get_image()
 		_skull_rect = Rect2(img.get_used_rect()) if img != null else Rect2(0, 0, 16, 16)
 	badge = Node2D.new()
-	badge.position = Vector2(0, 20 if price > 0 else 11)
+	badge.position = Vector2(0, 23 if price > 0 else 11)
 	badge.z_index = 1
 	add_child(badge)
 	badge.draw.connect(_draw_badge)
@@ -171,7 +176,7 @@ func _draw_badge() -> void:
 	badge.draw_string_outline(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, 3, Color(0.08, 0.06, 0.08))
 	badge.draw_string(font, Vector2(x, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BADGE_GROW_COLOR if grow else BADGE_SHRINK_COLOR)
 	x += w + 1.0
-	badge.draw_texture_rect_region(Art.tex("skull"), Rect2(Vector2(x, 3.0 - _skull_rect.size.y), _skull_rect.size), _skull_rect)
+	badge.draw_texture_rect_region(Art.tex(BADGE_SKULL), Rect2(Vector2(x, 3.0 - _skull_rect.size.y), _skull_rect.size), _skull_rect)
 	x += _skull_rect.size.x + 2.0
 	if teeth:
 		badge.draw_rect(Rect2(x - 1, -4, 11, 6), Color(0.08, 0.06, 0.08))
@@ -225,7 +230,7 @@ func crumble() -> void:
 		return
 	crumbled = true
 	taken = true
-	room.run.fx.burst(position - Vector2(0, 4), Art.palette("column"), 16, 70.0, 0.55, 2.6)
+	room.run.fx.burst(position - Vector2(0, 4), Art.palette(STAND), 16, 70.0, 0.55, 2.6)
 	room.run.fx.burst(position + Vector2(0, _icon_y), [Color(0.5, 0.45, 0.5), Color(0.25, 0.22, 0.25)], 8, 50.0, 0.4, 2.0)
 	Sfx.play("rock_break", -5.0)
 	room.remove_thing(self)

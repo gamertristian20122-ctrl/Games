@@ -12,7 +12,8 @@ Writes assets/art/props/                  <id>.png stills, <id>_anim_f<n>.png lo
        --sheet DIR                        also writes DIR/props_sheet.png (everything x4 beside the knight)
 Idempotent: it deletes and rewrites only the prop_* PNGs it owns plus props.json.
 
-It only cuts, crops, pads and (for the armour heart) swaps colour channels. No pixel is drawn.
+It only cuts, crops, pads and recolours whole sprites (the armour heart is the red heart with red
+and blue swapped; the lemon-yellow coin gets a warm wash so it reads as gold). No pixel is drawn.
 To add a prop: add one row to STILLS or LOOPS below, run it, look at the sheet.
 """
 import glob
@@ -49,6 +50,8 @@ PACKS = {
               "zip": "pixelfrog_kings_and_pigs/Kings and Pigs.zip"},
     "treasure": {"pack": "Treasure Hunters (Pixel Frog)", "licence": "CC0 1.0",
                  "zip": "pixelfrog_treasure_hunters/Treasure Hunters.zip"},
+    "zelda": {"pack": "Zelda-like tilesets and sprites (ArMM1998)", "licence": "CC0",
+              "zip": "armm1998_zelda_like/gfx_3.zip"},
 }
 
 # ---------------------------------------------------------------- what to cut
@@ -58,7 +61,7 @@ STILLS = [
     # chests: one style per floor theme, closed and open; "locked" is the gold one with a padlock
     ("prop_chest_crypt", "hideout", None, (224, 272, 256, 304)),
     ("prop_chest_crypt_open", "hideout", None, (256, 256, 288, 304)),
-    ("prop_chest_warrens", "sewer", None, (129, 40, 158, 72)),
+    ("prop_chest_warrens", "sewer", None, (129, 40, 158, 64)),
     ("prop_chest_warrens_open", "sewer", None, (130, 4, 158, 32)),
     ("prop_chest_ashen", "forge", None, (240, 112, 272, 144)),
     ("prop_chest_ashen_open", "forge", None, (240, 88, 272, 112)),
@@ -67,23 +70,26 @@ STILLS = [
     ("prop_chest_locked", "desert", None, (97, 41, 127, 64)),
     ("prop_chest_locked_open", "desert", None, (129, 8, 159, 32)),
     # the item stand: a stone column capital; the way down: a framed stairwell
-    ("prop_plinth", "castle", None, (192, 64, 208, 84)),
+    ("prop_plinth", "castle", None, (192, 64, 208, 80)),
     ("prop_stairs_down", "castle", None, (48, 320, 96, 368)),
     # the bomb you pick up (fuse not burning)
     ("prop_bomb", "kings", "Sprites/09-Bomb/Bomb Off.png", None),
+    # the golden skull without its glints: the Curse mark under cursed goods and on the Starve stand
+    ("prop_skull_mark", "treasure", "Treasure Hunters/Pirate Treasure/Sprites/Golden Skull/01.png", (0, 12, 24, 28)),
 ]
 
 TH = "Treasure Hunters/Pirate Treasure/Sprites/"
 # LOOPS: id, pack, how to get the frames, options.
-#   ("strip", file, cell_w, cell_h, count)   one sheet, frames side by side
-#   ("files", folder, count)                 01.png, 02.png ... inside the folder
+#   ("strip", file, cell_w, cell_h, count[, x0, y0])   frames side by side on a sheet, from (x0, y0)
+#   ("files", folder, count[, "%d"])         01.png, 02.png ... inside the folder ("%d": 1.png, 2.png ...)
 # options: "center_x": keep this x of the cell in the middle of the cut (the bomb's sparks fly to one side)
 #          "blue": swap red and blue (the armour heart is the red heart recoloured, like the HUD's)
+#          "wash": (r, g, b) every colour is multiplied by this (1, 1, 1 = unchanged)
 LOOPS = [
-    ("prop_coin", "treasure", ("files", TH + "Gold Coin/", 4), {}),
+    # the coin is the plain one: Pixel Frog's gold coin has a skull on it, and skulls mean the Curse here
+    ("prop_coin", "zelda", ("strip", "gfx/objects.png", 16, 16, 4, 0, 64), {"wash": (1.0, 0.84, 0.60)}),
     ("prop_gem", "treasure", ("files", TH + "Green Diamond/", 4), {}),
-    ("prop_key", "treasure", ("files", "Treasure Hunters/Merchant Ship/Sprites/Chest Key/Idle/", 8), {}),
-    ("prop_skull", "treasure", ("files", TH + "Golden Skull/", 8), {}),
+    ("prop_key", "treasure", ("files", "Treasure Hunters/Merchant Ship/Sprites/Chest Key/Idle/", 8, "%d"), {}),
     ("prop_heart", "kings", ("strip", "Sprites/12-Live and Coins/Big Heart Idle (18x14).png", 18, 14, 8), {}),
     ("prop_half_heart", "kings", ("strip", "Sprites/12-Live and Coins/Small Heart Idle (18x14).png", 18, 14, 8), {}),
     ("prop_armor", "kings", ("strip", "Sprites/12-Live and Coins/Big Heart Idle (18x14).png", 18, 14, 8), {"blue": True}),
@@ -130,6 +136,15 @@ def _blue(im):
     return im
 
 
+def _wash(im, k):
+    px = im.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = px[x, y]
+            px[x, y] = (int(r * k[0]), int(g * k[1]), int(b * k[2]), a)
+    return im
+
+
 def build():
     made = {}   # file name -> image
     info = {}   # id -> props.json row
@@ -150,11 +165,13 @@ def build():
     for pid, pack, how, opt in LOOPS:
         if how[0] == "strip":
             sheet = _zip_image(pack, how[1])
-            frames = [sheet.crop((i * how[2], 0, (i + 1) * how[2], how[3])) for i in range(how[4])]
+            ox, oy = (how[5], how[6]) if len(how) > 5 else (0, 0)
+            frames = [sheet.crop((ox + i * how[2], oy, ox + (i + 1) * how[2], oy + how[3])) for i in range(how[4])]
             src = PACKS[pack]["zip"] + " :: " + how[1]
         else:
-            frames = [_zip_image(pack, "%s%02d.png" % (how[1], i + 1)) for i in range(how[2])]
-            src = PACKS[pack]["zip"] + " :: " + how[1] + "01.png ..."
+            fmt = how[3] if len(how) > 3 else "%02d"
+            frames = [_zip_image(pack, how[1] + (fmt % (i + 1)) + ".png") for i in range(how[2])]
+            src = PACKS[pack]["zip"] + " :: " + how[1] + (fmt % 1) + ".png ..."
         x0, y0, x1, y1 = _union_box(frames)
         if "center_x" in opt:
             half = max(opt["center_x"] - x0, x1 - opt["center_x"])
@@ -162,12 +179,16 @@ def build():
         frames = [f.crop((x0, y0, x1, y1)) for f in frames]
         if opt.get("blue"):
             frames = [_blue(f) for f in frames]
+        if "wash" in opt:
+            frames = [_wash(f, opt["wash"]) for f in frames]
         for i, f in enumerate(frames):
             made["%s_anim_f%d.png" % (pid, i)] = f
         info[pid] = {"pack": PACKS[pack]["pack"], "licence": PACKS[pack]["licence"], "source": src,
                      "box": [x0, y0, x1, y1], "size": list(frames[0].size), "frames": len(frames)}
         if opt.get("blue"):
             info[pid]["note"] = "red and blue channels swapped by the importer"
+        if "wash" in opt:
+            info[pid]["note"] = "colours multiplied by %s by the importer" % (list(opt["wash"]),)
     return made, info
 
 

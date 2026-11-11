@@ -46,7 +46,7 @@ var _pressed_flash := {"bomb": 0.0, "action": 0.0, "pause": 0.0}
 func _ready() -> void:
 	layer = G.LAYER_TOUCH
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_bomb_tex = Art.tex("bomb")
+	_bomb_tex = Art.tex("prop_bomb")
 	_skull_tex = Art.tex("skull")
 	_skull_region = UI.used_rect("skull")
 	_canvas = Control.new()

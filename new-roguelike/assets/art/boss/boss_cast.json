@@ -1,16 +1,43 @@
 {
+ "_about": {
+  "below_feet_px": "animations with pixels under the feet line (weapons in the floor, puddles, breath) and how far.",
+  "body_width / body_height": "visible pixels of frame 0 of the measured_on animation (wings and weapons included).",
+  "core_width": "width of the pixels that are opaque in EVERY frame of the measured_on animation (a swinging axe or beating wing tip does not count). radius = 0.38 x the smaller of core_width and body_height, the same rule tools/pc_import_cast.py uses; it is a suggestion.",
+  "feet": "[x, y] on the canvas. y = the first empty row under the soles (same convention as pc_cast.json: draw the sprite with offset -feet and it stands on its position). x = the middle of the stance. For a boss with hover_px > 0 the point is the GROUND under it and the body hangs hover_px above.",
+  "hit_frames": "frame(s) where the blow lands or the shot leaves; active_frames = frames it stays dangerous.",
+  "mirrored": "true = the source faces left and every frame (and its fx) was flipped so the boss faces right.",
+  "projectile_spawn": "from_feet = [x, y] relative to the feet point, facing right (+x forward, -y up); mirror x when the boss is flipped to face left.",
+  "repeated_frames": "frames that are byte-identical to the frame before them in the SOURCE (the artist's holds).",
+  "source_fps": "from the pack's own preview GIFs (frame_ms lists the holds); null = the pack states none.",
+  "stance_width": "walkers: span of the pixels that touch the ground (lowest 3 rows) in the measured_on animation; hoverers (floats): width of the lowest third of the pixels that are opaque in every frame of it. Only used for the feet x.",
+  "touches_source_cell_edge": "source frames that touch the Left/Top/Right edge of their cell (possibly cut in the pack)."
+ },
  "boss_cthulu": {
+  "active_frames": {
+   "attack": [
+    2,
+    3
+   ],
+   "attack2": [
+    3,
+    4,
+    5,
+    6
+   ]
+  },
   "archive": "assets_raw/bosses/chierit_free_bosses/free_cthulu_v1.zip",
+  "below_feet_px": {},
   "body_height": 63,
   "body_width": 60,
   "canvas": [
    150,
    78
   ],
+  "core_width": 60,
   "credit": "chierit (https://chierit.itch.io)",
   "feet": [
-   52,
-   76
+   54,
+   77
   ],
   "floats": false,
   "frames": {
@@ -28,16 +55,15 @@
     2
    ],
    "attack2": [
-    3,
-    4,
-    5,
-    6
+    3
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC-BY 4.0, do not resell",
+  "measured_on": "idle",
   "mirrored": false,
-  "notes": "Faces right in the source. 'fly' lifts off the ground (same feet point, body rises).",
+  "notes": "Faces right in the source. 'fly' lifts off the ground (same feet point, body rises). hit f0 is a plain white silhouette drawn by the artist (the game flashes white by itself, so start hit at f1 if it doubles up). The last frames of the attacks sit 1 px off the idle pose in the source.",
   "pack": "chierit Free Cthulu",
   "projectile_spawn": {
    "attack": {
@@ -47,22 +73,22 @@
     ],
     "frame": 2,
     "from_feet": [
-     30,
-     -36
+     28,
+     -37
     ],
     "method": "beyond_idle"
    }
   },
-  "radius": 21,
+  "radius": 23,
   "reach_measured": {
    "attack": {
-    "forward_px": 93,
+    "forward_px": 91,
     "frames": [
      2
     ]
    },
    "attack2": {
-    "forward_px": 96,
+    "forward_px": 94,
     "frames": [
      3,
      4,
@@ -70,6 +96,14 @@
      6
     ]
    }
+  },
+  "repeated_frames": {
+   "death": [
+    10
+   ],
+   "idle": [
+    6
+   ]
   },
   "source_fps": {
    "all_gifs": 12.5
@@ -185,20 +219,25 @@
     "free_cthulu/animations/PNG/walk/walk_11.png",
     "free_cthulu/animations/PNG/walk/walk_12.png"
    ]
-  }
+  },
+  "stance_width": 21,
+  "touches_source_cell_edge": {}
  },
  "boss_death": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 30,
   "body_width": 24,
   "canvas": [
    29,
    34
   ],
+  "core_width": 20,
   "credit": null,
   "feet": [
-   14,
-   32
+   13,
+   33
   ],
   "floats": false,
   "frames": {
@@ -208,15 +247,37 @@
   },
   "fx": [],
   "hit_frames": {},
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
-  "mirrored": true,
-  "notes": "Small reaper with a lamp. No idle, attack, hit or death: walk (with lamp), walk without lamp, and 'rise' (comes up out of the ground: use as spawn). body size measured on run f0.",
+  "measured_on": "run",
+  "mirrored": false,
+  "notes": "Small reaper with a lamp. No idle, attack, hit or death: walk (with lamp), walk without lamp, and 'rise' (comes up out of the ground: use as spawn). Feet and body size measured on run. Faces right in the source (skull and lamp lead to the right).",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {},
   "radius": 8,
   "reach_measured": {},
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "death-lamp-rise.gif": {
+    "fps": 7.69,
+    "frame_ms": [
+     130,
+     130,
+     130,
+     130,
+     500,
+     130,
+     130,
+     130,
+     130,
+     130,
+     500
+    ]
+   },
+   "death-lamp-walk.gif": 7.69,
+   "death-walk.gif": 7.69
+  },
   "source_frame_px": {
    "run": [
     32,
@@ -262,20 +323,38 @@
     "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp10.png",
     "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp11.png"
    ]
-  }
+  },
+  "stance_width": 23,
+  "touches_source_cell_edge": {}
  },
  "boss_demon": {
+  "active_frames": {
+   "attack2": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ]
+  },
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 124,
   "body_width": 134,
   "canvas": [
    231,
    172
   ],
+  "core_width": 89,
   "credit": null,
   "feet": [
-   79,
-   159
+   100,
+   171
   ],
   "floats": true,
   "frames": {
@@ -293,10 +372,12 @@
     6
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 11,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": true,
-  "notes": "Winged demon that hovers. Idle cells are 256x176, attack cells 312x220: idle placed at (56,44) in the attack cell (exact pixel match, 6487 of 6569 px identical). attack = swipe without breath, attack2 = same with fire breath drawn in. No walk, hit or death. Feet = lowest pixel of the hovering body (no shadow).",
+  "notes": "Winged demon that hovers. Idle cells are 256x176, attack cells 312x220: idle placed at (56,44) in the attack cell (exact pixel match, 6487 of 6569 px identical). attack = swipe without breath, attack2 = same with fire breath drawn in. No walk, hit or death. It hovers: the feet point is the ground, taken from the lowest row of the breath where it pools on the floor (hover_px = gap under the body). body_width and radius count the wings; the cloak alone is stance_width (61 px) wide, so a body circle of about 23 px fits the cloak better.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {
    "attack2": {
@@ -306,22 +387,22 @@
     ],
     "frame": 6,
     "from_feet": [
-     38,
-     -56
+     17,
+     -68
     ],
     "method": "diff_attack"
    }
   },
-  "radius": 47,
+  "radius": 34,
   "reach_measured": {
    "attack": {
-    "forward_px": 79,
+    "forward_px": 58,
     "frames": [
      3
     ]
    },
    "attack2": {
-    "forward_px": 150,
+    "forward_px": 129,
     "frames": [
      8,
      11,
@@ -329,7 +410,60 @@
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {
+   "attack": [
+    10
+   ]
+  },
+  "source_fps": {
+   "demon-attack-no-breath.gif": {
+    "fps": 10.0,
+    "frame_ms": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     200
+    ]
+   },
+   "demon-attack.gif": {
+    "fps": 10.0,
+    "frame_ms": [
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     200
+    ]
+   },
+   "demon-idle.gif": 5.0
+  },
   "source_frame_px": {
    "attack": [
     312,
@@ -399,20 +533,25 @@
     "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle5.png",
     "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle6.png"
    ]
-  }
+  },
+  "stance_width": 61,
+  "touches_source_cell_edge": {}
  },
  "boss_demon_slime": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/chierit_free_bosses/boss_demon_slime_FREE_v1.0.zip",
+  "below_feet_px": {},
   "body_height": 105,
   "body_width": 80,
   "canvas": [
    212,
    126
   ],
+  "core_width": 78,
   "credit": "chierit (https://chierit.itch.io)",
   "feet": [
-   85,
-   124
+   81,
+   125
   ],
   "floats": false,
   "frames": {
@@ -425,23 +564,30 @@
   "fx": [],
   "hit_frames": {
    "attack": [
-    11
+    9
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC-BY 4.0, do not resell",
+  "measured_on": "idle",
   "mirrored": true,
   "notes": "Free version = demon form only (the slime form is in the paid version).",
   "pack": "chierit Boss: Demon Slime (free)",
   "projectile_spawn": {},
-  "radius": 28,
+  "radius": 30,
   "reach_measured": {
    "attack": {
-    "forward_px": 125,
+    "forward_px": 129,
     "frames": [
      11
     ]
    }
+  },
+  "repeated_frames": {
+   "death": [
+    21
+   ]
   },
   "source_fps": {
    "all_gifs": 10.0
@@ -540,20 +686,36 @@
     "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_11.png",
     "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_12.png"
    ]
-  }
+  },
+  "stance_width": 59,
+  "touches_source_cell_edge": {}
  },
  "boss_dragon": {
+  "active_frames": {
+   "attack": [
+    3,
+    4,
+    5,
+    6
+   ],
+   "attack2": [
+    6,
+    7
+   ]
+  },
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 39,
   "body_width": 71,
   "canvas": [
    122,
    57
   ],
+  "core_width": 60,
   "credit": null,
   "feet": [
-   40,
-   55
+   37,
+   56
   ],
   "floats": false,
   "frames": {
@@ -564,19 +726,18 @@
   "fx": [],
   "hit_frames": {
    "attack": [
-    3,
-    4,
-    5,
-    6
+    3
    ],
    "attack2": [
     6
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": true,
-  "notes": "Grotto Escape 2 boss dragon (small, low). attack = fire breath (fire drawn into the frames), attack2 = tail swipe. Spritesheets used (the loose sprites are named in reverse layer order). No walk, hit or death.",
+  "notes": "Grotto Escape 2 boss dragon (small, low). attack = fire breath (fire drawn into the frames), attack2 = tail swipe. Spritesheets used (the loose sprites are named in reverse layer order). No walk, hit or death. The tail sheet sits 5 px further left in its cells than idle (frame 0 is the idle pose, 98 % pixel match at +5): shifted back. The tail swipe ends with the dragon turned round; the pack has no turn-back frames.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {
    "attack": {
@@ -586,28 +747,56 @@
     ],
     "frame": 3,
     "from_feet": [
-     36,
-     -8
+     39,
+     -9
     ],
     "method": "beyond_idle"
    }
   },
-  "radius": 25,
+  "radius": 15,
   "reach_measured": {
    "attack": {
-    "forward_px": 80,
+    "forward_px": 83,
     "frames": [
      6
     ]
    },
    "attack2": {
-    "forward_px": 64,
+    "forward_px": 62,
     "frames": [
      6
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "breath.gif": {
+    "fps": 10.0,
+    "frame_ms": [
+     500,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   "idle.gif": 10.0,
+   "tail.gif": {
+    "fps": 10.0,
+    "frame_ms": [
+     1000,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   }
+  },
   "source_frame_px": {
    "attack": [
     144,
@@ -622,7 +811,12 @@
     64
    ]
   },
-  "source_offsets": {},
+  "source_offsets": {
+   "attack2": [
+    5,
+    0
+   ]
+  },
   "sources": {
    "attack": [
     "Legacy Collection/Assets/Gothicvania/Characters/Grotto-escape-2-boss-dragon/spritesheets/breath.png"
@@ -633,20 +827,25 @@
    "idle": [
     "Legacy Collection/Assets/Gothicvania/Characters/Grotto-escape-2-boss-dragon/spritesheets/idle.png"
    ]
-  }
+  },
+  "stance_width": 61,
+  "touches_source_cell_edge": {}
  },
  "boss_fire_skull": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 78,
   "body_width": 68,
   "canvas": [
    91,
    101
   ],
+  "core_width": 56,
   "credit": null,
   "feet": [
-   45,
-   99
+   46,
+   100
   ],
   "floats": true,
   "frames": {
@@ -655,15 +854,21 @@
   },
   "fx": [],
   "hit_frames": {},
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": true,
-  "notes": "Floating flaming skull: no attack, hit or death animation in the pack (fire on = idle; 'nofire' is the bare skull, 54x70 cells, placed at (16,32) in the 96x112 fire cell by an exact pixel match). Feet = bottom of the flames (it floats, no shadow).",
+  "notes": "Floating flaming skull: no attack, hit or death animation in the pack (fire on = idle; 'nofire' is the bare skull, 54x70 cells, placed at (16,32) in the 96x112 fire cell by an exact pixel match). Feet = bottom of the flames (it floats, no shadow; nothing in the pack shows its ground, so lift it in code). The skull tumbles round while it burns (that is the source animation), so it has no fixed facing.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {},
-  "radius": 24,
+  "radius": 21,
   "reach_measured": {},
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "fire-skull-no-fire.gif": 10.0,
+   "fire-skull.gif": 7.69
+  },
   "source_frame_px": {
    "idle": [
     96,
@@ -697,20 +902,33 @@
     "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/NoFire/frame3.png",
     "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/NoFire/frame4.png"
    ]
-  }
+  },
+  "stance_width": 43,
+  "touches_source_cell_edge": {}
  },
  "boss_frost_guardian": {
+  "active_frames": {
+   "attack": [
+    6,
+    7,
+    8
+   ]
+  },
   "archive": "assets_raw/bosses/chierit_free_bosses/Frost_Guardian_FREE_v1.0.zip",
+  "below_feet_px": {
+   "death": 3
+  },
   "body_height": 92,
   "body_width": 79,
   "canvas": [
    186,
    98
   ],
+  "core_width": 79,
   "credit": "chierit (https://chierit.itch.io)",
   "feet": [
-   92,
-   93
+   89,
+   94
   ],
   "floats": false,
   "frames": {
@@ -723,27 +941,42 @@
   "fx": [],
   "hit_frames": {
    "attack": [
-    7,
-    8
+    6
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC-BY 4.0, do not resell",
+  "measured_on": "idle",
   "mirrored": true,
-  "notes": "",
+  "notes": "Drawn from the front; the punch goes right. The death puddle spreads up to 3 px under the feet line.",
   "pack": "chierit Boss: Frost Guardian (free)",
   "projectile_spawn": {},
-  "radius": 28,
+  "radius": 30,
   "reach_measured": {
    "attack": {
-    "forward_px": 92,
+    "forward_px": 95,
     "frames": [
      7,
      8
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {
+   "death": [
+    15
+   ],
+   "idle": [
+    1
+   ],
+   "run": [
+    1,
+    6
+   ]
+  },
+  "source_fps": {
+   "all_gifs": 10.0
+  },
   "source_frame_px": {
    "attack": [
     192,
@@ -831,7 +1064,9 @@
     "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_9.png",
     "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_10.png"
    ]
-  }
+  },
+  "stance_width": 39,
+  "touches_source_cell_edge": {}
  },
  "boss_fx_demon_fireball": {
   "canvas": [
@@ -1046,17 +1281,30 @@
   ]
  },
  "boss_gollux": {
+  "active_frames": {
+   "attack": [
+    4,
+    5,
+    6
+   ],
+   "attack2": [
+    5,
+    6
+   ]
+  },
   "archive": "assets_raw/bosses/admurin_bosses_gollux/Bosses_Gollux.zip",
+  "below_feet_px": {},
   "body_height": 60,
   "body_width": 65,
   "canvas": [
    106,
    92
   ],
+  "core_width": 65,
   "credit": null,
   "feet": [
    34,
-   90
+   91
   ],
   "floats": false,
   "frames": {
@@ -1076,10 +1324,12 @@
     5
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "free, commercial use and modification allowed, no resale/NFT/AI training",
+  "measured_on": "idle",
   "mirrored": false,
-  "notes": "Idle cells are 128x128, all others 384x128: idle placed at (128,0) in the 384 cell (exact pixel match with attack A frame 0). No death animation in the pack.",
+  "notes": "Idle cells are 128x128, all others 384x128: idle placed at (128,0) in the 384 cell (exact pixel match with attack A frame 0). No death animation in the pack. heal f19 and f20 are the artist's pale and green flash frames. Both attacks end with a long stand-still (A from f8, B from f10).",
   "pack": "Admurin Bosses - Gollux",
   "projectile_spawn": {},
   "radius": 23,
@@ -1098,7 +1348,10 @@
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "all_gifs": 12.5
+  },
   "source_frame_px": {
    "attack": [
     384,
@@ -1150,20 +1403,30 @@
    "run": [
     "Gollux/gollux_move.png"
    ]
-  }
+  },
+  "stance_width": 65,
+  "touches_source_cell_edge": {}
  },
  "boss_hell_beast": {
+  "active_frames": {
+   "attack2": [
+    4,
+    5
+   ]
+  },
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 60,
   "body_width": 44,
   "canvas": [
    74,
    161
   ],
+  "core_width": 40,
   "credit": null,
   "feet": [
-   39,
-   159
+   36,
+   160
   ],
   "floats": false,
   "frames": {
@@ -1179,25 +1442,26 @@
     3
    ],
    "attack2": [
-    4,
-    5
+    4
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": true,
-  "notes": "attack = rears up and breathes (spits the fireball fx); attack2 = 'Burn': turns into a tall fire pillar (canvas is tall because of it). No walk, hit or death. The Burn spritesheet has 74 px cells while its single sprites are 80 px: the single 80x160 sprites are used.",
+  "notes": "attack = rears up and breathes (spits the fireball fx); attack2 = 'Burn': turns into a tall fire pillar (canvas is tall because of it). No walk, hit or death. The Burn spritesheet has 74 px cells while its single sprites are 80 px: the single 80x160 sprites are used. The Breath sprites sit 2 px further right in their cells than Idle (frame 0 is the idle pose, 100 % pixel match at -2): shifted back. The outline changes colour from frame to frame in the source (glow), and idle has loose sparks.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {
    "attack": {
     "canvas_px": [
-     56,
+     58,
      132
     ],
     "frame": 3,
     "from_feet": [
-     17,
-     -27
+     22,
+     -28
     ],
     "method": "rightmost"
    }
@@ -1205,20 +1469,23 @@
   "radius": 15,
   "reach_measured": {
    "attack": {
-    "forward_px": 18,
+    "forward_px": 23,
     "frames": [
      0,
      3
     ]
    },
    "attack2": {
-    "forward_px": 33,
+    "forward_px": 36,
     "frames": [
      4
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "all_gifs": 10.0
+  },
   "source_frame_px": {
    "attack": [
     80,
@@ -1233,7 +1500,12 @@
     160
    ]
   },
-  "source_offsets": {},
+  "source_offsets": {
+   "attack": [
+    -2,
+    0
+   ]
+  },
   "sources": {
    "attack": [
     "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Breath/Sprites/hell-beast-breath1.png",
@@ -1257,20 +1529,25 @@
     "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle5.png",
     "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle6.png"
    ]
-  }
+  },
+  "stance_width": 31,
+  "touches_source_cell_edge": {}
  },
  "boss_hell_hound": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 24,
   "body_width": 38,
   "canvas": [
    51,
    45
   ],
+  "core_width": 27,
   "credit": null,
   "feet": [
-   29,
-   43
+   32,
+   44
   ],
   "floats": false,
   "frames": {
@@ -1281,15 +1558,20 @@
   },
   "fx": [],
   "hit_frames": {},
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": true,
   "notes": "Mini-boss size. run = walk cycle, dash = gallop. Jump can serve as the pounce attack. No hit or death.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {},
-  "radius": 13,
+  "radius": 9,
   "reach_measured": {},
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "all_gifs": 10.0
+  },
   "source_frame_px": {
    "dash": [
     64,
@@ -1352,20 +1634,25 @@
     "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame11.png",
     "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame12.png"
    ]
-  }
+  },
+  "stance_width": 32,
+  "touches_source_cell_edge": {}
  },
  "boss_mecha_golem": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/kronovi_mecha_stone_golem/Mecha-stone Golem 0.1.zip",
+  "below_feet_px": {},
   "body_height": 46,
   "body_width": 48,
   "canvas": [
    73,
    73
   ],
+  "core_width": 48,
   "credit": null,
   "feet": [
-   26,
-   47
+   25,
+   72
   ],
   "floats": true,
   "frames": {
@@ -1390,12 +1677,17 @@
    ],
    "attack2": [
     6
+   ],
+   "cast": [
+    6
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 24,
   "licence": "free, commercial use and editing allowed, no resale/redistribution",
+  "measured_on": "idle",
   "mirrored": false,
-  "notes": "One 1000x1000 sheet of 100x100 cells. Rows: 0 idle/move (4; run = the same 4 frames, as the pack says), 1 glow 8, 2 ranged arm shot 9 (attack), 3 block 8 (page says 9), 4 melee 7 (attack2), 5 laser cast 7, 6 armour buff 10 (page says 11), 7+8 defeated 14 (death; played backwards = appearance). No hit animation. Faces right in the source. Hovers: no legs, feet = bottom of the body. Laser fx: beam starts at its left end and runs to the right edge of its 300 px cell; frame 0 of the laser sheet was empty and is dropped (14 frames remain: 8 charge + 6 beam).",
+  "notes": "One 1000x1000 sheet of 100x100 cells. Rows: 0 idle/move (4; run = the same 4 frames, as the pack says), 1 glow 8, 2 ranged arm shot 9 (attack), 3 block 8 (page says 9), 4 melee 7 (attack2), 5 laser cast 7, 6 armour buff 10 (page says 11), 7+8 defeated 14 (death; played backwards = appearance). No hit animation. Faces right in the source. Hovers: no legs. The feet point is the ground, taken from the rubble at the end of 'death' (the body drops hover_px onto it). Laser fx: beam starts at its left end and runs to the right edge of its 300 px cell; frame 0 of the laser sheet was empty and is dropped (14 frames remain: 8 charge + 6 beam).",
   "pack": "Kronovi Mecha-Stone Golem [FREE]",
   "projectile_spawn": {
    "attack": {
@@ -1405,8 +1697,8 @@
     ],
     "frame": 7,
     "from_feet": [
-     45,
-     -32
+     46,
+     -57
     ],
     "method": "rightmost"
    },
@@ -1417,8 +1709,8 @@
     ],
     "frame": 6,
     "from_feet": [
-     2,
-     -43
+     3,
+     -68
     ],
     "method": "cyan"
    }
@@ -1426,17 +1718,26 @@
   "radius": 17,
   "reach_measured": {
    "attack": {
-    "forward_px": 45,
+    "forward_px": 46,
     "frames": [
      7
     ]
    },
    "attack2": {
-    "forward_px": 36,
+    "forward_px": 37,
     "frames": [
      6
     ]
    }
+  },
+  "repeated_frames": {
+   "attack": [
+    4,
+    6
+   ],
+   "death": [
+    13
+   ]
   },
   "source_fps": null,
   "source_frame_px": {
@@ -1506,20 +1807,34 @@
    "run": [
     "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
    ]
-  }
+  },
+  "stance_width": 47,
+  "touches_source_cell_edge": {}
  },
  "boss_minotaur": {
+  "active_frames": {
+   "attack": [
+    4,
+    5,
+    10,
+    11
+   ]
+  },
   "archive": "assets_raw/bosses/chierit_free_bosses/mino_v1.1_free.zip",
+  "below_feet_px": {
+   "attack": 3
+  },
   "body_height": 100,
   "body_width": 104,
   "canvas": [
    206,
    124
   ],
+  "core_width": 102,
   "credit": "chierit (https://chierit.itch.io)",
   "feet": [
-   63,
-   119
+   69,
+   120
   ],
   "floats": false,
   "frames": {
@@ -1530,25 +1845,31 @@
   "fx": [],
   "hit_frames": {
    "attack": [
-    6
+    4,
+    10
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC-BY 4.0, do not resell",
+  "measured_on": "idle",
   "mirrored": true,
   "notes": "Free version has NO hit and NO death animation (paid version has them).",
   "pack": "chierit Boss: Minotaur (free)",
   "projectile_spawn": {},
-  "radius": 36,
+  "radius": 38,
   "reach_measured": {
    "attack": {
-    "forward_px": 141,
+    "forward_px": 135,
     "frames": [
      6
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "all_gifs": 10.0
+  },
   "source_frame_px": {
    "attack": [
     288,
@@ -1615,20 +1936,25 @@
     "mino_v1.1_free/animations/walk/walk_11.png",
     "mino_v1.1_free/animations/walk/walk_12.png"
    ]
-  }
+  },
+  "stance_width": 84,
+  "touches_source_cell_edge": {}
  },
  "boss_mutant_toad": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 36,
   "body_width": 48,
   "canvas": [
    74,
    60
   ],
+  "core_width": 48,
   "credit": null,
   "feet": [
-   32,
-   58
+   31,
+   59
   ],
   "floats": false,
   "frames": {
@@ -1642,22 +1968,27 @@
     2
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": false,
-  "notes": "Mini-boss size. attack = tongue lash. No hit or death.",
+  "notes": "Mini-boss size. attack = tongue lash. No hit or death. The tongue runs to the right edge of its 80 px source cell and ends flat there (it is cut like that in the pack).",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {},
-  "radius": 17,
+  "radius": 14,
   "reach_measured": {
    "attack": {
-    "forward_px": 40,
+    "forward_px": 41,
     "frames": [
      2
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "all_gifs": 10.0
+  },
   "source_frame_px": {
    "attack": [
     80,
@@ -1691,20 +2022,29 @@
     "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/jump/mutant-toad-jump3.png",
     "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/jump/mutant-toad-jump4.png"
    ]
+  },
+  "stance_width": 48,
+  "touches_source_cell_edge": {
+   "attack": [
+    "f2:R"
+   ]
   }
  },
  "boss_nightmare": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 81,
   "body_width": 91,
   "canvas": [
    121,
    91
   ],
+  "core_width": 87,
   "credit": null,
   "feet": [
-   70,
-   89
+   71,
+   90
   ],
   "floats": false,
   "frames": {
@@ -1713,15 +2053,20 @@
   },
   "fx": [],
   "hit_frames": {},
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": true,
   "notes": "Fire horse. Only idle and run in the pack: no attack, hit or death.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {},
-  "radius": 32,
+  "radius": 31,
   "reach_measured": {},
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "all_gifs": 10.0
+  },
   "source_frame_px": {
    "idle": [
     160,
@@ -1745,20 +2090,25 @@
     "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Run/frame2.png",
     "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Run/frame3.png"
    ]
-  }
+  },
+  "stance_width": 63,
+  "touches_source_cell_edge": {}
  },
  "boss_ogre": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 58,
-  "body_width": 64,
+  "body_width": 44,
   "canvas": [
    107,
    78
   ],
+  "core_width": 44,
   "credit": null,
   "feet": [
-   46,
-   76
+   34,
+   77
   ],
   "floats": false,
   "frames": {
@@ -1774,22 +2124,58 @@
     4
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle_unarmed",
   "mirrored": true,
-  "notes": "No hit or death animation in the pack. Club overhead smash.",
+  "notes": "No hit or death animation in the pack. Club overhead smash: he steps about 15 px forward during the swing and the pack has no step back, so he pops back when the attack ends (move him in code or accept it). Feet point, body size and radius are measured on idle_unarmed, so the club does not count.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {},
-  "radius": 22,
+  "radius": 17,
   "reach_measured": {
    "attack": {
-    "forward_px": 59,
+    "forward_px": 71,
     "frames": [
      5
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "ogre-attack.gif": {
+    "fps": 10.0,
+    "frame_ms": [
+     500,
+     100,
+     100,
+     500,
+     100,
+     100,
+     100
+    ]
+   },
+   "ogre-idle-unarmed.gif": {
+    "fps": 5.0,
+    "frame_ms": [
+     300,
+     200,
+     300,
+     200
+    ]
+   },
+   "ogre-idle.gif": {
+    "fps": 5.0,
+    "frame_ms": [
+     300,
+     200,
+     300,
+     200
+    ]
+   },
+   "ogre-walk-unarmed.gif": 10.0,
+   "ogre-walk.gif": 10.0
+  },
   "source_frame_px": {
    "attack": [
     144,
@@ -1851,20 +2237,25 @@
     "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed5.png",
     "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed6.png"
    ]
-  }
+  },
+  "stance_width": 36,
+  "touches_source_cell_edge": {}
  },
  "boss_terrible_knight": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 39,
   "body_width": 28,
   "canvas": [
    86,
    59
   ],
+  "core_width": 27,
   "credit": null,
   "feet": [
-   34,
-   57
+   31,
+   58
   ],
   "floats": false,
   "frames": {
@@ -1904,8 +2295,10 @@
     2
    ]
   },
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": false,
   "notes": "Platformer knight (mini-boss size). AttackSide = throws the dagger fx. ClimbLedge and AttackCrouch (platformer only) not imported. No death animation.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
@@ -1917,8 +2310,8 @@
     ],
     "frame": 1,
     "from_feet": [
-     20,
-     -10
+     23,
+     -11
     ],
     "method": "rightmost"
    }
@@ -1926,43 +2319,109 @@
   "radius": 10,
   "reach_measured": {
    "air_slash": {
-    "forward_px": 39,
+    "forward_px": 42,
     "frames": [
      4
     ]
    },
    "attack": {
-    "forward_px": 47,
+    "forward_px": 50,
     "frames": [
      2
     ]
    },
    "attack2": {
-    "forward_px": 20,
+    "forward_px": 23,
     "frames": [
      1
     ]
    },
    "attack3": {
-    "forward_px": 13,
+    "forward_px": 16,
     "frames": [
      0
     ]
    },
    "crouch_attack": {
-    "forward_px": 50,
+    "forward_px": 53,
     "frames": [
      1
     ]
    },
    "jump_attack": {
-    "forward_px": 22,
+    "forward_px": 25,
     "frames": [
      2
     ]
    }
   },
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "AirSwordSlash.gif": {
+    "fps": 14.29,
+    "frame_ms": [
+     70,
+     100,
+     100,
+     100,
+     100,
+     100
+    ]
+   },
+   "ClimbLedge.gif": {
+    "fps": 10.0,
+    "frame_ms": [
+     100,
+     100,
+     100,
+     100,
+     130
+    ]
+   },
+   "CrouchswordSlash.gif": {
+    "fps": 7.69,
+    "frame_ms": [
+     500,
+     130,
+     130,
+     500
+    ]
+   },
+   "JumpAttack.gif": 10.0,
+   "attackUp.gif": 10.0,
+   "attackcrouch.gif": 10.0,
+   "attackside.gif": 10.0,
+   "crouch.gif": {
+    "fps": 7.69,
+    "frame_ms": [
+     130,
+     1000
+    ]
+   },
+   "hit-preview.gif": 10.0,
+   "hurt.gif": {
+    "fps": 10.0,
+    "frame_ms": [
+     500,
+     100,
+     100
+    ]
+   },
+   "idle.gif": 7.69,
+   "jump.gif": 10.0,
+   "run.gif": 14.29,
+   "swordSlash.gif": {
+    "fps": 7.69,
+    "frame_ms": [
+     130,
+     130,
+     130,
+     130,
+     130,
+     1000
+    ]
+   }
+  },
   "source_frame_px": {
    "air_slash": [
     128,
@@ -2082,20 +2541,25 @@
     "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame11.png",
     "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame12.png"
    ]
-  }
+  },
+  "stance_width": 23,
+  "touches_source_cell_edge": {}
  },
  "boss_werewolf": {
+  "active_frames": {},
   "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "below_feet_px": {},
   "body_height": 39,
   "body_width": 57,
   "canvas": [
    79,
    56
   ],
+  "core_width": 49,
   "credit": null,
   "feet": [
-   40,
-   54
+   44,
+   55
   ],
   "floats": false,
   "frames": {
@@ -2106,15 +2570,20 @@
   },
   "fx": [],
   "hit_frames": {},
-  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "hit_frames_how": "read off the contact sheets by eye (HITS / ACTIVE in tools/import_bosses.py); reach_measured (the frames that reach furthest forward) is only a cross-check",
+  "hover_px": 0,
   "licence": "CC0 1.0 (no attribution needed)",
+  "measured_on": "idle",
   "mirrored": false,
   "notes": "Mini-boss size. Only idle, run, jump, fall: no attack, hit or death.",
   "pack": "ansimuz Legacy Collection (Gothicvania)",
   "projectile_spawn": {},
-  "radius": 20,
+  "radius": 15,
   "reach_measured": {},
-  "source_fps": null,
+  "repeated_frames": {},
+  "source_fps": {
+   "all_gifs": 10.0
+  },
   "source_frame_px": {
    "fall": [
     96,
@@ -2158,6 +2627,8 @@
     "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run5.png",
     "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run6.png"
    ]
-  }
+  },
+  "stance_width": 26,
+  "touches_source_cell_edge": {}
  }
 }

@@ -1,7 +1,8 @@
 extends Node2D
-## Bomb: placed at the player's feet. It blinks faster and faster for FUSE seconds, then
+## Bomb: placed at the player's feet. Its fuse burns and it blinks faster and faster for FUSE seconds, then
 ## the room handles the blast (room.explode): enemies, the player if too close, rocks, crates
-## and hidden doors. The numbers for the blast live at the top of scripts/run/run.gd.
+## and hidden doors. The numbers for the blast live at the top of scripts/run/run.gd; the picture
+## of the blast is run.fx.explosion(), drawn as wide as run.BOMB_RADIUS.
 
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 
@@ -17,9 +18,10 @@ var _gone := false
 func setup(the_room: Node, at: Vector2) -> void:
 	room = the_room
 	position = at
-	add_child(EnemyScript.make_shadow(11.0))
-	sprite = Art.sprite("bomb", "default")
-	sprite.position = Vector2(0, 3)
+	add_child(EnemyScript.make_shadow(12.0))
+	# the bomb with its fuse burning (4 frames; cut by tools/import_props.py)
+	sprite = Art.sprite("prop_bomb_lit", "default")
+	sprite.position = Vector2(0, 2)
 	add_child(sprite)
 
 

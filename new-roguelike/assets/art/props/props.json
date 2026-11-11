@@ -1,0 +1,338 @@
+{
+ "about": "Small things cut by tools/import_props.py. Do not edit by hand.",
+ "props": {
+  "prop_armor": {
+   "box": [
+    4,
+    1,
+    18,
+    14
+   ],
+   "frames": 8,
+   "licence": "CC0 1.0",
+   "note": "red and blue channels swapped by the importer",
+   "pack": "Kings and Pigs (Pixel Frog)",
+   "size": [
+    14,
+    13
+   ],
+   "source": "pixelfrog_kings_and_pigs/Kings and Pigs.zip :: Sprites/12-Live and Coins/Big Heart Idle (18x14).png"
+  },
+  "prop_bomb": {
+   "box": null,
+   "frames": 1,
+   "licence": "CC0 1.0",
+   "pack": "Kings and Pigs (Pixel Frog)",
+   "size": [
+    13,
+    16
+   ],
+   "source": "pixelfrog_kings_and_pigs/Kings and Pigs.zip :: Sprites/09-Bomb/Bomb Off.png"
+  },
+  "prop_bomb_lit": {
+   "box": [
+    16,
+    18,
+    37,
+    39
+   ],
+   "frames": 4,
+   "licence": "CC0 1.0",
+   "pack": "Kings and Pigs (Pixel Frog)",
+   "size": [
+    21,
+    21
+   ],
+   "source": "pixelfrog_kings_and_pigs/Kings and Pigs.zip :: Sprites/09-Bomb/Bomb On (52x56).png"
+  },
+  "prop_chest_ashen": {
+   "box": [
+    240,
+    112,
+    272,
+    144
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Forge (Anokolisa)",
+   "size": [
+    32,
+    29
+   ],
+   "source": "Pixel_Crawler_-_Forge_1.2/Pixel Crawler - Forge/Assets/Tiles.png"
+  },
+  "prop_chest_ashen_open": {
+   "box": [
+    240,
+    88,
+    272,
+    112
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Forge (Anokolisa)",
+   "size": [
+    32,
+    24
+   ],
+   "source": "Pixel_Crawler_-_Forge_1.2/Pixel Crawler - Forge/Assets/Tiles.png"
+  },
+  "prop_chest_crypt": {
+   "box": [
+    224,
+    272,
+    256,
+    304
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Hideout (Anokolisa)",
+   "size": [
+    32,
+    32
+   ],
+   "source": "Pixel_Crawler_-_Hideout_1.0/Pixel Crawler - Hideout/Assets/Tiles.png"
+  },
+  "prop_chest_crypt_open": {
+   "box": [
+    256,
+    256,
+    288,
+    304
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Hideout (Anokolisa)",
+   "size": [
+    32,
+    44
+   ],
+   "source": "Pixel_Crawler_-_Hideout_1.0/Pixel Crawler - Hideout/Assets/Tiles.png"
+  },
+  "prop_chest_locked": {
+   "box": [
+    97,
+    41,
+    127,
+    64
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Desert (Anokolisa)",
+   "size": [
+    30,
+    23
+   ],
+   "source": "Pixel_Crawler_-_Desert/Pixel Crawler - Desert/Assets/Props.png"
+  },
+  "prop_chest_locked_open": {
+   "box": [
+    129,
+    8,
+    159,
+    32
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Desert (Anokolisa)",
+   "size": [
+    30,
+    24
+   ],
+   "source": "Pixel_Crawler_-_Desert/Pixel Crawler - Desert/Assets/Props.png"
+  },
+  "prop_chest_pit": {
+   "box": [
+    320,
+    272,
+    352,
+    304
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Library (Anokolisa)",
+   "size": [
+    32,
+    32
+   ],
+   "source": "Pixel_Crawler_-_Library/Pixel Crawler - Library/Assets/Tiles.png"
+  },
+  "prop_chest_pit_open": {
+   "box": [
+    320,
+    224,
+    352,
+    272
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Library (Anokolisa)",
+   "size": [
+    32,
+    48
+   ],
+   "source": "Pixel_Crawler_-_Library/Pixel Crawler - Library/Assets/Tiles.png"
+  },
+  "prop_chest_warrens": {
+   "box": [
+    129,
+    40,
+    158,
+    64
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Sewer (Anokolisa)",
+   "size": [
+    28,
+    24
+   ],
+   "source": "Pixel_Crawler_-_Sewer/Pixel Crawler - Sewer/Assets/Props.png"
+  },
+  "prop_chest_warrens_open": {
+   "box": [
+    130,
+    4,
+    158,
+    32
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Sewer (Anokolisa)",
+   "size": [
+    28,
+    28
+   ],
+   "source": "Pixel_Crawler_-_Sewer/Pixel Crawler - Sewer/Assets/Props.png"
+  },
+  "prop_coin": {
+   "box": [
+    2,
+    2,
+    13,
+    13
+   ],
+   "frames": 4,
+   "licence": "CC0",
+   "note": "colours multiplied by [1.0, 0.84, 0.6] by the importer",
+   "pack": "Zelda-like tilesets and sprites (ArMM1998)",
+   "size": [
+    11,
+    11
+   ],
+   "source": "armm1998_zelda_like/gfx_3.zip :: gfx/objects.png"
+  },
+  "prop_gem": {
+   "box": [
+    6,
+    6,
+    18,
+    18
+   ],
+   "frames": 4,
+   "licence": "CC0 1.0",
+   "pack": "Treasure Hunters (Pixel Frog)",
+   "size": [
+    12,
+    12
+   ],
+   "source": "pixelfrog_treasure_hunters/Treasure Hunters.zip :: Treasure Hunters/Pirate Treasure/Sprites/Green Diamond/01.png ..."
+  },
+  "prop_half_heart": {
+   "box": [
+    7,
+    4,
+    15,
+    11
+   ],
+   "frames": 8,
+   "licence": "CC0 1.0",
+   "pack": "Kings and Pigs (Pixel Frog)",
+   "size": [
+    8,
+    7
+   ],
+   "source": "pixelfrog_kings_and_pigs/Kings and Pigs.zip :: Sprites/12-Live and Coins/Small Heart Idle (18x14).png"
+  },
+  "prop_heart": {
+   "box": [
+    4,
+    1,
+    18,
+    14
+   ],
+   "frames": 8,
+   "licence": "CC0 1.0",
+   "pack": "Kings and Pigs (Pixel Frog)",
+   "size": [
+    14,
+    13
+   ],
+   "source": "pixelfrog_kings_and_pigs/Kings and Pigs.zip :: Sprites/12-Live and Coins/Big Heart Idle (18x14).png"
+  },
+  "prop_key": {
+   "box": [
+    8,
+    5,
+    16,
+    20
+   ],
+   "frames": 8,
+   "licence": "CC0 1.0",
+   "pack": "Treasure Hunters (Pixel Frog)",
+   "size": [
+    8,
+    15
+   ],
+   "source": "pixelfrog_treasure_hunters/Treasure Hunters.zip :: Treasure Hunters/Merchant Ship/Sprites/Chest Key/Idle/1.png ..."
+  },
+  "prop_plinth": {
+   "box": [
+    192,
+    64,
+    208,
+    80
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Castle Environment (Anokolisa)",
+   "size": [
+    16,
+    16
+   ],
+   "source": "Pixel_Crawler_-_Castle_Environment_0.3/Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+  },
+  "prop_skull_mark": {
+   "box": [
+    0,
+    12,
+    24,
+    28
+   ],
+   "frames": 1,
+   "licence": "CC0 1.0",
+   "pack": "Treasure Hunters (Pixel Frog)",
+   "size": [
+    16,
+    13
+   ],
+   "source": "pixelfrog_treasure_hunters/Treasure Hunters.zip :: Treasure Hunters/Pirate Treasure/Sprites/Golden Skull/01.png"
+  },
+  "prop_stairs_down": {
+   "box": [
+    48,
+    320,
+    96,
+    368
+   ],
+   "frames": 1,
+   "licence": "purchased; commercial use, no redistribution",
+   "pack": "Pixel Crawler - Castle Environment (Anokolisa)",
+   "size": [
+    48,
+    48
+   ],
+   "source": "Pixel_Crawler_-_Castle_Environment_0.3/Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+  }
+ }
+}

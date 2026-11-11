@@ -2,22 +2,24 @@ extends RefCounted
 ## Pickups: the small things you walk over to collect. Use with:
 ##   const Pickups = preload("res://scripts/data/pickups.gd")
 ## To add one: add a row. No code needed as long as "give" uses the words the player understands.
-##   sprite   a list of Art ids; the first one that exists is used (so better art can be dropped in later)
-##   tint     colour wash          scale   size multiplier
+##   sprite   a list of Art ids; the first one that exists is used (the old art stays as a fallback)
+##   tint     colour wash          scale   size multiplier (keep 1.0: pixel art does not scale well)
+##   shadow   width of the shadow it sits on, in px
 ##   give     what the player gets: {"coins": n} {"hp": half hearts} {"armor": half hearts} {"keys": n} {"bombs": n}
 ##   kind     what G.pickup_collected reports: "coin", "key", "bomb", "heart" or "armor"
 ##   sfx      sound name          need   "hurt" = only picked up when not at full health
-## The key is Niji's "niji_key_gold" (assets/art/niji, cut out by tools/import_assets.py); the yellow
-## flask is only the fallback if that art is ever missing.
+## The pictures are ids "prop_*" in assets/art/props, cut by tools/import_props.py (which pack each
+## one comes from is in assets/art/props/props.json): a spinning gold coin, a green gem for five
+## coins, a big heart, a small heart for half a heart, a blue heart for armour, a key and a bomb.
 
 const ALL := {
-	"coin": {"sprite": ["coin"], "tint": Color(1, 1, 1), "scale": 1.0, "give": {"coins": 1}, "kind": "coin", "sfx": "coin_pickup"},
-	"coin5": {"sprite": ["coin"], "tint": Color(1.35, 1.25, 0.75), "scale": 1.6, "give": {"coins": 5}, "kind": "coin", "sfx": "coin_pickup"},
-	"half_heart": {"sprite": ["ui_heart_half"], "tint": Color(1, 1, 1), "scale": 0.8, "give": {"hp": 1}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
-	"heart": {"sprite": ["ui_heart_full"], "tint": Color(1, 1, 1), "scale": 0.8, "give": {"hp": 2}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
-	"armor": {"sprite": ["ui_heart_full"], "tint": Color(0.45, 0.75, 1.6), "scale": 0.8, "give": {"armor": 2}, "kind": "armor", "sfx": "heart_pickup"},
-	"key": {"sprite": ["key", "niji_key_gold", "flask_yellow"], "tint": Color(1, 1, 1), "scale": 1.0, "give": {"keys": 1}, "kind": "key", "sfx": "key_pickup"},
-	"bomb": {"sprite": ["bomb"], "tint": Color(1, 1, 1), "scale": 0.8, "give": {"bombs": 1}, "kind": "bomb", "sfx": "bomb_pickup"},
+	"coin": {"sprite": ["prop_coin", "coin"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 9.0, "give": {"coins": 1}, "kind": "coin", "sfx": "coin_pickup"},
+	"coin5": {"sprite": ["prop_gem", "coin"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 10.0, "give": {"coins": 5}, "kind": "coin", "sfx": "coin_pickup"},
+	"half_heart": {"sprite": ["prop_half_heart", "ui_heart_half"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 7.0, "give": {"hp": 1}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
+	"heart": {"sprite": ["prop_heart", "ui_heart_full"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"hp": 2}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
+	"armor": {"sprite": ["prop_armor", "ui_heart_full"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"armor": 2}, "kind": "armor", "sfx": "heart_pickup"},
+	"key": {"sprite": ["prop_key", "niji_key_gold", "flask_yellow"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 8.0, "give": {"keys": 1}, "kind": "key", "sfx": "key_pickup"},
+	"bomb": {"sprite": ["prop_bomb", "bomb"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"bombs": 1}, "kind": "bomb", "sfx": "bomb_pickup"},
 }
 
 ## What a cleared fight room may leave behind (weights; see room.gd roll_room_reward()).

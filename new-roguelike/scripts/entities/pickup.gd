@@ -31,14 +31,18 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	info = Pickups.info(id)
 	position = desc.get("pos", G.ROOM_CENTER)
 	var s := float(info.get("scale", 1.0))
-	var shadow := EnemyScript.make_shadow(8.0 * s)
+	var shadow := EnemyScript.make_shadow(float(info.get("shadow", 8.0)) * s)
 	add_child(shadow)
 	var sprite_id := Pickups.sprite_for(id)
 	sprite = Art.sprite(sprite_id, "default")
 	sprite.scale = Vector2(s, s)
 	sprite.modulate = info.get("tint", Color(1, 1, 1))
-	# how far the picture's lowest drawn row sits above the bottom of its image
-	_ground_y = 3.0 if Art.size(sprite_id).y >= 16.0 else 1.0
+	# how far the picture's lowest drawn row sits above the bottom of its image: the "prop_"
+	# pictures are cut tight, the old 16 px ones have empty rows under them
+	_ground_y = 1.0 if sprite_id.begins_with("prop_") or Art.size(sprite_id).y < 16.0 else 3.0
+	# start on a random frame, so a pile of coins does not spin as one
+	if sprite.sprite_frames.get_frame_count("default") > 1:
+		sprite.frame = randi() % sprite.sprite_frames.get_frame_count("default")
 	add_child(sprite)
 	_bob = randf() * 6.0
 	if desc.get("pop", false):
