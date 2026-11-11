@@ -13,6 +13,7 @@ extends Node2D
 ## summary()["floor"] counts from 1 (floor_index counts from 0).
 
 const Heroes = preload("res://scripts/data/heroes.gd")
+const Story = preload("res://scripts/data/story.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
@@ -54,6 +55,8 @@ var floor_index := 0
 ## A level is ONE small floor that ends when its boss falls. The camp passes it in G.next_run:
 ##   {"level": <row of Story.LEVELS>, "kit": [item ids the hero carries], "pack": {coins, bombs, keys}}
 var level := {}
+const LEVEL_HEAL := 2             ## half hearts given back when a level's boss falls
+const LEVEL_STEP_BUDGET := 0.8    ## extra monster budget for the second level of an area
 var floor_name := ""
 var floor_count := 4
 var time_s := 0.0
@@ -347,10 +350,23 @@ func _enter_floor() -> void:
 	if from != Vector2i.ZERO:
 		# --goto=boss: stand in front of the boss door instead of at the opposite one
 		player.position = room.door_pos(from) - Vector2(from) * 22.0
-	G.toast.emit(floor_name, "Floor %d" % (floor_index + 1))
+	if level.is_empty():
+		G.toast.emit(floor_name, "Floor %d" % (floor_index + 1))
+	else:
+		G.toast.emit(floor_name, "%s · level %d of %d" % [String(level.get("area", "")), Story.LEVELS.find(level) + 1, Story.LEVELS.size()])
 
 
 ## Walk onto the exit: fade out, then build the next floor.
+## Story: is there a level below the one being played?
+func has_next_level() -> bool:
+	return not level.is_empty() and not bool(level.get("final", false)) and not Story.after(String(level["id"])).is_empty()
+
+
+## Story: how much harder this level is than the first one with the same look (room.gd adds it to the budget).
+func level_bonus() -> float:
+	return 0.0 if level.is_empty() else LEVEL_STEP_BUDGET * float(Story.step_in_area(String(level["id"])))
+
+
 func next_floor() -> void:
 	if _floor_change > 0.0 or over:
 		return
@@ -520,7 +536,21 @@ func boss_killed(b: Node) -> void:
 	G.boss_defeated.emit(id)
 	Sfx.music(String(theme.get("music", "")))
 	# the run is won when the final boss falls (the row's "final"), or whatever boss guards the last floor
-	if floor_index >= floor_count - 1 or Bosses.info(id).get("final", false) or not level.is_empty():
+	if not level.is_empty():
+		# story: the level is cleared for good and what he carries is kept; the stair leads on
+		Story.clear(String(level["id"]), player.items)
+		G.stat.emit("levels_cleared_live", 1)
+		if not has_next_level():
+			victory = true
+			over = true
+			_end_t = 2.6
+			Sfx.play("victory_sting")
+		else:
+			player.hp = mini(player.max_hp, player.hp + LEVEL_HEAL)
+			G.hud_changed.emit()
+			G.toast.emit("Seal shard taken", "The stair leads deeper")
+		return
+	if floor_index >= floor_count - 1 or Bosses.info(id).get("final", false):
 		victory = true
 		over = true
 		_end_t = 2.6
@@ -558,6 +588,7 @@ func summary() -> Dictionary:
 		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
 		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")),
+		"coins_held": player.coins if player != null else 0,
 	}
 
 
@@ -605,7 +636,11 @@ func _physics_process(delta: float) -> void:
 		_fade_alpha = clampf(1.0 - _floor_change / 0.4, 0.0, 1.0)
 		if _floor_change <= 0.0:
 			_floor_change = 0.0
-			floor_index += 1
+			if level.is_empty():
+				floor_index += 1
+			else:
+				level = Story.after(String(level["id"]))        # the descent goes on with the next level
+				floor_index = clampi(int(level.get("floor", 1)) - 1, 0, floor_count - 1)
 			_start_floor()
 	else:
 		_fade_alpha = maxf(0.0, _fade_alpha - delta / ROOM_FADE)

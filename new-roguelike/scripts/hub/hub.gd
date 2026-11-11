@@ -266,9 +266,7 @@ func _build_hero() -> void:
 
 ## Puts the hero you play in your hands and the other two by the fire (after a change of hero).
 func refresh_heroes() -> void:
-	var mine := Heroes.by_id(String(Save.setting("last_hero")))
-	if bool(mine.get("locked", false)) and not Save.is_unlocked("hero:" + String(mine["id"])):
-		mine = Heroes.LIST[0]
+	var mine: Dictionary = Heroes.by_id("knight")
 	for c in _hero.get_children():
 		c.queue_free()
 	var m := Art.meta(String(mine["sprite"]))
@@ -294,8 +292,8 @@ func refresh_heroes() -> void:
 		if String(h["id"]) == String(mine["id"]) or spot >= Hub.HERO_SPOTS.size():
 			continue
 		var locked: bool = bool(h.get("locked", false)) and not Save.is_unlocked("hero:" + String(h["id"]))
-		if locked:
-			continue                   # not met yet: the story brings them to the fire (story.gd "joins")
+		if true:
+			continue                   # Aldous is the only hero now (owner, 11 Nov 2026); the others no longer stand here
 		var row := {"id": "hero:" + String(h["id"]), "name": String(h["name"]), "title": String(h["title"]), "sprite": String(h["sprite"]),
 			"hands": String(h.get("hand", "")), "weapon": String(h.get("weapon", "")), "grip": h.get("grip", 4), "hand": String(h.get("hand", "")),
 			"pos": Hub.HERO_SPOTS[spot], "face": 1 if spot == 0 else -1, "role": "hero", "hero": h, "locked": locked}
@@ -405,15 +403,13 @@ func _talk(index: int) -> void:
 		"gate":
 			var next := Story.next_level()
 			if next.is_empty():
-				info["lines"].append(["Every seal is mended. You may walk any level again.", UI.C_GOLD])
+				info["lines"].append(["Every seal is mended.", UI.C_GOLD])
 			else:
 				info["options"].append({"text": "Go down: %s" % String(next["name"]), "what": "hub_level", "arg": next["id"]})
-			# the last few cleared levels can be walked again
 			var c := Story.chapter()
-			for i in range(c - 1, maxi(c - 4, -1), -1):
-				var lv: Dictionary = Story.LEVELS[i]
-				info["options"].append({"text": "Again: %s" % String(lv["name"]), "what": "hub_level", "arg": lv["id"]})
-			info["lines"].append(["Levels cleared: %d of %d" % [c, Story.LEVELS.size()], UI.C_DIM])
+			if c > 0:
+				info["options"].append({"text": "Go down from the top", "what": "hub_level", "arg": Story.LEVELS[0]["id"]})
+			info["lines"].append(["Levels cleared: %d of %d. One descent runs through them all; walk out from the pause menu when no fight is on." % [c, Story.LEVELS.size()], UI.C_DIM])
 			info["lines"].append([_pack_line(), UI.C_GOLD])
 		"quests":
 			var offered := Quests.offered()
@@ -432,6 +428,7 @@ func _talk(index: int) -> void:
 			info["lines"].append([_pack_line(), UI.C_GOLD])
 			var kit := Story.kit()
 			info["lines"].append(["You carry %d item%s from the hill." % [kit.size(), "" if kit.size() == 1 else "s"], UI.C_DIM])
+			info["lines"].append(["Coins in the camp chest: %d" % Save.hub_get("bank:coins"), UI.C_DIM])
 		"hero":
 			var h: Dictionary = row["hero"]
 			info["lines"].append([String(h.get("desc", "")), UI.C_DIM])

@@ -8,14 +8,19 @@ extends RefCounted
 ## hungry and wrong, the seals are cracking and the dead walk in the forest. Aldous, the last knight
 ## of the order that swore to keep the seals, comes to the camp at the foot of the hill. He goes
 ## down level by level, puts each fallen guardian to rest and carries its seal shard back to Ysolde
-## the Druid, who mends the ward at the rune stones. On the way he finds Tobin (a grave robber) and
-## Ozric (the old hexer who studied the seals). At the bottom waits the Starved King.
+## the Druid, who mends the ward at the rune stones. At the bottom waits the Starved King.
+## Aldous is the ONLY hero (the owner removed the other two on 11 Nov 2026; switching WEAPONS is
+## planned instead).
 ##
-## LEVELS: one row each, cleared in this order. A level is one small dungeon that ends at its boss.
+## LEVELS: one row each, in this order. A level is one small dungeon that ends at its boss. They are
+## played as ONE descent: beat a boss, take the stair down, and the next level begins, each harder
+## than the last. From the pause menu the hero may walk back to the camp whenever no fight is on;
+## the Warden then sends him down again at the first level not yet cleared.
 ##   "floor"  which dungeon look and monster set (1 Crypt, 2 Warrens, 3 Ashen Halls, 4 Pit)
 ##   "boss"   a row key of scripts/data/bosses.gd      "rooms"  how many rooms
-##   "joins"  a hero who joins the camp when it is cleared      "final"  the last level
-## Dying only repeats that level. The items the hero carries are kept each time a level is cleared.
+##   "final"  the last level
+## Dying only repeats the level he died in. The items he carries are kept each time a level is cleared
+## and when he walks out. Coins are banked at the camp only when he walks out alive (or wins).
 ##
 ## CHAPTER = how many levels are cleared (0 to LEVELS.size()). An NPC's "story" gives pages per
 ## chapter; the newest entry not above the current chapter is spoken. A gold "!" shows over anyone
@@ -23,9 +28,9 @@ extends RefCounted
 
 const LEVELS := [
 	{"id": "crypt_1", "area": "The Crypt", "name": "The Burning Chapel", "floor": 1, "boss": "pyre_saint", "rooms": 6},
-	{"id": "crypt_2", "area": "The Crypt", "name": "The Sexton's Rows", "floor": 1, "boss": "red_sexton", "rooms": 7, "joins": "robber"},
+	{"id": "crypt_2", "area": "The Crypt", "name": "The Sexton's Rows", "floor": 1, "boss": "red_sexton", "rooms": 7},
 	{"id": "warrens_1", "area": "The Warrens", "name": "The Ogre's Larder", "floor": 2, "boss": "stonejaw", "rooms": 7},
-	{"id": "warrens_2", "area": "The Warrens", "name": "The Drowned Court", "floor": 2, "boss": "gutter_king", "rooms": 8, "joins": "witch"},
+	{"id": "warrens_2", "area": "The Warrens", "name": "The Drowned Court", "floor": 2, "boss": "gutter_king", "rooms": 8},
 	{"id": "ashen_1", "area": "The Ashen Halls", "name": "The Cold Forge", "floor": 3, "boss": "forge_warden", "rooms": 8},
 	{"id": "ashen_2", "area": "The Ashen Halls", "name": "The Ember Throne", "floor": 3, "boss": "cinder_tyrant", "rooms": 9},
 	{"id": "pit_1", "area": "The Pit", "name": "The Hungry Hall", "floor": 4, "boss": "starved_king", "rooms": 10, "final": true},
@@ -46,8 +51,8 @@ const TALK := {
 		0: ["The first seal is the Burning Chapel. Its saint was the kindest of the eight. Fire is all that is left of her.", "Her body only burns you when she dives. Watch the red on the floor and step aside."],
 		1: ["The Pyre Saint's shard. It is still warm.", "One more guardian keeps the Crypt: the Red Sexton, who buried the king's dead and never stopped digging."],
 		2: ["The first seal holds again. Do you feel it? The woods are quieter.", "Below the Crypt lie the Warrens, the king's old larders. Stonejaw the ogre was set to guard the meat. He ate it."],
-		3: ["Two shards from the Warrens and the second seal is whole. One is still down there, with a thing that calls itself a king.", "My old teacher Ozric went into the Warrens to study the seals. If he lives, bring him home."],
-		4: ["Ozric is back, and grumbling. Good. Half the hill is sealed.", "Next are the Ashen Halls, where the seals were forged. The Forge Warden turns shots back at whoever throws them. Lucky you carry a sword."],
+		3: ["Two shards from the Warrens and the second seal is whole. One is still down there, with a thing that calls itself a king.", "Rest if you must. The stair is still open, and the hill does not sleep."],
+		4: ["Half the hill is sealed. I did not think I would live to say that.", "Next are the Ashen Halls, where the seals were forged. The Forge Warden turns shots back at whoever throws them. Lucky you carry a sword."],
 		5: ["The forge is cold. One guardian left before the Pit: the Cinder Tyrant, on the Ember Throne.", "It was a man once, the smith who made the seals. Be quick, and be kind."],
 		6: ["Three seals mended. The fourth cannot be: the king has eaten its guardians.", "So the last seal must be you. Go down into the Pit and end his hunger, Aldous. We will keep the fire lit."],
 		7: ["It is done. The hill is only a hill.", "Stay by the fire a while, last knight. You have earned the quiet."],
@@ -66,7 +71,7 @@ const TALK := {
 	},
 	"chronicler": {
 		0: ["Brother Odo. I write down what comes out of the hill, so the next fool knows what is in it.", "Show me what you carry and I will put a name to it."],
-		4: ["Ozric says my account of the seals is wrong in eleven places. I have corrected two.", "The book is open, if you would look."],
+		4: ["The Druid says my account of the seals is wrong in eleven places. I have corrected two.", "The book is open, if you would look."],
 		7: ["The last page is written. I find I do not know what to do with my hands."],
 	},
 	"smith": {
@@ -83,14 +88,6 @@ const TALK := {
 		0: ["Strong things in the hill often cost you something. Read what a thing asks before you pick it up.", "A key opens a gold chest or a locked room. Never both."],
 		6: ["The trees lean away from the hill tonight. They know what is left down there."],
 		7: ["Listen. Birds."],
-	},
-	"hero:robber": {
-		2: ["Tobin. I was, ah, looking after some valuables for the dead. Your Sexton took it badly.", "You pulled me out, so I owe you. Say the word and I will go down in your place."],
-		7: ["Not one coin left in that hill worth stealing. I checked."],
-	},
-	"hero:witch": {
-		4: ["Ozric. I counted the seals for forty years and was eaten by a toad for my trouble. Nearly eaten.", "My staff still works, boy. Say the word and I will go down in your place."],
-		7: ["Forty years of study and the answer was a man with a sword. Typical."],
 	},
 }
 
@@ -149,15 +146,43 @@ static func clear(id: String, items: Array) -> String:
 	for item_id: Variant in items:
 		n += 1
 		Save.hub_set("kit:" + String(item_id), n)
-	var joined := ""
 	if first:
 		Save.stat_add("levels_cleared")
-		var who := String(lv.get("joins", ""))
-		if who != "" and not Save.is_unlocked("hero:" + who):
-			Save.unlock("hero:" + who)
-			joined = who
 	Save.flush()
-	return joined
+	return ""
+
+
+## The level after `id` in the descent, or {} after the last one.
+static func after(id: String) -> Dictionary:
+	for i in LEVELS.size() - 1:
+		if String(LEVELS[i]["id"]) == id:
+			return LEVELS[i + 1]
+	return {}
+
+
+## How far into its area a level is (0 = the first level with that look): later ones are a bit harder.
+static func step_in_area(id: String) -> int:
+	var lv := level(id)
+	var n := 0
+	for other: Dictionary in LEVELS:
+		if String(other["id"]) == id:
+			break
+		if int(other["floor"]) == int(lv.get("floor", 0)):
+			n += 1
+	return n
+
+
+## The hero walked out alive: his items are kept and his coins go into the camp's chest.
+static func walk_out(items: Array, coins: int) -> void:
+	for key: String in Save.data.get("hub", {}).keys():
+		if key.begins_with("kit:"):
+			Save.hub_set(key, 0)
+	var n := 0
+	for item_id: Variant in items:
+		n += 1
+		Save.hub_set("kit:" + String(item_id), n)
+	Save.hub_set("bank:coins", Save.hub_get("bank:coins") + maxi(coins, 0))
+	Save.flush()
 
 
 ## The pages `npc_id` speaks now and the chapter they belong to: [pages, chapter key], or [[], -1].

@@ -81,7 +81,7 @@ func build() -> void:
 func refresh() -> void:
 	if not is_instance_valid(backdrop):
 		return
-	var hero := Heroes.by_id(String(Save.setting("last_hero")))
+	var hero := Heroes.by_id("knight")          # Aldous is the only hero now
 	if bool(hero.get("locked", false)) and not Save.is_unlocked("hero:" + String(hero["id"])):
 		hero = Heroes.LIST[0]
 	backdrop.call("set_hero", hero, false)

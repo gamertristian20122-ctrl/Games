@@ -9,11 +9,15 @@ Android-first pixel-art game made in **Godot 4.7.2** (GL Compatibility, landscap
 The game is now a **story adventure in the spirit of old 2D adventure games**, not an endless roguelike:
 1. Open the game, press Play, you are in **the camp** (a small map to walk around, people to talk to).
 2. Talking is a **dialogue box** along the bottom: picture, name, words letter by letter, tap for the next page.
-3. The story moves on by **clearing levels in order** (`scripts/data/story.gd`): 7 levels in 4 areas, each a
-   small dungeon that ends at a boss. **Dying only repeats that level**; cleared levels stay cleared and the
-   hero **keeps his items** from level to level.
-4. **Aldous the knight is the story hero and SWINGS his sword** (no flying blade). Tobin (rogue) and Ozric
-   (wizard) are met in the story, join the camp, and can then be played; they keep ranged attacks.
+3. The story moves on by **one descent through 7 levels** (`scripts/data/story.gd`), 4 areas, each level a
+   small dungeon that ends at a boss and is harder than the last. Beat a boss, take the stair, the next
+   level begins (owner, 11 Nov 2026: going back to the gate after every level was "redundant").
+   **From the pause menu the hero can walk back to the camp whenever no fight is on**: he keeps his items,
+   his coins go into the camp chest, cleared levels stay cleared, and the Warden sends him down again at
+   the first level not yet cleared. **Dying only repeats the level he fell in** (coins carried are lost).
+4. **Aldous the knight is the ONLY hero and SWINGS his sword** (no flying blade). The owner removed the
+   wizard and the rogue on 11 Nov 2026 and wants **switchable weapons** for the knight later instead.
+   The other two rows still exist in `heroes.gd` because the bot tests use them; nothing in the game shows them.
 5. **The Hungry Curse (the black orb) is REMOVED.** The owner did not understand why it was there. Its code
    and tests still exist but are switched off (`G.curse_on()`, only `--withcurse` turns it on). Do not bring
    it back, and do not build on it. Items that only worked with it are no longer offered.
@@ -417,11 +421,17 @@ screen -> "Camp" (or "Try again"). Back / pause in the camp goes to the title.
   camp person says, by chapter). Chapter = number of levels cleared. All words are placeholders to rewrite.
 - **Progress is in the save's `hub` section:** `lvl:<id>` (cleared), `kit:<item id>` (items carried, in
   order), `heard:<npc id>` (which lines were heard; a gold "!" marks unheard ones), `seen:intro`.
-- **A level run:** `G.next_run = {"level": row, "kit": [...], "pack": {...}}`; `run.gd` builds ONE floor with
-  that look, room count and boss, and the run is won when the boss falls. `main.gd` then calls
-  `Story.clear()` (keeps the items, lets a hero join) and the end screen says "Cleared" with only "Camp".
-  On death the end screen offers "Try again" (same level, same kit) or "Camp".
-- **The gate (Warden):** "Go down: <next level>" plus the last three cleared levels to walk again.
+- **The descent (v0.6.0):** `G.next_run = {"level": row, "kit": [...], "pack": {...}}` starts at that level.
+  When its boss falls `run.gd` `boss_killed()` calls `Story.clear()` (level cleared, items kept), heals
+  `LEVEL_HEAL`, and the room gets the stair; `next_floor()` then loads `Story.after(level)`. The second
+  level of an area gets `LEVEL_STEP_BUDGET` more monsters. Only the final boss ends the run (Victory).
+  Pause menu in a level: "Back to camp" (greyed out during a fight) -> `main.leave_run()` ->
+  `Story.walk_out()` (kit kept, coins to `bank:coins`). On death: "Try again" (the level he fell in,
+  with the kit as of the last cleared level) or "Camp". The camp chest's coins are not spent on
+  anything yet (camp upgrades are planned).
+- **The gate (Warden):** "Go down: <first level not cleared>" and, once any is cleared, "Go down from the top".
+- **v0.5.1 bug, fixed:** "Leave" in a talk window did nothing (main.gd only closed a screen when another
+  was under it). `--uitour=flow` now checks Leave, Back, the gate and walking out (41 checks).
 - **Dialogue box:** `scripts/ui/hub_talk.gd` (pages first, then the person's choices as buttons).
 - **Sword swing:** `"melee"` in the knight's row of `heroes.gd`, `player.gd` `_swing()`: an arc in front of
   him hits everything at once and cuts enemy shots down; a boss's guard (`shielded`) stops it. Shot items

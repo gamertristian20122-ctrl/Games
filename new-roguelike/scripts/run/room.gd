@@ -981,7 +981,7 @@ func _roll_enemies() -> Array[String]:
 	var out: Array[String] = []
 	if pool.is_empty():
 		return out
-	var budget: float = float(G.arg("budget", str(run.SPAWN_BUDGET_BASE))) + run.SPAWN_BUDGET_PER_FLOOR * run.floor_index + run.SPAWN_BUDGET_PER_ROOM * run.rooms_cleared_floor
+	var budget: float = float(G.arg("budget", str(run.SPAWN_BUDGET_BASE))) + run.level_bonus() + run.SPAWN_BUDGET_PER_FLOOR * run.floor_index + run.SPAWN_BUDGET_PER_ROOM * run.rooms_cleared_floor
 	# two or three kinds per room keeps fights readable
 	var kinds: Array[String] = []
 	var want := 2 + rng.randi() % 2
@@ -1032,7 +1032,7 @@ func _room_cleared() -> void:
 		var item: String = run.take_item("boss", rng)
 		if item != "":
 			add_thing("pedestal", {"item": item, "pos": free_spot_near(G.ROOM_CENTER + Vector2(-28, 4))})
-		if run.floor_index < run.floor_count - 1:
+		if run.has_next_level() if not run.level.is_empty() else run.floor_index < run.floor_count - 1:
 			add_thing("floor_exit", {"pos": free_spot_near(G.ROOM_CENTER + Vector2(28, -12))})
 	else:
 		_roll_room_reward()

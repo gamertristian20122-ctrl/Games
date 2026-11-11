@@ -232,8 +232,8 @@ func _on_action(what: String, arg: Variant) -> void:
 		"back":
 			if top_name() == "pause":
 				resume()
-			elif _stack.size() > 1:
-				close_top()
+			elif _stack.size() > 1 or is_instance_valid(hub):
+				close_top()             # in the camp a talk window is the only screen open: Leave must close it
 		"play":
 			_transition(show_hub)
 		"talk":
@@ -269,6 +269,8 @@ func _on_action(what: String, arg: Variant) -> void:
 			resume()
 		"give_up":
 			give_up()
+		"leave_run":
+			leave_run()
 		"quit":
 			quit_game()
 
@@ -306,10 +308,7 @@ func _start_level() -> void:
 	if lv.is_empty():
 		return
 	G.next_run = {"level": lv, "kit": Story.kit(), "pack": Quests.take_pack()}
-	var hero := String(Save.setting("last_hero"))
-	if bool(Heroes.by_id(hero).get("locked", false)) and not Save.is_unlocked("hero:" + hero):
-		hero = "knight"
-	await start_run(hero, _fresh_seed())
+	await start_run("knight", _fresh_seed())       # Aldous is the only hero (weapons will be switchable later)
 
 
 ## Frees the current run and waits a frame so it is really gone before anything new starts.
@@ -330,9 +329,11 @@ func _on_run_ended(victory: bool, summary: Dictionary) -> void:
 		return
 	_ending = true
 	_refresh_layers()
-	# a story level was won: it stays cleared, the items are kept, a rescued hero may join the camp
-	if victory and String(summary.get("level", "")) != "":
-		summary["joined"] = Story.clear(String(summary["level"]), summary.get("items", []))
+	# story: "Try again" starts at the level he fell in; a win banks his coins at the camp
+	if String(summary.get("level", "")) != "":
+		_level_id = String(summary["level"])
+		if victory:
+			Story.walk_out(summary.get("items", []), int(summary.get("coins_held", 0)))
 	if G.flag("autotest") and String(summary.get("level", "")) != "":
 		print("[main] level %s victory=%s chapter=%d kit=%s joined=%s" % [summary["level"], victory, Story.chapter(), Story.kit(), summary.get("joined", "")])
 	if G.flag("autotest"):
@@ -374,6 +375,19 @@ func resume() -> void:
 	close_all()
 	get_tree().paused = false
 	Save.flush()
+
+
+## "Back to camp" in the pause menu (only offered while no fight is on): the hero walks out alive.
+## He keeps his items, his coins go into the camp's chest, and cleared levels stay cleared.
+func leave_run() -> void:
+	if run == null or _ending:
+		return
+	var p: Variant = run.get("player")
+	if is_instance_valid(p):
+		Story.walk_out(p.get("items"), int(p.get("coins")))
+	_ending = true
+	_busy = false
+	await _transition(show_hub)
 
 
 ## "Give up" in the pause menu: the run counts as lost and the end screen is shown.

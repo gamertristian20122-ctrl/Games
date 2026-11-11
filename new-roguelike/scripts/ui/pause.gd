@@ -43,9 +43,21 @@ func build() -> void:
 	stage.add_child(sprite)
 	stage.resized.connect(func() -> void:
 		sprite.position = Vector2(roundf(stage.size.x / 2.0), roundf(stage.size.y / 2.0 + Art.size(String(hero["sprite"])).y) - 2.0))
-	var give_up := UI.button("Give up", _ask_give_up)
-	give_up.custom_minimum_size.y = 22
-	left.add_child(give_up)
+	var in_story: bool = run != null and run.get("level") is Dictionary and not (run.get("level") as Dictionary).is_empty()
+	if in_story:
+		# walk back out with what you carry: only while no fight is on
+		var room: Variant = run.get("room")
+		var fight: bool = is_instance_valid(room) and room.get("fighting") == true
+		var leave := UI.button("Back to camp", _ask_leave)
+		leave.custom_minimum_size.y = 22
+		leave.disabled = fight
+		if fight:
+			leave.text = "Camp (not in a fight)"
+		left.add_child(leave)
+	else:
+		var give_up := UI.button("Give up", _ask_give_up)
+		give_up.custom_minimum_size.y = 22
+		left.add_child(give_up)
 	default_focus = resume
 
 	# right: how the run is going, and what you carry
@@ -149,6 +161,10 @@ func _show_item(id: String) -> void:
 	if cursed and String(info.get("curse", "")) != "":
 		text += "  Curse: " + String(info.get("curse", ""))
 	_detail.text = text
+
+
+func _ask_leave() -> void:
+	ask("Walk back to the camp? You keep your items and bank your coins.", "To camp", "Keep going", func() -> void: send("leave_run"), false)
 
 
 func _ask_give_up() -> void:
