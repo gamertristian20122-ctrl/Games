@@ -122,7 +122,7 @@ func _pick(e, mean: bool) -> void:
 func _walk_again(e) -> void:
 	e.stop()
 	e.state = WALK
-	e.t = e.rng.randf_range(0.8, 1.2) if e.phase >= 2 else e.rng.randf_range(1.2, 1.8)
+	e.t = e.rng.randf_range(0.7, 1.1) if e.phase >= 2 else e.rng.randf_range(1.0, 1.5)
 
 
 # ------------------------------------------------------------------------------ GRAVE STEP

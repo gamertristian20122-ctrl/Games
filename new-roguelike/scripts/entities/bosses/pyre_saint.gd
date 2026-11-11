@@ -63,7 +63,7 @@ func tick(e, delta: float) -> void:
 	var mean: bool = e.phase >= 2
 	match e.state:
 		DRIFT:
-			e.chase(delta, 1.35 if mean else 1.0)
+			e.chase(delta, 1.25 if mean else 1.0)
 			if e.t <= 0.0:
 				_next_attack(e, mean)
 		SWOOP:
@@ -179,7 +179,7 @@ func _begin_swoop(e, warn: float) -> void:
 	var reach := _aim(e)
 	e.mem["left"] = reach
 	e.tell(warn)
-	e.mark_charge(e.dir, reach + 24.0, warn)   # + its own body at the far end
+	_mark_swoop(e, warn)
 	e._say("SWOOP")
 	Sfx.play("boss_roar", -9.0, 0.05, 1.5)
 	e.after(warn, _swoop_go)
@@ -209,8 +209,15 @@ func _aim(e) -> float:
 func _swoop_go(e) -> void:
 	e.state = SWOOP
 	# the lane stays red for as long as the skull is flying down it
-	var v := float(e.p.get("swoop_speed", 185.0))
-	e.mark_charge(e.dir, float(e.mem["left"]) + 24.0, maxf(float(e.mem["left"]) / v, 0.2))
+	_mark_swoop(e, maxf(float(e.mem["left"]) / float(e.p.get("swoop_speed", 185.0)), 0.2))
+
+
+## The lane of a swoop: a little wider than the body really is (standing just outside the red is
+## safe with room to spare, also when the skull comes to rest there) and long enough for the body
+## at its far end.
+func _mark_swoop(e, seconds: float) -> void:
+	var to: Vector2 = e.position + e.dir * (float(e.mem["left"]) + 24.0)
+	e.mark_lane(e.position, to, e.radius + e.player.radius + 4.0, seconds)
 	Sfx.play("enemy_shoot", -3.0, 0.05, 0.6)
 
 
@@ -267,7 +274,7 @@ func _rain_erupt(e) -> void:
 	e.run.fx.burst(at, FIRE, 6, 70.0, 0.35, 2.2)
 	Sfx.play("explosion", -11.0, 0.1, 1.5)
 	if e.phase >= 2:
-		e.burn_ground(at, r - 4.0, 1.0, 0.0)
+		e.burn_ground(at, r - 5.0, 0.8, 0.0)
 
 
 # ------------------------------------------------------------------------------ GUTTERS OUT

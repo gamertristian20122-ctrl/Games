@@ -29,12 +29,12 @@ extends RefCounted
 
 const ALL := {
 	# ---- floor 1, the Crypt
-	"pyre_saint": {"name": "The Pyre Saint", "sprite": "boss_fire_skull", "floors": [1], "hp": 680.0,
+	"pyre_saint": {"name": "The Pyre Saint", "sprite": "boss_fire_skull", "floors": [1], "hp": 640.0,
 		"speed": 30.0, "touch": 1, "shot": "enemy", "flying": true, "hover": 10.0, "no_facing": true, "stagger_dmg": 2.0, "layout": "boss_arena",
 		"params": {"warn": 0.8, "flare_radius": 30.0, "ring_shots": 16, "ring_gap": 0.7, "ring_speed": 48.0,
 			"swoop_warn": 0.9, "rebound_warn": 0.65, "swoop_speed": 185.0, "candles": 5, "candles2": 7, "candle_radius": 15.0,
 			"candle_warn": 1.0, "candle_gap": 0.4, "gutter_seconds": 3.0, "sink": 20.0, "helper": "bone_walker", "helpers": 2}},
-	"red_sexton": {"name": "The Red Sexton", "sprite": "boss_death", "floors": [1], "hp": 270.0,
+	"red_sexton": {"name": "The Red Sexton", "sprite": "boss_death", "floors": [1], "hp": 300.0,
 		"speed": 46.0, "touch": 1, "shot": "enemy", "idle": "run", "enter": "spawn", "hit_frames": {"spawn": [2]},
 		"params": {"step_warn": 0.8, "step2_warn": 0.6, "blade_radius": 16.0, "step_far": 28.0, "fan_warn": 0.7, "fan_blades": 5,
 			"fan_angle": 0.42, "fan_speed": 105.0, "helper": "shambler", "helpers": 2, "helpers2": 3, "near": 46.0, "far": 85.0, "lamp_burn": 3.5}},
