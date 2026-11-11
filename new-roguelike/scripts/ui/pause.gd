@@ -159,7 +159,7 @@ func _show_item(id: String) -> void:
 	_detail_name.add_theme_color_override("font_color", UI.C_CURSE if cursed else UI.C_GOLD)
 	var text := String(info.get("desc", ""))
 	if cursed and String(info.get("curse", "")) != "":
-		text += "  Curse: " + String(info.get("curse", ""))
+		text += "  Price: " + String(info.get("curse", ""))
 	_detail.text = text
 
 

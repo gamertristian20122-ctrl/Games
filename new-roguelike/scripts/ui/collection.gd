@@ -83,7 +83,7 @@ func _items_page() -> Control:
 	row.add_child(left)
 	var left_col := UI.vbox(2)
 	left.add_child(left_col)
-	var ids: Array = Items.ALL.keys()
+	var ids: Array = Items.ids()
 	var seen := 0
 	for id: String in ids:
 		if Save.has_seen(id):
@@ -267,7 +267,7 @@ func _stats_page() -> Control:
 	grid.add_theme_constant_override("v_separation", 5)
 	centre.add_child(grid)
 	var seen := 0
-	for id: String in Items.ALL:
+	for id: String in Items.ids():
 		if Save.has_seen(id):
 			seen += 1
 	var fastest := Save.stat_get("fastest_win")
@@ -282,8 +282,8 @@ func _stats_page() -> Control:
 		["Bosses beaten", str(Save.stat_total("boss_killed"))],
 		["Secrets found", str(Save.stat_total("secret_found"))],
 		["Chests opened", str(Save.stat_total("chest_opened"))],
-		["Items found", "%d/%d" % [seen, Items.ALL.size()]],
-		["Cursed items taken", str(Save.stat_get("cursed_taken"))],
+		["Items found", "%d/%d" % [seen, Items.ids().size()]],
+		["Risky items taken", str(Save.stat_get("cursed_taken"))],
 	]
 	for pair: Array in rows:
 		var k := UI.label(pair[0], "Dim")

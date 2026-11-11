@@ -360,6 +360,15 @@ func _run_flow() -> void:
 	await _key(KEY_ENTER)
 	await _settle()
 	_check("Leave closes the talk box", main.call("top_name") == "" and is_instance_valid(main.get("hub")))
+	# the smith sharpens the blade for coins from the camp chest
+	Save.hub_set("bank:coins", 40)
+	main.call("_on_action", "hub_buy", "edge")
+	await _settle()
+	_check("the smith's upgrade was bought", Save.hub_get("up:edge") == 1 and Save.hub_get("bank:coins") == 25)
+	if main.call("top_name") == "hub_talk":
+		await _key(KEY_ESCAPE)
+		await _settle()
+	Save.hub_set("bank:coins", 0)
 	# down into the hill and back out alive
 	main.call("_on_action", "hub_level", "crypt_1")
 	await _settle(1.5)

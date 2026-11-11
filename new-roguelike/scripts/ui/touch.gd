@@ -33,6 +33,7 @@ var _knob := {"move": Vector2.ZERO, "aim": Vector2.ZERO}
 var _held := {"move": false, "aim": false}
 var _swapped := false
 var _bombs := 0
+var _block_left := 2            ## blows the knight's guard can still take (player.gd)
 var hub_mode := false           ## in the camp: one stick to walk and the second button says TALK (main.gd sets this)
 var _action_shown := false
 var _canvas: Control
@@ -133,8 +134,10 @@ func _read_call(delta: float) -> void:
 		ready = G.run.get("call_ready") == true
 		pulse = G.run.get("call_pulse") == true
 	if _block_mode():
-		ready = true                  # BLOCK is always there to hold
-		fill = 1.0
+		var hero: Node = G.run.get("player")
+		_block_left = int(hero.get("block_left"))
+		ready = _block_left > 0
+		fill = float(hero.get("block_fill"))
 	if pulse:
 		_pulse_t += delta
 	if not is_equal_approx(fill, _call_fill) or ready != _call_ready or pulse != _call_pulse or pulse:
@@ -322,6 +325,8 @@ func _draw_controls() -> void:
 			_canvas.draw_rect(Rect2(ac.x - 5.0, ac.y - 6.0, 10, 7), Color(UI.C_BONE, held * lit))
 			_canvas.draw_colored_polygon(PackedVector2Array([ac + Vector2(-5, 1), ac + Vector2(5, 1), ac + Vector2(0, 7)]), Color(UI.C_BONE, held * lit))
 			_canvas.draw_rect(Rect2(ac.x - 1.0, ac.y - 4.0, 2, 7), Color(UI.C_INK, 0.6 * lit))
+			for k in 2:       # one pip for every blow the guard can still take
+				_canvas.draw_rect(Rect2(ac.x - 5.0 + 6.0 * k, ac.y + 9.0, 4, 2), Color(UI.C_BONE, 0.95) if k < _block_left else Color(UI.C_BONE, 0.2))
 		elif hub_mode:
 			for k in 3:       # three dots: "speak"
 				_canvas.draw_rect(Rect2(ac.x - 7.0 + 5.0 * k, ac.y - 1.0, 3, 3), Color(UI.C_BONE, 0.95 * lit))

@@ -36,6 +36,7 @@ const FAKE_RUN_SCRIPT := "res://scripts/ui/dev_fake_run.gd"
 const HUB_SCRIPT := "res://scripts/hub/hub.gd"
 const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
+const Upgrades = preload("res://scripts/data/upgrades.gd")
 
 var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
@@ -246,6 +247,12 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("refresh_heroes")
+		"hub_buy":
+			if Upgrades.buy(String(arg)):
+				Sfx.play("ui_start")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("retalk")
 		"hub_claim":
 			Quests.claim(String(arg))
 			Sfx.play("ui_start")

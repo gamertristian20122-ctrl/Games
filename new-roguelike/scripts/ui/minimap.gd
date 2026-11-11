@@ -11,8 +11,8 @@ const GS = preload("res://scripts/core/g.gd")     # only for the RoomType names
 
 const CELL := Vector2(8, 6)      ## one room
 const STEP := Vector2(9, 7)      ## room plus the gap to the next
-const COLS := 6
-const ROWS := 5
+const COLS := 5       ## a level has 6 to 10 rooms; the map scrolls with you when it is wider
+const ROWS := 4
 
 const TYPE_COLOUR := {
 	GS.RoomType.BOSS: UI.C_RED,

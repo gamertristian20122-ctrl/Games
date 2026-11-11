@@ -20,6 +20,7 @@ const FamiliarScript = preload("res://scripts/entities/familiar.gd")
 const Curse = preload("res://scripts/entities/curse.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
+const Upgrades = preload("res://scripts/data/upgrades.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -116,6 +117,14 @@ func setup(the_run: Node, hero_id: String) -> void:
 		light.color = run.theme.get("light", Color(1, 0.9, 0.7))
 		light.position = Vector2(0, -_mid)
 		add_child(light)
+	if hero.has("melee"):
+		# what the camp's smith and cook have done for him (scripts/data/upgrades.gd)
+		var camp := Upgrades.mods()
+		if not camp.is_empty():
+			stats.set_layer("camp", camp)
+		max_hp = mini(max_hp + Upgrades.bonus_hp(), MAX_HP)
+		hp = max_hp
+		_block_cool = maxf(BLOCK_COOLDOWN + Upgrades.block_cooldown(), 1.5)
 	stats.changed.connect(_stats_changed)
 	_stats_changed()
 	_hook_bomb_button()
@@ -132,11 +141,15 @@ func _enter_tree() -> void:
 func _hook_bomb_button() -> void:
 	if not Controls.bomb_pressed.is_connected(place_bomb):
 		Controls.bomb_pressed.connect(place_bomb)
+	if not Controls.action_pressed.is_connected(_on_block_tap):
+		Controls.action_pressed.connect(_on_block_tap)
 
 
 func _exit_tree() -> void:
 	if Controls.bomb_pressed.is_connected(place_bomb):
 		Controls.bomb_pressed.disconnect(place_bomb)
+	if Controls.action_pressed.is_connected(_on_block_tap):
+		Controls.action_pressed.disconnect(_on_block_tap)
 
 
 func _stats_changed() -> void:
@@ -180,46 +193,68 @@ func entered_room(the_room: Node) -> void:
 		light.color = run.theme.get("light", Color(1, 0.9, 0.7))
 
 
-## The knight's guard (hold the second button): he walks slowly, cannot swing, and whatever comes
-## from the side he faces is stopped. Numbers in the hero's "melee" row (heroes.gd).
+## The knight's guard (the second button: tap it or hold it). It covers him on ALL sides, so there
+## is nothing to aim. It takes BLOCK_HITS blows, then it breaks and needs a rest before it is whole
+## again (a blow it took also starts that rest, so a half-used guard mends by itself).
+## While it is up he walks a little slower and cannot swing.
+const BLOCK_HITS := 2            ## blows the guard stops before it breaks
+const BLOCK_COOLDOWN := 5.0      ## seconds until the guard is whole again (camp upgrade "Mend the guard" shortens it)
+const BLOCK_TAP := 0.8           ## a tap keeps the guard up this long; holding keeps it up as long as you hold
+const BLOCK_WALK := 0.6          ## walking speed while the guard is up
 var blocking := false
-var _block_dir := Vector2.RIGHT
+var block_left := BLOCK_HITS     ## blows the guard can still take (touch.gd shows it)
+var block_fill := 1.0            ## 0..1: how far the guard has mended (touch.gd draws the ring)
+var _block_cool := BLOCK_COOLDOWN
+var _block_cd := 0.0
+var _guard_t := 0.0
 var _guard: Node2D
 
-func _update_block() -> void:
-	var can := hero.has("melee") and not dead and _swing_t <= 0.0
-	blocking = can and Controls.action_held
-	if not blocking:
-		if _guard != null:
-			_guard.visible = false
+func _on_block_tap() -> void:
+	if hero.has("melee") and not dead and block_left > 0:
+		_guard_t = BLOCK_TAP
+
+
+func _update_block(delta: float) -> void:
+	if not hero.has("melee"):
 		return
-	if Controls.aim.length() > Controls.AIM_DEADZONE:
-		_block_dir = Controls.aim.normalized()
-	elif Controls.move.length() > 0.3:
-		_block_dir = Controls.move.normalized()
-	else:
-		_block_dir = Vector2(_face, 0.0) if absf(_block_dir.x) < 0.01 and absf(_block_dir.y) < 0.01 else _block_dir
-	aim_dir = _block_dir
+	if block_left < BLOCK_HITS:
+		_block_cd -= delta
+		if _block_cd <= 0.0:
+			block_left = BLOCK_HITS
+			Sfx.play("door_open", -14.0, 0.0, 1.8)
+	block_fill = 1.0 if block_left >= BLOCK_HITS else 1.0 - clampf(_block_cd / maxf(_block_cool, 0.1), 0.0, 1.0)
+	_guard_t = maxf(0.0, _guard_t - delta)
+	blocking = not dead and block_left > 0 and (Controls.action_held or _guard_t > 0.0)
 	if _guard == null:
 		_guard = Node2D.new()
 		_guard.z_index = 2
-		_guard.draw.connect(func() -> void:
-			var a := _block_dir.angle()
-			_guard.draw_arc(Vector2(0, -9), 15.0, a - 1.1, a + 1.1, 14, Color(0.75, 0.9, 1.0, 0.85), 2.0)
-			_guard.draw_arc(Vector2(0, -9), 12.5, a - 0.9, a + 0.9, 12, Color(0.75, 0.9, 1.0, 0.3), 2.0))
+		_guard.draw.connect(_draw_guard)
 		add_child(_guard)
-	_guard.visible = true
-	_guard.queue_redraw()
+	_guard.visible = blocking
+	if blocking:
+		_guard.queue_redraw()
 
 
-## True when a blow from `from` lands on the raised guard.
-func _blocked(from: Vector2) -> bool:
+## The guard: one pale half-ring for every blow it can still take (a flat code-drawn shape).
+func _draw_guard() -> void:
+	for i in block_left:
+		var a0 := PI * float(i) + 0.3 - PI * 0.5
+		_guard.draw_arc(Vector2(0, -9), 15.0, a0, a0 + PI - 0.6, 14, Color(0.75, 0.9, 1.0, 0.9), 2.0)
+		_guard.draw_arc(Vector2(0, -9), 12.5, a0 + 0.1, a0 + PI - 0.7, 12, Color(0.75, 0.9, 1.0, 0.3), 2.0)
+
+
+## A blow lands on the raised guard: it is stopped and the guard is one blow weaker.
+func _blocked() -> bool:
 	if not blocking:
 		return false
-	var to := from - position
-	if to.length() < 0.5:
-		return false
-	return absf(angle_difference(_block_dir.angle(), to.angle())) <= float((hero["melee"] as Dictionary).get("guard_arc", 2.4)) * 0.5
+	block_left -= 1
+	_block_cd = _block_cool
+	if block_left <= 0:
+		_guard_t = 0.0
+		run.fx.ring(position - Vector2(0, 9), 14.0, 30.0, 0.3, Color(0.75, 0.9, 1.0), 2.0)
+		Sfx.play("rock_break", -6.0, 0.05, 1.3)
+		run.shake(0.25)
+	return true
 
 
 func can_be_hit() -> bool:
@@ -241,8 +276,8 @@ func _physics_process(delta: float) -> void:
 	invuln = maxf(0.0, invuln - delta)
 	_spike_cd = maxf(0.0, _spike_cd - delta)
 	# ---- walking
-	_update_block()
-	var want: Vector2 = Controls.move * stats.v("speed") * (0.45 if blocking else 1.0)
+	_update_block(delta)
+	var want: Vector2 = Controls.move * stats.v("speed") * (BLOCK_WALK if blocking else 1.0)
 	vel = vel.move_toward(want, (ACCEL if want != Vector2.ZERO else DECEL) * delta)
 	position = room.move_circle(position, radius, (vel + knock) * delta, stats.has_flag("flying"), true)
 	knock = knock.move_toward(Vector2.ZERO, 700.0 * delta)
@@ -257,7 +292,9 @@ func _physics_process(delta: float) -> void:
 	_fire_cd -= delta
 	if firing and _fire_cd <= 0.0:
 		_fire()
-		_fire_cd = 1.0 / stats.v("rate")
+		_fire_cd = 1.0 / (swing_rate() if hero.has("melee") else stats.v("rate"))
+	if not _cuts.is_empty():
+		_tick_cuts(delta)
 	run.effects.fire("on_tick", [delta])
 	_update_look(delta)
 
@@ -284,54 +321,188 @@ func _fire() -> void:
 	run.effects.fire("on_shot_fired", [from, aim_dir])
 
 
-## The knight's sword: one sweep through the arc in front of him. Every monster inside is hit at
-## once (a boss's guard still stops it) and enemy shots inside are cut out of the air.
+## THE KNIGHT'S SWORD. One swing sweeps an arc in front of him: every monster inside is hit at once
+## (a boss's guard still stops it) and enemy shots inside are cut out of the air.
+## The items were written for thrown shots; this is what each stat and flag means FOR A SWORD
+## (the words the player reads are in scripts/data/items.gd):
+##   damage, knockback   as they say               rate         swings per second
+##   range, shot_size    a longer reach            shot_speed   a quicker (or slower) swing
+##   shots               that many cuts per swing, one after the other (Twin Hatchets, Storm Axes)
+##   return              one more cut on the way back, lighter (Tethered Sickle)
+##   ring                every swing is a full spin, a little softer (Breaking Wheel)
+##   homing              each swing steps him toward the nearest monster in front (Seeker Staff)
+##   pierce              blows bite deeper into elites, big monsters and bosses (Needle Spear, Hollow Bolt)
+##   bounce              the shock of a blow jumps on to that many monsters nearby (Ricochet Mallet);
+##   bounce_grow         ... harder with every jump (Stonebiter)
+##   reap                a killing blow swings again at once, harder each time (Reaping Hook)
+##   eat_shots           every enemy shot cut down makes the next blow hit harder (Starveling Blade)
+##   Bone Thistle        (hook on_shot_end) three splinters fly from the tip of the blade
 const SWING_TIME := 0.14
+const ECHO_GAP := 0.10           ## seconds between the cuts of one swing
+const BACKSWING := 0.6           ## damage share of the cut on the way back
+const RING_SOFT := 0.8           ## damage share of a full spin
+const PIERCE_BONUS := 0.15       ## more damage to elites, big monsters and bosses per point of pierce
+const CHAIN_REACH := 46.0        ## how far the shock of a blow jumps
+const CHAIN_SHARE := 0.6         ## damage share of a jump
+const CHAIN_GROW := 1.3          ## Stonebiter: each jump is this much harder than the last
+const REAP_MAX := 4              ## free follow-up swings in a row
+const REAP_GROW := 1.25
+const EAT_STEP := 0.2            ## Starveling Blade: +20% on the next blow per shot cut down ...
+const EAT_MAX := 1.0             ## ... up to +100%
+const LUNGE := 58.0              ## px/s of step per point of homing
 var _swing_t := 0.0
 var _swing_side := 1.0
 var _swing_arc := 2.3
 var _swing_reach := 34.0
 var _slash: Node2D
+var _cuts: Array = []            ## cuts still to come: [seconds from now, damage share]
+var _eat_bonus := 0.0
+var _reaps := 0
+
+## How far the blade reaches from his middle, with everything he carries.
+func melee_reach() -> float:
+	var m: Dictionary = hero["melee"]
+	var k: float = stats.v("range") / maxf(float(hero.get("range", 100.0)), 1.0)
+	return float(m.get("reach", 34.0)) * clampf(1.0 + 0.6 * (k - 1.0), 0.7, 1.7) * (1.0 + 0.2 * (stats.v("shot_size") - 1.0))
+
+
+## Swings per second.
+func swing_rate() -> float:
+	var k: float = stats.v("shot_speed") / maxf(float(hero.get("shot_speed", 150.0)), 1.0)
+	return stats.v("rate") * clampf(sqrt(k), 0.6, 1.35)
+
 
 func _swing() -> void:
 	var m: Dictionary = hero["melee"]
-	var arc := float(m.get("arc", 2.3))
-	var reach := float(m.get("reach", 34.0)) + maxf(stats.v("range") - float(hero.get("range", 44.0)), 0.0) * 0.12
-	var extra := maxi(1, int(stats.v("shots"))) - 1
-	var damage: float = stats.v("damage") * (1.0 + 0.5 * float(extra))
-	var from := position
+	var spin := stats.has_flag("ring")
+	_swing_arc = TAU if spin else float(m.get("arc", 2.3))
+	_swing_reach = melee_reach()
+	_reaps = 0
+	# Seeker Staff: a step toward the nearest monster in front of him
+	var pull: float = stats.v("homing")
+	if pull > 0.0:
+		var best: Node = null
+		var best_d := _swing_reach * 2.6
+		for e in room.enemies:
+			if not is_instance_valid(e) or e.dead or not e.hittable:
+				continue
+			var to: Vector2 = (e.position as Vector2) - position
+			if to.length() < best_d and (spin or absf(angle_difference(aim_dir.angle(), to.angle())) < 1.3):
+				best_d = to.length()
+				best = e
+		if best != null and best_d > _swing_reach * 0.7:
+			aim_dir = ((best.position as Vector2) - position).normalized()
+			knock += aim_dir * minf(LUNGE * pull, 190.0)
+	var cuts := 1 if spin else maxi(1, int(stats.v("shots")))
+	_cut(RING_SOFT if spin else 1.0)
+	for k in range(1, cuts):
+		_cuts.append([ECHO_GAP * float(k), 1.0])
+	for k in int(stats.flag("return")):
+		_cuts.append([ECHO_GAP * float(cuts + k), BACKSWING])
+	Sfx.play(String(hero.get("shoot_sfx", "player_shoot_blade")), -10.0, 0.08, 0.8)
+	run.effects.fire("on_shot_fired", [position + aim_dir * 7.0, aim_dir])
+	# items that wait for a shot to end (Bone Thistle) hear it at the tip of the blade
+	run.shots.end_victim = 0
+	run.effects.fire("on_shot_end", [position + aim_dir * _swing_reach * 0.8, aim_dir, stats.v("damage"), false])
+
+
+## One cut through the arc. `share` is how much of his damage it carries.
+func _cut(share: float) -> void:
+	var m: Dictionary = hero["melee"]
+	var damage: float = stats.v("damage") * share * (1.0 + _eat_bonus)
+	var shove: float = float(m.get("knock", 1.6)) * stats.v("knockback")
+	var pierce: float = stats.flag("pierce")
+	var struck: Array = []
+	var killed := false
 	for e in room.enemies.duplicate():
 		if not is_instance_valid(e) or e.dead or not e.hittable or e.get("shielded") == true:
 			continue
-		var to: Vector2 = (e.position as Vector2) - Vector2(0.0, float(e.hit_up) * 0.5) - from
+		var to: Vector2 = (e.position as Vector2) - Vector2(0.0, float(e.hit_up) * 0.5) - position
 		var far: float = to.length() - float(e.radius) - float(e.hit_grow)
-		if far > reach:
+		if far > _swing_reach:
 			continue
-		if far > 4.0 and absf(angle_difference(aim_dir.angle(), to.angle())) > arc * 0.5:
+		if far > 4.0 and absf(angle_difference(aim_dir.angle(), to.angle())) > _swing_arc * 0.5:
 			continue
-		e.hurt(damage, to.normalized(), float(m.get("knock", 1.6)))
-		run.effects.fire("on_hit", [e, damage, e.position])
-		run.fx.burst((e.position as Vector2) - Vector2(0, float(e.hit_up)), [Color(1, 1, 1), Color(0.8, 0.9, 1.0)], 4, 70.0, 0.2, 2.0, to.normalized())
+		var d := damage
+		if pierce > 0.0 and (e.elite or "boss_id" in e or bool(e.data.get("big", false))):
+			d *= 1.0 + PIERCE_BONUS * pierce
+		_strike(e, d, to.normalized(), shove)
+		struck.append(e)
+		killed = killed or e.dead
+	# Ricochet Mallet, Stonebiter: the shock of the blow jumps on
+	var jumps := int(stats.flag("bounce"))
+	if jumps > 0 and not struck.is_empty():
+		var last: Node = struck[0]
+		var d2 := damage * CHAIN_SHARE
+		for j in jumps:
+			var next: Node = null
+			var best := CHAIN_REACH
+			for e in room.enemies:
+				if not is_instance_valid(e) or e.dead or not e.hittable or struck.has(e):
+					continue
+				var gap: float = (e.position as Vector2).distance_to(last.position) - float(e.radius)
+				if gap < best:
+					best = gap
+					next = e
+			if next == null:
+				break
+			if stats.has_flag("bounce_grow"):
+				d2 *= CHAIN_GROW
+			var dir: Vector2 = ((next.position as Vector2) - (last.position as Vector2)).normalized()
+			run.fx.ring((last.position as Vector2) - Vector2(0, float(last.hit_up)), 3.0, 12.0, 0.18, Color(1, 1, 1, 0.8), 1.5)
+			_strike(next, d2, dir, shove * 0.5)
+			struck.append(next)
+			killed = killed or next.dead
+			last = next
+	# enemy shots inside the arc are cut down
+	var eaten := 0
 	var shots: Node = run.shots
 	for i in shots.count:
 		if shots.side[i] != Shots.SIDE_ENEMY or shots.left[i] <= 0.0:
 			continue
-		var to2: Vector2 = shots.pos[i] - Vector2(0.0, 7.0) - from
-		if to2.length() <= reach + 2.0 and absf(angle_difference(aim_dir.angle(), to2.angle())) <= arc * 0.5:
+		var to2: Vector2 = shots.pos[i] - Vector2(0.0, 7.0) - position
+		if to2.length() <= _swing_reach + 2.0 and absf(angle_difference(aim_dir.angle(), to2.angle())) <= _swing_arc * 0.5:
 			shots.left[i] = 0.0
+			eaten += 1
 			run.fx.burst(shots.pos[i] - Vector2(0.0, 7.0), [Color(1, 1, 1)], 3, 50.0, 0.18, 2.0)
+	if not struck.is_empty():
+		_eat_bonus = 0.0                      # the stored force went into this blow
+	if eaten > 0 and stats.has_flag("eat_shots"):
+		_eat_bonus = minf(_eat_bonus + EAT_STEP * float(eaten), EAT_MAX)
+	# Reaping Hook: a killing blow swings again
+	if killed and stats.has_flag("reap") and _reaps < REAP_MAX:
+		_reaps += 1
+		_cuts.append([0.08, share * REAP_GROW])
 	_swing_t = SWING_TIME
 	_swing_side = -_swing_side
-	_swing_arc = arc
-	_swing_reach = reach
 	if _slash == null:
 		_slash = Node2D.new()
 		_slash.z_index = 2
 		_slash.draw.connect(_draw_slash)
 		add_child(_slash)
 	_slash.queue_redraw()
-	Sfx.play(String(hero.get("shoot_sfx", "player_shoot_blade")), -10.0, 0.08, 0.8)
-	run.effects.fire("on_shot_fired", [position + aim_dir * 7.0, aim_dir])
+
+
+func _strike(e: Node, damage: float, dir: Vector2, shove: float) -> void:
+	e.hurt(damage, dir, shove)
+	run.effects.fire("on_hit", [e, damage, e.position])
+	run.fx.burst((e.position as Vector2) - Vector2(0, float(e.hit_up)), [Color(1, 1, 1), Color(0.8, 0.9, 1.0)], 4, 70.0, 0.2, 2.0, dir)
+
+
+## The later cuts of a swing (second and third cuts, the backswing, a reaping follow-up).
+func _tick_cuts(delta: float) -> void:
+	if dead:
+		_cuts.clear()
+		return
+	var due: Array = []
+	for c: Array in _cuts:
+		c[0] = float(c[0]) - delta
+		if float(c[0]) <= 0.0:
+			due.append(c)
+	for c: Array in due:
+		_cuts.erase(c)
+		_cut(float(c[1]))
+		Sfx.play(String(hero.get("shoot_sfx", "player_shoot_blade")), -14.0, 0.1, 1.0)
 
 
 ## The white crescent a swing leaves for a moment (a flat code-drawn shape, like the other effects).
@@ -390,9 +561,8 @@ func _update_look(delta: float) -> void:
 		HeroLook.layer(weapon, body, HeroLook.aim(weapon, dir, 0.0, _face))
 		_slash.queue_redraw()
 	elif blocking:
-		# the sword held across the body, toward the threat
-		_face = signf(_block_dir.x) if absf(_block_dir.x) > 0.15 else _face
-		HeroLook.layer(weapon, body, HeroLook.aim(weapon, _block_dir.rotated(1.2 * _face), 0.0, _face))
+		# the sword held upright in front of him
+		HeroLook.layer(weapon, body, HeroLook.aim(weapon, Vector2(0.35 * _face, -1.0).normalized(), 0.0, _face))
 	elif firing:
 		HeroLook.layer(weapon, body, HeroLook.aim(weapon, aim_dir, _kick, _face))
 	else:
@@ -426,10 +596,11 @@ func _draw() -> void:
 func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 	if not can_be_hit():
 		return
-	if _blocked(from) and cause != "spikes":
-		invuln = 0.25
-		knock = (position - from).normalized() * 70.0
-		run.fx.burst(position - Vector2(0, 9) + _block_dir * 13.0, [Color(1, 1, 1), Color(0.75, 0.9, 1.0)], 6, 80.0, 0.2, 2.0, _block_dir)
+	if cause != "spikes" and _blocked():
+		invuln = 0.35
+		var away := (position - from).normalized() if position.distance_to(from) > 0.5 else Vector2.ZERO
+		knock = away * 70.0
+		run.fx.burst(position - Vector2(0, 9) - away * 13.0, [Color(1, 1, 1), Color(0.75, 0.9, 1.0)], 6, 80.0, 0.2, 2.0, -away)
 		Sfx.play("shot_hit_wall", -3.0, 0.06, 1.3)
 		return
 	if ward_ready:

@@ -436,14 +436,39 @@ screen -> "Camp" (or "Try again"). Back / pause in the camp goes to the title.
 - **Sword swing:** `"melee"` in the knight's row of `heroes.gd`, `player.gd` `_swing()`: an arc in front of
   him hits everything at once and cuts enemy shots down; a boss's guard (`shielded`) stops it. Shot items
   still help: extra shots = harder swings, extra range = a little reach. The white crescent is code-drawn.
-- **Block (v0.5.1):** hold the second button (touch BLOCK, keys Q / Shift, gamepad left shoulder):
-  `player.gd` `_update_block()` / `_blocked()`. He walks at 45% speed, cannot swing, and blows and shots
-  from inside `guard_arc` of the way he faces do nothing. Spikes and hits from behind still hurt. The bot
-  never blocks. The guard is a code-drawn pale arc (no shield art is used yet).
+- **Block:** rebuilt in v0.7.0 (see the next section). Keys Q / Shift, gamepad left shoulder. The bot never
+  blocks; `--holdblock` holds it up for tests. The guard is code-drawn half-rings (no shield art yet).
 - **Test flags:** `--autotest --level=<id>` (the bot plays that level; add `--goto=boss --bosshp=40` to
   finish it fast; prints the chapter and kit), `--hub --hublevel=<id>`, `--hub --hubtalk=<npc id>`.
 - **Not balanced yet:** the knight's sword against all seven bosses, level length, and how strong a kit of
   kept items makes the later levels. The bot swings at air a lot; judge by playing.
+
+## Sword items, block, camp upgrades, quest list — v0.7.0
+Asked for by the owner on 11 Nov 2026 ("make the upgrades work with the sword realistically ... make the
+camp better and more open ... a quest list on the top left ... a compact and better GUI ... block easier
+to use but only 2 attacks then a cooldown").
+- **Items fit the sword.** Every stat and flag the items set has a meaning for a swing; the table is the
+  comment above `_swing()` in `scripts/entities/player.gd` (`melee_reach()`, `swing_rate()`, `_cut()`), the
+  words are the `desc` / `curse` lines in `scripts/data/items.gd`. Names and icons are unchanged (they read
+  as relics he carries). The 13 items that needed the Hungry Curse are marked `"needs_curse": true`, never
+  offered, and hidden in the Collection (`Items.ids()`). "Cursed" items are called RISKY in the game now.
+  The knight's `range` (100) and `shot_speed` (150) in `heroes.gd` are only the base those items scale.
+- **Block:** tap or hold the second button. The guard covers ALL sides (nothing to aim), stops
+  `BLOCK_HITS` (2) blows, then breaks; it is whole again after `BLOCK_COOLDOWN` (5 s; a blow taken starts
+  the same rest). Guard up = walking at 60%, no swinging. The touch button shows two pips and the ring.
+- **Camp upgrades (`scripts/data/upgrades.gd`):** the smith sells Sharpen (+10% damage x3), Balance (+7%
+  swing speed x3), Draw out (+reach x2), Mend the guard (block 1 s sooner x2); the cook sells A proper meal
+  (+1 heart x3). Paid from the camp chest (`bank:coins`, filled only by walking out alive). Kept as
+  `up:<id>` in the save's hub section; `player.gd setup()` applies them (stats layer "camp").
+- **Quest list (`scripts/ui/quest_list.gd`):** top-left, under the hearts in a level and in the camp. First
+  line is the goal ("Beat <boss>" / "Go down: <level>"), then the Druid's three quests with progress; in
+  the camp also the chest's coins. During a fight it shows the goal only, so it never hides a monster.
+- **GUI:** smaller minimap (5 x 4 rooms, it scrolls), smaller dialogue box and choice windows.
+- **Camp:** 720 x 464 now (was 576 x 368), open ground round the fire, six trodden paths (`Hub.PATHS`), the
+  forest wall plants itself to fit the map (`hub.gd _build_forest()`), people turn to the hero, and those
+  the pack drew walking stroll round their post (`_stroll()`). The Free Pack NPCs have no walk frames.
+- **Not checked by a person:** how strong stacked sword items are (bot fights were about twice as fast
+  with five of them), upgrade prices, and whether 5 s of block rest feels right.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

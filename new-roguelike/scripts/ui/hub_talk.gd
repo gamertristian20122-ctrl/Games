@@ -10,7 +10,7 @@ extends "res://scripts/ui/screen.gd"
 
 const Story = preload("res://scripts/data/story.gd")
 const LETTERS_PER_SECOND := 48.0
-const BOX_H := 56.0
+const BOX_H := 46.0
 
 var info := {}
 var _pages: Array = []
@@ -49,7 +49,7 @@ func build() -> void:
 		face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		face.custom_minimum_size = Vector2(52, 48)
+		face.custom_minimum_size = Vector2(40, 38)
 		face.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var well := UI.panel("well")
 		well.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -73,7 +73,7 @@ func build() -> void:
 	_text = UI.label("", "")
 	_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_text.custom_minimum_size = Vector2(0, 36)
+	_text.custom_minimum_size = Vector2(0, 28)
 	col.add_child(_text)
 	focus_mode = Control.FOCUS_ALL
 	default_focus = self
@@ -148,20 +148,20 @@ func _show_choices() -> void:
 	var centre := CenterContainer.new()
 	margin.add_child(centre)
 	var panel := UI.panel()
-	panel.custom_minimum_size = Vector2(250, 0)
+	panel.custom_minimum_size = Vector2(226, 0)
 	centre.add_child(panel)
-	var col := UI.vbox(2)
+	var col := UI.vbox(1)
 	panel.add_child(col)
 	var head := UI.hbox(4)
 	col.add_child(head)
-	head.add_child(UI.label(String(info.get("name", "")), "Head"))
+	head.add_child(UI.label(String(info.get("name", "")), "Gold"))
 	var title := UI.label(String(info.get("title", "")), "Small")
 	title.add_theme_color_override("font_color", UI.C_GOLD)
 	title.size_flags_vertical = Control.SIZE_SHRINK_END
 	head.add_child(title)
 	for line: Variant in info.get("lines", []):
 		var words := String(line[0]) if line is Array else String(line)
-		var lab := UI.label(words, "", 240.0)
+		var lab := UI.label(words, "Small", 220.0)
 		if line is Array and line.size() > 1:
 			lab.add_theme_color_override("font_color", line[1])
 		col.add_child(lab)
@@ -170,13 +170,13 @@ func _show_choices() -> void:
 		var what := String(opt.get("what", "back"))
 		var arg: Variant = opt.get("arg")
 		var b := UI.button(String(opt["text"]), func() -> void: send(what, arg))
-		b.custom_minimum_size = Vector2(240, 17)
+		b.custom_minimum_size = Vector2(220, 15)
 		b.disabled = bool(opt.get("off", false))
 		col.add_child(b)
 		if first == null and not b.disabled:
 			first = b
 	var back := UI.button("Leave", on_back, "", "")
-	back.custom_minimum_size = Vector2(240, 17)
+	back.custom_minimum_size = Vector2(220, 15)
 	col.add_child(back)
 	default_focus = first if first != null else back
 	default_focus.grab_focus.call_deferred()

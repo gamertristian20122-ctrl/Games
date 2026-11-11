@@ -20,6 +20,8 @@ const Heroes = preload("res://scripts/data/heroes.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
+const Upgrades = preload("res://scripts/data/upgrades.gd")
+const QuestList = preload("res://scripts/ui/quest_list.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
@@ -49,6 +51,7 @@ var _tour: Array = []
 var _tour_t := 0.0
 var _news := false              ## a quest is waiting to be handed in
 var _talked := {}               ## npc ids spoken to during this visit
+var _quests: Control
 
 
 func _ready() -> void:
@@ -60,8 +63,7 @@ func _ready() -> void:
 	add_child(_ysort)
 	for p: Array in Hub.PROPS:
 		_prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
-	for p: Array in Hub.FOREST:
-		_prop(String(p[0]), Vector2(p[1], p[2]), 0.0, 8.0 if String(p[0]).contains("tree") else 5.0)
+	_build_forest()
 	_build_fire()
 	for row: Dictionary in Hub.NPCS:
 		_add_person(row)
@@ -84,6 +86,16 @@ func _ready() -> void:
 	_prompt.add_theme_constant_override("outline_size", 3)
 	add_child(_prompt)
 	Controls.action_pressed.connect(_on_talk_pressed)
+	# the quest list in the top-left corner, as in a level
+	var layer := CanvasLayer.new()
+	layer.layer = G.LAYER_HUD
+	add_child(layer)
+	_quests = QuestList.new()
+	_quests.in_camp = true
+	var ins := UI.safe_insets(self)
+	_quests.position = Vector2(ins.x + 2.0, ins.y + 2.0)
+	_quests.modulate.a = 0.92
+	layer.add_child(_quests)
 	if G.arg("hublevel") != "":          # test: go down into that level after a second
 		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_level", G.arg("hublevel")))
 	elif Save.hub_get("seen:intro") == 0 and G.arg("shots") == "":
@@ -91,7 +103,7 @@ func _ready() -> void:
 		Save.hub_set("seen:intro", 1)
 		get_tree().create_timer(0.7).timeout.connect(func() -> void: action.emit("talk", Story.INTRO.duplicate(true)))
 	if G.arg("shots") != "" and G.flag("hub"):
-		_tour = [Vector2(322, 160), Vector2(150, 226), Vector2(300, 250), Vector2(440, 290), Vector2(180, 300)]
+		_tour = [Vector2(376, 170), Vector2(180, 276), Vector2(360, 300), Vector2(540, 276), Vector2(520, 410)]
 
 
 func _exit_tree() -> void:
@@ -106,14 +118,22 @@ func _build_ground() -> void:
 	ground.draw.connect(func() -> void:
 		ground.draw_texture_rect(grass, Rect2(Vector2(-64, -64), Hub.MAP + Vector2(128, 128)), true))
 	add_child(ground)
-	for p: Array in Hub.PATCHES:
-		var s := Sprite2D.new()
-		s.texture = Art.tex("hub_patch_%d" % int(p[2]))
-		s.position = Vector2(p[0], p[1])
-		add_child(s)
-	# small flat things on the grass: the same every time
+	# small flat things on the grass and the trodden paths: the same every time
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261111
+	var n := 0
+	for path: Array in Hub.PATHS:
+		for i in path.size() - 1:
+			var from: Vector2 = path[i]
+			var to: Vector2 = path[i + 1]
+			var steps := maxi(1, int(from.distance_to(to) / 30.0))
+			for k in steps + 1:
+				var s := Sprite2D.new()
+				s.texture = Art.tex("hub_patch_%d" % (n % 2))
+				s.position = (from.lerp(to, float(k) / float(steps)) + Vector2(rng.randf_range(-4, 4), rng.randf_range(-4, 4))).round()
+				s.flip_h = rng.randf() < 0.5
+				add_child(s)
+				n += 1
 	for id: String in Hub.SCATTER:
 		var spec: Array = Hub.SCATTER[id]
 		for i in int(spec[1]):
@@ -161,10 +181,41 @@ func _build_fire() -> void:
 	pit.add_child(flame)
 	_solids.append([Hub.FIRE - Vector2(0, 6), 11.0])
 	var grill := _anim("hub_fire_c", 7.0)        # the cook's fire
-	grill.position = Vector2(392, 300)
+	grill.position = Hub.GRILL
 	grill.offset = Vector2(0, -10)
 	_ysort.add_child(grill)
-	_solids.append([Vector2(392, 296), 10.0])
+	_solids.append([Hub.GRILL - Vector2(0, 4), 10.0])
+
+
+## The forest wall round the clearing, fitted to the size of the map.
+func _build_forest() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7071
+	for p: Array in Hub.BEHIND_GATE:
+		_prop(String(p[0]), Vector2(p[1], p[2]), 0.0, 8.0)
+	var i := 0
+	var x := 24.0
+	while x < Hub.MAP.x:
+		if x < float(Hub.GATE_GAP[0]) or x > float(Hub.GATE_GAP[1]):
+			_prop(String(Hub.FOREST_BIG[i % Hub.FOREST_BIG.size()]), Vector2(x, 94.0 + rng.randf_range(-6, 6)).round(), 0.0, 8.0)
+			i += 1
+		x += 78.0
+	var y := 176.0
+	while y < Hub.MAP.y - 10.0:
+		_prop(String(Hub.FOREST_SIDE[i % Hub.FOREST_SIDE.size()]), Vector2(4.0 + rng.randf_range(-4, 4), y).round(), 0.0, 8.0)
+		_prop(String(Hub.FOREST_SIDE[(i + 1) % Hub.FOREST_SIDE.size()]), Vector2(Hub.MAP.x - 4.0 + rng.randf_range(-4, 4), y + 30.0).round(), 0.0, 8.0)
+		i += 1
+		y += 84.0
+	x = 22.0
+	while x < Hub.MAP.x:
+		_prop(String(Hub.FOREST_LOW[i % Hub.FOREST_LOW.size()]), Vector2(x, Hub.MAP.y - 6.0 + rng.randf_range(-5, 3)).round(), 0.0, 5.0)
+		i += 1
+		x += 58.0
+	x = 70.0
+	while x < Hub.MAP.x:
+		_prop(String(Hub.FOREST_YOUNG[i % Hub.FOREST_YOUNG.size()]), Vector2(x, Hub.MAP.y + 34.0).round(), 0.0, 8.0)
+		i += 1
+		x += 104.0
 
 
 func _build_light() -> void:
@@ -181,8 +232,9 @@ func _build_light() -> void:
 	tex.fill_to = Vector2(1.0, 0.5)
 	tex.width = 128
 	tex.height = 128
-	for spec: Array in [[Hub.FIRE - Vector2(0, 10), Color(1.0, 0.72, 0.42), 1.9, 0.7], [Vector2(392, 290), Color(1.0, 0.7, 0.45), 1.1, 0.5],
-			[Vector2(104, 180), Color(0.45, 0.85, 1.0), 1.2, 0.5], [Vector2(288, 80), Color(0.75, 0.6, 1.0), 1.1, 0.4]]:
+	for spec: Array in [[Hub.FIRE - Vector2(0, 10), Color(1.0, 0.72, 0.42), 2.1, 0.7], [Hub.GRILL - Vector2(0, 10), Color(1.0, 0.7, 0.45), 1.1, 0.5],
+			[Vector2(146, 216), Color(0.45, 0.85, 1.0), 1.3, 0.5], [Vector2(360, 88), Color(0.75, 0.6, 1.0), 1.1, 0.4],
+			[Vector2(590, 236), Color(1.0, 0.75, 0.5), 0.9, 0.35]]:
 		var l := PointLight2D.new()
 		l.texture = tex
 		l.position = spec[0]
@@ -196,7 +248,7 @@ func _build_light() -> void:
 	flies.position = Hub.MAP * 0.5
 	flies.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	flies.emission_rect_extents = Hub.MAP * 0.5
-	flies.amount = 26
+	flies.amount = 40
 	flies.lifetime = 7.0
 	flies.preprocess = 7.0
 	flies.direction = Vector2(0, -1)
@@ -253,7 +305,8 @@ func _add_person(row: Dictionary) -> Dictionary:
 	mark.z_index = 100
 	node.add_child(mark)
 	_solids.append([row["pos"] - Vector2(0, 2), 6.0])
-	var person := {"row": row, "node": node, "hands": hands, "mark": mark, "face": face, "top": bh, "solid": _solids.size() - 1}
+	var person := {"row": row, "node": node, "hands": hands, "mark": mark, "face": face, "top": bh, "solid": _solids.size() - 1,
+		"body": body, "post": row["pos"], "goal": row["pos"], "wait": randf_range(1.0, 4.0), "walks": Art.has_anim(sprite_id, "run") and not row.has("weapon")}
 	_people.append(person)
 	return person
 
@@ -281,26 +334,6 @@ func refresh_heroes() -> void:
 	_off_hand = Hands.new()
 	if String(mine.get("hand", "")) != "":
 		_off_hand.build(_hero, _body, String(mine["hand"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)), true)
-	# the others by the fire
-	for i in range(_people.size() - 1, -1, -1):
-		if String(_people[i]["row"].get("role", "")) == "hero":
-			_solids[int(_people[i]["solid"])] = [Vector2(-999, -999), 0.0]
-			(_people[i]["node"] as Node2D).queue_free()
-			_people.remove_at(i)
-	var spot := 0
-	for h: Dictionary in Heroes.LIST:
-		if String(h["id"]) == String(mine["id"]) or spot >= Hub.HERO_SPOTS.size():
-			continue
-		var locked: bool = bool(h.get("locked", false)) and not Save.is_unlocked("hero:" + String(h["id"]))
-		if true:
-			continue                   # Aldous is the only hero now (owner, 11 Nov 2026); the others no longer stand here
-		var row := {"id": "hero:" + String(h["id"]), "name": String(h["name"]), "title": String(h["title"]), "sprite": String(h["sprite"]),
-			"hands": String(h.get("hand", "")), "weapon": String(h.get("weapon", "")), "grip": h.get("grip", 4), "hand": String(h.get("hand", "")),
-			"pos": Hub.HERO_SPOTS[spot], "face": 1 if spot == 0 else -1, "role": "hero", "hero": h, "locked": locked}
-		var person := _add_person(row)
-		if locked:
-			(person["node"] as Node2D).modulate = Color(0.16, 0.16, 0.2)     # not yours yet: a dark shape by the fire
-		spot += 1
 	_near = -1
 
 
@@ -346,9 +379,10 @@ func _update_people(delta: float) -> void:
 	for i in _people.size():
 		var p: Dictionary = _people[i]
 		var node: Node2D = p["node"]
-		if p["hands"] != null:
-			(p["hands"] as RefCounted).update(delta, false, float(p["face"]))
 		var d := node.position.distance_to(_hero.position)
+		var walking := _stroll(p, delta, d)
+		if p["hands"] != null:
+			(p["hands"] as RefCounted).update(delta, walking, float(p["face"]))
 		if d < best_d:
 			best_d = d
 			best = i
@@ -356,6 +390,7 @@ func _update_people(delta: float) -> void:
 		mark.visible = (news and String(p["row"].get("role", "")) == "quests") or bool(p.get("news", false))
 		mark.position.y = -float(p["top"]) - 16.0 + roundf(sin(_time * 5.0) * 1.5)
 	_near = best
+	_quests.visible = not frozen
 	G.hub_near = best >= 0 and not frozen
 	if best >= 0 and not frozen:
 		var p: Dictionary = _people[best]
@@ -366,6 +401,41 @@ func _update_people(delta: float) -> void:
 	else:
 		_prompt.visible = false
 
+
+
+## People are not statues: they turn to the hero when he comes close, and those the pack drew
+## walking wander a few steps round their post now and then. Returns true while walking.
+func _stroll(p: Dictionary, delta: float, hero_dist: float) -> bool:
+	var node: Node2D = p["node"]
+	var body: AnimatedSprite2D = p["body"]
+	if hero_dist < 44.0 or frozen:
+		if absf(_hero.position.x - node.position.x) > 3.0:
+			p["face"] = signf(_hero.position.x - node.position.x)
+		body.flip_h = float(p["face"]) < 0.0
+		if body.animation != "idle":
+			body.play("idle")
+		return false
+	if not bool(p["walks"]):
+		return false
+	var goal: Vector2 = p["goal"]
+	if node.position.distance_to(goal) < 1.0:
+		p["wait"] = float(p["wait"]) - delta
+		if body.animation != "idle":
+			body.play("idle")
+		if float(p["wait"]) <= 0.0:
+			p["wait"] = randf_range(2.5, 6.0)
+			var post: Vector2 = p["post"]
+			p["goal"] = (post + Vector2(randf_range(-Hub.STROLL, Hub.STROLL), randf_range(-Hub.STROLL * 0.6, Hub.STROLL * 0.6))).round()
+		return false
+	var step := (goal - node.position).limit_length(18.0 * delta)
+	node.position += step
+	if absf(step.x) > 0.001:
+		p["face"] = signf(step.x)
+	body.flip_h = float(p["face"]) < 0.0
+	if body.animation != "run":
+		body.play("run")
+	_solids[int(p["solid"])] = [node.position - Vector2(0, 2), 6.0]
+	return true
 
 
 func _on_talk_pressed() -> void:
@@ -394,9 +464,6 @@ func _talk(index: int) -> void:
 	var pages: Array = said.duplicate()
 	if pages.is_empty() and String(row.get("text", "")) != "":
 		pages = [String(row["text"])]
-	if not Story.has_news(id) and _talked.has(id) and String(row.get("role", "chat")) != "chat":
-		pages = []                     # heard it already this visit: straight to the choices
-	_talked[id] = true
 	var info := {"name": row["name"], "title": row.get("title", ""), "sprite": row["sprite"], "pages": pages, "heard": id,
 		"lines": [], "options": []}
 	match String(row.get("role", "chat")):
@@ -434,6 +501,23 @@ func _talk(index: int) -> void:
 			info["lines"].append([String(h.get("desc", "")), UI.C_DIM])
 			info["lines"].append([String(h.get("passive", "")), UI.C_DIM])
 			info["options"].append({"text": "Play as %s" % String(h["name"]), "what": "hub_hero", "arg": h["id"]})
+	# what this person sells for coins from the camp chest (scripts/data/upgrades.gd)
+	var sells := false
+	for up: Dictionary in Upgrades.LIST:
+		if String(up["at"]) != id:
+			continue
+		sells = true
+		var t := Upgrades.tier(String(up["id"]))
+		var price := Upgrades.cost(up)
+		info["lines"].append(["%s %d/%d: %s" % [up["name"], t, Upgrades.steps(up), up["text"]], UI.C_DIM if price >= 0 else UI.C_FAINT])
+		if price >= 0:
+			info["options"].append({"text": "%s: %d coins" % [up["name"], price], "what": "hub_buy", "arg": up["id"], "off": Upgrades.coins() < price})
+	if sells:
+		info["lines"].append(["Camp chest: %d coins. Walk out of the hill alive to fill it." % Upgrades.coins(), UI.C_GOLD])
+	# heard it already this visit and nothing new: straight to the choices
+	if not Story.has_news(id) and _talked.has(id) and not ((info["options"] as Array).is_empty() and (info["lines"] as Array).is_empty()):
+		info["pages"] = []
+	_talked[id] = true
 	action.emit("talk", info)
 
 

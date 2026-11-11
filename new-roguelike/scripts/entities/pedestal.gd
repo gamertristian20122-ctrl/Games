@@ -294,7 +294,7 @@ func _physics_process(delta: float) -> void:
 	if cursed and not taken and not warned and dist < WARN_RANGE:
 		warned = true
 		var info: Dictionary = Items.info(item)
-		G.toast.emit("Cursed: " + String(info.get("name", item)), String(info.get("curse", "")))
+		G.toast.emit("Risky: " + String(info.get("name", item)), String(info.get("curse", "")))
 		Sfx.play("curse_whisper", -4.0)
 	var reach: float = BLOCK_RADIUS + player.radius
 	if dist < reach:

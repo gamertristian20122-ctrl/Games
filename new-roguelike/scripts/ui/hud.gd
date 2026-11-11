@@ -19,6 +19,8 @@ const Hearts = preload("res://scripts/ui/hearts.gd")
 const Minimap = preload("res://scripts/ui/minimap.gd")
 const ItemRack = preload("res://scripts/ui/item_rack.gd")
 const CurseMeter = preload("res://scripts/ui/curse_meter.gd")
+const QuestList = preload("res://scripts/ui/quest_list.gd")
+const Story = preload("res://scripts/data/story.gd")
 
 const CARD_TIME := 2.5           ## seconds an item card stays up
 const PAUSE_GAP := 23.0          ## room kept free in the top right corner for the pause button
@@ -34,6 +36,7 @@ var _counters: HBoxContainer
 var _count_labels := {}
 var _count_icons := {}
 var _curse_meter: Control
+var _quests: Control             ## the quest list under the hearts (scripts/ui/quest_list.gd)
 var _coins_shown := 0
 var _coins_target := 0
 var _coin_clock := 0.0
@@ -101,6 +104,9 @@ func _ready() -> void:
 	_counters.resized.connect(func() -> void:
 		if _boss_box != null:
 			_place_boss_bar())
+
+	_quests = QuestList.new()
+	_root.add_child(_quests)
 
 	_minimap = Minimap.new()
 	_root.add_child(_minimap)
@@ -187,6 +193,8 @@ func _layout() -> void:
 	_hearts.modulate.a = alpha
 	_counters.position = Vector2(left + 1.0, top + _hearts.size.y + 1.0)
 	_counters.modulate.a = alpha
+	_quests.position = Vector2(left - 1.0, _counters.position.y + _counters.size.y + 2.0)
+	_quests.modulate.a = 0.9
 	var gap := PAUSE_GAP if Controls.using_touch else 0.0
 	_minimap.position = Vector2(right - _minimap.size.x - gap, top - 1.0)
 	_minimap.modulate.a = alpha
@@ -247,6 +255,7 @@ func _refresh() -> void:
 		return
 	if _hearts.call("set_values", _num(p, "hp"), _num(p, "max_hp"), _num(p, "armor")):
 		_counters.position.y = _hearts.position.y + _hearts.size.y + 1.0
+		_quests.position.y = _counters.position.y + _counters.size.y + 2.0
 		_place_boss_bar()
 	_coins_target = _num(p, "coins")
 	if _coins_shown < 0:
@@ -420,7 +429,11 @@ func _draw_rule() -> void:
 
 func _on_floor_started(floor_index: int, floor_name: String) -> void:
 	_dirty = true
-	_queue_banner({"style": "floor", "over": "Floor %d" % (floor_index + 1), "title": floor_name, "sub": ""})
+	var over := "Floor %d" % (floor_index + 1)
+	if is_instance_valid(run) and run.get("level") is Dictionary and not (run.get("level") as Dictionary).is_empty():
+		var lv: Dictionary = run.get("level")       # the story: which level of the descent this is
+		over = "%s · level %d of %d" % [String(lv.get("area", "")), Story.LEVELS.find(lv) + 1, Story.LEVELS.size()]
+	_queue_banner({"style": "floor", "over": over, "title": floor_name, "sub": ""})
 
 
 func _on_toast(title: String, subtitle: String) -> void:

@@ -503,7 +503,7 @@ func take_item(pool: String, rng: RandomNumberGenerator) -> String:
 func _needs_curse(info: Dictionary) -> bool:
 	if G.curse_on():
 		return false
-	return (String(info.get("desc", "")) + String(info.get("curse", ""))).contains("Curse")
+	return bool(info.get("needs_curse", false))
 
 
 # =============================================================================== kills, death, victory
