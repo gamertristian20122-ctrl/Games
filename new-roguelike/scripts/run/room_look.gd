@@ -668,21 +668,22 @@ func draw_doors(c: Node2D) -> void:
 func _draw_side_door(c: Node2D, dir: Vector2i, mid: Vector2, shut: bool, locked: bool, boss: bool, cracked: bool) -> void:
 	var left := dir == LEFT
 	var x0 := -SIDE_DEPTH if left else W        # outer edge (left door) / floor edge (right door)
+	var tint: Color = theme["tile_tint"]        # stone and wood take the floor's tint, like the walls
 	if cracked:
 		# a blown hole: no frame, ragged stone ends, a little rubble
 		for s: float in [-1.0, 1.0]:
 			var y := mid.y + s * 8.0
 			c.draw_rect(Rect2(-5.0 if left else W, y - 2.0, 5, 3), INK)
-			c.draw_rect(Rect2(-7.0 if left else W + 4.0, y - 1.0 + s, 3, 2), BRICK_DARK)
-			c.draw_rect(Rect2(-3.0 if left else W + 1.0, y + s * 2.0, 2, 2), BRICK)
+			c.draw_rect(Rect2(-7.0 if left else W + 4.0, y - 1.0 + s, 3, 2), BRICK_DARK * tint)
+			c.draw_rect(Rect2(-3.0 if left else W + 1.0, y + s * 2.0, 2, 2), BRICK * tint)
 		if shut:
 			_bars_v(c, Rect2(-6.0 if left else W, mid.y - 9, 6, 18))
 		return
 	# the door leaf, seen from above: a plank across the doorway with two studs
 	if shut:
 		var lx := -5.0 if left else W + 1.0
-		var wood := WOOD
-		var grain := WOOD_DARK
+		var wood := WOOD * tint
+		var grain := WOOD_DARK * tint
 		if boss:
 			wood = Color("a8242a")
 			grain = Color("5e1120")
@@ -696,8 +697,8 @@ func _draw_side_door(c: Node2D, dir: Vector2i, mid: Vector2, shut: bool, locked:
 		# the doorway behind a shut door is dark
 		c.draw_rect(Rect2(x0 if left else W + 5.0, mid.y - 8, SIDE_DEPTH - 5.0, 16), Color(VOID.r, VOID.g, VOID.b, 0.85))
 	# the frame: two stone jambs that stick out of the wall
-	var cap := STONE
-	var cap_hi := STONE_HI
+	var cap := STONE * tint
+	var cap_hi := STONE_HI * tint
 	if boss:
 		cap = Color("b23a30")
 		cap_hi = BOSS_RED

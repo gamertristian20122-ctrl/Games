@@ -14,6 +14,7 @@ const Pickups = preload("res://scripts/data/pickups.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const ShotTypes = preload("res://scripts/data/shot_types.gd")
 const Stats = preload("res://scripts/run/stats.gd")
+const CurseTests = preload("res://dev/curse_tests.gd")
 
 const POOLS := ["treasure", "boss", "shop", "secret", "cursed"]
 
@@ -71,6 +72,13 @@ static func layout_checks() -> Array[String]:
 			if Layouts.pick_list(kind, 1, 3, i + 1).is_empty():
 				out.append("floor %d: no '%s' layout" % [i + 1, kind])
 	return out
+
+
+## The Hungry Curse's rules, tested on a real run that hangs on `host` (see dev/curse_tests.gd):
+## where it appears, the level table, lunges and meals, bites, shots, bombs, CALL, secret walls,
+## cursed items and the Starve stand, the belly being kept, the treasure pair.
+static func curse(host: Node) -> Array[String]:
+	return CurseTests.run_all(host)
 
 
 static func all() -> Array[String]:

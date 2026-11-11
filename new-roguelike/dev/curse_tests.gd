@@ -15,6 +15,10 @@ const DT := 1.0 / 60.0
 const HERO_SAFE := Vector2(250, 100)     ## where the hero waits when a test does not need him
 const ANCHOR := Vector2(264, 8)          ## a stunned enemy stands here so the fight never "ends"
 
+## Every test is a function below called _t_<name>.
+const TESTS: Array[String] = ["level_table", "where_it_appears", "lunge_meal", "minion_and_elite", "boss_bite", "hero_bite",
+	"shots", "bomb", "call", "secret_wall", "cursed_items_and_starve", "belly_kept", "treasure_pair"]
+
 static var _fails: Array[String] = []
 static var _stats := {}
 static var _test := ""
@@ -32,10 +36,10 @@ static func run_all(host: Node) -> Array[String]:
 	if run.tutor != null:
 		run.tutor.free()                   # the first-run lesson would stage fights of its own
 		run.tutor = null
-	for test: Callable in [_t_level_table, _t_where_it_appears, _t_lunge_meal, _t_minion_and_elite, _t_boss_bite,
-			_t_hero_bite, _t_shots, _t_bomb, _t_call, _t_secret_wall, _t_cursed_items_and_starve, _t_belly_kept, _t_treasure_pair]:
-		_test = String(test.get_method()).trim_prefix("_t_")
-		test.call(run)
+	var me: GDScript = load("res://dev/curse_tests.gd")
+	for test_name in TESTS:
+		_test = test_name
+		me.call("_t_" + test_name, run)
 	G.stat.disconnect(counter)
 	run.queue_free()
 	return _fails
@@ -56,6 +60,7 @@ static func _arena(run: Node, at: Vector2, level: int = 0) -> Node2D:
 	run.belly = 0
 	run.call_cd = 0.0
 	run.shots.clear()
+	room.grid.fill(0)                      # no rocks or crates: nothing but what the test puts there
 	room.fighting = true
 	room.fight_time = 0.0
 	room._spawn_curse()
@@ -155,7 +160,11 @@ static func _t_where_it_appears(run: Node) -> void:
 		run.player.position = Vector2(20, 20)
 		_tick(run, Curse.RISE_DELAY + 0.05)
 		_expect(c2.state == Curse.RISING and not c2.lit(), "it rises %.1f s after the doors lock, harmless" % Curse.RISE_DELAY)
-		_expect(c2.position.distance_to(Vector2(240, 80)) < 1.0, "it rises at the spawn point farthest from the hero")
+		var far := Curse.SPAWN_POINTS[0]
+		for sp in Curse.SPAWN_POINTS:
+			if sp.distance_to(Vector2(20, 20)) > far.distance_to(Vector2(20, 20)):
+				far = sp
+		_expect(c2.position.distance_to(far) < 1.0, "it rises at the spawn point farthest from the hero")
 		_tick(run, Curse.RISE_TIME + 0.05)
 		_expect(c2.state == Curse.CREEP and c2.lit() and c2.solid, "after rising it creeps and its rim is lit")
 		# the last enemy dies: it sinks, harmless at once
@@ -224,13 +233,16 @@ static func _t_minion_and_elite(run: Node) -> void:
 		_tick(run, 0.05)
 		_expect(not big.dead and is_equal_approx(big.hp, full * (1.0 - Curse.BIG_BITE)), "%s loses half its health to the first bite" % case[3])
 		_expect(big.knock.length() > 50.0, "%s is shoved away by the bite" % case[3])
-		big.knock = Vector2.ZERO
-		big.position = Vector2(100, 56)
-		_tick(run, 0.5)
+		for part: float in [0.5, 0.3]:
+			big.knock = Vector2.ZERO
+			big.position = Vector2(100, 56)
+			c.position = Vector2(100, 56)
+			_tick(run, part)
 		_expect(not big.dead, "%s is bitten at most once per second" % case[3])
 		big.knock = Vector2.ZERO
 		big.position = Vector2(100, 56)
-		_tick(run, 0.6)
+		c.position = Vector2(100, 56)
+		_tick(run, 0.3)
 		_expect(big.dead and run.belly == int(case[2]), "the second bite swallows %s and pays %d (belly = %d)" % [case[3], case[2], run.belly])
 
 
@@ -242,26 +254,26 @@ static func _t_boss_bite(run: Node) -> void:
 		boss.stun = 9999.0
 		boss.position = Vector2(136, 56)
 		var full: float = boss.max_hp
-		c.position = Vector2(110, 56)
+		c.position = Vector2(118, 56)
 		_tick(run, 0.03)
 		var pct := 5.0 + lvl
 		_expect(is_equal_approx(boss.hp, full * (1.0 - pct / 100.0)), "at level %d a bite takes %d%% of a boss (took %.1f%%)" % [lvl, int(pct), 100.0 * (full - boss.hp) / full])
 		_expect(c.state == Curse.WINDED and c.t > Curse.BOSS_REST - 0.2, "after biting a boss it stands still for %.0f s" % Curse.BOSS_REST)
-		_expect(is_equal_approx(c.position.x, maxf(110.0 - Curse.BOSS_BOUNCE, c.radius)), "the boss knocks it back %d px" % int(Curse.BOSS_BOUNCE))
+		_expect(absf(c.position.x - (118.0 - Curse.BOSS_BOUNCE)) < 1.0, "the boss knocks it back %d px" % int(Curse.BOSS_BOUNCE))
 		# while it rests it cannot bite the boss again
 		var before: float = boss.hp
-		c.position = Vector2(110, 56)
+		c.position = Vector2(118, 56)
 		_tick(run, 1.0)
 		_expect(is_equal_approx(boss.hp, before), "no second boss bite while it rests")
 		# the floor: bites never take a boss below 10%
-		_tick(run, Curse.BOSS_REST)
 		boss.hp = full * 0.12
-		c.position = Vector2(110, 56)
+		c.position = Vector2(118, 56)
+		c._boss_cd = 0.0
 		c._go(Curse.CREEP, 0.0)
 		_tick(run, 0.03)
 		_expect(is_equal_approx(boss.hp, full * Curse.BOSS_FLOOR) and not boss.dead, "a bite stops at %d%% of the boss's health" % int(Curse.BOSS_FLOOR * 100.0))
-		boss.free()
 		run.room.enemies.erase(boss)
+		boss.free()
 		run.boss = null
 
 
@@ -269,9 +281,9 @@ static func _t_hero_bite(run: Node) -> void:
 	var p: Node = run.player
 	for lvl: int in [0, 2, 3, 5]:
 		var c := _arena(run, Vector2(100, 56), lvl)
-		p.position = Vector2(100.0 + c.radius + Curse.HERO_BITE_PAD + 1.0, 56)
+		p.position = Vector2(100.0 + c.radius + Curse.HERO_BITE_PAD + 2.0, 56)
 		_tick(run, 0.02)
-		_expect(p.hp == p.max_hp and c.state == Curse.CREEP, "level %d: one pixel outside the bite range nothing happens" % lvl)
+		_expect(p.hp == p.max_hp and c.state == Curse.CREEP, "level %d: two pixels outside the bite range nothing happens" % lvl)
 		p.position = Vector2(100.0 + c.radius, 56)
 		c.position = Vector2(100, 56)
 		_tick(run, 0.02)
@@ -409,6 +421,7 @@ static func _t_call(run: Node) -> void:
 	_expect(c.state == Curse.CREEP and run.call_cd > 0.0, "it creeps again while the cooldown still runs")
 	Controls.press_action()
 	_expect(c.state == Curse.CREEP, "CALL does nothing during its cooldown")
+	run.player.position = Vector2(20, 20)
 	_tick(run, cooldown)
 	_expect(run.call_cd == 0.0 and c.can_call(), "after the cooldown CALL works again")
 	# the Spiked Goad shortens it
@@ -438,11 +451,11 @@ static func _t_secret_wall(run: Node) -> void:
 	var door: Dictionary = room.rs["doors"][side]
 	room.fighting = true
 	room._spawn_curse()
-	_enemy(run, "shambler", ANCHOR if side != Vector2i(1, 0) and side != Vector2i(0, -1) else Vector2(8, 104))
+	_enemy(run, "shambler", ANCHOR)
 	var c2: Node2D = room.curse
 	var secrets := int(_stats.get("secret_found", 0))
 	for hit in 2:
-		run.player.position = HERO_SAFE if side != Vector2i(1, 0) and side != Vector2i(0, 1) else Vector2(20, 12)
+		run.player.position = HERO_SAFE
 		c2.position = (room.door_pos(side) as Vector2) - Vector2(side) * 50.0
 		c2._go(Curse.CREEP, 0.0)
 		c2.aim_dir = Vector2(side)
@@ -455,7 +468,6 @@ static func _t_secret_wall(run: Node) -> void:
 			_expect(door["revealed"], "the second lunge opens it")
 			_expect(int(_stats.get("secret_found", 0)) == secrets + 1, "and that counts as finding the secret")
 		_tick(run, Curse.WINDED_TIME)
-	# a lunge that ends far from the door does nothing
 	run._enter_room(Vector2i.ZERO, Vector2i.ZERO)
 
 

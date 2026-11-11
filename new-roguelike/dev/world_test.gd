@@ -20,6 +20,8 @@ func _ready() -> void:
 		var problems := Validate.check_scripts()
 		if G.flag("validate"):
 			problems.append_array(Validate.all())
+			if problems.is_empty():
+				problems.append_array(Validate.curse(self))
 		for p in problems:
 			print("ERROR: data check: " + p)
 		print("VALIDATE %s (%d problems)" % ["OK" if problems.is_empty() else "FAILED", problems.size()])
