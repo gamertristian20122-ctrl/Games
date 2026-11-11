@@ -470,6 +470,31 @@ to use but only 2 attacks then a cooldown").
 - **Not checked by a person:** how strong stacked sword items are (bot fights were about twice as fast
   with five of them), upgrade prices, and whether 5 s of block rest feels right.
 
+## The owner's interview answers (11 Nov 2026, after v0.7.0) — the roadmap
+Twelve questions, asked with multiple choice. These are decisions; build toward them in the order below.
+- **The camp becomes a small village with exits into a wider world** ("all of these": bigger clearing,
+  buildings you can enter, and walking out into other areas).
+- **You spawn in your home: a room in the tavern** (the tavern is a building in the village; the cook and
+  others are downstairs). A bed, a chest and a mirror for customizing belong there.
+- **Travel is walking screen to screen** (areas join edge to edge, the next screen slides in). No map menu.
+- **First new area: the Fairy Forest** (elves, druids, hunters, outdoors). The others come later.
+- **Camp life, all four:** a shop for items (chest coins), people with side stories who arrive as the
+  story moves on, a training yard (dummy and safe monsters), day and night and weather.
+- **Attack stays on the right stick** (no attack button).
+- **Weapons to switch between, all four:** great axe (slow, wide, shoves), spear (long, narrow), war hammer
+  (very slow, stuns, breaks rocks), twin daggers (very fast, short). **Got by a mix:** some from bosses,
+  some bought at the smith, some hidden in secret rooms.
+- **Difficulty: an Easy / Normal / Hard switch in Settings.**
+- **Customizing:** name your knight (people in the story use it), armour colour (a tint), weapon look
+  (which pack picture he carries). NOT a choice of body.
+- **Story, all four:** bosses speak before the fight and as they fall; scenes at the camp after each seal;
+  an opening scene (the knight arrives at the village at night); notes and carvings to find in the levels.
+- **Text and button size on the phone: good as it is.** Do not enlarge or shrink them.
+Suggested build order (each a build the owner can play): 1 difficulty switch + naming + armour colour +
+bosses speak (small, quick); 2 the village with the tavern home, shop and training yard; 3 screen-to-screen
+walking and the Fairy Forest; 4 the four weapons; 5 camp scenes, opening scene, notes, side stories;
+6 day and night, weather.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces
