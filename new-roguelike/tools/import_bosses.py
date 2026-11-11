@@ -130,7 +130,7 @@ BOSSES = [
              "6 armour buff 10 (page says 11), 7+8 defeated 14 (death; played backwards = appearance). No hit "
              "animation. Faces right in the source. Hovers: no legs, feet = bottom of the body. Laser fx: beam starts "
              "at its left end and runs to the right edge of its 300 px cell; frame 0 of the laser sheet was empty and "
-             "is dropped (14 frames remain: 7 charge + 7 beam)."),
+             "is dropped (14 frames remain: 8 charge + 6 beam)."),
     dict(id="frost_guardian", pk="chierit_frost", mirror=True, anims=[
         A("idle", ("files", FG + "idle")),
         A("run", ("files", FG + "walk")),
@@ -427,7 +427,17 @@ def import_boss(b, cast):
     return out, feet
 
 
-FXNOTES = {}
+FXNOTES = {
+    "demon_fireball_blue": "Blue = the colour of the breath drawn into boss_demon attack2 (source file breath.png).",
+    "demon_fireball": "Orange version of the same burst (source breath-fire.png). f0 = falling fireball, f1-4 = burst.",
+    "hell_beast_fireball": "Points forward (right after mirroring). Loop all 3 frames in flight.",
+    "mecha_golem_arm": "The launched forearm, fist pointing right, same art as the arm in attack f7.",
+    "mecha_golem_arm_glow": "Glowing version of the forearm, 6 frames (3x3 grid of 100 px cells, empty cells dropped).",
+    "mecha_golem_laser": "f0-7 charge spark, f8-13 beam. Emitter = left end at the vertical middle; the beam runs to "
+                         "the right edge (272 px), so stretch or tile it in code for a longer beam.",
+    "terrible_knight_dagger": "Thrown dagger, still image, pointing right.",
+    "terrible_knight_dagger_hit": "Dagger impact burst, 3 frames.",
+}
 
 
 def main():

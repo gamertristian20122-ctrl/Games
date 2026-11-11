@@ -38,6 +38,14 @@ CARPET_PARTS = {
     (2, 0): "fill", (2, 1): "t", (2, 2): "b",
 }
 
+# Pieces only the OLD room look used. Rooms are now drawn from the Pixel Crawler tile sets
+# (assets/art/pc_tiles, tools/pc_import_tiles.py), so these are no longer cut out or shipped.
+NIJI_SKIP = (
+    "niji_bag_brown", "niji_bag_gold", "niji_carpet_", "niji_door_single_a", "niji_floor_plants",
+    "niji_floor_torch", "niji_keyhole_light", "niji_wall_grate", "niji_wall_pipe",
+    "niji_wall_sign_orange", "niji_wall_torch",
+)
+
 # ---------------------------------------------------------------- Superdark forest
 FOREST_PACK = "superdark_enchanted_forest"
 FOREST_KEEP = [
@@ -88,7 +96,7 @@ def import_niji(manifest, written):
     clean(folder)
     atlases = {}
     for s in manifest["sprites"]:
-        if s["pack"] != NIJI_PACK:
+        if s["pack"] != NIJI_PACK or s["id"].startswith(NIJI_SKIP):
             continue
         path = os.path.join(RAW, "art", s["atlas"])
         if path not in atlases:

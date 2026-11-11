@@ -228,3 +228,36 @@ Added by the cast builder. Every character on screen is a purchased Pixel Crawle
   --resolution 1600x720 res://dev/cast_lineup.tscn -- --shots=/abs/dir [--anim=run|death|hit]`
   writes one picture with every hero aiming in 8 directions, every monster, both bosses, the
   familiars and the shopkeeper on floor lines.
+
+## Rooms in the Pixel Crawler art (room builder, Nov 2026)
+This replaces what "Look, effects and layouts" says about walls, floors, doors, obstacles and room
+decoration (`tile_tint`, niji / forest wall pieces and carpets are gone). Shots, effects and the
+layout letters in that section still hold.
+
+- Every room picture comes from one tile set per floor: `assets/art/pc_tiles/<crypt|warrens|ashen|pit>/`
+  described by `assets/art/pc_tiles/tilesets.json` (written by `tools/pc_import_tiles.py`; never edit
+  it by hand). `scripts/run/room_look.gd` reads the json once, loads pieces when first needed and
+  keeps them. `tools/pc_preview_room.py` is the reference for draw order.
+- Sizes: back wall 48 px, side walls 16, bottom strip 16, so a room is 304 x 176 on the 180 px tall
+  screen. The floor is still (0,0)..(272,112); the json counts from the wall frame's top-left corner
+  (game x = json x - 16, game y = json y - 48). `G.CAMERA_CENTER` centres the whole frame.
+- Layers (`room.gd`): `tiles` (floor, floor bits, walls, doors, wall pieces) < `spikes_node` (pits and
+  spikes, flat) < `ysort` (obstacles and characters, sorted by their feet) < `front` (bottom wall and
+  door parts marked "front") < `door_fx` (the code-drawn boss mark).
+- `scripts/data/floors.gd` picks the set (`tiles`) and holds what the json does not: how much
+  decoration, `dress` (what a shop, treasure, secret and boss room put on the back wall), `debris`
+  colours, `pit_depth`, `pit_join` (the Pit's one-hole-per-tile shaft is joined into big shafts by
+  cutting that picture into quarters) and `secret_hole`.
+- Obstacle letters map to json kinds: `#` rock, `c` crate, `I` pillar, `T` torch, `o` pit, `^` spikes.
+  Which variant a tile gets is hashed from the room's seed and mirrored left to right.
+- Door states come straight from the json (`doors.<n|s|w|e>.<state>`): open, shut, locked, hidden,
+  cracked, boss, boss_open. Made by code: the red skull boss mark and a thin gold rim round the
+  keyhole plate of a locked back-wall door.
+- Lights: wall lights sit at the json's columns; `RoomLook.MAX_LIGHTS` (6) real lights per room,
+  the rest only glow. A secret room has no wall lights.
+- Test flags: `--doorlook=<state>` draws a door in that state in all four walls (look only),
+  `--floor=N`, `--goto=shop|treasure|secret|boss`, `--layout=<name>`.
+- `./tools/check.sh` (dev/validate.gd) checks that each floor's tile set is complete and that
+  `dress` / `no_floor_deco` name real pieces.
+- Known gaps (need the tile importer, not code): the crypt has ONE pillar picture (the hooded
+  statue), the ashen halls one; blown-open side doors are a floor tile with rubble (no ragged hole).

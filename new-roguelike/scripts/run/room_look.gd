@@ -19,7 +19,9 @@ extends Node2D
 ##   open     a doorway                              shut     a door leaf (back wall) or bars
 ##   locked   a door or hatch with a keyhole plate   boss     red door or hatch + a red skull mark
 ##   hidden   plain wall until a bomb opens it       cracked  the blown-open secret door
-## The only door part made by code is the boss mark (the pack has none): _boss_mark() below.
+## The only door parts made by code are the boss mark (the pack has none): _boss_mark() below, and a
+## thin gold rim round the keyhole plate of a locked back-wall door.
+## To LOOK at a door state in all four walls at once: --doorlook=open|shut|locked|boss|boss_open|cracked
 
 ## The most real lights one room may have: the hero's, plus stands, torches and wall lights.
 ## Every light costs a little on a phone, so wall lights past this number only get a glow.
@@ -46,6 +48,9 @@ const INK := Color("1a1216")
 const BOSS_RED := Color("da4e38")
 const BOSS_LIGHT := Color("f58a66")
 const BOSS_DARK := Color("3a0d16")
+## A locked door in the back wall is a shut door plus the pack's small keyhole plate. The plate gets
+## a thin gold rim (flat squares) so "locked" is told from "shut" at a glance on every floor.
+const LOCK_GOLD := Color("f4bd3e")
 ## Floor decoration is drawn a little darker than the pack made it, so shots and pickups stand out.
 const DECO_DIM := Color(0.84, 0.84, 0.84)
 
@@ -639,7 +644,12 @@ func _draw_door(c: Node2D, dir: Vector2i, front: bool) -> void:
 		if bool(op.get("front", false)) != front or not op.has("piece"):
 			continue
 		var pos := at + Vector2(float(op["dx"]), float(op["dy"]))
-		c.draw_texture(piece(set_id, String(op["piece"])), pos)
+		var tex := piece(set_id, String(op["piece"]))
+		if dir == UP and state == "locked" and String(op["piece"]) == "door_lock":
+			var plate := Vector2(tex.get_size())
+			c.draw_rect(Rect2(pos - Vector2(2, 2), plate + Vector2(4, 4)), INK)
+			c.draw_rect(Rect2(pos - Vector2(1, 1), plate + Vector2(2, 2)), LOCK_GOLD)
+		c.draw_texture(tex, pos)
 		if state == "cracked" and dir == UP and not room.fighting:
 			# a blown-open secret door in the back wall: the opening is dark while you can walk in
 			var dark := Color(String(ts.get("void_color", "#000000"))).darkened(0.4)
