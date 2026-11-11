@@ -1,0 +1,13 @@
+Pack: Fantasy UI Borders (1.0)
+Author: Kenney (Kenney Vleugels, www.kenney.nl)
+Source URL: https://kenney-assets.itch.io/fantasy-ui-borders
+Also at: https://kenney.nl/assets/fantasy-ui-borders
+Download: itch.io free download, upload id 9251321 (kenney_fantasy-ui-borders.zip)
+Original archive: kenney_fantasy-ui-borders.zip sha256 59532da3bd61195a425585455b40baa6cbf1eda8227c42adcef31a535a737769
+Licence: CC0 1.0 (public domain dedication)
+Licence quote (itch.io page): "License: CC0 1.0 Universal. You're allowed to use these game assets in any project including commercial ones. There's no need to ask permission before using these and giving attribution is not required (but is appreciated!)"
+Licence quote (bundled License.txt): "License: (Creative Commons Zero, CC0)"
+Published: License.txt: "Creation date: 03-12-2023"
+Retrieved: 2026-11-11
+Human-made evidence: Newer than 2022, so positive evidence recorded: the itch.io page carries the content disclosure "No generative AI was used"; the zip includes the hand-built vector source (Vector/fantasy-ui-borders.svg) the PNGs were exported from; every piece is an exact, symmetric 48x48 two-tone tile.
+Notes: Extracted only PNG/Default (48x48). PNG/Double is the same art at 96x96 and stays in the zip, as does the SVG. All pieces are white/translucent-white on transparent: tint them in engine (bone, tarnished gold, blood red) for the dark-fantasy look. Panel = filled, Border = outline only, Transparent border / Transparent center = half-opacity variants. 9-slice margins per file are in the manifest.

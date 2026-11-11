@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## HUD: everything drawn on top of the game while you play.
-##   top left      hearts (half-heart steps, armour in blue), then coins / keys / bombs
+##   top left      hearts (half-heart steps, armour in blue), then coins / keys / bombs, then the
+##                 Hungry Curse: five skull sockets (Curse Level) and its belly, e.g. "3/5" (curse_meter.gd)
 ##   top right     minimap (the touch pause button sits in the very corner, see touch.gd)
 ##   top middle    boss health bar with the boss's name
 ##   bottom left   the items you carry, lying in a row
@@ -17,6 +18,7 @@ const Icon = preload("res://scripts/ui/icon.gd")
 const Hearts = preload("res://scripts/ui/hearts.gd")
 const Minimap = preload("res://scripts/ui/minimap.gd")
 const ItemRack = preload("res://scripts/ui/item_rack.gd")
+const CurseMeter = preload("res://scripts/ui/curse_meter.gd")
 
 const CARD_TIME := 2.5           ## seconds an item card stays up
 const PAUSE_GAP := 23.0          ## room kept free in the top right corner for the pause button
@@ -31,6 +33,7 @@ var _hearts: Control
 var _counters: HBoxContainer
 var _count_labels := {}
 var _count_icons := {}
+var _curse_meter: Control
 var _coins_shown := 0
 var _coins_target := 0
 var _coin_clock := 0.0
@@ -91,6 +94,12 @@ func _ready() -> void:
 		_counters.add_child(pair)
 		_count_labels[kind] = num
 		_count_icons[kind] = icon
+	_curse_meter = CurseMeter.new()
+	_curse_meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_counters.add_child(_curse_meter)
+	_counters.resized.connect(func() -> void:
+		if _boss_box != null:
+			_place_boss_bar())
 
 	_minimap = Minimap.new()
 	_root.add_child(_minimap)
@@ -244,6 +253,7 @@ func _refresh() -> void:
 		(_count_labels["coin"] as Label).text = str(_coins_shown)
 	(_count_labels["key"] as Label).text = str(_num(p, "keys"))
 	(_count_labels["bomb"] as Label).text = str(_num(p, "bombs"))
+	_curse_meter.call("set_values", _num(run, "curse_level"), _num(run, "belly"), int(run.call("belly_cap")) if run.has_method("belly_cap") else 5)
 	var items: Variant = p.get("items")
 	if items is Array and items != _rack_ids:
 		_rack_ids = (items as Array).duplicate()

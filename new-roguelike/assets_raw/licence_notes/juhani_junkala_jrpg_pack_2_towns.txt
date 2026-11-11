@@ -1,0 +1,25 @@
+Pack: JRPG Pack 2 Towns (4 loops; only "Town4 - Bazaar" is used)
+Page: https://opengameart.org/content/jrpg-pack-2-towns
+Author: Juhani Junkala, posting as SubspaceAudio (https://opengameart.org/users/subspaceaudio, https://juhanijunkala.com/)
+Published on the page: 2017-05-12
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/); bundled INFO.txt, verbatim: "Hi, I'm Juhani Junkala, the author of this music collection. I'm a classically trained composer, producer and a sound designer with over 20 years of experience. These music tracks have been released under CC0 creative commons license. You can do anything you want with these tunes."
+
+Human-made evidence: Published in 2017 (zip entries dated 2017-05-12 to 2017-05-22), years before generative music tools existed. The bundled INFO.txt is signed by the composer: "I'm a classically trained composer, producer and a sound designer with over 20 years of experience." Page tags: jrpg, RPG, town.
+AI check: published before 2022; the page text, tags and bundled files were searched for AI / generative / Suno / Udio / "generated" wording and none was found.
+
+Original download(s), kept untouched in original/:
+  JRPG Music Pack #2 [Towns] by Juhani Junkala.zip
+    from https://opengameart.org/sites/default/files/JRPG%20Music%20Pack%20%232%20%5BTowns%5D%20by%20Juhani%20Junkala.zip
+    sha256 b56785b248ad0faf629a5981eed7ec507b738abf87230e19ae0dba2f4eb466f8  (14309691 bytes)
+
+Files used for the game set (extracted unchanged into used/):
+  Town4 - Bazaar.ogg
+  INFO.txt
+
+Game-ready files made from this source:
+  ../../music/shop.ogg <- Town4 - Bazaar.ogg
+
+Processing for the game-ready files in ../../music/: decode, one fixed gain per track to reach about -16 LUFS integrated (no compressor, no dynamic loudness filter), stereo 44.1 kHz Ogg Vorbis at about 100 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.

@@ -1,0 +1,1146 @@
+[
+ {
+  "id": "dw_arcane_bolt",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Arcane Bolt.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "square frames inferred from strip height (no .ase shipped for this one)"
+ },
+ {
+  "id": "dw_black_and_white_ray",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Black And White Ray.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 8,
+  "layout": "strip",
+  "category": "beam",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_black_and_white_sparks",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Black And White Sparks.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "sparkle",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_bolt_of_purity",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Bolt Of Purity.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_darkness_bolt",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Darkness Bolt.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_darkness_orb",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Darkness Orb.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_fireball",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Fireball.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_firebomb",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Firebomb.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_ice_lance",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Ice Lance.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 4,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_light_bolt",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Light Bolt.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_magic_orb",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Magic Orb.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_magic_ray",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Magic Ray.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 8,
+  "layout": "strip",
+  "category": "beam",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_magic_sparks",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Magic Sparks.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "sparkle",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_pixelart_shield",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Pixelart Shield.png",
+  "frame_w": 48,
+  "frame_h": 48,
+  "frames": 6,
+  "layout": "strip",
+  "category": "aura",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_plant_missle",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Plant Missle.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_pure_bolt_2",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Pure Bolt 2.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_rock_sling",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Rock Sling.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 1,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_splash",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Splash.png",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 6,
+  "layout": "strip",
+  "category": "impact",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_water_blast",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Water Blast.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_water_bolt",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Water Bolt.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_water_orb",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Water Orb.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "dw_wind_bolt",
+  "pack": "devwizard-pixelart-spells",
+  "file": "devwizard-pixelart-spells/Pixelart Spells/PNG Files/Wind Bolt.png",
+  "frame_w": 16,
+  "frame_h": 16,
+  "frames": 6,
+  "layout": "strip",
+  "category": "projectile",
+  "frame_size_source": "aseprite header"
+ },
+ {
+  "id": "sx_fireball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Fireball_68x9.png",
+  "frame_w": 68,
+  "frame_h": 9,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 680,
+  "sheet_h": 54,
+  "facing": "left"
+ },
+ {
+  "id": "sx_iceball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Iceball_84x9.png",
+  "frame_w": 84,
+  "frame_h": 9,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 7,
+  "sheet_w": 840,
+  "sheet_h": 63,
+  "facing": "left"
+ },
+ {
+  "id": "sx_poisonball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Poisonball_65x9.png",
+  "frame_w": 65,
+  "frame_h": 9,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 650,
+  "sheet_h": 54,
+  "facing": "left"
+ },
+ {
+  "id": "sx_small_fireball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Small_Fireball_10x26.png",
+  "frame_w": 10,
+  "frame_h": 26,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 100,
+  "sheet_h": 156,
+  "facing": "up"
+ },
+ {
+  "id": "sx_small_iceball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Small_Iceball_9x24.png",
+  "frame_w": 9,
+  "frame_h": 24,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 90,
+  "sheet_h": 144,
+  "facing": "up"
+ },
+ {
+  "id": "sx_small_poisonball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Small_Poisonball_9x25.png",
+  "frame_w": 9,
+  "frame_h": 25,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 90,
+  "sheet_h": 150,
+  "facing": "up"
+ },
+ {
+  "id": "sx_jumping_small_fireball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Jumping_Small_Fireball_14x45.png",
+  "frame_w": 14,
+  "frame_h": 45,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 140,
+  "sheet_h": 270,
+  "facing": "up"
+ },
+ {
+  "id": "sx_jumping_small_iceball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Jumping_Small_Iceball_14x41.png",
+  "frame_w": 14,
+  "frame_h": 41,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 140,
+  "sheet_h": 246,
+  "facing": "up"
+ },
+ {
+  "id": "sx_jumping_small_poisonball",
+  "pack": "stealthix-animated-fires",
+  "file": "stealthix-animated-fires/Jumping_Small_Poisonball_13x40.png",
+  "frame_w": 13,
+  "frame_h": 40,
+  "frames": 60,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 10,
+  "rows": 6,
+  "sheet_w": 140,
+  "sheet_h": 246,
+  "facing": "up"
+ },
+ {
+  "id": "cm_01_magicspell",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/1_magicspell_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 75,
+  "layout": "grid",
+  "category": "magic_burst",
+  "cols": 9,
+  "rows": 9,
+  "empty_frames_inside": [
+   0
+  ],
+  "content_bbox": [
+   24,
+   28,
+   72,
+   76
+  ],
+  "content_w": 48,
+  "content_h": 48
+ },
+ {
+  "id": "cm_02_magic8",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/2_magic8_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   32,
+   23,
+   65,
+   82
+  ],
+  "content_w": 33,
+  "content_h": 59
+ },
+ {
+  "id": "cm_03_bluefire",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/3_bluefire_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   28,
+   51,
+   80,
+   93
+  ],
+  "content_w": 52,
+  "content_h": 42
+ },
+ {
+  "id": "cm_04_casting",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/4_casting_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 73,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 9,
+  "rows": 9,
+  "empty_frames_inside": [
+   0
+  ],
+  "content_bbox": [
+   34,
+   24,
+   64,
+   78
+  ],
+  "content_w": 30,
+  "content_h": 54
+ },
+ {
+  "id": "cm_05_magickahit",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/5_magickahit_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 41,
+  "layout": "grid",
+  "category": "impact",
+  "cols": 7,
+  "rows": 7,
+  "empty_frames_inside": [
+   0
+  ],
+  "content_bbox": [
+   41,
+   21,
+   56,
+   82
+  ],
+  "content_w": 15,
+  "content_h": 61
+ },
+ {
+  "id": "cm_06_flamelash",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/6_flamelash_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 46,
+  "layout": "grid",
+  "category": "magic_burst",
+  "cols": 7,
+  "rows": 7,
+  "empty_frames_inside": [
+   0
+  ],
+  "content_bbox": [
+   28,
+   35,
+   72,
+   77
+  ],
+  "content_w": 44,
+  "content_h": 42
+ },
+ {
+  "id": "cm_07_firespin",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/7_firespin_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   31,
+   37,
+   71,
+   75
+  ],
+  "content_w": 40,
+  "content_h": 38
+ },
+ {
+  "id": "cm_08_protectioncircle",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/8_protectioncircle_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   34,
+   39,
+   68,
+   73
+  ],
+  "content_w": 34,
+  "content_h": 34
+ },
+ {
+  "id": "cm_09_brightfire",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/9_brightfire_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "fire_loop",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   45,
+   37,
+   61,
+   69
+  ],
+  "content_w": 16,
+  "content_h": 32
+ },
+ {
+  "id": "cm_10_weaponhit",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/10_weaponhit_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 31,
+  "layout": "grid",
+  "category": "impact",
+  "cols": 6,
+  "rows": 6,
+  "empty_frames_inside": [
+   0
+  ],
+  "content_bbox": [
+   32,
+   34,
+   69,
+   71
+  ],
+  "content_w": 37,
+  "content_h": 37
+ },
+ {
+  "id": "cm_11_fire",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/11_fire_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "fire_loop",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   40,
+   27,
+   65,
+   78
+  ],
+  "content_w": 25,
+  "content_h": 51
+ },
+ {
+  "id": "cm_12_nebula",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/12_nebula_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "magic_burst",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   15,
+   15,
+   90,
+   92
+  ],
+  "content_w": 75,
+  "content_h": 77
+ },
+ {
+  "id": "cm_13_vortex",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/13_vortex_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "portal",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   14,
+   12,
+   91,
+   88
+  ],
+  "content_w": 77,
+  "content_h": 76
+ },
+ {
+  "id": "cm_14_phantom",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/14_phantom_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "projectile",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   15,
+   19,
+   84,
+   90
+  ],
+  "content_w": 69,
+  "content_h": 71
+ },
+ {
+  "id": "cm_15_loading",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/15_loading_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 121,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 11,
+  "rows": 11,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   23,
+   21,
+   85,
+   83
+  ],
+  "content_w": 62,
+  "content_h": 62
+ },
+ {
+  "id": "cm_16_sunburn",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/16_sunburn_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "explosion",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   16,
+   23,
+   78,
+   79
+  ],
+  "content_w": 62,
+  "content_h": 56
+ },
+ {
+  "id": "cm_17_felspell",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/17_felspell_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 91,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 10,
+  "rows": 10,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   15,
+   17,
+   86,
+   87
+  ],
+  "content_w": 71,
+  "content_h": 70
+ },
+ {
+  "id": "cm_18_midnight",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/18_midnight_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   22,
+   25,
+   79,
+   82
+  ],
+  "content_w": 57,
+  "content_h": 57
+ },
+ {
+  "id": "cm_19_freezing",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/19_freezing_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 86,
+  "layout": "grid",
+  "category": "aura",
+  "cols": 10,
+  "rows": 10,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   9,
+   15,
+   89,
+   93
+  ],
+  "content_w": 80,
+  "content_h": 78
+ },
+ {
+  "id": "cm_20_magicbubbles",
+  "pack": "codemanu-free-pixel-effects",
+  "file": "codemanu-free-pixel-effects/20_magicbubbles_spritesheet.png",
+  "frame_w": 100,
+  "frame_h": 100,
+  "frames": 61,
+  "layout": "grid",
+  "category": "sparkle",
+  "cols": 8,
+  "rows": 8,
+  "empty_frames_inside": [],
+  "content_bbox": [
+   25,
+   28,
+   76,
+   82
+  ],
+  "content_w": 51,
+  "content_h": 54
+ },
+ {
+  "id": "wsf_bolt",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/Bolt/frames",
+  "frame_w": 48,
+  "frame_h": 32,
+  "frames": 4,
+  "layout": "loose",
+  "category": "projectile",
+  "frame_files": [
+   "bolt1.png",
+   "bolt2.png",
+   "bolt3.png",
+   "bolt4.png"
+  ]
+ },
+ {
+  "id": "wsf_pulse",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/Pulse/frames",
+  "frame_w": 63,
+  "frame_h": 32,
+  "frames": 4,
+  "layout": "loose",
+  "category": "projectile",
+  "frame_files": [
+   "pulse1.png",
+   "pulse2.png",
+   "pulse3.png",
+   "pulse4.png"
+  ]
+ },
+ {
+  "id": "wsf_charged",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/charged/frames",
+  "frame_w": 63,
+  "frame_h": 48,
+  "frames": 6,
+  "layout": "loose",
+  "category": "projectile",
+  "frame_files": [
+   "charged1.png",
+   "charged2.png",
+   "charged3.png",
+   "charged4.png",
+   "charged5.png",
+   "charged6.png"
+  ]
+ },
+ {
+  "id": "wsf_crossed",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/crossed/frames",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 6,
+  "layout": "loose",
+  "category": "projectile",
+  "frame_files": [
+   "crossed1.png",
+   "crossed2.png",
+   "crossed3.png",
+   "crossed4.png",
+   "crossed5.png",
+   "crossed6.png"
+  ]
+ },
+ {
+  "id": "wsf_hits_2",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/hits/Hits-2/frames",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 7,
+  "layout": "loose",
+  "category": "impact",
+  "frame_files": [
+   "hits-2-1.png",
+   "hits-2-2.png",
+   "hits-2-3.png",
+   "hits-2-4.png",
+   "hits-2-5.png",
+   "hits-2-6.png",
+   "hits-2-7.png"
+  ]
+ },
+ {
+  "id": "wsf_hits_3",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/hits/Hits-3/frames",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 5,
+  "layout": "loose",
+  "category": "impact",
+  "frame_files": [
+   "hits-3-1.png",
+   "hits-3-2.png",
+   "hits-3-3.png",
+   "hits-3-4.png",
+   "hits-3-5.png"
+  ]
+ },
+ {
+  "id": "wsf_hits_5",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/hits/Hits-5/frames",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 7,
+  "layout": "loose",
+  "category": "impact",
+  "frame_files": [
+   "hits-5-1.png",
+   "hits-5-2.png",
+   "hits-5-3.png",
+   "hits-5-4.png",
+   "hits-5-5.png",
+   "hits-5-6.png",
+   "hits-5-7.png"
+  ]
+ },
+ {
+  "id": "wsf_hits_6",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/hits/Hits-6/frames",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 7,
+  "layout": "loose",
+  "category": "impact",
+  "frame_files": [
+   "hits-6-preview1.png",
+   "hits-6-preview2.png",
+   "hits-6-preview3.png",
+   "hits-6-preview4.png",
+   "hits-6-preview5.png",
+   "hits-6-preview6.png",
+   "hits-6-preview7.png"
+  ]
+ },
+ {
+  "id": "wsf_hits_1",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/hits/hits-1/frames",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 5,
+  "layout": "loose",
+  "category": "impact",
+  "frame_files": [
+   "hits-1-1.png",
+   "hits-1-2.png",
+   "hits-1-3.png",
+   "hits-1-4.png",
+   "hits-1-5.png"
+  ]
+ },
+ {
+  "id": "wsf_hits_4",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/hits/hits-4/frames",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 7,
+  "layout": "loose",
+  "category": "impact",
+  "frame_files": [
+   "hits-4-1.png",
+   "hits-4-2.png",
+   "hits-4-3.png",
+   "hits-4-4.png",
+   "hits-4-5.png",
+   "hits-4-6.png",
+   "hits-4-7.png"
+  ]
+ },
+ {
+  "id": "wsf_spark",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/spark/frames",
+  "frame_w": 63,
+  "frame_h": 32,
+  "frames": 5,
+  "layout": "loose",
+  "category": "projectile",
+  "frame_files": [
+   "spark-preview1.png",
+   "spark-preview2.png",
+   "spark-preview3.png",
+   "spark-preview4.png",
+   "spark-preview5.png"
+  ]
+ },
+ {
+  "id": "wsf_waveform",
+  "pack": "ansimuz-warped-shooting-fx",
+  "file": "ansimuz-warped-shooting-fx/Pixelart/waveform/frames",
+  "frame_w": 95,
+  "frame_h": 32,
+  "frames": 4,
+  "layout": "loose",
+  "category": "projectile",
+  "frame_files": [
+   "waveform1.png",
+   "waveform2.png",
+   "waveform3.png",
+   "waveform4.png"
+  ]
+ },
+ {
+  "id": "ax_explosion_1_a",
+  "pack": "ansimuz-explosion-pack",
+  "file": "ansimuz-explosion-pack/explosion-1-a/spritesheet.png",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 8,
+  "layout": "strip",
+  "category": "explosion",
+  "loose_frames_in_zip": 8,
+  "empty_frames": [
+   7
+  ]
+ },
+ {
+  "id": "ax_explosion_1_b",
+  "pack": "ansimuz-explosion-pack",
+  "file": "ansimuz-explosion-pack/explosion-1-b/spritesheet.png",
+  "frame_w": 64,
+  "frame_h": 64,
+  "frames": 8,
+  "layout": "strip",
+  "category": "explosion",
+  "loose_frames_in_zip": 8
+ },
+ {
+  "id": "ax_explosion_1_f",
+  "pack": "ansimuz-explosion-pack",
+  "file": "ansimuz-explosion-pack/explosion-1-f/Sprites.png",
+  "frame_w": 48,
+  "frame_h": 48,
+  "frames": 8,
+  "layout": "strip",
+  "category": "explosion",
+  "loose_frames_in_zip": 8
+ },
+ {
+  "id": "ax_explosion_1_g",
+  "pack": "ansimuz-explosion-pack",
+  "file": "ansimuz-explosion-pack/explosion-1-g/spritesheet.png",
+  "frame_w": 48,
+  "frame_h": 48,
+  "frames": 7,
+  "layout": "strip",
+  "category": "explosion",
+  "loose_frames_in_zip": 7,
+  "empty_frames": [
+   6
+  ]
+ },
+ {
+  "id": "misc_blood_splatter",
+  "pack": "oga-cc0-singles",
+  "file": "oga-cc0-singles/koasuna_blood_splatter_sprite_sheet.png",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 7,
+  "layout": "strip",
+  "category": "impact_blood"
+ },
+ {
+  "id": "misc_smoke_puff",
+  "pack": "oga-cc0-singles",
+  "file": "oga-cc0-singles/aidan_walker_smoke_puff.png",
+  "frame_w": 32,
+  "frame_h": 32,
+  "frames": 7,
+  "layout": "strip",
+  "category": "smoke",
+  "tintable": true,
+  "empty_frames": [
+   6
+  ]
+ },
+ {
+  "id": "misc_portal_blue",
+  "pack": "oga-cc0-singles",
+  "file": "oga-cc0-singles/rodhakgames_portalsSpriteSheet.png",
+  "frame_w": 32,
+  "frame_h": 48,
+  "frames": 4,
+  "layout": "grid",
+  "category": "portal",
+  "cols": 4,
+  "rows": 4,
+  "row": 0
+ },
+ {
+  "id": "misc_portal_red",
+  "pack": "oga-cc0-singles",
+  "file": "oga-cc0-singles/rodhakgames_portalsSpriteSheet.png",
+  "frame_w": 32,
+  "frame_h": 48,
+  "frames": 4,
+  "layout": "grid",
+  "category": "portal",
+  "cols": 4,
+  "rows": 4,
+  "row": 1
+ },
+ {
+  "id": "misc_portal_orange",
+  "pack": "oga-cc0-singles",
+  "file": "oga-cc0-singles/rodhakgames_portalsSpriteSheet.png",
+  "frame_w": 32,
+  "frame_h": 48,
+  "frames": 4,
+  "layout": "grid",
+  "category": "portal",
+  "cols": 4,
+  "rows": 4,
+  "row": 2
+ },
+ {
+  "id": "misc_portal_grey",
+  "pack": "oga-cc0-singles",
+  "file": "oga-cc0-singles/rodhakgames_portalsSpriteSheet.png",
+  "frame_w": 32,
+  "frame_h": 48,
+  "frames": 4,
+  "layout": "grid",
+  "category": "portal",
+  "cols": 4,
+  "rows": 4,
+  "row": 3
+ }
+]

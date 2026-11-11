@@ -1,0 +1,18 @@
+Fonts: Jacquard 12 and Jacquard 24 (pixel blackletter display fonts, "The Soft Type Collection")
+Page: https://fonts.google.com/specimen/Jacquard+12 and https://fonts.google.com/specimen/Jacquard+24
+Files fetched from: https://raw.githubusercontent.com/google/fonts/main/ofl/jacquard12/ and .../ofl/jacquard24/ (Jacquard12-Regular.ttf, Jacquard24-Regular.ttf, OFL.txt, METADATA.pb, DESCRIPTION.en_us.html)
+Upstream source repository: https://github.com/scfried/soft-type-jacquard
+Author: Sarah Cadigan-Fried (METADATA.pb: designer: "Sarah Cadigan-Fried")
+Published: font copyright 2023; added to Google Fonts 2024-03-15 (METADATA.pb: date_added: "2024-03-15"); TTF creation date 2023-06-04
+Retrieved: 2026-11-11 (UTC)
+
+Licence: SIL Open Font License 1.1 - commercial, closed-source use allowed (the font may be embedded in the game; keep OFL.txt with it and mention it in the credits)
+Licence evidence: bundled OFL.txt, verbatim: "Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jacquard) This Font Software is licensed under the SIL Open Font License, Version 1.1."; METADATA.pb: license: "OFL"; the TTF's own licence field says the same.
+Suggested credit line: Fonts "Jacquard 12" / "Jacquard 24" (c) 2023 The Soft Type Project Authors, SIL Open Font License 1.1
+
+Human-made evidence (this font is newer than 2022, so it needs positive evidence): it is a hand-drawn revival of a printed 19th-century alphabet, by a named type designer, with editable design sources. Google Fonts description, verbatim: "Jacquard is an expanded revival typeface from a Victorian needlepoint alphabet designed in Berlin by Heinrich Kuehn circa 1880." and "These typefaces were designed with machine knitting in mind". The upstream repository (cloned and inspected on 2026-11-11) holds the designer's Glyphs source files (sources/Jacquard12.glyphs, sources/Jacquard24.glyphs) and an AUTHORS.txt listing only Sarah Cadigan-Fried; its README says: "Designer: Sarah Cadigan-Fried".
+AI check: no AI-generation wording in the description, README or metadata.
+
+Files (unchanged): Jacquard12-Regular.ttf (sha256 b1560583565a37f3d3a25cf2572df3efd2d773ecdcbb459dcd7ea0398cb840d1), Jacquard24-Regular.ttf (sha256 8e5b1bdb8b6087d6175f1d9edd2634e38b10fb109c0955c24ad55272a866ed49), OFL.txt; Google Fonts metadata and descriptions in original/.
+
+How to use: Jacquard 12 native size 21 px (21, 42, 63 ...), Jacquard 24 native size 43 px (43, 86 ...); antialiasing off, hinting off. Measured: at any other size the pixels come out uneven. Blackletter capitals are hard to read in ALL CAPS ("GRAVE DEPTHS" is a struggle), so use Title Case ("Grave Depths"). Sample: ../_sheets/display_jacquard.png

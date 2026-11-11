@@ -1,0 +1,21 @@
+Font: Alkhemikal (pixel blackletter display font)
+Page: https://fontenddev.com/fonts/alkhemikal/   (download link on that page goes to https://www.dafont.com/alkhemikal.font)
+Author: jeti (Font End Dev, https://fontenddev.com/)
+Published: first release 2018-08-08 (page, verbatim: "First Prototype: July 11, 2018 (As "Warlock") First Release: August 08, 2018"; DaFont: "First seen on DaFont: August 08, 2018"; the TTF's own creation date is 2018-08-08)
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC BY 4.0 - commercial, closed-source use allowed, CREDIT REQUIRED
+Licence evidence: author's page, verbatim: "You are free to use this font for personal or commercial projects as long as you give credit. Licensed under CC BY 4.0"; DaFont "Note of the author", verbatim: "You are free to use this font for personal or commercial projects, all I ask is that you include credit. Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/"
+Credit line to put in the game's credits screen: Font "Alkhemikal" by jeti (fontenddev.com), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+No licence file is bundled in the download; CC-BY-4.0-legalcode.txt here is the licence text fetched from https://creativecommons.org/licenses/by/4.0/legalcode.txt
+
+Human-made evidence: released in 2018, before generative tools. The author's release post (https://fontenddev.com/2018/08/08/alkhemikal-new-font/), verbatim: "Alkhemikal is my tribute to handwritten blackletter! Instead of keeping strictly to traditional blackletter style, all characters get a little more room and uppercase letters eschew extra ornamentation to improve legibility." and "I kept going back in to tweak things here and there so the release date kept being pushed back".
+AI check: published before 2022; no AI-generation wording on the author's page, the release post or the DaFont page.
+
+Original download, kept untouched in original/:
+  alkhemikal.zip
+    from https://dl.dafont.com/dl/?f=alkhemikal
+    sha256 e273f594b56986413c87b2848ca9e938fe931aa920e482ad4d5d19bcec7c1ab6  (11945 bytes)
+Files: Alkhemikal.ttf (extracted unchanged, 354 glyphs per DaFont)
+
+How to use: native size 16 px (use 16, 32, 48 ...), antialiasing off, hinting off. Reads well in ALL CAPS and in mixed case. Sample: ../_sheets/display_alkhemikal.png

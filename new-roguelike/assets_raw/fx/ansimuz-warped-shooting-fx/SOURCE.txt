@@ -1,0 +1,13 @@
+Pack: Warped Shooting Fx
+Author: ansimuz (Luis Zuno)
+Source URL: https://opengameart.org/content/warped-shooting-fx
+Download URL: https://opengameart.org/sites/default/files/warped_shooting_fx_files.zip
+Original archive: warped_shooting_fx_files.zip, 13,501,456 bytes, sha256 b6945dba8e8da05608fb38abd9b9ff1cf5013663ef71045d1c10f42965062139 - NOT kept on disk: 13 MB of it is a bundled music track (wav/ogg/mp3) which would blow the 15 MB budget. Only the Pixelart folder and the licence file were extracted here; re-download from the URL above if the zip is wanted.
+Licence: CC0 1.0 (public domain dedication)
+Licence quote (OpenGameArt licence field): "License(s): CC0"
+Licence quote (bundled public-license.txt): "You may use these assets in personal or commercial projects. You can modify these assets to suit your needs. You can re-distribute the file. Credit no required but appreciated it."
+Licence quote (page description): "Feel free to use it on your commercial games or projects."
+Published: 2021-02-06 (OpenGameArt submission date)
+Retrieved: 2026-11-11
+Human-made evidence: Published February 2021, before generative image tools were in use. Every effect ships with its Aseprite source (.aseprite) next to hand-numbered frame PNGs. public-license.txt: "Artwork created by Luis Zuno (@ansimuz)", a long-established pixel artist.
+Notes: Loose numbered frames per effect folder. Sci-fi flavoured (cyan/pink energy) - recolour toward the dungeon palette if needed. Projectiles face RIGHT. The bundled music track was not extracted (music is another agent's job).

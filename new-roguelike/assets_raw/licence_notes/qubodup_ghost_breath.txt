@@ -1,0 +1,22 @@
+Pack: Ghost breath
+Page: https://opengameart.org/content/ghost-breath
+Author: qubodup (Iwan Gabovitch)  (https://opengameart.org/users/qubodup)
+Published on the page: 2010-02-11
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/)
+
+Human-made evidence: Author description: "-75% speed of me breathing.. Might be as well used as a spell"
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  ghostbreath.flac
+    from https://opengameart.org/sites/default/files/ghostbreath.flac
+    sha256 f371839853a5dff7dbd5a8c81368f5cfab587f567df5ba962e981d4392c530bc  (749279 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  ghostbreath.flac
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

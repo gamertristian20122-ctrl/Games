@@ -1,0 +1,14 @@
+Pack: UI Pack - Pixel Adventure (2.0)
+Author: Kenney (Kenney Vleugels, www.kenney.nl)
+Source URL: https://opengameart.org/content/ui-pack-pixel-adventure
+Also at: https://kenney.nl/assets/ui-pack-pixel-adventure
+Download URL: https://opengameart.org/sites/default/files/kenney_ui-pack-pixel-adventure.zip
+Original archive: kenney_ui-pack-pixel-adventure.zip sha256 6ebf462e7f209f5f348419b09be6601a559ef1e1d6b595f0e9f8aa4c00a84048
+Licence: CC0 1.0 (public domain dedication)
+Licence quote (bundled License.txt): "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/ You can use this content for personal, educational, and commercial purposes. Support by crediting 'Kenney' or 'www.kenney.nl' (this is not a requirement)"
+Licence quote (OpenGameArt licence field): "License(s): CC0"
+Licence quote (kenney.nl/support): "Yes, all game assets on the asset pages are public domain licensed (CC0). You're free to use them, even in commercial projects."
+Published: 2024-09-04 (OpenGameArt submission by Kenney); License.txt: "Creation date: 04/09/2024"
+Retrieved: 2026-11-11
+Human-made evidence: Newer than 2022 and this pack has NO page of its own with an AI disclosure (it is not on Kenney's itch.io; kenney.nl page says nothing either way). Evidence is indirect: same author as the two packs above, whose itch.io pages state "No generative AI was used"; tiles are exact 16/32 px grid pieces in a 9-slice layout with thick and thin outline variants, i.e. built by hand in a tile editor. OPTIONAL pack: drop it if only directly-labelled sources are acceptable - the other two Kenney packs cover icons and frames without it.
+Notes: Extracted only the Tilesheets folder; the 397 individual tile PNGs stay in the zip. Use the *_packed.png sheets (no gaps). Large = 32x32 tiles, 13 x 7. Small = 16x16 tiles, 23 x 7. Thick outline matches the 0x72 dungeon art best. Colours are bright adventure wood/slate/parchment - prefer the slate/dark pieces.

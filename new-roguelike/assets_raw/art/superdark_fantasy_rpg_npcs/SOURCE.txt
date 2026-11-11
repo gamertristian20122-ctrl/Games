@@ -1,0 +1,39 @@
+PACK        : 16x16 Fantasy RPG Characters ("16x16 free NPC pack")   (ADD-ON to 0x72 DungeonTileset II)
+URL         : https://superdark.itch.io/16x16-free-npc-pack
+              (linked by 0x72 himself on https://0x72.itch.io/dungeontileset-ii in his list of extension packs)
+AUTHOR      : Superdark (itch.io user superdark)
+LICENCE     : NO NAMED LICENCE. The author gives a free-form permission on the page (quoted below) that allows
+              free and commercial use and modification, with no credit required. It is CC0-like in effect but it is
+              NOT formally CC0: the itch.io info panel has no "Asset license" row.  <-- flag for the owner
+PRICE       : free ("name your own price", $0 accepted). Nothing was paid, no account used.
+
+EXACT LICENCE TEXT (copied from the itch.io page on the download date)
+  "These assets are completely free so you can use them however you like, in free and commercial projects and
+   you can even modify them to suit your needs, you don't need to credit me but it is greatly appreciated if you
+   do, and don't forget: have fun :)"
+  Also on the page: "This asset pack was inspired by 0x72's amazing work"
+  The archive contains no readme. Page copy saved next to this file: SOURCE_page_snapshot.html
+
+DATES
+  Published   : upload knights.png 2019-09-04 15:39 UTC; upload "Fantasy RPG NPCs - Individuel Frames.rar"
+                2020-01-03 13:47 UTC (last update)
+  Downloaded  : 2026-11-10 23:54 UTC (date -u), straight from the itch.io CDN
+
+HUMAN-MADE EVIDENCE
+  - Made 2019-2020, years before image generators existed.
+  - itch.io info panel "Content: No generative AI was used"; "no-ai" tag.
+  - Author describes drawing them as pixel-art practice in 0x72's style.
+  - Style check against the primary pack: 96% of all opaque pixels use 0x72's exact palette colours, and the
+    outline colour is the same #222222. Same scale (characters about 16 px wide inside 32x32 frames).
+
+WHAT IT ADDS (the reason it is kept)
+  Thief (rogue-type hero), Archer, Mage; Magic Shopkeeper, Merchant, Alchemist, Blacksmith, Butcher (shop NPCs);
+  royal knights (3) and two Large Knights + Executioner (boss-sized); king, queen, princess, bishop, nuns, herald,
+  townsfolk. Every character: 4-frame idle + 4-frame walk, or one shared 4-frame loop.
+
+FILES KEPT
+  Fantasy RPG NPCs - Individuel Frames.rar   original download, 193289 bytes
+                                             sha256 4767110f7a624b631a7b3cb2157f58ac2ef8484555c87492ab96e00c07b17377
+  Fantasy RPG NPCs - Individuel Frames/      the rar extracted unchanged (344 PNG frames, all 32x32 with padding).
+                                             Folder "All" is the author's flat copy of the per-character folders.
+  knights.png                                112x128 preview strip of the knights (second upload on the page)

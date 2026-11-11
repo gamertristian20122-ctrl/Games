@@ -1,0 +1,91 @@
+{
+  "description": "Pixel font shortlist for the dungeon roguelike: two candidates per role. Use only at the listed native size or whole multiples of it, with antialiasing and hinting off.",
+  "generated": "2026-11-11",
+  "fonts": [
+    {
+      "role": "display",
+      "rank": 1,
+      "name": "Alkhemikal",
+      "files": [
+        "alkhemikal/Alkhemikal.ttf"
+      ],
+      "author": "jeti (Font End Dev)",
+      "licence": "CC BY 4.0",
+      "credit_required": true,
+      "credit_text": "Font \"Alkhemikal\" by jeti (fontenddev.com), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+      "source_url": "https://fontenddev.com/fonts/alkhemikal/",
+      "published": "2018-08-08",
+      "native_size_px": 16,
+      "sample": "_sheets/display_alkhemikal.png",
+      "notes": "Legible in ALL CAPS and mixed case; also works for headings and boss names."
+    },
+    {
+      "role": "display",
+      "rank": 2,
+      "name": "Jacquard 12 / Jacquard 24",
+      "files": [
+        "jacquard/Jacquard12-Regular.ttf",
+        "jacquard/Jacquard24-Regular.ttf"
+      ],
+      "author": "Sarah Cadigan-Fried",
+      "licence": "SIL OFL 1.1",
+      "credit_required": false,
+      "credit_text": "Fonts \"Jacquard 12\" / \"Jacquard 24\" (c) 2023 The Soft Type Project Authors, SIL Open Font License 1.1",
+      "source_url": "https://fonts.google.com/specimen/Jacquard+24",
+      "published": "2024-03-15",
+      "native_size_px": {
+        "Jacquard12-Regular.ttf": 21,
+        "Jacquard24-Regular.ttf": 43
+      },
+      "sample": "_sheets/display_jacquard.png",
+      "notes": "True blackletter, more ornate. Hard to read in ALL CAPS; use Title Case."
+    },
+    {
+      "role": "hud",
+      "rank": 1,
+      "name": "Pixel Operator",
+      "files": [
+        "pixel_operator/PixelOperator.ttf",
+        "pixel_operator/PixelOperator-Bold.ttf",
+        "pixel_operator/PixelOperator8.ttf",
+        "pixel_operator/PixelOperator8-Bold.ttf",
+        "pixel_operator/PixelOperatorMono.ttf",
+        "pixel_operator/PixelOperatorMono8.ttf"
+      ],
+      "author": "Jayvee Enaguas (HarvettFox96)",
+      "licence": "CC0 1.0",
+      "credit_required": false,
+      "credit_text": "Font \"Pixel Operator\" by Jayvee Enaguas (CC0)",
+      "source_url": "https://www.dafont.com/pixel-operator.font",
+      "published": "2011-09-19 (updated 2018-10-04)",
+      "native_size_px": {
+        "PixelOperator.ttf": 16,
+        "PixelOperator8.ttf": 8
+      },
+      "cap_height_px": {
+        "PixelOperator.ttf": 9,
+        "PixelOperator8.ttf": 7
+      },
+      "sample": "_sheets/hud_pixel_operator.png",
+      "notes": "Very readable; digits and punctuation clear."
+    },
+    {
+      "role": "hud",
+      "rank": 2,
+      "name": "m5x7",
+      "files": [
+        "m5x7/m5x7.ttf"
+      ],
+      "author": "Daniel Linssen",
+      "licence": "CC0 1.0",
+      "credit_required": false,
+      "credit_text": "Font \"m5x7\" by Daniel Linssen (CC0)",
+      "source_url": "https://managore.itch.io/m5x7",
+      "published": "2016",
+      "native_size_px": 16,
+      "cap_height_px": 7,
+      "sample": "_sheets/hud_m5x7.png",
+      "notes": "Narrower; fits more text per line on a phone screen."
+    }
+  ]
+}

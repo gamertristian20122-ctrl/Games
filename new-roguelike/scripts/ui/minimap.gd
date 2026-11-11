@@ -3,6 +3,7 @@ extends Control
 ##   bright = the room you are in, grey = visited, dark = seen through a door but not entered.
 ##   Special rooms have their own colour and a small mark:
 ##   boss red, treasure gold, shop green, secret pale blue, altar purple.
+##   A small pale nick on a room's edge = a wall the Hungry Curse has cracked (a hidden door).
 ## It redraws when the HUD says something changed, and twice a second for the blinking room.
 
 const UI = preload("res://scripts/ui/theme.gd")
@@ -92,6 +93,8 @@ func _draw() -> void:
 		draw_rect(r, fill)
 		if special:
 			_mark(type, r)
+		if visited:
+			_crack_marks(info, r)
 		if here and _blink:
 			# a bright frame around the room you are in
 			var f := r.grow(1)
@@ -100,6 +103,19 @@ func _draw() -> void:
 			draw_rect(Rect2(f.position + Vector2(0, f.size.y - 1), Vector2(f.size.x, 1)), col)
 			draw_rect(Rect2(f.position, Vector2(1, f.size.y)), col)
 			draw_rect(Rect2(f.position + Vector2(f.size.x - 1, 0), Vector2(1, f.size.y)), col)
+
+
+## Walls the Hungry Curse has cracked but not yet opened: a pale nick on that side of the room.
+func _crack_marks(info: Dictionary, r: Rect2) -> void:
+	var doors: Variant = info.get("doors")
+	if not (doors is Dictionary):
+		return
+	for d: Variant in doors:
+		var door: Variant = doors[d]
+		if not (d is Vector2i) or not (door is Dictionary) or not door.get("cracked", false) or door.get("revealed", false):
+			continue
+		var edge := (r.position + r.size / 2.0 + Vector2(d) * r.size / 2.0).round()
+		draw_rect(Rect2(edge.x - 1, edge.y - 1, 2, 2), UI.C_ICE)
 
 
 ## A tiny dark mark so special rooms can be told apart without relying on colour alone.

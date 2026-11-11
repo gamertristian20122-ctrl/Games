@@ -1,0 +1,22 @@
+Pack: Fire Crackling
+Page: https://opengameart.org/content/fire-crackling
+Author: AntumDeluge  (https://opengameart.org/users/antumdeluge)
+Published on the page: 2013-05-10
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/); page text, verbatim: "Licensing: Creative Commons Zero (CC0)"; author comment on the page (2014-01-30), verbatim: "Go ahead. It is public domain. You are free to use it however you wish."
+
+Human-made evidence: Published 2013 (pre generative-audio); description: "A popping and crackling fireplace."
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  fire-1.wav
+    from https://opengameart.org/sites/default/files/fire-1.wav
+    sha256 26702de8a195bcbafeae72034861d875a1b7917168a25106f4e1957ecdddf7e5  (253232 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  fire-1.wav
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

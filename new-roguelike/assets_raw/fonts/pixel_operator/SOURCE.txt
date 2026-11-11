@@ -1,0 +1,23 @@
+Font: Pixel Operator family (readable pixel font for HUD and text)
+Page: https://www.dafont.com/pixel-operator.font
+Author: Jayvee Enaguas (HarvettFox96)
+Published: 2009-2018 (DaFont, verbatim: "First seen on DaFont: September 19, 2011"; version in the files: 2018.10.04-1)
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: bundled LICENSE.txt is the full "Creative Commons Legal Code CC0 1.0 Universal" text; the copyright field inside every TTF, verbatim: "Released by Jayvee Enaguas (HarvettFox96) <harvettfox96 [at] protonmail [dot] com>, licensed under a Creative Commons Zero (CC0) 1.0 <https://creativecommons.org/licenses/zero/1.0/>. (c) 2009-2018."; DaFont note, verbatim: "This typeface is made by Jayvee Enaguas (HarvettFox96), licensed under a Creative Commons Zero (CC0) 1.0. 2009-2018."
+
+Human-made evidence: on DaFont since 2011, last updated 2018, with a hand-written changelog on the page (for example "Changed licence to Creative Commons Zero (CC0) 1.0", "Modified one (1), Ii, Jj and l in every monospace variants only").
+AI check: published before 2022; no AI-generation wording on the page or in the files.
+
+Original download, kept untouched in original/:
+  pixel_operator.zip  (16 files: 15 TTFs + LICENSE.txt)
+    from https://dl.dafont.com/dl/?f=pixel_operator
+    sha256 95b33667e4884f5714db33d8324472df28f9d5ffed49108824c5819c1a217dad  (106073 bytes)
+Files extracted unchanged: PixelOperator.ttf, PixelOperator-Bold.ttf, PixelOperator8.ttf, PixelOperator8-Bold.ttf, PixelOperatorMono.ttf, PixelOperatorMono8.ttf, LICENSE.txt (the other variants stay in the zip)
+
+How to use: antialiasing off, hinting off.
+  PixelOperator.ttf / -Bold: native size 16 px, capital letters 9 px tall. Best for item descriptions.
+  PixelOperator8.ttf / -Bold: native size 8 px, capital letters 7 px tall, wider letters. Best for small HUD numbers.
+  Mono variants: fixed-width digits, handy for a timer or coin counter that should not jiggle.
+Sample: ../_sheets/hud_pixel_operator.png

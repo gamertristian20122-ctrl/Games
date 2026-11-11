@@ -1,0 +1,19 @@
+Font: m5x7 (compact readable pixel font)
+Page: https://managore.itch.io/m5x7
+Author: Daniel Linssen (managore)
+Published: 2016 (the TTF's own creation date is 2016-03-09)
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: itch.io page "More information" box, verbatim: "Asset license Creative Commons Zero v1.0 Universal"; page text, verbatim: "free to use but attribution appreciated"
+No licence file is bundled (the download is the bare TTF); CC0-1.0-legalcode.txt here is the licence text fetched from https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt
+Optional thank-you credit: Font "m5x7" by Daniel Linssen
+
+Human-made evidence: the itch.io page states, verbatim: "Content No generative AI was used". Font file dated 2016, before generative tools. The page lists the hand-set metrics, verbatim: "average width +5 ascender height +7 descender height -2 x-height +5".
+AI check: published before 2022; itch.io AI disclosure says no generative AI.
+
+Original download (free, "Name your own price", no account): m5x7.ttf
+    via https://managore.itch.io/m5x7 (upload id 170386)
+    sha256 47c3f0b01f0fd417b3a44c2888a71d3072f750e76f3e6e946a6a9b188d988cbf  (34300 bytes)
+
+How to use: native size 16 px (page, verbatim: "use font size 16, 32, 48, etc"), capital letters 7 px tall, antialiasing off, hinting off. Narrower than Pixel Operator, so more text fits per line. Sample: ../_sheets/hud_m5x7.png

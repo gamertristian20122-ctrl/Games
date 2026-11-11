@@ -1,0 +1,14 @@
+Pack: Free Pixel Effects Pack
+Author: CodeManu (Davit Masia)
+Source URL: https://opengameart.org/content/free-pixel-effects-pack
+Mirror (same author, same zip name): https://codemanu.itch.io/pixelart-effect-pack
+Download URL: https://opengameart.org/sites/default/files/Free%20Pixel%20Effects%20Pack.zip
+Original archive: Free Pixel Effects Pack.zip sha256 831566871401a9c27246a26f7a760bb9db72a140e88ff134748fb023d30ca1fe
+Licence: CC0 1.0 / public domain
+Licence quote (bundled README.txt and both pages): "This is a public domain asset, you can use it for both personal and comercial purposes. No credit required but feel free to show us where you used it on @DavitMasia and @CodeManuPro at twitter. :)"
+Licence quote (OpenGameArt licence field): "License(s): CC0"
+Licence caveat: The itch.io mirror shows the metadata field "Asset license: Creative Commons Attribution v4.0 International" next to the same public-domain sentence. The copy kept here was downloaded from OpenGameArt, where the author himself selected CC0. Crediting "CodeManu" in the credits anyway costs nothing and satisfies either reading.
+Published: 2018-07-21 (OpenGameArt submission date; files inside the zip are dated 2018-07-21)
+Retrieved: 2026-11-11
+Human-made evidence: Published July 2018, before generative image tools existed. README: "All these effects were created with Pixel FX Designer" - a particle-effect design tool written by this same author (designer-set emitters, not generative AI). The itch.io mirror carries the disclosure "No generative AI was used".
+Notes: Every sheet is a grid of 100x100 px cells read row by row; trailing cells are empty. The drawn effect only fills part of each cell (see content_bbox in the manifest), so crop to that box in the import step: most land between 15 and 62 px, five (nebula, vortex, phantom, felspell, freezing) are 69-80 px and should be skipped or used only as large room-scale auras.

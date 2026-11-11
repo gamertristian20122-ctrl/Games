@@ -1,0 +1,7698 @@
+{
+ "generated_utc": "2026-11-11T00:00:46Z",
+ "root": "all file paths are relative to new-roguelike/assets_raw/art/",
+ "schema": {
+  "id": "unique sprite/animation id",
+  "pack": "pack folder slug",
+  "files": "ordered loose frame files (one PNG per frame)",
+  "atlas+rects": "atlas file with [x,y,w,h] per frame (used only where the pack ships no loose frames)",
+  "frame_w/frame_h": "frame size in px",
+  "frames": "frame count",
+  "category": "hero|enemy|boss|tile|prop|pickup|weapon|ui|npc|familiar|other",
+  "also_usable_as": "other categories the sprite could reasonably serve",
+  "character": "groups the idle/run/hit animations of one character",
+  "content_bbox": "[x,y,w,h] union of non-transparent pixels over all frames (Superdark frames sit in padded 32x32 or 64x64 canvases)",
+  "note": "free text",
+  "show_whole": "contact-sheet hint: draw the whole atlas instead of every cell"
+ },
+ "notes": [
+  "All character sprites face right only (flip horizontally for left); there are no up/down facings and no attack or death animations in any pack.",
+  "0x72 animations: 4 frames idle, 4 frames run, 1 frame hit (heroes only). Superdark: 4 idle + 4 walk (Golem 6+6) or one shared 4-frame loop."
+ ],
+ "packs": [
+  {
+   "slug": "0x72_dungeontileset_ii",
+   "role": "PRIMARY",
+   "name": "16x16 DungeonTileset II v1.7",
+   "author": "0x72 (Robert Norenberg)",
+   "licence": "CC0 1.0",
+   "source_url": "https://0x72.itch.io/dungeontileset-ii",
+   "id_prefix": "(none)"
+  },
+  {
+   "slug": "niji_dungeontileset_ii_extended",
+   "role": "add-on",
+   "name": "Dungeon Tileset II Extended v1.1",
+   "author": "Niji (nijikokun)",
+   "licence": "CC0 1.0",
+   "source_url": "https://nijikokun.itch.io/dungeontileset-ii-extended",
+   "id_prefix": "niji_"
+  },
+  {
+   "slug": "superdark_fantasy_rpg_npcs",
+   "role": "add-on",
+   "name": "16x16 Fantasy RPG Characters (NPC pack)",
+   "author": "Superdark",
+   "licence": "custom permissive statement on the itch.io page (free, commercial use, modification, no credit required); not a named licence",
+   "source_url": "https://superdark.itch.io/16x16-free-npc-pack",
+   "id_prefix": "sdn_"
+  },
+  {
+   "slug": "superdark_enchanted_forest",
+   "role": "add-on",
+   "name": "16x16 Enchanted Forest Characters",
+   "author": "Superdark",
+   "licence": "custom permissive statement on the itch.io page (free, commercial use, modification, no credit required); not a named licence",
+   "source_url": "https://superdark.itch.io/enchanted-forest-characters",
+   "id_prefix": "sdf_"
+  }
+ ],
+ "counts_by_category": {
+  "hero": 40,
+  "enemy": 56,
+  "boss": 16,
+  "familiar": 6,
+  "npc": 41,
+  "tile": 64,
+  "prop": 45,
+  "pickup": 26,
+  "weapon": 27,
+  "ui": 6
+ },
+ "counts_by_pack": {
+  "0x72_dungeontileset_ii": 180,
+  "niji_dungeontileset_ii_extended": 55,
+  "superdark_fantasy_rpg_npcs": 44,
+  "superdark_enchanted_forest": 48
+ },
+ "sprites": [
+  {
+   "id": "knight_m_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "character": "knight_m",
+   "content_bbox": [
+    1,
+    1,
+    14,
+    23
+   ]
+  },
+  {
+   "id": "knight_m_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "knight_m",
+   "content_bbox": [
+    0,
+    8,
+    15,
+    20
+   ]
+  },
+  {
+   "id": "knight_m_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_m_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "knight_m",
+   "content_bbox": [
+    0,
+    6,
+    15,
+    22
+   ]
+  },
+  {
+   "id": "knight_f_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "character": "knight_f",
+   "content_bbox": [
+    1,
+    1,
+    14,
+    23
+   ]
+  },
+  {
+   "id": "knight_f_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "knight_f",
+   "content_bbox": [
+    0,
+    8,
+    15,
+    20
+   ]
+  },
+  {
+   "id": "knight_f_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/knight_f_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "knight_f",
+   "content_bbox": [
+    0,
+    6,
+    15,
+    22
+   ]
+  },
+  {
+   "id": "wizzard_m_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "character": "wizzard_m",
+   "content_bbox": [
+    2,
+    4,
+    14,
+    21
+   ]
+  },
+  {
+   "id": "wizzard_m_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "wizzard_m",
+   "content_bbox": [
+    1,
+    8,
+    15,
+    20
+   ]
+  },
+  {
+   "id": "wizzard_m_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_m_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "wizzard_m",
+   "content_bbox": [
+    0,
+    7,
+    16,
+    21
+   ]
+  },
+  {
+   "id": "wizzard_f_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "character": "wizzard_f",
+   "content_bbox": [
+    0,
+    5,
+    15,
+    21
+   ]
+  },
+  {
+   "id": "wizzard_f_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "wizzard_f",
+   "content_bbox": [
+    0,
+    7,
+    16,
+    21
+   ]
+  },
+  {
+   "id": "wizzard_f_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wizzard_f_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "character": "wizzard_f",
+   "content_bbox": [
+    0,
+    6,
+    15,
+    22
+   ]
+  },
+  {
+   "id": "elf_m_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "elf_m",
+   "content_bbox": [
+    1,
+    5,
+    15,
+    19
+   ]
+  },
+  {
+   "id": "elf_m_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "elf_m",
+   "content_bbox": [
+    1,
+    9,
+    15,
+    19
+   ]
+  },
+  {
+   "id": "elf_m_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_m_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "elf_m",
+   "content_bbox": [
+    1,
+    7,
+    15,
+    21
+   ]
+  },
+  {
+   "id": "elf_f_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "elf_f",
+   "content_bbox": [
+    0,
+    7,
+    15,
+    18
+   ]
+  },
+  {
+   "id": "elf_f_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "elf_f",
+   "content_bbox": [
+    0,
+    12,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "elf_f_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/elf_f_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "elf_f",
+   "content_bbox": [
+    0,
+    11,
+    16,
+    17
+   ]
+  },
+  {
+   "id": "lizard_m_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "lizard_m",
+   "content_bbox": [
+    1,
+    6,
+    15,
+    19
+   ]
+  },
+  {
+   "id": "lizard_m_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "lizard_m",
+   "content_bbox": [
+    0,
+    9,
+    16,
+    19
+   ]
+  },
+  {
+   "id": "lizard_m_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_m_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "lizard_m",
+   "content_bbox": [
+    1,
+    7,
+    15,
+    21
+   ]
+  },
+  {
+   "id": "lizard_f_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "lizard_f",
+   "content_bbox": [
+    1,
+    6,
+    15,
+    19
+   ]
+  },
+  {
+   "id": "lizard_f_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "lizard_f",
+   "content_bbox": [
+    0,
+    9,
+    16,
+    19
+   ]
+  },
+  {
+   "id": "lizard_f_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lizard_f_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "lizard_f",
+   "content_bbox": [
+    1,
+    7,
+    15,
+    21
+   ]
+  },
+  {
+   "id": "dwarf_m_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "dwarf_m",
+   "content_bbox": [
+    1,
+    3,
+    15,
+    20
+   ]
+  },
+  {
+   "id": "dwarf_m_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "dwarf_m",
+   "content_bbox": [
+    2,
+    7,
+    14,
+    21
+   ]
+  },
+  {
+   "id": "dwarf_m_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_m_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "dwarf_m",
+   "content_bbox": [
+    1,
+    4,
+    14,
+    24
+   ]
+  },
+  {
+   "id": "dwarf_f_hit_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_hit_anim_f0.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 1,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "dwarf_f",
+   "content_bbox": [
+    1,
+    3,
+    15,
+    20
+   ]
+  },
+  {
+   "id": "dwarf_f_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "dwarf_f",
+   "content_bbox": [
+    2,
+    7,
+    14,
+    21
+   ]
+  },
+  {
+   "id": "dwarf_f_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/dwarf_f_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 28,
+   "frames": 4,
+   "category": "hero",
+   "also_usable_as": [
+    "npc"
+   ],
+   "character": "dwarf_f",
+   "content_bbox": [
+    1,
+    4,
+    14,
+    24
+   ]
+  },
+  {
+   "id": "tiny_zombie_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "also_usable_as": [
+    "familiar"
+   ],
+   "character": "tiny_zombie",
+   "content_bbox": [
+    4,
+    6,
+    9,
+    10
+   ]
+  },
+  {
+   "id": "tiny_zombie_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_zombie_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "also_usable_as": [
+    "familiar"
+   ],
+   "character": "tiny_zombie",
+   "content_bbox": [
+    3,
+    4,
+    11,
+    12
+   ]
+  },
+  {
+   "id": "goblin_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "also_usable_as": [
+    "familiar"
+   ],
+   "character": "goblin",
+   "content_bbox": [
+    4,
+    6,
+    10,
+    10
+   ]
+  },
+  {
+   "id": "goblin_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/goblin_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "also_usable_as": [
+    "familiar"
+   ],
+   "character": "goblin",
+   "content_bbox": [
+    3,
+    4,
+    11,
+    12
+   ]
+  },
+  {
+   "id": "skelet_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "character": "skelet",
+   "content_bbox": [
+    3,
+    2,
+    10,
+    14
+   ]
+  },
+  {
+   "id": "skelet_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skelet_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "character": "skelet",
+   "content_bbox": [
+    3,
+    0,
+    10,
+    16
+   ]
+  },
+  {
+   "id": "muddy_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/muddy_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/muddy_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/muddy_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/muddy_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "character": "muddy",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "swampy_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/swampy_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/swampy_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/swampy_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/swampy_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "character": "swampy",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "zombie_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/zombie_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/zombie_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/zombie_anim_f3.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/zombie_anim_f10.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "character": "zombie",
+   "content_bbox": [
+    2,
+    0,
+    12,
+    16
+   ]
+  },
+  {
+   "id": "ice_zombie_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ice_zombie_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ice_zombie_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ice_zombie_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ice_zombie_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "enemy",
+   "character": "ice_zombie",
+   "content_bbox": [
+    2,
+    0,
+    12,
+    16
+   ]
+  },
+  {
+   "id": "masked_orc_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "masked_orc",
+   "content_bbox": [
+    3,
+    7,
+    12,
+    16
+   ]
+  },
+  {
+   "id": "masked_orc_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/masked_orc_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "masked_orc",
+   "content_bbox": [
+    2,
+    5,
+    13,
+    18
+   ]
+  },
+  {
+   "id": "orc_warrior_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "orc_warrior",
+   "content_bbox": [
+    4,
+    7,
+    11,
+    16
+   ]
+  },
+  {
+   "id": "orc_warrior_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_warrior_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "orc_warrior",
+   "content_bbox": [
+    2,
+    5,
+    13,
+    18
+   ]
+  },
+  {
+   "id": "orc_shaman_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "orc_shaman",
+   "content_bbox": [
+    4,
+    8,
+    11,
+    15
+   ]
+  },
+  {
+   "id": "orc_shaman_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/orc_shaman_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "orc_shaman",
+   "content_bbox": [
+    2,
+    6,
+    13,
+    17
+   ]
+  },
+  {
+   "id": "necromancer_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/necromancer_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/necromancer_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/necromancer_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/necromancer_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "also_usable_as": [
+    "boss",
+    "npc"
+   ],
+   "character": "necromancer",
+   "content_bbox": [
+    0,
+    6,
+    14,
+    17
+   ]
+  },
+  {
+   "id": "wogol_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "wogol",
+   "content_bbox": [
+    3,
+    7,
+    10,
+    16
+   ]
+  },
+  {
+   "id": "wogol_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wogol_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "wogol",
+   "content_bbox": [
+    2,
+    5,
+    12,
+    18
+   ]
+  },
+  {
+   "id": "chort_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "chort",
+   "content_bbox": [
+    3,
+    2,
+    11,
+    21
+   ]
+  },
+  {
+   "id": "chort_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chort_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "chort",
+   "content_bbox": [
+    1,
+    0,
+    14,
+    23
+   ]
+  },
+  {
+   "id": "slug_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/slug_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/slug_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/slug_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/slug_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "slug",
+   "content_bbox": [
+    0,
+    6,
+    14,
+    17
+   ]
+  },
+  {
+   "id": "pumpkin_dude_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "pumpkin_dude",
+   "content_bbox": [
+    0,
+    2,
+    16,
+    21
+   ]
+  },
+  {
+   "id": "pumpkin_dude_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/pumpkin_dude_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "enemy",
+   "character": "pumpkin_dude",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    23
+   ]
+  },
+  {
+   "id": "big_zombie_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_idle_anim_f3.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 36,
+   "frames": 4,
+   "category": "boss",
+   "character": "big_zombie",
+   "content_bbox": [
+    6,
+    9,
+    20,
+    27
+   ]
+  },
+  {
+   "id": "big_zombie_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_zombie_run_anim_f3.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 36,
+   "frames": 4,
+   "category": "boss",
+   "character": "big_zombie",
+   "content_bbox": [
+    6,
+    3,
+    20,
+    33
+   ]
+  },
+  {
+   "id": "ogre_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_idle_anim_f3.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 36,
+   "frames": 4,
+   "category": "boss",
+   "character": "ogre",
+   "content_bbox": [
+    5,
+    10,
+    22,
+    26
+   ]
+  },
+  {
+   "id": "ogre_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ogre_run_anim_f3.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 36,
+   "frames": 4,
+   "category": "boss",
+   "character": "ogre",
+   "content_bbox": [
+    5,
+    8,
+    22,
+    28
+   ]
+  },
+  {
+   "id": "big_demon_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_idle_anim_f3.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 36,
+   "frames": 4,
+   "category": "boss",
+   "character": "big_demon",
+   "content_bbox": [
+    3,
+    5,
+    26,
+    31
+   ]
+  },
+  {
+   "id": "big_demon_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/big_demon_run_anim_f3.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 36,
+   "frames": 4,
+   "category": "boss",
+   "character": "big_demon",
+   "content_bbox": [
+    4,
+    2,
+    23,
+    34
+   ]
+  },
+  {
+   "id": "imp_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "familiar",
+   "also_usable_as": [
+    "enemy"
+   ],
+   "character": "imp",
+   "content_bbox": [
+    4,
+    4,
+    10,
+    12
+   ]
+  },
+  {
+   "id": "imp_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/imp_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "familiar",
+   "also_usable_as": [
+    "enemy"
+   ],
+   "character": "imp",
+   "content_bbox": [
+    3,
+    2,
+    11,
+    14
+   ]
+  },
+  {
+   "id": "tiny_slug_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_slug_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_slug_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_slug_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/tiny_slug_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "familiar",
+   "also_usable_as": [
+    "enemy"
+   ],
+   "character": "tiny_slug",
+   "content_bbox": [
+    1,
+    3,
+    13,
+    13
+   ]
+  },
+  {
+   "id": "doc_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "npc",
+   "also_usable_as": [
+    "hero"
+   ],
+   "character": "doc",
+   "content_bbox": [
+    1,
+    6,
+    15,
+    17
+   ]
+  },
+  {
+   "id": "doc_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doc_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 23,
+   "frames": 4,
+   "category": "npc",
+   "also_usable_as": [
+    "hero"
+   ],
+   "character": "doc",
+   "content_bbox": [
+    1,
+    4,
+    15,
+    19
+   ]
+  },
+  {
+   "id": "angel_idle_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_idle_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "npc",
+   "also_usable_as": [
+    "enemy",
+    "familiar"
+   ],
+   "character": "angel",
+   "content_bbox": [
+    2,
+    4,
+    13,
+    12
+   ]
+  },
+  {
+   "id": "angel_run_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_run_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_run_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_run_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/angel_run_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "npc",
+   "also_usable_as": [
+    "enemy",
+    "familiar"
+   ],
+   "character": "angel",
+   "content_bbox": [
+    2,
+    2,
+    13,
+    14
+   ]
+  },
+  {
+   "id": "doors_frame_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doors_frame_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    3,
+    16,
+    29
+   ]
+  },
+  {
+   "id": "doors_frame_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doors_frame_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    3,
+    16,
+    29
+   ]
+  },
+  {
+   "id": "doors_frame_top",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doors_frame_top.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    3,
+    13,
+    26,
+    3
+   ]
+  },
+  {
+   "id": "doors_leaf_closed",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doors_leaf_closed.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    32,
+    32
+   ]
+  },
+  {
+   "id": "doors_leaf_open",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/doors_leaf_open.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    32,
+    32
+   ]
+  },
+  {
+   "id": "edge_down",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/edge_down.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    6
+   ]
+  },
+  {
+   "id": "floor_1",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_1.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_2",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_3",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_4",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_4.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_5",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_5.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_6",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_6.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_7",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_7.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_8",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_8.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_ladder",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_ladder.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "floor_stairs",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_stairs.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_bottom_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_bottom_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_bottom_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_bottom_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_mid_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_mid_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    5,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_mid_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_mid_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    11,
+    0,
+    5,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_top_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_top_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    1,
+    12,
+    15,
+    4
+   ]
+  },
+  {
+   "id": "wall_edge_top_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_top_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    12,
+    16,
+    4
+   ]
+  },
+  {
+   "id": "wall_edge_tshape_bottom_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_tshape_bottom_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_tshape_bottom_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_tshape_bottom_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_tshape_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_tshape_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_edge_tshape_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_edge_tshape_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_hole_1",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_hole_1.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_hole_2",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_hole_2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_mid",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_mid.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_outer_front_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_outer_front_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    11,
+    0,
+    5,
+    16
+   ]
+  },
+  {
+   "id": "wall_outer_front_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_outer_front_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    5,
+    16
+   ]
+  },
+  {
+   "id": "wall_outer_mid_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_outer_mid_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    11,
+    0,
+    5,
+    16
+   ]
+  },
+  {
+   "id": "wall_outer_mid_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_outer_mid_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    5,
+    16
+   ]
+  },
+  {
+   "id": "wall_outer_top_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_outer_top_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    11,
+    12,
+    5,
+    4
+   ]
+  },
+  {
+   "id": "wall_outer_top_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_outer_top_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    12,
+    5,
+    4
+   ]
+  },
+  {
+   "id": "wall_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_top_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_top_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    12,
+    16,
+    4
+   ]
+  },
+  {
+   "id": "wall_top_mid",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_top_mid.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    12,
+    16,
+    4
+   ]
+  },
+  {
+   "id": "wall_top_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_top_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "content_bbox": [
+    0,
+    12,
+    16,
+    4
+   ]
+  },
+  {
+   "id": "button_blue_down",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/button_blue_down.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    2,
+    4,
+    12,
+    10
+   ]
+  },
+  {
+   "id": "button_blue_up",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/button_blue_up.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    2,
+    2,
+    12,
+    12
+   ]
+  },
+  {
+   "id": "button_red_down",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/button_red_down.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    2,
+    4,
+    12,
+    10
+   ]
+  },
+  {
+   "id": "button_red_up",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/button_red_up.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    2,
+    2,
+    12,
+    12
+   ]
+  },
+  {
+   "id": "chest_empty_open_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_empty_open_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_empty_open_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_empty_open_anim_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "chest_full_open_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_full_open_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_full_open_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_full_open_anim_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "chest_mimic_open_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_mimic_open_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_mimic_open_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/chest_mimic_open_anim_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "prop",
+   "also_usable_as": [
+    "enemy"
+   ],
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "column",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/column.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 48,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    4,
+    16,
+    35
+   ]
+  },
+  {
+   "id": "column_wall",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/column_wall.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 48,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    4,
+    16,
+    44
+   ]
+  },
+  {
+   "id": "crate",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/crate.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 24,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    1,
+    3,
+    14,
+    20
+   ]
+  },
+  {
+   "id": "floor_spikes_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_spikes_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_spikes_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_spikes_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/floor_spikes_anim_f3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 4,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "hole",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/hole.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "lever_left",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lever_left.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    2,
+    14,
+    13
+   ]
+  },
+  {
+   "id": "lever_right",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/lever_right.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    2,
+    2,
+    14,
+    13
+   ]
+  },
+  {
+   "id": "skull",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/skull.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    5,
+    7,
+    6,
+    6
+   ]
+  },
+  {
+   "id": "wall_banner_blue",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_banner_blue.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_banner_green",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_banner_green.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_banner_red",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_banner_red.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_banner_yellow",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_banner_yellow.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_fountain_basin_blue_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_basin_blue_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_basin_blue_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_basin_blue_anim_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_fountain_basin_red_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_basin_red_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_basin_red_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_basin_red_anim_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_fountain_mid_blue_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_mid_blue_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_mid_blue_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_mid_blue_anim_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_fountain_mid_red_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_mid_red_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_mid_red_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_mid_red_anim_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_fountain_top_1",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_top_1.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    8,
+    16,
+    8
+   ]
+  },
+  {
+   "id": "wall_fountain_top_2",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_top_2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    5,
+    16,
+    11
+   ]
+  },
+  {
+   "id": "wall_fountain_top_3",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_fountain_top_3.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    7,
+    16,
+    9
+   ]
+  },
+  {
+   "id": "wall_goo",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_goo.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "wall_goo_base",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/wall_goo_base.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "bomb",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/bomb_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/bomb_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/bomb_f2.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 3,
+   "category": "pickup",
+   "content_bbox": [
+    0,
+    2,
+    15,
+    13
+   ]
+  },
+  {
+   "id": "coin_anim",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/coin_anim_f0.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/coin_anim_f1.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/coin_anim_f2.png",
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/coin_anim_f3.png"
+   ],
+   "frame_w": 6,
+   "frame_h": 7,
+   "frames": 4,
+   "category": "pickup",
+   "content_bbox": [
+    0,
+    0,
+    6,
+    7
+   ]
+  },
+  {
+   "id": "flask_big_blue",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_big_blue.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    3,
+    3,
+    10,
+    11
+   ]
+  },
+  {
+   "id": "flask_big_green",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_big_green.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    3,
+    3,
+    10,
+    11
+   ]
+  },
+  {
+   "id": "flask_big_red",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_big_red.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    3,
+    3,
+    10,
+    11
+   ]
+  },
+  {
+   "id": "flask_big_yellow",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_big_yellow.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    3,
+    3,
+    10,
+    11
+   ]
+  },
+  {
+   "id": "flask_blue",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_blue.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    4,
+    3,
+    8,
+    11
+   ]
+  },
+  {
+   "id": "flask_green",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_green.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    4,
+    3,
+    8,
+    11
+   ]
+  },
+  {
+   "id": "flask_red",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_red.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    4,
+    3,
+    8,
+    11
+   ]
+  },
+  {
+   "id": "flask_yellow",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/flask_yellow.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup",
+   "content_bbox": [
+    4,
+    3,
+    8,
+    11
+   ]
+  },
+  {
+   "id": "weapon_anime_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_anime_sword.png"
+   ],
+   "frame_w": 12,
+   "frame_h": 30,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    12,
+    30
+   ]
+  },
+  {
+   "id": "weapon_arrow",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_arrow.png"
+   ],
+   "frame_w": 7,
+   "frame_h": 21,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    7,
+    21
+   ]
+  },
+  {
+   "id": "weapon_axe",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_axe.png"
+   ],
+   "frame_w": 9,
+   "frame_h": 21,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    9,
+    21
+   ]
+  },
+  {
+   "id": "weapon_baton_with_spikes",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_baton_with_spikes.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 22,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    22
+   ]
+  },
+  {
+   "id": "weapon_big_hammer",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_big_hammer.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 37,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    37
+   ]
+  },
+  {
+   "id": "weapon_bow",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_bow.png"
+   ],
+   "frame_w": 14,
+   "frame_h": 26,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    7,
+    0,
+    7,
+    26
+   ]
+  },
+  {
+   "id": "weapon_bow_2",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_bow_2.png"
+   ],
+   "frame_w": 14,
+   "frame_h": 26,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    14,
+    26
+   ]
+  },
+  {
+   "id": "weapon_cleaver",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_cleaver.png"
+   ],
+   "frame_w": 9,
+   "frame_h": 19,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    8,
+    19
+   ]
+  },
+  {
+   "id": "weapon_double_axe",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_double_axe.png"
+   ],
+   "frame_w": 16,
+   "frame_h": 24,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    16,
+    24
+   ]
+  },
+  {
+   "id": "weapon_duel_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_duel_sword.png"
+   ],
+   "frame_w": 9,
+   "frame_h": 30,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    9,
+    30
+   ]
+  },
+  {
+   "id": "weapon_golden_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_golden_sword.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 22,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    22
+   ]
+  },
+  {
+   "id": "weapon_green_magic_staff",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_green_magic_staff.png"
+   ],
+   "frame_w": 8,
+   "frame_h": 30,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    8,
+    30
+   ]
+  },
+  {
+   "id": "weapon_hammer",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_hammer.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 24,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    24
+   ]
+  },
+  {
+   "id": "weapon_katana",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_katana.png"
+   ],
+   "frame_w": 6,
+   "frame_h": 29,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    6,
+    29
+   ]
+  },
+  {
+   "id": "weapon_knife",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_knife.png"
+   ],
+   "frame_w": 6,
+   "frame_h": 13,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    6,
+    13
+   ]
+  },
+  {
+   "id": "weapon_knight_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_knight_sword.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 29,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    29
+   ]
+  },
+  {
+   "id": "weapon_lavish_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_lavish_sword.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 30,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    30
+   ]
+  },
+  {
+   "id": "weapon_mace",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_mace.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 24,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    24
+   ]
+  },
+  {
+   "id": "weapon_machete",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_machete.png"
+   ],
+   "frame_w": 5,
+   "frame_h": 22,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    5,
+    22
+   ]
+  },
+  {
+   "id": "weapon_red_gem_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_red_gem_sword.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 21,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    21
+   ]
+  },
+  {
+   "id": "weapon_red_magic_staff",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_red_magic_staff.png"
+   ],
+   "frame_w": 8,
+   "frame_h": 30,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    8,
+    30
+   ]
+  },
+  {
+   "id": "weapon_regular_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_regular_sword.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 21,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    21
+   ]
+  },
+  {
+   "id": "weapon_rusty_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_rusty_sword.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 21,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    21
+   ]
+  },
+  {
+   "id": "weapon_saw_sword",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_saw_sword.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 25,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    25
+   ]
+  },
+  {
+   "id": "weapon_spear",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_spear.png"
+   ],
+   "frame_w": 6,
+   "frame_h": 30,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    6,
+    30
+   ]
+  },
+  {
+   "id": "weapon_throwing_axe",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_throwing_axe.png"
+   ],
+   "frame_w": 10,
+   "frame_h": 14,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    10,
+    14
+   ]
+  },
+  {
+   "id": "weapon_waraxe",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/weapon_waraxe.png"
+   ],
+   "frame_w": 12,
+   "frame_h": 23,
+   "frames": 1,
+   "category": "weapon",
+   "content_bbox": [
+    0,
+    0,
+    12,
+    23
+   ]
+  },
+  {
+   "id": "ui_heart_empty",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ui_heart_empty.png"
+   ],
+   "frame_w": 13,
+   "frame_h": 12,
+   "frames": 1,
+   "category": "ui",
+   "content_bbox": [
+    0,
+    0,
+    13,
+    12
+   ]
+  },
+  {
+   "id": "ui_heart_full",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ui_heart_full.png"
+   ],
+   "frame_w": 13,
+   "frame_h": 12,
+   "frames": 1,
+   "category": "ui",
+   "content_bbox": [
+    0,
+    0,
+    13,
+    12
+   ]
+  },
+  {
+   "id": "ui_heart_half",
+   "pack": "0x72_dungeontileset_ii",
+   "files": [
+    "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/frames/ui_heart_half.png"
+   ],
+   "frame_w": 13,
+   "frame_h": 12,
+   "frames": 1,
+   "category": "ui",
+   "content_bbox": [
+    0,
+    0,
+    13,
+    12
+   ]
+  },
+  {
+   "id": "atlas_floor_16x16",
+   "pack": "0x72_dungeontileset_ii",
+   "atlas": "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/atlas_floor-16x16.png",
+   "rects": [
+    [
+     0,
+     0,
+     16,
+     16
+    ],
+    [
+     16,
+     0,
+     16,
+     16
+    ],
+    [
+     32,
+     0,
+     16,
+     16
+    ],
+    [
+     48,
+     0,
+     16,
+     16
+    ],
+    [
+     64,
+     0,
+     16,
+     16
+    ],
+    [
+     80,
+     0,
+     16,
+     16
+    ],
+    [
+     96,
+     0,
+     16,
+     16
+    ],
+    [
+     0,
+     16,
+     16,
+     16
+    ],
+    [
+     16,
+     16,
+     16,
+     16
+    ],
+    [
+     32,
+     16,
+     16,
+     16
+    ],
+    [
+     48,
+     16,
+     16,
+     16
+    ],
+    [
+     64,
+     16,
+     16,
+     16
+    ],
+    [
+     80,
+     16,
+     16,
+     16
+    ],
+    [
+     96,
+     16,
+     16,
+     16
+    ],
+    [
+     0,
+     32,
+     16,
+     16
+    ],
+    [
+     16,
+     32,
+     16,
+     16
+    ],
+    [
+     32,
+     32,
+     16,
+     16
+    ],
+    [
+     48,
+     32,
+     16,
+     16
+    ],
+    [
+     64,
+     32,
+     16,
+     16
+    ],
+    [
+     80,
+     32,
+     16,
+     16
+    ],
+    [
+     96,
+     32,
+     16,
+     16
+    ],
+    [
+     0,
+     48,
+     16,
+     16
+    ],
+    [
+     16,
+     48,
+     16,
+     16
+    ],
+    [
+     32,
+     48,
+     16,
+     16
+    ],
+    [
+     48,
+     48,
+     16,
+     16
+    ],
+    [
+     64,
+     48,
+     16,
+     16
+    ],
+    [
+     80,
+     48,
+     16,
+     16
+    ],
+    [
+     96,
+     48,
+     16,
+     16
+    ],
+    [
+     0,
+     64,
+     16,
+     16
+    ],
+    [
+     16,
+     64,
+     16,
+     16
+    ],
+    [
+     32,
+     64,
+     16,
+     16
+    ],
+    [
+     48,
+     64,
+     16,
+     16
+    ],
+    [
+     64,
+     64,
+     16,
+     16
+    ],
+    [
+     80,
+     64,
+     16,
+     16
+    ],
+    [
+     0,
+     80,
+     16,
+     16
+    ],
+    [
+     16,
+     80,
+     16,
+     16
+    ],
+    [
+     32,
+     80,
+     16,
+     16
+    ],
+    [
+     48,
+     80,
+     16,
+     16
+    ],
+    [
+     64,
+     80,
+     16,
+     16
+    ],
+    [
+     80,
+     80,
+     16,
+     16
+    ],
+    [
+     0,
+     96,
+     16,
+     16
+    ],
+    [
+     16,
+     96,
+     16,
+     16
+    ],
+    [
+     32,
+     96,
+     16,
+     16
+    ],
+    [
+     64,
+     96,
+     16,
+     16
+    ],
+    [
+     80,
+     96,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 45,
+   "category": "tile",
+   "show_whole": true,
+   "atlas_w": 112,
+   "atlas_h": 112,
+   "note": "floor autotile atlas, 16x16 cells; frames = number of non-empty cells"
+  },
+  {
+   "id": "atlas_walls_low_16x16",
+   "pack": "0x72_dungeontileset_ii",
+   "atlas": "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/atlas_walls_low-16x16.png",
+   "rects": [
+    [
+     0,
+     0,
+     16,
+     16
+    ],
+    [
+     16,
+     0,
+     16,
+     16
+    ],
+    [
+     32,
+     0,
+     16,
+     16
+    ],
+    [
+     48,
+     0,
+     16,
+     16
+    ],
+    [
+     64,
+     0,
+     16,
+     16
+    ],
+    [
+     80,
+     0,
+     16,
+     16
+    ],
+    [
+     96,
+     0,
+     16,
+     16
+    ],
+    [
+     112,
+     0,
+     16,
+     16
+    ],
+    [
+     128,
+     0,
+     16,
+     16
+    ],
+    [
+     144,
+     0,
+     16,
+     16
+    ],
+    [
+     160,
+     0,
+     16,
+     16
+    ],
+    [
+     176,
+     0,
+     16,
+     16
+    ],
+    [
+     0,
+     16,
+     16,
+     16
+    ],
+    [
+     16,
+     16,
+     16,
+     16
+    ],
+    [
+     32,
+     16,
+     16,
+     16
+    ],
+    [
+     48,
+     16,
+     16,
+     16
+    ],
+    [
+     64,
+     16,
+     16,
+     16
+    ],
+    [
+     80,
+     16,
+     16,
+     16
+    ],
+    [
+     96,
+     16,
+     16,
+     16
+    ],
+    [
+     112,
+     16,
+     16,
+     16
+    ],
+    [
+     128,
+     16,
+     16,
+     16
+    ],
+    [
+     144,
+     16,
+     16,
+     16
+    ],
+    [
+     176,
+     16,
+     16,
+     16
+    ],
+    [
+     0,
+     32,
+     16,
+     16
+    ],
+    [
+     16,
+     32,
+     16,
+     16
+    ],
+    [
+     32,
+     32,
+     16,
+     16
+    ],
+    [
+     48,
+     32,
+     16,
+     16
+    ],
+    [
+     64,
+     32,
+     16,
+     16
+    ],
+    [
+     80,
+     32,
+     16,
+     16
+    ],
+    [
+     96,
+     32,
+     16,
+     16
+    ],
+    [
+     112,
+     32,
+     16,
+     16
+    ],
+    [
+     128,
+     32,
+     16,
+     16
+    ],
+    [
+     144,
+     32,
+     16,
+     16
+    ],
+    [
+     160,
+     32,
+     16,
+     16
+    ],
+    [
+     176,
+     32,
+     16,
+     16
+    ],
+    [
+     0,
+     48,
+     16,
+     16
+    ],
+    [
+     16,
+     48,
+     16,
+     16
+    ],
+    [
+     32,
+     48,
+     16,
+     16
+    ],
+    [
+     48,
+     48,
+     16,
+     16
+    ],
+    [
+     64,
+     48,
+     16,
+     16
+    ],
+    [
+     80,
+     48,
+     16,
+     16
+    ],
+    [
+     96,
+     48,
+     16,
+     16
+    ],
+    [
+     112,
+     48,
+     16,
+     16
+    ],
+    [
+     128,
+     48,
+     16,
+     16
+    ],
+    [
+     144,
+     48,
+     16,
+     16
+    ],
+    [
+     160,
+     48,
+     16,
+     16
+    ],
+    [
+     176,
+     48,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 47,
+   "category": "tile",
+   "show_whole": true,
+   "atlas_w": 192,
+   "atlas_h": 64,
+   "note": "low wall autotile atlas (3x3 minimal), 16x16 cells; frames = number of non-empty cells"
+  },
+  {
+   "id": "atlas_walls_high_16x32",
+   "pack": "0x72_dungeontileset_ii",
+   "atlas": "0x72_dungeontileset_ii/0x72_DungeonTilesetII_v1.7/atlas_walls_high-16x32.png",
+   "rects": [
+    [
+     0,
+     0,
+     16,
+     32
+    ],
+    [
+     16,
+     0,
+     16,
+     32
+    ],
+    [
+     32,
+     0,
+     16,
+     32
+    ],
+    [
+     48,
+     0,
+     16,
+     32
+    ],
+    [
+     64,
+     0,
+     16,
+     32
+    ],
+    [
+     80,
+     0,
+     16,
+     32
+    ],
+    [
+     96,
+     0,
+     16,
+     32
+    ],
+    [
+     112,
+     0,
+     16,
+     32
+    ],
+    [
+     128,
+     0,
+     16,
+     32
+    ],
+    [
+     144,
+     0,
+     16,
+     32
+    ],
+    [
+     160,
+     0,
+     16,
+     32
+    ],
+    [
+     176,
+     0,
+     16,
+     32
+    ],
+    [
+     192,
+     0,
+     16,
+     32
+    ],
+    [
+     208,
+     0,
+     16,
+     32
+    ],
+    [
+     224,
+     0,
+     16,
+     32
+    ],
+    [
+     240,
+     0,
+     16,
+     32
+    ],
+    [
+     256,
+     0,
+     16,
+     32
+    ],
+    [
+     0,
+     32,
+     16,
+     32
+    ],
+    [
+     16,
+     32,
+     16,
+     32
+    ],
+    [
+     32,
+     32,
+     16,
+     32
+    ],
+    [
+     48,
+     32,
+     16,
+     32
+    ],
+    [
+     64,
+     32,
+     16,
+     32
+    ],
+    [
+     80,
+     32,
+     16,
+     32
+    ],
+    [
+     96,
+     32,
+     16,
+     32
+    ],
+    [
+     112,
+     32,
+     16,
+     32
+    ],
+    [
+     128,
+     32,
+     16,
+     32
+    ],
+    [
+     144,
+     32,
+     16,
+     32
+    ],
+    [
+     176,
+     32,
+     16,
+     32
+    ],
+    [
+     192,
+     32,
+     16,
+     32
+    ],
+    [
+     208,
+     32,
+     16,
+     32
+    ],
+    [
+     224,
+     32,
+     16,
+     32
+    ],
+    [
+     240,
+     32,
+     16,
+     32
+    ],
+    [
+     256,
+     32,
+     16,
+     32
+    ],
+    [
+     272,
+     32,
+     16,
+     32
+    ],
+    [
+     288,
+     32,
+     16,
+     32
+    ],
+    [
+     0,
+     64,
+     16,
+     32
+    ],
+    [
+     16,
+     64,
+     16,
+     32
+    ],
+    [
+     32,
+     64,
+     16,
+     32
+    ],
+    [
+     48,
+     64,
+     16,
+     32
+    ],
+    [
+     64,
+     64,
+     16,
+     32
+    ],
+    [
+     80,
+     64,
+     16,
+     32
+    ],
+    [
+     96,
+     64,
+     16,
+     32
+    ],
+    [
+     112,
+     64,
+     16,
+     32
+    ],
+    [
+     128,
+     64,
+     16,
+     32
+    ],
+    [
+     144,
+     64,
+     16,
+     32
+    ],
+    [
+     160,
+     64,
+     16,
+     32
+    ],
+    [
+     176,
+     64,
+     16,
+     32
+    ],
+    [
+     192,
+     64,
+     16,
+     32
+    ],
+    [
+     208,
+     64,
+     16,
+     32
+    ],
+    [
+     224,
+     64,
+     16,
+     32
+    ],
+    [
+     240,
+     64,
+     16,
+     32
+    ],
+    [
+     272,
+     64,
+     16,
+     32
+    ],
+    [
+     288,
+     64,
+     16,
+     32
+    ],
+    [
+     336,
+     64,
+     16,
+     32
+    ],
+    [
+     352,
+     64,
+     16,
+     32
+    ],
+    [
+     0,
+     96,
+     16,
+     32
+    ],
+    [
+     16,
+     96,
+     16,
+     32
+    ],
+    [
+     32,
+     96,
+     16,
+     32
+    ],
+    [
+     48,
+     96,
+     16,
+     32
+    ],
+    [
+     64,
+     96,
+     16,
+     32
+    ],
+    [
+     80,
+     96,
+     16,
+     32
+    ],
+    [
+     96,
+     96,
+     16,
+     32
+    ],
+    [
+     112,
+     96,
+     16,
+     32
+    ],
+    [
+     128,
+     96,
+     16,
+     32
+    ],
+    [
+     144,
+     96,
+     16,
+     32
+    ],
+    [
+     160,
+     96,
+     16,
+     32
+    ],
+    [
+     176,
+     96,
+     16,
+     32
+    ],
+    [
+     192,
+     96,
+     16,
+     32
+    ],
+    [
+     208,
+     96,
+     16,
+     32
+    ],
+    [
+     240,
+     96,
+     16,
+     32
+    ],
+    [
+     256,
+     96,
+     16,
+     32
+    ],
+    [
+     272,
+     96,
+     16,
+     32
+    ],
+    [
+     288,
+     96,
+     16,
+     32
+    ],
+    [
+     304,
+     96,
+     16,
+     32
+    ],
+    [
+     320,
+     96,
+     16,
+     32
+    ],
+    [
+     336,
+     96,
+     16,
+     32
+    ],
+    [
+     352,
+     96,
+     16,
+     32
+    ],
+    [
+     368,
+     96,
+     16,
+     32
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 32,
+   "frames": 78,
+   "category": "tile",
+   "show_whole": true,
+   "atlas_w": 384,
+   "atlas_h": 128,
+   "note": "tall wall autotile atlas (3x3 minimal), 16x32 cells drawn on a 16x16 grid with Y offset, see pack README; frames = number of non-empty cells"
+  },
+  {
+   "id": "niji_key_gold",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     320,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_key_gold_long",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     352,
+     320,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_coin_single",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     336,
+     320,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_bomb",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     352,
+     336,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_bag_brown",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     288,
+     304,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_bag_brown_patched",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     304,
+     304,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_bag_gold",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     304,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_bag_blue",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     336,
+     304,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_big_pink",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     288,
+     208,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_pink",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     288,
+     240,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_big_purple",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     304,
+     208,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_purple",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     304,
+     240,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_big_lime",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     208,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_lime",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     240,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_big_grey",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     336,
+     208,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_flask_grey",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     336,
+     240,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "pickup"
+  },
+  {
+   "id": "niji_ui_heart_pink_full",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     288,
+     288,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "ui"
+  },
+  {
+   "id": "niji_ui_heart_pink_half",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     304,
+     288,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "ui"
+  },
+  {
+   "id": "niji_ui_heart_pink_empty",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     288,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "ui"
+  },
+  {
+   "id": "niji_wall_torch_anim",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     128,
+     352,
+     16,
+     32
+    ],
+    [
+     144,
+     352,
+     16,
+     32
+    ],
+    [
+     160,
+     352,
+     16,
+     32
+    ],
+    [
+     176,
+     352,
+     16,
+     32
+    ],
+    [
+     192,
+     352,
+     16,
+     32
+    ],
+    [
+     208,
+     352,
+     16,
+     32
+    ],
+    [
+     224,
+     352,
+     16,
+     32
+    ],
+    [
+     240,
+     352,
+     16,
+     32
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 32,
+   "frames": 8,
+   "category": "prop",
+   "note": "animated wall torch; flame in the top cell, holder in the bottom cell"
+  },
+  {
+   "id": "niji_wall_torch_unlit",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     256,
+     352,
+     16,
+     32
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "prop",
+   "note": "same cell layout as wall_torch_anim"
+  },
+  {
+   "id": "niji_torch_glow_anim",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     128,
+     384,
+     16,
+     16
+    ],
+    [
+     144,
+     384,
+     16,
+     16
+    ],
+    [
+     160,
+     384,
+     16,
+     16
+    ],
+    [
+     176,
+     384,
+     16,
+     16
+    ],
+    [
+     192,
+     384,
+     16,
+     16
+    ],
+    [
+     208,
+     384,
+     16,
+     16
+    ],
+    [
+     224,
+     384,
+     16,
+     16
+    ],
+    [
+     240,
+     384,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 8,
+   "category": "prop",
+   "note": "optional animated glow/soot outline drawn behind the wall torch"
+  },
+  {
+   "id": "niji_flame_anim",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     128,
+     336,
+     16,
+     16
+    ],
+    [
+     144,
+     336,
+     16,
+     16
+    ],
+    [
+     160,
+     336,
+     16,
+     16
+    ],
+    [
+     176,
+     336,
+     16,
+     16
+    ],
+    [
+     192,
+     336,
+     16,
+     16
+    ],
+    [
+     208,
+     336,
+     16,
+     16
+    ],
+    [
+     224,
+     336,
+     16,
+     16
+    ],
+    [
+     240,
+     336,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 8,
+   "category": "prop",
+   "note": "bare flame, 8 frames",
+   "also_usable_as": [
+    "other"
+   ]
+  },
+  {
+   "id": "niji_floor_torch_anim",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     128,
+     400,
+     16,
+     32
+    ],
+    [
+     144,
+     400,
+     16,
+     32
+    ],
+    [
+     160,
+     400,
+     16,
+     32
+    ],
+    [
+     176,
+     400,
+     16,
+     32
+    ],
+    [
+     192,
+     400,
+     16,
+     32
+    ],
+    [
+     208,
+     400,
+     16,
+     32
+    ],
+    [
+     224,
+     400,
+     16,
+     32
+    ],
+    [
+     240,
+     400,
+     16,
+     32
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 32,
+   "frames": 8,
+   "category": "prop",
+   "note": "standing floor torch / brazier candle"
+  },
+  {
+   "id": "niji_keyhole_dark",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     288,
+     384,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_keyhole_light",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     304,
+     384,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_wall_sign_orange",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     384,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_wall_sign_grey",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     336,
+     384,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_wall_sign_grey_2",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     400,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_wall_sign_orange_2",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     336,
+     400,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_signpost_orange",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     320,
+     416,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_signpost_grey",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     336,
+     416,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_rug_red",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     20,
+     324,
+     24,
+     40
+    ]
+   ],
+   "frame_w": 24,
+   "frame_h": 40,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_rug_red_small",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     48,
+     324,
+     16,
+     24
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 24,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_rug_grey",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     68,
+     324,
+     24,
+     40
+    ]
+   ],
+   "frame_w": 24,
+   "frame_h": 40,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_rug_grey_small",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     96,
+     324,
+     16,
+     24
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 24,
+   "frames": 1,
+   "category": "prop"
+  },
+  {
+   "id": "niji_door_single_a_closed",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     142,
+     256,
+     21,
+     32
+    ]
+   ],
+   "frame_w": 21,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile",
+   "note": "single-leaf door, 21 px wide (overhangs a 16 px cell)"
+  },
+  {
+   "id": "niji_door_single_a_open",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     142,
+     288,
+     21,
+     32
+    ]
+   ],
+   "frame_w": 21,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile"
+  },
+  {
+   "id": "niji_door_single_b_closed",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     190,
+     256,
+     21,
+     32
+    ]
+   ],
+   "frame_w": 21,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile"
+  },
+  {
+   "id": "niji_door_single_b_open",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     190,
+     288,
+     21,
+     32
+    ]
+   ],
+   "frame_w": 21,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile"
+  },
+  {
+   "id": "niji_wall_pipe",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     64,
+     32,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile"
+  },
+  {
+   "id": "niji_wall_grate",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     64,
+     48,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile"
+  },
+  {
+   "id": "niji_ladder",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     112,
+     96,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile",
+   "also_usable_as": [
+    "prop"
+   ]
+  },
+  {
+   "id": "niji_floor_blank_dark",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     32,
+     112,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile"
+  },
+  {
+   "id": "niji_floor_plants",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     48,
+     112,
+     16,
+     16
+    ]
+   ],
+   "frame_w": 16,
+   "frame_h": 16,
+   "frames": 1,
+   "category": "tile"
+  },
+  {
+   "id": "niji_plants_overlay_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     144,
+     32,
+     128,
+     32
+    ]
+   ],
+   "frame_w": 128,
+   "frame_h": 32,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid; moss/plant overlays for floors"
+  },
+  {
+   "id": "niji_stairs_side_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     112,
+     64,
+     32,
+     64
+    ]
+   ],
+   "frame_w": 32,
+   "frame_h": 64,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid; small side staircases"
+  },
+  {
+   "id": "niji_stairs_stone_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     144,
+     64,
+     32,
+     64
+    ]
+   ],
+   "frame_w": 32,
+   "frame_h": 64,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid; ascending stone staircase with landing"
+  },
+  {
+   "id": "niji_stairs_carpet_red_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     176,
+     64,
+     48,
+     64
+    ]
+   ],
+   "frame_w": 48,
+   "frame_h": 64,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid"
+  },
+  {
+   "id": "niji_stairs_carpet_red_torn_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     224,
+     64,
+     48,
+     64
+    ]
+   ],
+   "frame_w": 48,
+   "frame_h": 64,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid"
+  },
+  {
+   "id": "niji_stairs_carpet_mixed_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     128,
+     128,
+     48,
+     64
+    ]
+   ],
+   "frame_w": 48,
+   "frame_h": 64,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid; direction-change staircase"
+  },
+  {
+   "id": "niji_stairs_carpet_grey_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     176,
+     128,
+     48,
+     64
+    ]
+   ],
+   "frame_w": 48,
+   "frame_h": 64,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid"
+  },
+  {
+   "id": "niji_stairs_carpet_grey_torn_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     224,
+     128,
+     48,
+     64
+    ]
+   ],
+   "frame_w": 48,
+   "frame_h": 64,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid"
+  },
+  {
+   "id": "niji_carpet_red_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     16,
+     272,
+     48,
+     48
+    ]
+   ],
+   "frame_w": 48,
+   "frame_h": 48,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid; carpet edge + fill tiles on floor"
+  },
+  {
+   "id": "niji_carpet_grey_block",
+   "pack": "niji_dungeontileset_ii_extended",
+   "atlas": "niji_dungeontileset_ii_extended/dungeontiles-extended v1.1/dungeontileset-extended.png",
+   "rects": [
+    [
+     64,
+     272,
+     48,
+     48
+    ]
+   ],
+   "frame_w": 48,
+   "frame_h": 48,
+   "frames": 1,
+   "category": "tile",
+   "note": "multi-tile block: slice on the 16 px grid"
+  },
+  {
+   "id": "sdn_alchemist_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "alchemist",
+   "content_bbox": [
+    10,
+    14,
+    12,
+    18
+   ]
+  },
+  {
+   "id": "sdn_alchemist_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Alchemist/Alchemist_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "alchemist",
+   "content_bbox": [
+    9,
+    12,
+    13,
+    20
+   ]
+  },
+  {
+   "id": "sdn_archer_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "archer",
+   "content_bbox": [
+    6,
+    13,
+    16,
+    19
+   ],
+   "also_usable_as": [
+    "npc"
+   ]
+  },
+  {
+   "id": "sdn_archer_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Archer/Archer_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "archer",
+   "content_bbox": [
+    6,
+    12,
+    16,
+    20
+   ],
+   "also_usable_as": [
+    "npc"
+   ]
+  },
+  {
+   "id": "sdn_bishop_idle_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Bishop/Bishop_Idle + Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Bishop/Bishop_Idle + Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Bishop/Bishop_Idle + Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Bishop/Bishop_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "bishop",
+   "content_bbox": [
+    8,
+    5,
+    16,
+    27
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "enemy",
+    "boss"
+   ]
+  },
+  {
+   "id": "sdn_blacksmith_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "blacksmith",
+   "content_bbox": [
+    8,
+    11,
+    14,
+    21
+   ]
+  },
+  {
+   "id": "sdn_blacksmith_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Blacksmith/Blacksmith_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "blacksmith",
+   "content_bbox": [
+    7,
+    9,
+    16,
+    23
+   ]
+  },
+  {
+   "id": "sdn_butcher_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "butcher",
+   "content_bbox": [
+    9,
+    14,
+    15,
+    18
+   ],
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdn_butcher_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Butcher/Butcher_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "butcher",
+   "content_bbox": [
+    9,
+    11,
+    15,
+    21
+   ],
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdn_executioner_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "executioner",
+   "content_bbox": [
+    6,
+    2,
+    20,
+    30
+   ]
+  },
+  {
+   "id": "sdn_executioner_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Executioner/Executioner_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "executioner",
+   "content_bbox": [
+    5,
+    1,
+    22,
+    31
+   ]
+  },
+  {
+   "id": "sdn_herald_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "herald",
+   "content_bbox": [
+    9,
+    13,
+    15,
+    19
+   ]
+  },
+  {
+   "id": "sdn_herald_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Herald/Herald_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "herald",
+   "content_bbox": [
+    9,
+    11,
+    15,
+    21
+   ]
+  },
+  {
+   "id": "sdn_king_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "king",
+   "content_bbox": [
+    8,
+    11,
+    15,
+    21
+   ]
+  },
+  {
+   "id": "sdn_king_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/King/King_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "king",
+   "content_bbox": [
+    8,
+    9,
+    14,
+    23
+   ]
+  },
+  {
+   "id": "sdn_knight_elite_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "knight_elite",
+   "content_bbox": [
+    9,
+    12,
+    13,
+    20
+   ],
+   "also_usable_as": [
+    "hero"
+   ]
+  },
+  {
+   "id": "sdn_knight_elite_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Elite/EliteKnight_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "knight_elite",
+   "content_bbox": [
+    8,
+    10,
+    14,
+    22
+   ],
+   "also_usable_as": [
+    "hero"
+   ]
+  },
+  {
+   "id": "sdn_knight_heavy_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "knight_heavy",
+   "content_bbox": [
+    8,
+    13,
+    16,
+    19
+   ],
+   "also_usable_as": [
+    "hero"
+   ]
+  },
+  {
+   "id": "sdn_knight_heavy_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Heavy/HeavyKnight_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "knight_heavy",
+   "content_bbox": [
+    8,
+    11,
+    16,
+    21
+   ],
+   "also_usable_as": [
+    "hero"
+   ]
+  },
+  {
+   "id": "sdn_knight_standard_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "knight_standard",
+   "content_bbox": [
+    9,
+    14,
+    14,
+    18
+   ],
+   "also_usable_as": [
+    "hero"
+   ]
+  },
+  {
+   "id": "sdn_knight_standard_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Knight - Standard/Knight_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "knight_standard",
+   "content_bbox": [
+    9,
+    13,
+    14,
+    19
+   ],
+   "also_usable_as": [
+    "hero"
+   ]
+  },
+  {
+   "id": "sdn_large_knight_elite_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "large_knight_elite",
+   "content_bbox": [
+    1,
+    3,
+    28,
+    29
+   ]
+  },
+  {
+   "id": "sdn_large_knight_elite_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Elite/LargeEliteKnight_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "large_knight_elite",
+   "content_bbox": [
+    0,
+    1,
+    29,
+    31
+   ]
+  },
+  {
+   "id": "sdn_large_knight_standard_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "large_knight_standard",
+   "content_bbox": [
+    3,
+    3,
+    26,
+    29
+   ]
+  },
+  {
+   "id": "sdn_large_knight_standard_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Large Knight - Standard/LargeKnight_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "large_knight_standard",
+   "content_bbox": [
+    3,
+    1,
+    26,
+    31
+   ]
+  },
+  {
+   "id": "sdn_mage_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "mage",
+   "content_bbox": [
+    8,
+    13,
+    16,
+    19
+   ],
+   "also_usable_as": [
+    "npc"
+   ]
+  },
+  {
+   "id": "sdn_mage_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mage/Mage_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "mage",
+   "content_bbox": [
+    8,
+    12,
+    16,
+    20
+   ],
+   "also_usable_as": [
+    "npc"
+   ]
+  },
+  {
+   "id": "sdn_magic_shopkeeper_idle_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Magic Shopkeeper/MagicShopKeeper_Idle + Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Magic Shopkeeper/MagicShopKeeper_Idle + Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Magic Shopkeeper/MagicShopKeeper_Idle + Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Magic Shopkeeper/MagicShopKeeper_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "magic_shopkeeper",
+   "content_bbox": [
+    9,
+    15,
+    14,
+    17
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk"
+  },
+  {
+   "id": "sdn_merchant_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "merchant",
+   "content_bbox": [
+    9,
+    14,
+    13,
+    18
+   ]
+  },
+  {
+   "id": "sdn_merchant_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Merchant/Merchant_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "merchant",
+   "content_bbox": [
+    9,
+    12,
+    13,
+    20
+   ]
+  },
+  {
+   "id": "sdn_mountain_king_idle_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mountain King/MountainKing_Idle + Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mountain King/MountainKing_Idle + Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mountain King/MountainKing_Idle + Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Mountain King/MountainKing_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "mountain_king",
+   "content_bbox": [
+    8,
+    16,
+    16,
+    16
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk"
+  },
+  {
+   "id": "sdn_nun_fat_idle_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Fat/FatNun_Idle + Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Fat/FatNun_Idle + Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Fat/FatNun_Idle + Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Fat/FatNun_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "nun_fat",
+   "content_bbox": [
+    5,
+    16,
+    20,
+    16
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdn_nun_normal_idle_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Normal/NormalNun_Idle + Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Normal/NormalNun_Idle + Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Normal/NormalNun_Idle + Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Normal/NormalNun_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "nun_normal",
+   "content_bbox": [
+    8,
+    15,
+    15,
+    17
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdn_nun_tall_idle_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Tall/TallNun_Idle + Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Tall/TallNun_Idle + Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Tall/TallNun_Idle + Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Nun - Tall/TallNun_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "nun_tall",
+   "content_bbox": [
+    9,
+    12,
+    15,
+    20
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdn_princess_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "princess",
+   "content_bbox": [
+    7,
+    8,
+    16,
+    24
+   ]
+  },
+  {
+   "id": "sdn_princess_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Princess/Princess_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "princess",
+   "content_bbox": [
+    9,
+    6,
+    15,
+    26
+   ]
+  },
+  {
+   "id": "sdn_queen_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "queen",
+   "content_bbox": [
+    6,
+    14,
+    17,
+    18
+   ]
+  },
+  {
+   "id": "sdn_queen_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Queen/Queen_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "queen",
+   "content_bbox": [
+    8,
+    12,
+    16,
+    20
+   ]
+  },
+  {
+   "id": "sdn_thief_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "thief",
+   "content_bbox": [
+    10,
+    15,
+    12,
+    17
+   ],
+   "also_usable_as": [
+    "npc",
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdn_thief_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Thief/Thief_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "thief",
+   "content_bbox": [
+    9,
+    13,
+    13,
+    19
+   ],
+   "also_usable_as": [
+    "npc",
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdn_townsfolk_female_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "townsfolk_female",
+   "content_bbox": [
+    7,
+    16,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "sdn_townsfolk_female_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Female/Townsfolk_F_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "townsfolk_female",
+   "content_bbox": [
+    7,
+    16,
+    15,
+    16
+   ]
+  },
+  {
+   "id": "sdn_townsfolk_male_idle",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Idle_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Idle_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Idle_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "townsfolk_male",
+   "content_bbox": [
+    9,
+    13,
+    15,
+    19
+   ]
+  },
+  {
+   "id": "sdn_townsfolk_male_walk",
+   "pack": "superdark_fantasy_rpg_npcs",
+   "files": [
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Walk_1.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Walk_2.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Walk_3.png",
+    "superdark_fantasy_rpg_npcs/Fantasy RPG NPCs - Individuel Frames/Townsfolk - Male/Townsfolk_M_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "townsfolk_male",
+   "content_bbox": [
+    9,
+    11,
+    15,
+    21
+   ]
+  },
+  {
+   "id": "sdf_bandit_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "bandit",
+   "content_bbox": [
+    5,
+    15,
+    22,
+    17
+   ]
+  },
+  {
+   "id": "sdf_bandit_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bandit/Bandit_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "bandit",
+   "content_bbox": [
+    5,
+    12,
+    22,
+    20
+   ]
+  },
+  {
+   "id": "sdf_bear_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "bear",
+   "content_bbox": [
+    2,
+    10,
+    29,
+    22
+   ],
+   "also_usable_as": [
+    "boss"
+   ]
+  },
+  {
+   "id": "sdf_bear_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Bear/Bear_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "bear",
+   "content_bbox": [
+    0,
+    9,
+    31,
+    23
+   ],
+   "also_usable_as": [
+    "boss"
+   ]
+  },
+  {
+   "id": "sdf_centaur_male_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "centaur_male",
+   "content_bbox": [
+    4,
+    11,
+    21,
+    21
+   ]
+  },
+  {
+   "id": "sdf_centaur_male_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centaur - Male/Centaur_M_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "centaur_male",
+   "content_bbox": [
+    1,
+    9,
+    24,
+    23
+   ]
+  },
+  {
+   "id": "sdf_centuar_female_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "centuar_female",
+   "content_bbox": [
+    4,
+    11,
+    23,
+    21
+   ]
+  },
+  {
+   "id": "sdf_centuar_female_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Centuar - Female/Centaur_F_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "centuar_female",
+   "content_bbox": [
+    1,
+    9,
+    26,
+    23
+   ]
+  },
+  {
+   "id": "sdf_cleric_fat_idle_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Fat/FatCleric_Idle + Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Fat/FatCleric_Idle + Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Fat/FatCleric_Idle + Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Fat/FatCleric_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "cleric_fat",
+   "content_bbox": [
+    7,
+    17,
+    18,
+    15
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdf_cleric_normal_idle_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Normal/NormalCleric_Idle + Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Normal/NormalCleric_Idle + Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Normal/NormalCleric_Idle + Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Normal/NormalCleric_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "cleric_normal",
+   "content_bbox": [
+    9,
+    14,
+    14,
+    18
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdf_cleric_tall_idle_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Tall/TallCleric_Idle + Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Tall/TallCleric_Idle + Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Tall/TallCleric_Idle + Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Cleric - Tall/TallCleric_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "cleric_tall",
+   "content_bbox": [
+    10,
+    12,
+    12,
+    20
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdf_elf_female_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "elf_female",
+   "content_bbox": [
+    7,
+    16,
+    16,
+    16
+   ]
+  },
+  {
+   "id": "sdf_elf_female_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Female/Elf_F_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "elf_female",
+   "content_bbox": [
+    8,
+    15,
+    16,
+    17
+   ]
+  },
+  {
+   "id": "sdf_elf_male_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "elf_male",
+   "content_bbox": [
+    8,
+    14,
+    16,
+    18
+   ]
+  },
+  {
+   "id": "sdf_elf_male_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf - Male/Elf_M_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "elf_male",
+   "content_bbox": [
+    8,
+    12,
+    16,
+    20
+   ]
+  },
+  {
+   "id": "sdf_elf_princess_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "elf_princess",
+   "content_bbox": [
+    7,
+    15,
+    16,
+    17
+   ]
+  },
+  {
+   "id": "sdf_elf_princess_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elf Princess/HighElf_F_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "elf_princess",
+   "content_bbox": [
+    8,
+    15,
+    17,
+    17
+   ]
+  },
+  {
+   "id": "sdf_elven_king_idle_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven King/HighElf_M_Idle + Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven King/HighElf_M_Idle + Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven King/HighElf_M_Idle + Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven King/HighElf_M_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "elven_king",
+   "content_bbox": [
+    8,
+    9,
+    15,
+    23
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk"
+  },
+  {
+   "id": "sdf_elven_knight_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "elven_knight",
+   "content_bbox": [
+    9,
+    12,
+    13,
+    20
+   ],
+   "also_usable_as": [
+    "npc",
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdf_elven_knight_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Elven Knight/ElvenKnight_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "elven_knight",
+   "content_bbox": [
+    8,
+    10,
+    14,
+    22
+   ],
+   "also_usable_as": [
+    "npc",
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdf_ent_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "ent",
+   "content_bbox": [
+    4,
+    2,
+    23,
+    30
+   ],
+   "also_usable_as": [
+    "boss"
+   ]
+  },
+  {
+   "id": "sdf_ent_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ent/Ent_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "ent",
+   "content_bbox": [
+    4,
+    1,
+    23,
+    31
+   ],
+   "also_usable_as": [
+    "boss"
+   ]
+  },
+  {
+   "id": "sdf_fairy_idle_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Fairy/Fairy_Idle + Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Fairy/Fairy_Idle + Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Fairy/Fairy_Idle + Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Fairy/Fairy_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "familiar",
+   "character": "fairy",
+   "content_bbox": [
+    4,
+    15,
+    22,
+    17
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk"
+  },
+  {
+   "id": "sdf_forest_guardian_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "forest_guardian",
+   "content_bbox": [
+    2,
+    2,
+    28,
+    30
+   ],
+   "also_usable_as": [
+    "boss",
+    "hero"
+   ]
+  },
+  {
+   "id": "sdf_forest_guardian_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Forest Guardian/ForestGuardian_walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "forest_guardian",
+   "content_bbox": [
+    2,
+    0,
+    28,
+    32
+   ],
+   "also_usable_as": [
+    "boss",
+    "hero"
+   ]
+  },
+  {
+   "id": "sdf_gnoll_brute_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_brute",
+   "content_bbox": [
+    8,
+    14,
+    16,
+    18
+   ]
+  },
+  {
+   "id": "sdf_gnoll_brute_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Brute/GnollBrute_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_brute",
+   "content_bbox": [
+    8,
+    11,
+    16,
+    21
+   ]
+  },
+  {
+   "id": "sdf_gnoll_overseer_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_overseer",
+   "content_bbox": [
+    2,
+    5,
+    25,
+    27
+   ]
+  },
+  {
+   "id": "sdf_gnoll_overseer_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Overseer/GnollOverseer_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_overseer",
+   "content_bbox": [
+    2,
+    2,
+    25,
+    30
+   ]
+  },
+  {
+   "id": "sdf_gnoll_scout_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_scout",
+   "content_bbox": [
+    6,
+    14,
+    16,
+    18
+   ]
+  },
+  {
+   "id": "sdf_gnoll_scout_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Scout/GnollScout_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_scout",
+   "content_bbox": [
+    6,
+    11,
+    16,
+    21
+   ]
+  },
+  {
+   "id": "sdf_gnoll_shaman_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_shaman",
+   "content_bbox": [
+    6,
+    14,
+    16,
+    18
+   ]
+  },
+  {
+   "id": "sdf_gnoll_shaman_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Gnoll - Shaman/GnollShaman_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "gnoll_shaman",
+   "content_bbox": [
+    6,
+    11,
+    16,
+    21
+   ]
+  },
+  {
+   "id": "sdf_golem_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Idle_4.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Idle_5.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Idle_6.png"
+   ],
+   "frame_w": 64,
+   "frame_h": 64,
+   "frames": 6,
+   "category": "boss",
+   "character": "golem",
+   "content_bbox": [
+    9,
+    29,
+    48,
+    35
+   ]
+  },
+  {
+   "id": "sdf_golem_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Walk_4.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Walk_5.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Golem/Golem_Walk_6.png"
+   ],
+   "frame_w": 64,
+   "frame_h": 64,
+   "frames": 6,
+   "category": "boss",
+   "character": "golem",
+   "content_bbox": [
+    9,
+    26,
+    48,
+    38
+   ]
+  },
+  {
+   "id": "sdf_mushroom_large_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "mushroom_large",
+   "content_bbox": [
+    5,
+    5,
+    22,
+    27
+   ]
+  },
+  {
+   "id": "sdf_mushroom_large_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Large/LargeMushroom_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "mushroom_large",
+   "content_bbox": [
+    5,
+    3,
+    22,
+    29
+   ]
+  },
+  {
+   "id": "sdf_mushroom_normal_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "mushroom_normal",
+   "content_bbox": [
+    9,
+    13,
+    14,
+    19
+   ]
+  },
+  {
+   "id": "sdf_mushroom_normal_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Normal/NormalMushroom_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "mushroom_normal",
+   "content_bbox": [
+    9,
+    11,
+    14,
+    21
+   ]
+  },
+  {
+   "id": "sdf_mushroom_small_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "familiar",
+   "character": "mushroom_small",
+   "content_bbox": [
+    9,
+    18,
+    14,
+    14
+   ],
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdf_mushroom_small_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Mushroom - Small/SmallMushroom_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "familiar",
+   "character": "mushroom_small",
+   "content_bbox": [
+    8,
+    16,
+    15,
+    16
+   ],
+   "also_usable_as": [
+    "enemy"
+   ]
+  },
+  {
+   "id": "sdf_ranger_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "ranger",
+   "content_bbox": [
+    4,
+    9,
+    21,
+    23
+   ],
+   "also_usable_as": [
+    "npc"
+   ]
+  },
+  {
+   "id": "sdf_ranger_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Ranger/Ranger_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "hero",
+   "character": "ranger",
+   "content_bbox": [
+    3,
+    7,
+    22,
+    25
+   ],
+   "also_usable_as": [
+    "npc"
+   ]
+  },
+  {
+   "id": "sdf_troll_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "troll",
+   "content_bbox": [
+    3,
+    1,
+    29,
+    31
+   ]
+  },
+  {
+   "id": "sdf_troll_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Troll/Troll_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "boss",
+   "character": "troll",
+   "content_bbox": [
+    1,
+    0,
+    31,
+    32
+   ]
+  },
+  {
+   "id": "sdf_wizard_idle_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wizard/Wizard_Idle + Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wizard/Wizard_Idle + Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wizard/Wizard_Idle + Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wizard/Wizard_Idle + Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "npc",
+   "character": "wizard",
+   "content_bbox": [
+    7,
+    6,
+    20,
+    26
+   ],
+   "note": "one 4-frame loop shipped for both idle and walk",
+   "also_usable_as": [
+    "hero"
+   ]
+  },
+  {
+   "id": "sdf_wolf_idle",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Idle_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Idle_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Idle_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Idle_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "wolf",
+   "content_bbox": [
+    2,
+    15,
+    27,
+    17
+   ],
+   "also_usable_as": [
+    "familiar"
+   ]
+  },
+  {
+   "id": "sdf_wolf_walk",
+   "pack": "superdark_enchanted_forest",
+   "files": [
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Walk_1.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Walk_2.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Walk_3.png",
+    "superdark_enchanted_forest/Enchanted Forest - Individual Frames/Wolf/Wolf_Walk_4.png"
+   ],
+   "frame_w": 32,
+   "frame_h": 32,
+   "frames": 4,
+   "category": "enemy",
+   "character": "wolf",
+   "content_bbox": [
+    1,
+    13,
+    30,
+    19
+   ],
+   "also_usable_as": [
+    "familiar"
+   ]
+  }
+ ]
+}

@@ -2,7 +2,10 @@ extends CanvasLayer
 ## Touch controls: two floating sticks and three buttons, drawn with plain shapes.
 ##   A stick appears where the thumb lands. Left half of the screen moves, right half aims
 ##   and fires (the other way round when "Left-handed sticks" is on in Settings).
-##   Bomb and Action sit on the edge of the aiming side, above where that thumb rests.
+##   Bomb and CALL sit on the edge of the aiming side, above where that thumb rests.
+##   CALL is the game's second button: it calls the Hungry Curse (Controls.press_action()). It
+##   shows the pack's skull, is lit only while a call would work (a fight is on and the Curse is
+##   creeping), and a ring around it fills up again while the cooldown runs.
 ##   Pause is the small button in the top right corner.
 ## Every finger is tracked by its own number, so both sticks work at once and a finger that
 ## started on a button never drags a stick. The results go to scripts/core/controls.gd
@@ -18,6 +21,8 @@ const BUTTON_R := 14.0          ## visible button radius (28 px across)
 const HIT_PAD := 9.0            ## invisible extra reach around every button
 const PAUSE_SIZE := 20.0
 const ALPHA := 0.35
+const CALL_LABEL := "CALL"                     ## the word under the second button
+const CALL_GOLD := Color(0.98, 0.90, 0.58)     ## the Hungry Curse's pale gold
 
 var active := false
 var _fingers := {}              ## finger number -> "move", "aim", "bomb", "action", "pause" or "none"
@@ -29,6 +34,12 @@ var _bombs := 0
 var _action_shown := false
 var _canvas: Control
 var _bomb_tex: Texture2D
+var _skull_tex: Texture2D
+var _skull_region := Rect2()
+var _call_fill := 1.0           ## 0..1: how far the CALL cooldown has recovered
+var _call_ready := false        ## pressing CALL would work right now
+var _call_pulse := false        ## the first-run lesson points at the button
+var _pulse_t := 0.0
 var _pressed_flash := {"bomb": 0.0, "action": 0.0, "pause": 0.0}
 
 
@@ -36,6 +47,8 @@ func _ready() -> void:
 	layer = G.LAYER_TOUCH
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bomb_tex = Art.tex("bomb")
+	_skull_tex = Art.tex("skull")
+	_skull_region = UI.used_rect("skull")
 	_canvas = Control.new()
 	_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -44,6 +57,7 @@ func _ready() -> void:
 	add_child(_canvas)
 	G.hud_changed.connect(_read_bombs)
 	G.player_hurt.connect(func(_n: int) -> void: _buzz(30))
+	G.buzz.connect(_buzz)
 	Controls.device_changed.connect(func(_t: bool) -> void: _update_visible())
 	get_viewport().size_changed.connect(_canvas.queue_redraw)
 	_update_visible()
@@ -93,10 +107,32 @@ func _process(delta: float) -> void:
 	if Controls.action_enabled != _action_shown:
 		_action_shown = Controls.action_enabled
 		_canvas.queue_redraw()
+	if Controls.action_enabled:
+		_read_call(delta)
 	for key: String in _pressed_flash:
 		if _pressed_flash[key] > 0.0:
 			_pressed_flash[key] = maxf(_pressed_flash[key] - delta * 5.0, 0.0)
 			_canvas.queue_redraw()
+
+
+## What the CALL button shows comes from the run (see "run.call_*" in scripts/core/g.gd).
+func _read_call(delta: float) -> void:
+	var fill := 1.0
+	var ready := false
+	var pulse := false
+	if is_instance_valid(G.run):
+		var f: Variant = G.run.get("call_fill")
+		if f is float:
+			fill = f
+		ready = G.run.get("call_ready") == true
+		pulse = G.run.get("call_pulse") == true
+	if pulse:
+		_pulse_t += delta
+	if not is_equal_approx(fill, _call_fill) or ready != _call_ready or pulse != _call_pulse or pulse:
+		_call_fill = fill
+		_call_ready = ready
+		_call_pulse = pulse
+		_canvas.queue_redraw()
 
 
 func _buzz(msec: int) -> void:
@@ -251,12 +287,26 @@ func _draw_controls() -> void:
 	_canvas.draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * dim))
 	_canvas.draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(UI.C_BONE, dim))
 
-	# action: only when the game switches it on; a plain diamond
+	# CALL: the pack's skull (drawn at twice its size), lit only while a call would work,
+	# with a ring that fills up again while the cooldown runs
 	if Controls.action_enabled:
 		var ac := _button_centre("action")
-		_round_button(ac, _pressed_flash["action"], 1.0)
-		var d := 6.0
-		_canvas.draw_colored_polygon(PackedVector2Array([ac + Vector2(0, -d), ac + Vector2(d, 0), ac + Vector2(0, d), ac + Vector2(-d, 0)]), Color(UI.C_GOLD, 0.85))
+		var lit := 1.0 if _call_ready else 0.4
+		_round_button(ac, _pressed_flash["action"], lit)
+		var skull_size := _skull_region.size * 2.0
+		_canvas.draw_texture_rect_region(_skull_tex, Rect2((ac - skull_size / 2.0 + Vector2(0, -1)).round(), skull_size), _skull_region, Color(CALL_GOLD, 0.95 * lit))
+		if _call_fill < 1.0:
+			_canvas.draw_arc(ac, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _call_fill, 32, Color(CALL_GOLD, 0.85), 2.0, true)
+		elif _call_ready:
+			_canvas.draw_arc(ac, BUTTON_R - 2.5, 0.0, TAU, 32, Color(CALL_GOLD, 0.9), 1.5, true)
+		if _call_pulse:
+			# the first-run lesson: a ring closes in on the button again and again
+			var k := fmod(_pulse_t * 1.4, 1.0)
+			_canvas.draw_arc(ac, BUTTON_R + 10.0 * (1.0 - k), 0.0, TAU, 32, Color(CALL_GOLD, 0.25 + 0.6 * k), 2.0, true)
+		var lw := font.get_string_size(CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
+		var lp := Vector2(roundf(ac.x - lw / 2.0), ac.y + 12.0)
+		_canvas.draw_string_outline(font, lp, CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))
+		_canvas.draw_string(font, lp, CALL_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(CALL_GOLD, lit))
 
 	# pause: two bars in a small square
 	var pc := _button_centre("pause")

@@ -22,8 +22,12 @@ item makes it bigger.
   code-drawn disc).
 - Every asset must be human-made with a licence that allows a commercial closed-source game
   (CC0 preferred; CC-BY / OFL only for music and fonts). Record each one in `scripts/data/credits.gd`.
-  Raw downloads with their licence evidence live in `assets_raw/` (not in git).
-- **The GitHub repo is public.** Never commit signing keys or paid assets.
+  Raw downloads with their licence evidence live in `assets_raw/` (each pack has a SOURCE.txt; the two
+  biggest audio source folders are not in git, their notes are in `assets_raw/licence_notes/`).
+- **The GitHub repo must stay PRIVATE.** It holds the purchased "Pixel Crawler" art by Anokolisa
+  (`assets_raw/paid_pixel_crawler/zips/`, bought by the owner in Nov 2026: commercial use allowed, no
+  reselling or sharing of the art itself; terms are in each pack's Terms.txt). Never copy it anywhere public.
+  The signing key is not in the repo.
 - Original game: no names, items, enemies, bosses, layouts or text copied from existing games.
   Do not reuse ideas from the owner's older games in this repo (no "echo", no recorded past self).
 - No `class_name`; use `const X = preload("res://...")`.

@@ -7,14 +7,28 @@ extends Node
 ## sidesteps shots that come close. Between fights it grabs pickups, opens chests, takes items,
 ## shops, hunts for the secret room with a bomb, clears every room, then fights the boss and
 ## takes the exit.
+## THE HUNGRY CURSE: the bot plays it in one of three styles, chosen with --botstyle=
+##   dodge    steps off a locked stripe and never walks into a lit rim. Nothing else.
+##   feeder   (the default) also stands so that the most enemies lie on the line between the
+##            disc and itself when a lunge is near, and bombs the disc when its belly is full
+##   caller   also presses CALL when 2 or more enemies are on that line and the disc is 40+ px away
+## It logs every meal, bite and belly cough, and the RESULT line carries the Curse's numbers.
 ## It prints one line per event starting with "AUTOTEST ", restarts the run when it dies, and
 ## after --time=<game seconds> prints "AUTOTEST RESULT {json}" and quits with exit code 0.
 
 const RoomScript = preload("res://scripts/run/room.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
+const Curse = preload("res://scripts/entities/curse.gd")
 
 const DEFAULT_TIME := 600.0
+const STYLES: Array[String] = ["dodge", "feeder", "caller"]
+const CALL_MIN_ENEMIES := 2      ## caller: enemies on the line before it presses CALL
+const CALL_MIN_DIST := 40.0      ## caller: ... and the disc at least this far away
+const FEED_FROM_FILL := 0.45     ## feeder: starts lining enemies up when the lunge timer is this full
+const BOMB_BELLY := 5            ## feeder: bombs the disc when its belly holds this much (or is full)
+const CURSED_UP_TO := 2          ## it takes cursed items only below this Curse Level
+const STARVE_FROM := 3           ## it buys "Starve the Curse" from this Curse Level
 
 var run: Node
 var time_limit := DEFAULT_TIME
@@ -34,6 +48,14 @@ var items_taken := 0
 var secrets := 0
 var damage := 0
 var base_seed := 0
+# ---- the Hungry Curse
+var style := "feeder"
+var tally := {}                  ## counters by G.stat key (curse_meals, curse_bites, belly_coins ...)
+var kills_f1 := 0
+var boss_bite_now := 0           ## thousandths of the current boss's health eaten by the Curse
+var boss_bite_max := 0
+var _bomb_spot := Vector2.INF    ## a bomb we dropped for the Curse: keep away from it
+var _bomb_spot_t := 0.0
 
 var _restart := false
 var _done := false
@@ -62,6 +84,9 @@ func setup(the_run: Node) -> void:
 	base_seed = run.seed_value
 	max_floor = run.floor_index + 1
 	time_limit = float(G.arg("time", str(DEFAULT_TIME)))
+	style = G.arg("botstyle", "feeder")
+	if not STYLES.has(style):
+		style = "feeder"
 	Controls.bot = true
 	G.room_cleared.connect(_on_room_cleared)
 	G.item_acquired.connect(func(id: String) -> void:
@@ -69,6 +94,7 @@ func setup(the_run: Node) -> void:
 		_log("item %s" % id))
 	G.boss_started.connect(func(b: Node) -> void:
 		boss_starts += 1
+		boss_bite_now = 0
 		if run.floor_index == 0:
 			floor1_boss_starts += 1
 		_log("boss_start %s hp=%d player_hp=%d" % [b.boss_id, int(b.max_hp), run.player.hp + run.player.armor]))
@@ -87,6 +113,7 @@ func setup(the_run: Node) -> void:
 		if key == "secret_found":
 			secrets += 1
 			_log("secret_found"))
+	G.stat.connect(_on_curse_stat)
 	G.run_ended.connect(_on_run_ended)
 	_log("start hero=%s seed=%d floor=%d \"%s\" rooms=%d" % [run.hero_id, run.seed_value, run.floor_index + 1, run.floor_name, run.rooms.size()])
 
@@ -99,6 +126,32 @@ func _exit_tree() -> void:
 
 func _log(text: String) -> void:
 	print("AUTOTEST t=%.1f f%d %s" % [total_time, run.floor_index + 1, text])
+
+
+## Counts everything the Hungry Curse reports and logs the moments worth reading back.
+func _on_curse_stat(key: String, n: int) -> void:
+	tally[key] = int(tally.get(key, 0)) + n
+	match key:
+		"kills":
+			if run.floor_index == 0:
+				kills_f1 += n
+		"curse_meals":
+			_log("meal belly=%d/%d meals=%d" % [run.belly, run.belly_cap(), int(tally[key])])
+		"curse_bites":
+			_log("bite level=%d hp=%d/%d armor=%d" % [run.curse_level, run.player.hp, run.player.max_hp, run.player.armor])
+		"belly_coins":
+			if n > 1:
+				_log("belly_cough coins=%d" % n)
+		"curse_feast":
+			_log("feast")
+		"curse_boss_permille":
+			boss_bite_now += n
+			boss_bite_max = maxi(boss_bite_max, boss_bite_now)
+			_log("boss_bite %.1f%% (this boss %.1f%%)" % [n / 10.0, boss_bite_now / 10.0])
+		"wall_cracked":
+			_log("wall_cracked")
+		"curse_starved":
+			_log("starved level=%d" % run.curse_level)
 
 
 func _on_room_cleared(coord: Vector2i) -> void:
@@ -134,6 +187,33 @@ func _finish() -> void:
 		"floor1_boss_starts": floor1_boss_starts, "floor1_boss_kills": floor1_boss_kills,
 		"items": items_taken, "secrets": secrets, "damage_taken": damage,
 	}
+	# ---- the Hungry Curse
+	var kills_all := int(tally.get("kills", 0))
+	var meals := int(tally.get("curse_meals", 0))
+	var bite_dmg := int(tally.get("curse_bite_damage", 0))
+	var coins := int(tally.get("coins", 0))
+	result["style"] = style
+	result["kills"] = kills_all
+	result["curse_meals"] = meals
+	result["curse_kill_pct"] = snappedf(100.0 * meals / maxf(1.0, float(kills_all)), 0.1)
+	result["kills_f1"] = kills_f1
+	result["curse_meals_f1"] = int(tally.get("curse_meals_f1", 0))
+	result["curse_kill_pct_f1"] = snappedf(100.0 * float(tally.get("curse_meals_f1", 0)) / maxf(1.0, float(kills_f1)), 0.1)
+	result["bites"] = int(tally.get("curse_bites", 0))
+	result["bites_warded"] = int(tally.get("curse_bites_warded", 0))
+	result["bites_per_run"] = snappedf(float(tally.get("curse_bites", 0)) / float(runs), 0.1)
+	result["bite_damage"] = bite_dmg
+	result["bite_damage_pct"] = snappedf(100.0 * bite_dmg / maxf(1.0, float(damage)), 0.1)
+	result["lunges"] = int(tally.get("curse_lunges", 0))
+	result["calls"] = int(tally.get("curse_calls", 0))
+	result["feasts"] = int(tally.get("curse_feast", 0))
+	result["stuns"] = int(tally.get("curse_stunned", 0))
+	result["shots_eaten"] = int(tally.get("curse_shots_eaten", 0))
+	result["coins"] = coins
+	result["belly_coins"] = int(tally.get("belly_coins", 0))
+	result["belly_coin_pct"] = snappedf(100.0 * float(tally.get("belly_coins", 0)) / maxf(1.0, float(coins)), 0.1)
+	result["boss_bite_pct_avg"] = snappedf(float(tally.get("curse_boss_permille", 0)) / 10.0 / maxf(1.0, float(boss_starts)), 0.1)
+	result["boss_bite_pct_max"] = snappedf(boss_bite_max / 10.0, 0.1)
 	print("AUTOTEST RESULT " + JSON.stringify(result))
 	get_tree().quit(0)
 
@@ -269,7 +349,102 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 	# ---- do not hug walls, do not stand on spikes
 	move += _wall_push(pos) * 1.2
 	move += _spike_push(room, pos) * 2.0
+	# ---- the Hungry Curse
+	var curse: Node2D = room.curse
+	if curse != null and is_instance_valid(curse) and curse.solid:
+		move = _curse_moves(p, room, curse, move.limit_length(1.0), delta)
 	return [move.limit_length(1.0) if move.length() > 0.15 else Vector2.ZERO, aim]
+
+
+# =============================================================================== the Hungry Curse
+## How many enemies the disc would sweep up if it lunged from where it is through `through`.
+func _on_line(room: Node, curse: Node2D, through: Vector2) -> float:
+	var from: Vector2 = curse.position
+	var dir := through - from
+	if dir.length() < 1.0:
+		return 0.0
+	dir = dir.normalized()
+	var to := from + dir * 400.0
+	var n := 0.0
+	for e in room.enemies:
+		if not e.hittable:
+			continue
+		var reach: float = curse.radius + e.radius - 1.0
+		if Curse.seg_dist2(e.position, from, to) < reach * reach:
+			n += 0.5 if e.has_method("bitten") else 1.0
+	return n
+
+
+## Changes the move the fight wanted so that it suits the Curse: off the stripe, away from a lit
+## rim, and (feeder, caller) onto the spot that lines the most enemies up for the next lunge.
+func _curse_moves(p: Node, room: Node, curse: Node2D, move: Vector2, delta: float) -> Vector2:
+	var pos: Vector2 = p.position
+	var cpos: Vector2 = curse.position
+	var r: float = curse.radius
+	var state: int = curse.state
+	_bomb_spot_t = maxf(0.0, _bomb_spot_t - delta)
+	# ---- 1. step off a locked stripe (every style)
+	if state == Curse.LOCK or state == Curse.LUNGE:
+		var dir: Vector2 = curse.aim_dir
+		var rel := pos - cpos
+		var along := rel.dot(dir)
+		var side_off := rel.cross(dir)             # signed distance from the stripe's middle line
+		var need := r + Curse.HERO_BITE_PAD + 7.0
+		if along > -need and absf(side_off) < need:
+			var side: Vector2 = dir.orthogonal() * (-1.0 if side_off >= 0.0 else 1.0)
+			var goal := pos + side * (need - absf(side_off) + 4.0)
+			if goal.x < 6.0 or goal.y < 6.0 or goal.x > G.ROOM_W - 6.0 or goal.y > G.ROOM_H - 6.0 or room.blocks_walk(G.cell_of(goal)):
+				side = -side                       # a wall is in the way: cross to the other side
+			return side
+	if not curse.lit():
+		return move
+	# ---- 2. never walk into a lit rim (every style)
+	var away := pos - cpos
+	var dist := away.length()
+	var keep := r + 16.0
+	if dist < keep and dist > 0.01:
+		move += away / dist * 3.0 * (keep - dist) / 16.0
+	var next := pos + move.limit_length(1.0) * 22.0
+	if next.distance_to(cpos) < r + 8.0 and dist > 0.01:
+		var inward := -away / dist
+		move -= inward * maxf(0.0, move.dot(inward))      # slide past it instead of through it
+	if style == "dodge":
+		return move
+	# ---- 3. a bomb for a full belly (feeder, caller)
+	if _bomb_spot_t > 0.0 and pos.distance_to(_bomb_spot) < 44.0:
+		move += (pos - _bomb_spot).normalized() * 3.0
+	elif p.bombs > 0 and state == Curse.CREEP and run.belly >= mini(BOMB_BELLY, run.belly_cap()) \
+			and dist < r + Curse.BOMB_REACH - 8.0 and dist > r + 12.0:
+		Controls.press_bomb()
+		_bomb_spot = pos
+		_bomb_spot_t = 1.8
+		_log("bombs the Curse belly=%d" % run.belly)
+	# ---- 4. line the enemies up (feeder, caller)
+	if state == Curse.FOLLOW or (state == Curse.CREEP and (curse.fill >= FEED_FROM_FILL or style == "caller")):
+		var best := pos
+		var best_score := _on_line(room, curse, pos)
+		var here_score := best_score
+		for ring: float in [20.0, 40.0]:
+			for k in 12:
+				var c := pos + Vector2.RIGHT.rotated(TAU * k / 12.0) * ring
+				if c.x < 12.0 or c.y < 12.0 or c.x > G.ROOM_W - 12.0 or c.y > G.ROOM_H - 12.0 or room.blocks_walk(G.cell_of(c)):
+					continue
+				if c.distance_to(cpos) < r + 34.0:
+					continue
+				var score := _on_line(room, curse, c) - ring * 0.006
+				for e in room.enemies:
+					if (e.position as Vector2).distance_to(c) < 26.0:
+						score -= 0.7
+				if score > best_score + 0.01:
+					best_score = score
+					best = c
+		if best != pos and best_score >= 1.0:
+			move = move * 0.35 + (best - pos).normalized()
+		elif here_score >= 1.0 and state == Curse.FOLLOW:
+			move *= 0.3                                    # good spot: hold it while the stripe sweeps
+		if style == "caller" and here_score >= CALL_MIN_ENEMIES and dist >= CALL_MIN_DIST and curse.can_call():
+			Controls.press_action()
+	return move
 
 
 func _wall_push(pos: Vector2) -> Vector2:

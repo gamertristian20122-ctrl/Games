@@ -1,0 +1,23 @@
+Pack: 100 CC0 metal and wood SFX
+Page: https://opengameart.org/content/100-cc0-metal-and-wood-sfx
+Author: rubberduck  (https://opengameart.org/users/rubberduck)
+Published on the page: 2018-07-04
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/)
+
+Human-made evidence: Published 2018 by the same author as the recorded packs above; description: "This sfx pack contains 100 metal and wood sounds" (real-object foley: keys, locks, doors, hammers).
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  100-CC0-wood-metal-SFX.zip
+    from https://opengameart.org/sites/default/files/100-CC0-wood-metal-SFX.zip
+    sha256 be6eba63b03409ac0c77787a956b1503a7c186403d04aef9725c52644a4b7878  (1990361 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  keys_06.ogg
+  lock_open_01.ogg
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

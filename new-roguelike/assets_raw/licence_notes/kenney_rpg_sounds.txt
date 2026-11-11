@@ -1,0 +1,28 @@
+Pack: 50 RPG sound effects (Kenney "RPG Audio")
+Page: https://opengameart.org/content/50-rpg-sound-effects
+Author: Kenney (Kenney Vleugels, www.kenney.nl)  (https://opengameart.org/users/kenney)
+Published on the page: 2014-03-17
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/); bundled license.txt, verbatim: "License (CC0) http://creativecommons.org/publicdomain/zero/1.0/ You may use these graphics in personal and commercial projects. Credit (Kenney or www.kenney.nl) would be nice but is not mandatory."
+
+Human-made evidence: Published 2014 by Kenney Vleugels; foley recordings (doors, footsteps, knives, coins).
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  RPGsounds_Kenney.zip
+    from https://opengameart.org/sites/default/files/RPGsounds_Kenney.zip
+    sha256 3ae398ad63e293f9c450bda22d5d81c3af69c74df66fc1400f33c012c0bbc231  (690952 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  OGG/bookPlace2.ogg
+  OGG/doorClose_1.ogg
+  OGG/doorOpen_1.ogg
+  OGG/footstep00.ogg
+  OGG/footstep01.ogg
+  OGG/footstep07.ogg
+  OGG/footstep08.ogg
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

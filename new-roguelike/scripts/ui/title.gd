@@ -4,7 +4,11 @@ extends "res://scripts/ui/screen.gd"
 
 const Heroes = preload("res://scripts/data/heroes.gd")
 
+## The one line under the game's name: what makes this game different.
+const TAGLINE := "Your Curse is awake. It eats everything. Make it eat them."
+
 var _name_label: Label
+var _tag_label: Label
 var _column: VBoxContainer
 
 
@@ -27,6 +31,15 @@ func build() -> void:
 	_name_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	_name_label.offset_top = 2
 	area.add_child(_name_label)
+
+	_tag_label = UI.label(TAGLINE, "Small")
+	_tag_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_tag_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tag_label.add_theme_color_override("font_color", Color(0.98, 0.90, 0.58))
+	_tag_label.add_theme_color_override("font_outline_color", UI.C_INK)
+	_tag_label.add_theme_constant_override("outline_size", 3)
+	_tag_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	area.add_child(_tag_label)
 
 	_column = UI.vbox(3)
 	_column.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
@@ -61,6 +74,7 @@ func build() -> void:
 	refresh()
 	UI.pop_in(_column, Vector2(8, 0))
 	UI.pop_in(_name_label, Vector2(0, -6))
+	UI.pop_in(_tag_label, Vector2(0, -3))
 
 
 ## The hero you played last stands in the picture (the first hero on a fresh save).
@@ -75,6 +89,8 @@ func refresh() -> void:
 
 func _fit() -> void:
 	UI.fit_title(_name_label, maxf(size.x - 28.0, 120.0))
+	# the tagline sits right under the name, whatever size the name ended up
+	_tag_label.offset_top = _name_label.offset_top + _name_label.get_minimum_size().y - 1.0
 
 
 ## Back on the title means "leave the game?".

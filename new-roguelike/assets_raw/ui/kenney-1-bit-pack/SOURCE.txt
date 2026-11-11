@@ -1,0 +1,13 @@
+Pack: 1-Bit Pack (1.1)
+Author: Kenney (Kenney Vleugels, www.kenney.nl)
+Source URL: https://opengameart.org/content/1-bit-pack
+Also at: https://kenney-assets.itch.io/1-bit-pack and https://kenney.nl/assets/1-bit-pack
+Download URL: https://opengameart.org/sites/default/files/1bitpack_kenney_1.1.zip
+Original archive: 1bitpack_kenney_1.1.zip sha256 7ca44530b7e04ec06c63fcd90a14fe60ce5a1f998a41f33e7408e57226570d8e
+Licence: CC0 1.0 (public domain dedication)
+Licence quote (bundled License.txt): "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/ This content is free to use in personal, educational and commercial projects. Support us by crediting Kenney or www.kenney.nl (this is not mandatory)"
+Licence quote (OpenGameArt licence field): "License(s): CC0"
+Published: 2019-05-06 (OpenGameArt submission by Kenney); License.txt: "Creation date: 06-05-2020" for version 1.1
+Retrieved: 2026-11-11
+Human-made evidence: Published 2019/2020, before generative image tools existed. The author's itch.io page for this pack carries the disclosure "No generative AI was used".
+Notes: Use Tilesheet/monochrome_transparent_packed.png: 48 x 22 tiles of 16x16, white on transparent, so every icon can be tinted in engine (modulate). The non-"packed" sheets have a 1 px gap between tiles. Also holds usable 16x16 projectile sprites (daggers, arrows, bone) - see the manifest.

@@ -1,0 +1,12 @@
+Pack: Animated Fires
+Author: stealthix
+Source URL: https://opengameart.org/content/animated-fires
+Download URL: https://opengameart.org/sites/default/files/Fires.zip
+Original archive: Fires.zip sha256 c716e8f46c85b2df8a102fd7c8db4003ee11b97a66bfe679af56809c91de9f71
+Licence: CC0 1.0 (public domain dedication)
+Licence quote (page description): "This asset is released under CC-0, you may use it however you want :)"
+Licence quote (page licence field): "License(s): CC0"
+Published: 2019-04-16 (OpenGameArt submission date; files inside the zip are dated 2019-04-16)
+Retrieved: 2026-11-11
+Human-made evidence: Published April 2019, before generative image tools existed. Author states "I've used the Endesga 32 Palette to create these." Hard-edged palette pixel art.
+Notes: Cover.gif (228 KB preview) left inside the zip only. Sheets are 10 columns x 6 rows read row by row. Fireball/Iceball/Poisonball fly LEFT (head at left, trail right); the Small and Jumping variants fly UP. Jumping_Small_Poisonball sheet is 140x246 but its real grid is 13x40 (10 px unused on the right, 6 px at the bottom); Iceball sheet has one empty 7th row.
