@@ -47,6 +47,7 @@ const ARM_BODY := 14.0               # half the length of the flying arm
 const BEAM_HALF := 6.0
 const WAVE_GAP := 0.45               # s between the fist and each shockwave band
 const SWEEP_HOLD := 0.3              # s the phase-2 beam stands on its first edge before it turns
+const WEDGE_EXTRA := 0.07            # rad the red wedge is wider than the beam's travel, each side (the beam has a width)
 const GUARD_WARN := 0.7
 const BLAST_WARN := 0.7
 const BLAST_RADIUS := 20.0
@@ -277,7 +278,7 @@ func _begin_laser(e, mean: bool) -> void:
 		a0 = aim - side * turn * 0.35
 		a1 = aim + side * turn * 0.65
 		# the wedge: all the ground the beam will cross
-		e.mark_cone(from, Vector2.RIGHT.rotated((a0 + a1) * 0.5), LASER_REACH, turn * 0.5, warn)
+		e.mark_cone(from, Vector2.RIGHT.rotated((a0 + a1) * 0.5), LASER_REACH, turn * 0.5 + WEDGE_EXTRA, warn)
 	e.mem["beam_from"] = from
 	e.mem["beam_px"] = e.muzzle_px("cast")
 	e.mem["a0"] = a0
@@ -326,7 +327,7 @@ func _beam_on(e, _frame: int) -> void:
 	if mean:
 		# the wedge stays on the floor (and fills again) for as long as the beam turns
 		var mid := Vector2.RIGHT.rotated((float(e.mem["a0"]) + float(e.mem["a1"])) * 0.5)
-		e.mark_cone(e.mem["beam_from"], mid, LASER_REACH, float(e.p.get("sweep", 0.85)) * 0.5, SWEEP_HOLD + float(e.p.get("sweep_time", 1.6)))
+		e.mark_cone(e.mem["beam_from"], mid, LASER_REACH, float(e.p.get("sweep", 0.85)) * 0.5 + WEDGE_EXTRA, SWEEP_HOLD + float(e.p.get("sweep_time", 1.6)))
 	_burn(e, 0.0, mean)
 
 

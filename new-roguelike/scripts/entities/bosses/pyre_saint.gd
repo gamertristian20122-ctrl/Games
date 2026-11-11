@@ -227,7 +227,7 @@ func _swoop_ends(e, mean: bool) -> void:
 	Sfx.play("rock_break", -6.0, 0.06, 0.9)
 	e.mem["legs"] = int(e.mem["legs"]) - 1
 	if int(e.mem["legs"]) > 0:
-		_begin_swoop(e, float(e.p.get("rebound_warn", 0.65)) * (0.85 if mean else 1.0))
+		_begin_swoop(e, float(e.p.get("rebound_warn", 0.85)) * (0.85 if mean else 1.0))
 		return
 	e.state = REST                         # it hangs where it stopped for a moment
 	e.t = 0.7 if mean else 1.0
