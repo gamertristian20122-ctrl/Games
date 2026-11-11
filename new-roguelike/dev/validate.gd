@@ -14,6 +14,7 @@ const Pickups = preload("res://scripts/data/pickups.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const ShotTypes = preload("res://scripts/data/shot_types.gd")
 const Stats = preload("res://scripts/run/stats.gd")
+const RoomLook = preload("res://scripts/run/room_look.gd")
 const CurseTests = preload("res://dev/curse_tests.gd")
 
 const POOLS := ["treasure", "boss", "shop", "secret", "cursed"]
@@ -166,6 +167,37 @@ static func all() -> Array[String]:
 		for id in pool:
 			if not Enemies.ALL.has(id):
 				out.append("floor %d: unknown enemy '%s'" % [i + 1, id])
+	# ---- the look of each floor: its tile set exists, is complete, and floors.gd names real pieces
+	for i in Floors.count():
+		var fl: Dictionary = Floors.get_floor(i)
+		var set_id := String(fl.get("tiles", ""))
+		var ts: Dictionary = RoomLook.tile_set(set_id)
+		if ts.is_empty():
+			out.append("floor %d: tile set '%s' is not in assets/art/pc_tiles/tilesets.json" % [i + 1, set_id])
+			continue
+		for part: String in ["floor", "walls", "doors", "obstacles", "wall_deco", "pieces"]:
+			if not ts.has(part):
+				out.append("tile set %s: no '%s'" % [set_id, part])
+		for piece_name: String in ts.get("pieces", {}):
+			if not ResourceLoader.exists(RoomLook.TILES_DIR + set_id + "/" + piece_name + ".png"):
+				out.append("tile set %s: picture '%s.png' is missing" % [set_id, piece_name])
+		for kind: String in ["rock", "crate", "pillar", "torch", "pit", "spikes"]:
+			if not (ts.get("obstacles", {}) as Dictionary).has(kind):
+				out.append("tile set %s: no picture for obstacle '%s'" % [set_id, kind])
+		for wall: String in ["n", "s", "w", "e"]:
+			for state: String in ["open", "shut", "locked", "hidden", "cracked", "boss", "boss_open"]:
+				if not ((ts.get("doors", {}) as Dictionary).get(wall, {}) as Dictionary).has(state):
+					out.append("tile set %s: door '%s' has no state '%s'" % [set_id, wall, state])
+		var dress: Dictionary = fl.get("dress", {})
+		for kind: String in dress:
+			for row: Dictionary in dress[kind]:
+				if not RoomLook.has_piece(set_id, String(row.get("piece", ""))):
+					out.append("floor %d: dress '%s' names a piece '%s' the tile set does not have" % [i + 1, kind, row.get("piece", "")])
+		for piece_name in fl.get("no_floor_deco", []):
+			if not RoomLook.has_piece(set_id, String(piece_name)):
+				out.append("floor %d: no_floor_deco names an unknown piece '%s'" % [i + 1, piece_name])
+		if bool(fl.get("pit_join", false)) and ((ts.get("obstacles", {}) as Dictionary).get("pit", {}) as Dictionary).has("frames"):
+			out.append("floor %d: pit_join only works with a still pit picture" % (i + 1))
 	# ---- pickups
 	for id: String in Pickups.ALL:
 		if not Art.has(Pickups.sprite_for(id)):

@@ -196,3 +196,35 @@ To add a curse-related item: add a row in `scripts/data/items.gd`. `"cursed": tr
 gives +1 Curse Level. Use `mods` with `call_cooldown`, `curse_creep`, `belly_mult` or the flag
 `curse_eats_coins`; anything smarter is a hook function in `scripts/run/item_effects.gd`. A locked
 item also needs `"locked": true` and a row in `scripts/data/unlocks.gd`.
+
+## The cast (heroes, monsters, bosses, helpers) — Pixel Crawler art
+Added by the cast builder. Every character on screen is a purchased Pixel Crawler sprite (ids `pc_*`).
+
+- **Where the art is:** `assets/art/pc/` (cut by `tools/pc_import_cast.py`; do not redo). Measurements
+  per id are in `assets/art/pc/pc_cast.json`; which creature suits which floor is in
+  `assets/art/pc/pc_roster_proposal.md`.
+- **Art (`scripts/core/art.gd`):** `Art.sprite(id)` stands a sprite on its measured feet point.
+  `Art.meta(id)` gives `body_height`, `body_width`, `radius`, `feet`. `Art.has_anim(id, "hit" | "death" |
+  "attack")` says what the pack really drew (never faked): heroes have no hit animation, only bats
+  have an attack animation, shopkeepers only idle. Ask before playing one.
+- **Heroes (`scripts/data/heroes.gd`):** `sprite`, `weapon` (a `pc_weapon_*` still, points up), `grip`
+  (px from the bottom of the weapon to the hand) and `hand` (a `pc_hand_*` fist drawn on the grip).
+  `scripts/entities/hero_look.gd` holds the weapon for the player, the menus and the line-up: it turns
+  to the aim, goes behind the body when aiming up, kicks back on a shot. Keep a weapon about as long
+  as the hero is tall or shorter; pick another sprite, never scale. Hero ids stay knight / witch / robber.
+- **Monsters (`scripts/data/enemies.gd`):** 31 rows, 7 to 8 of their own per floor plus a few shared with
+  the next floor. Body circle, shot hit height, hit size and shadow come from the measurements
+  (`enemy.gd` `setup()`); a row only needs `radius` / `hit_up` to overrule them. `"idle": "run"` and
+  `"hover"` are for flyers. A dead body plays the pack's death animation, then fades (it is already
+  out of `room.enemies`). Old row keys kept because tests and other files name them: `bone_archer`
+  (shown as Bone Mage), `lantern_head` (Ember Husk).
+- **Flashes:** a hit = pure white for `HIT_FLASH` (0.06 s). A wind-up (`tell()`) blinks PALE, not white
+  (`TELL_SHADER`), so tall sprites never turn into a blank white shape.
+- **Bosses (`scripts/data/bosses.gd`):** a floor creature at `"scale": 2.0` (whole numbers only).
+  New boss fights are not written yet: the two old fights are reused on all four floors.
+- **Helpers:** familiars are tinted `pc_bat_small` using the flying loop (`scripts/data/familiars.gd`;
+  row keys `wisp`, `tithe_imp` must stay). The shopkeeper is `pc_npc_tavern_a` (`shopkeeper.gd`).
+- **Look at it:** `xvfb-run -a -s "-screen 0 1600x720x24" godot --path . --rendering-driver opengl3
+  --resolution 1600x720 res://dev/cast_lineup.tscn -- --shots=/abs/dir [--anim=run|death|hit]`
+  writes one picture with every hero aiming in 8 directions, every monster, both bosses, the
+  familiars and the shopkeeper on floor lines.

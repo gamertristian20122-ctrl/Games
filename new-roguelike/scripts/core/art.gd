@@ -24,7 +24,7 @@ extends Node
 ## pc = the purchased Pixel Crawler cast and weapons (tools/pc_import_cast.py).
 const DIRS: Array[String] = [
 	"res://assets/art/dungeon/", "res://assets/art/niji/", "res://assets/art/forest/", "res://assets/art/fx/",
-	"res://assets/art/pc/",
+	"res://assets/art/pc/", "res://assets/art/props/", "res://assets/art/boss/",
 ]
 const ANIMS := [["idle", "_idle_anim"], ["run", "_run_anim"], ["hit", "_hit_anim"], ["default", "_anim"], ["default", ""],
 	["death", "_death_anim"], ["attack", "_attack_anim"]]

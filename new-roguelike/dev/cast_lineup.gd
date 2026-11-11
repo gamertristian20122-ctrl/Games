@@ -43,7 +43,7 @@ func _ready() -> void:
 			else:
 				var dir := Vector2.RIGHT.rotated(TAU * k / 8.0)
 				body.flip_h = dir.x < -0.15
-				HeroLook.layer(weapon, body, HeroLook.aim(weapon, dir, 0.0))
+				HeroLook.layer(weapon, body, HeroLook.aim(weapon, dir, 0.0, -1.0 if body.flip_h else 1.0))
 	_lines.append(y)
 	for floor_number in [1, 2, 3, 4]:
 		if floor_number % 2 == 1:

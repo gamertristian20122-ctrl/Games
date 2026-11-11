@@ -20,6 +20,8 @@ extends RefCounted
 ##   floor_deco   [fewest, most] small things lying on the floor of a fight room (kept dim)
 ##   no_floor_deco  pieces of the set's floor decoration this floor does not use
 ##   pit_depth    0..1: a shadow along the top inside edge of every pit (for pit tiles that have no rim)
+##   pit_join     true when the set's pit picture is ONE framed hole per tile: touching pits are then
+##                joined into one big shaft (room_look.gd cuts the picture into quarters to do it)
 ##   secret_hole  dark rectangles (x, y, w, h in px inside the piece door_n_cracked): the opening of a
 ##                blown-open secret door in the back wall. Not drawn in a fight, so the wall reads shut.
 ##   debris       colours of the bits that fly off a broken "rock" / "crate"
@@ -86,7 +88,7 @@ const LIST := [
 		"id": "pit", "name": "The Pit", "rooms": 12, "enemies": [],
 		"tiles": "pit", "ambient": Color("bdb8d6"), "light": Color(1.0, 0.76, 0.80), "torch_power": 1.0,
 		"wall_lights": [1, 2], "wall_deco": [3, 5], "floor_deco": [2, 5], "no_floor_deco": [],
-		"pit_depth": 0.0, "secret_hole": [Rect2(3, 3, 6, 17)],
+		"pit_depth": 0.0, "pit_join": true, "secret_hole": [Rect2(3, 3, 6, 17)],
 		"debris": {"rock": [Color("8f8671"), Color("686151"), Color("4a4438")], "crate": [Color("7b513b"), Color("3b2c22"), Color("a06a48")]},
 		"dress": {
 			"shop": [{"piece": "prop_crate_a", "col": 3, "y": 29}, {"piece": "prop_crate_b", "col": 4, "y": 23}, {"piece": "prop_crate_a", "col": 13, "y": 29}],

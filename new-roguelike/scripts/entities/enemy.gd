@@ -35,8 +35,14 @@ const SHOT_PLANE := 7.0         ## shots are drawn this far above the floor (see
 
 const FLASH_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(1.0, 1.0, 1.0, c.a);\n}\n"
 
+## The wind-up blink: the sprite goes pale but keeps its drawing (a full white shape of these tall
+## sprites looked like a blank cut-out). Pure white is kept for the short hit flash only.
+const TELL_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0, 0.96, 0.85), 0.6), c.a);\n}\n"
+const HIT_FLASH := 0.06         ## seconds of pure white when a shot lands (3 to 4 frames)
+
 static var _ai_cache := {}
 static var _white: ShaderMaterial
+static var _pale: ShaderMaterial
 static var _shadow_tex: GradientTexture2D
 
 var room: Node
@@ -130,6 +136,15 @@ static func white_material() -> ShaderMaterial:
 	return _white
 
 
+static func tell_material() -> ShaderMaterial:
+	if _pale == null:
+		var sh := Shader.new()
+		sh.code = TELL_SHADER
+		_pale = ShaderMaterial.new()
+		_pale.shader = sh
+	return _pale
+
+
 ## A soft dark blob used under every character (one shared texture).
 static func shadow_texture() -> GradientTexture2D:
 	if _shadow_tex == null:
@@ -189,7 +204,9 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	radius = float(data.get("radius", clampf(float(m.get("radius", 5.0)), 5.0, 7.5) * _base_scale))
 	_mid = body_h * 0.5 + _hover
 	hit_up = float(data.get("hit_up", clampf(_mid - SHOT_PLANE, 0.0, 26.0) if not m.is_empty() else 0.0))
-	hit_grow = clampf(body_w * 0.5 - radius, 0.0, 3.0 * _base_scale) if not m.is_empty() else 0.0
+	# shots test ONE circle around the middle of the body: halfway between half its width and half
+	# its height, so a shot that visibly touches the chest or the head counts
+	hit_grow = clampf((body_w + body_h) * 0.25 - radius, 0.0, 4.0 * _base_scale) if not m.is_empty() else 0.0
 	if minion:
 		max_hp *= Enemies.MINION_HP
 	if elite:
@@ -295,7 +312,7 @@ func _update_look(delta: float) -> void:
 		_tell -= delta
 		# the tell: blink white faster and faster
 		var k := 1.0 - _tell / maxf(_tell_dur, 0.01)
-		sprite.material = white_material() if fmod(k * k * 7.0 + k * 3.0, 1.0) < 0.5 else null
+		sprite.material = tell_material() if fmod(k * k * 7.0 + k * 3.0, 1.0) < 0.5 else null
 	else:
 		sprite.material = null
 	if elite:
@@ -451,9 +468,9 @@ func hurt(amount: float, from_dir: Vector2 = Vector2.ZERO, knock_mult: float = 1
 	if dead or not hittable:
 		return
 	hp -= amount
-	_flash = 0.09
+	_flash = HIT_FLASH
 	if _has_hit and _attack_t <= 0.0:
-		_flash = 0.05
+		_flash = HIT_FLASH * 0.7
 		_hit_t = Art.anim_time(_sprite_id, "hit")
 		sprite.play("hit")
 		sprite.frame = 0

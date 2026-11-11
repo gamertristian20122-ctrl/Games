@@ -1,5 +1,5 @@
 extends RefCounted
-## Familiar behaviour "tithe": the Tithe Imp. After each meal of the Hungry Curse it flies to the
+## Familiar behaviour "tithe": the Tithe Bat (row key "tithe_imp"). After each meal of the Hungry Curse it flies to the
 ## disc, takes ONE coin out of the belly and carries it to the hero, so some belly coins arrive
 ## without spending a bomb. It fetches at most `per_room` coins in one room.
 ## params:  per_room  coins it may fetch per room          speed  px/s while it is fetching

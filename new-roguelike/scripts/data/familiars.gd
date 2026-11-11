@@ -12,10 +12,10 @@ extends RefCounted
 ## The row keys ("wisp", "tithe_imp") are ids used by heroes.gd, items.gd and unlocks: do not rename them.
 
 const ALL := {
-	"wisp": {"name": "Dusk Bat", "sprite": "pc_bat_small", "anim": "run", "hover": 12.0, "tint": Color(0.82, 0.95, 1.15),
+	"wisp": {"name": "Dusk Bat", "sprite": "pc_bat_small", "anim": "run", "hover": 16.0, "tint": Color(0.82, 0.95, 1.15),
 		"behaviour": "shooter", "params": {"cooldown": 1.15, "damage": 1.6, "range": 95.0, "shot_speed": 150.0, "shot": "wisp"}},
 	# After each meal of the Hungry Curse it flies over, takes one coin out of the belly and brings it to you.
-	"tithe_imp": {"name": "Tithe Bat", "sprite": "pc_bat_small", "anim": "run", "hover": 12.0, "tint": Color(1.3, 1.05, 0.45),
+	"tithe_imp": {"name": "Tithe Bat", "sprite": "pc_bat_small", "anim": "run", "hover": 16.0, "tint": Color(1.3, 1.05, 0.45),
 		"behaviour": "tithe", "params": {"per_room": 3, "speed": 150.0}},
 }
 

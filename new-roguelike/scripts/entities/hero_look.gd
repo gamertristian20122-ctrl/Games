@@ -5,10 +5,13 @@ extends RefCounted
 ## separate still picture that points UP, drawn on top and turned toward the aim.
 ## The player, the menus and the test line-up all pose it through this file, so it looks the
 ## same everywhere. Per hero (scripts/data/heroes.gd): "weapon" = the sprite id,
-## "grip" = how many pixels above the bottom of the weapon picture the hand holds it.
+## "grip" = how many pixels above the bottom of the weapon picture the hand holds it,
+## "hand" = a hand piece from the same pack (pc_hand_*) drawn closed around the grip.
 
 const HAND_UP := 9.0        ## the hand is this far above the feet (the pack's own grip height)
 const REACH := 4.0          ## how far the hand is pushed toward the aim (px)
+const HAND_SIDE := 6.0      ## aiming straight up or down, the hand is this far to the side the hero faces (px)
+const UP_LIFT := 7.0        ## aiming up, the hand rises this much so the blade shows above the head (px)
 const RECOIL := 3.5         ## how far a shot kicks the weapon back (px)
 const REST_TILT := 0.5      ## how far the weapon leans forward while nothing is aimed at (radians)
 const REST_SIDE := 5.0      ## where the resting hand is, to the side of the body (px)
@@ -27,13 +30,28 @@ static func set_weapon(w: Sprite2D, hero: Dictionary) -> void:
 	w.centered = false
 	var sz := w.texture.get_size()
 	w.offset = Vector2(-floorf(sz.x * 0.5), -sz.y + float(hero.get("grip", 4.0)))
+	# the hand: a child of the weapon, sitting on the grip (the weapon's turning point), so it turns with it
+	var hand := w.get_node_or_null("hand") as Sprite2D
+	var hand_id := String(hero.get("hand", ""))
+	if hand_id == "":
+		if hand != null:
+			hand.visible = false
+		return
+	if hand == null:
+		hand = Sprite2D.new()
+		hand.name = "hand"
+		w.add_child(hand)
+	hand.visible = true
+	hand.texture = Art.tex(hand_id)
 
 
 ## Points the weapon along `dir` (a unit vector). `kick` is 1 right after a shot and falls to 0.
+## `face` is 1 (the hero looks right) or -1: aiming up or down, the hand moves to that side of the
+## body, so the weapon is held beside the hero and not through the middle of the chest.
 ## Returns true when the weapon belongs IN FRONT of the body (false = behind: the hero aims up).
-static func aim(w: Sprite2D, dir: Vector2, kick: float = 0.0) -> bool:
+static func aim(w: Sprite2D, dir: Vector2, kick: float = 0.0, face: float = 1.0) -> bool:
 	w.rotation = dir.angle() + PI * 0.5
-	w.position = Vector2(0.0, -HAND_UP) + dir * (REACH - RECOIL * kick)
+	w.position = Vector2(HAND_SIDE * face * absf(dir.y), -HAND_UP - UP_LIFT * maxf(0.0, -dir.y)) + dir * (REACH - RECOIL * kick)
 	return dir.y > BEHIND_ABOVE
 
 

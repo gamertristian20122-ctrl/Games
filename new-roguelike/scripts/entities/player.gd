@@ -233,7 +233,7 @@ func _update_look(delta: float) -> void:
 	# the weapon: held in the hand, pointing where you aim, kicking back with each shot
 	_kick = maxf(0.0, _kick - delta * 9.0)
 	if firing:
-		HeroLook.layer(weapon, body, HeroLook.aim(weapon, aim_dir, _kick))
+		HeroLook.layer(weapon, body, HeroLook.aim(weapon, aim_dir, _kick, _face))
 	else:
 		HeroLook.rest(weapon, _face, delta)
 		HeroLook.layer(weapon, body, true)
@@ -281,7 +281,7 @@ func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 	last_cause = cause
 	invuln = stats.v("invuln")
 	_hit_anim = 0.3
-	_flash = 0.12
+	_flash = 0.07            # a few frames of white, then the usual blink
 	var away := position - from
 	knock = (away.normalized() if away.length() > 0.5 else Vector2.DOWN) * 150.0
 	run.shake(0.55)

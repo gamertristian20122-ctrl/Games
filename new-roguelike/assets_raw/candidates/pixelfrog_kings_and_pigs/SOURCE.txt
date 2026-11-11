@@ -1,0 +1,17 @@
+PACK     : Kings and Pigs (file "Kings and Pigs.zip", 279 kB)
+URL      : https://pixelfrog-assets.itch.io/kings-and-pigs
+AUTHOR   : Pixel Frog
+PRICE    : free
+CONTENT USED HERE : Sprites/12-Live and Coins: Big Heart idle 8f + hit, Small Heart idle 8f + hit (18x14 cells, heart ~11 px),
+           Live Bar (66x34, 3 heart slots), Big/Small Diamond 10f, Numbers 6x8.
+           Sprites/09-Bomb: Bomb Off, Bomb On 4f (burning fuse), Boooooom 6f explosion (52x56 cells, bomb ~13x16 px).
+           Sprites/08-Box: breakable box + 4 pieces. Sprites/10-Cannon: cannon ball. Aseprite sources included.
+           (No half / empty heart: make them by editing the full heart - CC0 allows it - or use 0x72's hearts.)
+LICENCE  : CC0 1.0. Exact text, itch.io page: "These assets are released under a Creative Commons Zero (CC0) license.
+           You can distribute, remix, adapt, and build upon the material in any medium or format, even for commercial
+           purposes. Attribution is not required."   Info panel: "Asset license: Creative Commons Zero v1.0 Universal".
+DATES    : uploaded 2019-10-15; downloaded 2026-11-11 15:33 UTC
+HUMAN-MADE EVIDENCE : published 2019 (before image generators); itch.io info panel "Content: No generative AI was used";
+           editable .aseprite source files in the zip; well-known artist (Pixel Adventure, Tiny Swords), 199 ratings (4.9).
+MATCH    : see comparison_pickups2_vs_pixel_crawler.png (row 2). Same pixel density, dark navy/purple outline, saturated
+           colours: hearts, diamonds and the lit bomb sit next to Pixel Crawler characters without looking pasted in.

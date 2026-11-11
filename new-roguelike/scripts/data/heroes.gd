@@ -13,13 +13,15 @@ extends RefCounted
 ##
 ## How a hero looks: "sprite" is a Pixel Crawler hero (idle, run and death animations), "weapon" is a
 ## weapon still from the same pack (pc_weapon_*; they point up) and "grip" is how many pixels above
-## the bottom of that picture the hand holds it. scripts/entities/hero_look.gd does the holding.
+## the bottom of that picture the hand holds it, "hand" is the pack's hand piece (pc_hand_*) closed
+## around the grip. scripts/entities/hero_look.gd does the holding. Pick a weapon about as long as
+## the hero is tall or shorter (the heroes are 29 to 32 px tall); never scale one.
 ## The hero ids ("knight", "witch", "robber") are used by saves, unlocks and test flags: do not rename
 ## them. Names, titles and descriptions are placeholders and can be rewritten freely.
 
 const LIST := [
 	{
-		"id": "knight", "name": "Aldous", "title": "The Cursed Knight", "sprite": "pc_knight", "weapon": "pc_weapon_castle_12", "grip": 6,
+		"id": "knight", "name": "Aldous", "title": "The Cursed Knight", "sprite": "pc_knight", "weapon": "pc_weapon_castle_13", "grip": 3, "hand": "pc_hand_castle_16",
 		"desc": "A fallen knight who hurls spectral blades. Slow, sturdy, hits hard.",
 		"passive": "Oath Ward: the first hit in every room is blocked.",
 		"locked": false, "unlock_hint": "",
@@ -27,7 +29,7 @@ const LIST := [
 		"shot": "blade", "shoot_sfx": "player_shoot_blade", "ward": true,
 	},
 	{
-		"id": "witch", "name": "Ozric", "title": "The Old Hexer", "sprite": "pc_wizard", "weapon": "pc_weapon_hideout_14", "grip": 11,
+		"id": "witch", "name": "Ozric", "title": "The Old Hexer", "sprite": "pc_wizard", "weapon": "pc_weapon_hideout_14", "grip": 11, "hand": "pc_hand_base_0",
 		"desc": "An old wizard whose fast hex bolts curve after their prey. Frail.",
 		"passive": "Companion: starts every run with a familiar.",
 		"locked": true, "unlock_hint": "Defeat the first boss.",
@@ -35,7 +37,7 @@ const LIST := [
 		"shot": "hex", "shoot_sfx": "player_shoot_magic", "familiar": "wisp", "mods": {"flat": {"homing": 1.6}},
 	},
 	{
-		"id": "robber", "name": "Tobin", "title": "The Grave Robber", "sprite": "pc_rogue", "weapon": "pc_weapon_garden_8", "grip": 4,
+		"id": "robber", "name": "Tobin", "title": "The Grave Robber", "sprite": "pc_rogue", "weapon": "pc_weapon_garden_8", "grip": 4, "hand": "pc_hand_hideout_16",
 		"desc": "A thief who went too deep. Quick feet, quick knives, short reach.",
 		"passive": "Prepared: starts with a key and two bombs, and finds more coins.",
 		"locked": true, "unlock_hint": "Find two secret rooms.",

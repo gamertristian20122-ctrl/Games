@@ -20,3 +20,4 @@ HUMAN-MADE EVIDENCE : itch.io info panel "Content: No generative AI was used", "
 MATCH    : effects match well (same pixel density, 3-4 tone shading, no outline like Pixel Crawler's own fire).
            Items are small and cuter than Pixel Crawler (bomb/dynamite fine, chests too small); UI hearts have a WHITE
            outline (HUD only); wood UI theme is too cheerful for dark fantasy.
+RE-VERIFIED : 2026-11-11 15:33 UTC by a second pass: itch.io page re-read (licence text and "No generative AI was used" still shown), archive integrity tested (unzip -t OK).

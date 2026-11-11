@@ -57,7 +57,7 @@ func _physics_process(delta: float) -> void:
 		if behaviour.has_method("start"):
 			behaviour.start(self)
 	# trail behind the player, each familiar a little further back
-	var back := Vector2(-15.0 - 11.0 * slot, -3.0)
+	var back := Vector2(-26.0 - 16.0 * slot, -3.0)      # the bats are wide: far enough back that the wings clear the hero
 	if player.body.flip_h:
 		back.x = -back.x
 	var want: Vector2 = player.position + back

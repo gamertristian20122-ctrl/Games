@@ -1,0 +1,12 @@
+PACK     : Zelda-like tilesets and sprites (file "gfx_3.zip")
+URL      : https://opengameart.org/content/zelda-like-tilesets-and-sprites
+AUTHOR   : ArMM1998
+PRICE    : free
+CONTENT USED HERE : gfx/objects.png (528x320, 16 px grid): HUD heart in 5 states (full, 3/4, 1/2, 1/4, empty - white outline),
+           heart pickup 4f spin, coin 4f spin, small + big chest (closed/open), sparkle 4f, dust puff 6f, pot + 4f break,
+           fire 7f, bush cut leaves 4f, speech bubbles. (Tilesets and character in the zip are not needed.)
+LICENCE  : CC0. Exact text, OpenGameArt page: "License(s): CC0".
+DATES    : published 2017-02-16; downloaded 2026-11-11 15:33 UTC
+HUMAN-MADE EVIDENCE : 2017, before image generators; hand-pixelled on a strict 16 px grid with a small palette; widely used set.
+MATCH    : see comparison_pickups2_vs_pixel_crawler.png (row 5). Same pixel density, dark outlines. Heart pickup, coin, sparkle
+           and dust match; HUD hearts have a white outline (fine on a HUD, not in the world).

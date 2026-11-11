@@ -72,6 +72,9 @@ var _floor_tex: Array[Texture2D] = []
 var _pits: Dictionary = {}             ## cell index -> Array of Texture2D (one per animation frame)
 var _pit_fps := 0.0
 var _pit_frame := 0
+var _pit_join_tex: Texture2D           ## the one pit picture that joined pits are cut from
+var _pit_ops: Dictionary = {}          ## cell index -> Array of [source Rect2, target Rect2]
+var _force_door := ""                  ## test flag --doorlook=<state>: every door is drawn in this state
 var _spike_tex: Array[Texture2D] = []
 var _spike_off: Array[Vector2] = []
 var _torch_lights: Array = []          ## [PointLight2D, base energy, base scale, phase]
@@ -147,6 +150,7 @@ func roll(the_room: Node2D) -> void:
 	ts = tile_set(set_id)
 	back = float(ts.get("back_wall_h", 48))
 	rng.seed = int(room.rs["seed"]) + 101
+	_force_door = G.arg("doorlook")
 	# how many lights are left for the wall after the hero's, the stands' and the floor torches'
 	var stands := 0
 	match room.type:
@@ -244,11 +248,17 @@ func _roll_flat() -> void:
 	var animated := pit.has("frames")
 	_pit_fps = float(pit.get("fps", 4.0)) if animated else 0.0
 	var pools := pit.has("autotile9")
+	var join := bool(theme.get("pit_join", false)) and not animated and not pools
+	if join:
+		_pit_join_tex = piece(set_id, String(frames[0]["piece"]))
 	for i: int in room.grid.size():
 		if room.grid[i] != room.PIT:
 			continue
 		var x := i % COLS
 		var y := i / COLS
+		if join:
+			_pit_ops[i] = _joined_pit(x, y)
+			continue
 		var list: Array = []
 		if pools and _in_pool(x, y):
 			# one of the nine pool tiles: which edges of the pool this tile is on
@@ -265,6 +275,47 @@ func _roll_flat() -> void:
 		else:
 			list.append(piece(set_id, String(frames[(x + y) % frames.size()]["piece"])))
 		_pits[i] = list
+
+
+## A pit picture that is one stone-rimmed hole per tile (the Pit's shaft) would turn a block of pits
+## into a grid of little squares. So touching pits are joined into one big shaft, cut from that same
+## picture a quarter at a time: a corner quarter stays as it is, a quarter on a straight side is one
+## line of the rim stretched along it, a quarter in the middle is the dark of the hole.
+## Needs a 16 x 16 picture with a rim at most 4 px wide (floors.gd "pit_join").
+func _joined_pit(x: int, y: int) -> Array:
+	var ops: Array = []
+	var at := Vector2(x * T, y * T)
+	for sy: int in [-1, 1]:
+		for sx: int in [-1, 1]:
+			var qx := 0.0 if sx < 0 else 8.0
+			var qy := 0.0 if sy < 0 else 8.0
+			var ix := 7.0 if sx < 0 else 8.0     # the line of pixels next to the middle of the tile
+			var iy := 7.0 if sy < 0 else 8.0
+			var side := _is_pit(x + sx, y)
+			var updown := _is_pit(x, y + sy)
+			var target := Rect2(at + Vector2(qx, qy), Vector2(8, 8))
+			if not side and not updown:
+				ops.append([Rect2(qx, qy, 8, 8), target])
+			elif side and not updown:
+				ops.append([Rect2(ix, qy, 1, 8), target])
+			elif updown and not side:
+				ops.append([Rect2(qx, iy, 8, 1), target])
+			else:
+				ops.append([Rect2(ix, iy, 1, 1), target])
+				if not _is_pit(x + sx, y + sy):
+					# the floor pokes into the shaft here: the rim turns round its corner
+					# (rim colours, outermost first, are the first pixels of the picture's middle row)
+					for r: Array in [[2, 0, 0, 4, 4], [1, 0, 1, 2, 1], [1, 1, 0, 1, 1], [0, 0, 0, 1, 1]]:
+						ops.append([Rect2(float(r[0]), 7, 1, 1), _from_corner(at, sx, sy, r[1], r[2], r[3], r[4])])
+					if sy < 0:
+						# and throws the same shadow into the hole as the rest of the far rim
+						ops.append([Rect2(7, 5, 1, 1), _from_corner(at, sx, sy, 0, 4, 4, 3)])
+	return ops
+
+
+## A small rectangle counted from one corner of a tile (sx, sy = which corner) in room pixels.
+func _from_corner(at: Vector2, sx: int, sy: int, i: int, j: int, w: int, h: int) -> Rect2:
+	return Rect2(at.x + (i if sx < 0 else T - i - w), at.y + (j if sy < 0 else T - j - h), w, h)
 
 
 func _wall_item(piece_name: String, x: float, y: float, d: Dictionary = {}) -> Dictionary:
@@ -471,7 +522,11 @@ func _add_glow(parent: Node2D, at: Vector2, colour: Color, glow_scale: float, al
 func build_obstacle(node: Node2D, kind: String, cx: int, cy: int) -> void:
 	var ob: Dictionary = ts["obstacles"][kind]
 	var variants: Array = ob["variants"]
-	var v: Dictionary = variants[posmod(cx * 7 + cy * 13 + int(room.rs["seed"]), variants.size())]
+	# Which of the set's pictures this tile gets: a real mix from the room's seed (not a stripe
+	# pattern, which gave a row of pillars the same picture), the same every visit, and mirrored
+	# left to right so a hall of columns or statues still looks built on purpose.
+	var mirror_x := mini(cx, COLS - 1 - cx)
+	var v: Dictionary = variants[posmod(hash(Vector3i(int(room.rs["seed"]) & 0xFFFFFF, mirror_x, cy * 8 + kind.length())), variants.size())]
 	var corner := Vector2(-8, -15)     # the tile's top-left corner, seen from the node
 	var s := Sprite2D.new()
 	s.texture = piece(set_id, String(v["piece"]))
@@ -536,6 +591,8 @@ func _locked(dir: Vector2i) -> bool:
 
 ## Which of the json's door states this wall shows right now ("" = no door at all).
 func door_state(dir: Vector2i) -> String:
+	if _force_door != "":
+		return _force_door                 # test flag: all four walls show a door in this state
 	if not room.door_exists(dir):
 		return ""
 	var door: Dictionary = room.rs["doors"][dir]
@@ -668,6 +725,9 @@ func draw_tiles(c: Node2D) -> void:
 ## spike rhythm: 0 down (safe), 1 tips showing (warning), 2 and 3 up.
 func draw_flat(c: Node2D, spike_frame: int) -> void:
 	var depth := float(theme.get("pit_depth", 0.0))
+	for i: int in _pit_ops:
+		for op: Array in _pit_ops[i]:
+			c.draw_texture_rect_region(_pit_join_tex, op[1], op[0])
 	for i: int in _pits:
 		var frames: Array = _pits[i]
 		var pos := Vector2((i % COLS) * T, (i / COLS) * T)
@@ -701,7 +761,7 @@ func draw_front(c: Node2D) -> void:
 
 ## Door parts made by code, above everything: the boss mark, where the json says "code".
 func draw_doors(c: Node2D) -> void:
-	for dir: Vector2i in room.rs["doors"]:
+	for dir: Vector2i in [UP, DOWN, LEFT, RIGHT]:
 		var state := door_state(dir)
 		if state != "boss":
 			continue

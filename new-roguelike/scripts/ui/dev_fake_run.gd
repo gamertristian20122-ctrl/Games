@@ -7,6 +7,7 @@ extends Node2D
 ##   1 hurt   2 heal   3 item   4 cursed item   5 boss   6 coin   7 toast   8 next room   9 die   0 win
 
 const Heroes = preload("res://scripts/data/heroes.gd")
+const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Items = preload("res://scripts/data/items.gd")
 
 
@@ -61,6 +62,9 @@ func setup(hero: String, seed_value: int) -> void:
 	add_child(player)
 	_sprite = Art.sprite(String(h["sprite"]))
 	player.add_child(_sprite)
+	var held := HeroLook.make_weapon(h)          # carried at the side, like in a real run
+	player.add_child(held)
+	HeroLook.rest(held, 1.0)
 	_make_map()
 	Controls.bomb_pressed.connect(_on_bomb)
 	G.run_started.emit(self)

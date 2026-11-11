@@ -1,0 +1,2163 @@
+{
+ "boss_cthulu": {
+  "archive": "assets_raw/bosses/chierit_free_bosses/free_cthulu_v1.zip",
+  "body_height": 63,
+  "body_width": 60,
+  "canvas": [
+   150,
+   78
+  ],
+  "credit": "chierit (https://chierit.itch.io)",
+  "feet": [
+   52,
+   76
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 7,
+   "attack2": 9,
+   "death": 11,
+   "fly": 6,
+   "hit": 5,
+   "idle": 15,
+   "run": 12
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    2
+   ],
+   "attack2": [
+    3,
+    4,
+    5,
+    6
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC-BY 4.0, do not resell",
+  "mirrored": false,
+  "notes": "Faces right in the source. 'fly' lifts off the ground (same feet point, body rises).",
+  "pack": "chierit Free Cthulu",
+  "projectile_spawn": {
+   "attack": {
+    "canvas_px": [
+     82,
+     40
+    ],
+    "frame": 2,
+    "from_feet": [
+     30,
+     -36
+    ],
+    "method": "beyond_idle"
+   }
+  },
+  "radius": 21,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 93,
+    "frames": [
+     2
+    ]
+   },
+   "attack2": {
+    "forward_px": 96,
+    "frames": [
+     3,
+     4,
+     5,
+     6
+    ]
+   }
+  },
+  "source_fps": {
+   "all_gifs": 12.5
+  },
+  "source_frame_px": {
+   "attack": [
+    192,
+    112
+   ],
+   "attack2": [
+    192,
+    112
+   ],
+   "death": [
+    192,
+    112
+   ],
+   "fly": [
+    192,
+    112
+   ],
+   "hit": [
+    192,
+    112
+   ],
+   "idle": [
+    192,
+    112
+   ],
+   "run": [
+    192,
+    112
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "free_cthulu/animations/PNG/1atk/1atk_1.png",
+    "free_cthulu/animations/PNG/1atk/1atk_2.png",
+    "free_cthulu/animations/PNG/1atk/1atk_3.png",
+    "free_cthulu/animations/PNG/1atk/1atk_4.png",
+    "free_cthulu/animations/PNG/1atk/1atk_5.png",
+    "free_cthulu/animations/PNG/1atk/1atk_6.png",
+    "free_cthulu/animations/PNG/1atk/1atk_7.png"
+   ],
+   "attack2": [
+    "free_cthulu/animations/PNG/2atk/2atk_1.png",
+    "free_cthulu/animations/PNG/2atk/2atk_2.png",
+    "free_cthulu/animations/PNG/2atk/2atk_3.png",
+    "free_cthulu/animations/PNG/2atk/2atk_4.png",
+    "free_cthulu/animations/PNG/2atk/2atk_5.png",
+    "free_cthulu/animations/PNG/2atk/2atk_6.png",
+    "free_cthulu/animations/PNG/2atk/2atk_7.png",
+    "free_cthulu/animations/PNG/2atk/2atk_8.png",
+    "free_cthulu/animations/PNG/2atk/2atk_9.png"
+   ],
+   "death": [
+    "free_cthulu/animations/PNG/death/death_1.png",
+    "free_cthulu/animations/PNG/death/death_2.png",
+    "free_cthulu/animations/PNG/death/death_3.png",
+    "free_cthulu/animations/PNG/death/death_4.png",
+    "free_cthulu/animations/PNG/death/death_5.png",
+    "free_cthulu/animations/PNG/death/death_6.png",
+    "free_cthulu/animations/PNG/death/death_7.png",
+    "free_cthulu/animations/PNG/death/death_8.png",
+    "free_cthulu/animations/PNG/death/death_9.png",
+    "free_cthulu/animations/PNG/death/death_10.png",
+    "free_cthulu/animations/PNG/death/death_11.png"
+   ],
+   "fly": [
+    "free_cthulu/animations/PNG/fly/fly_1.png",
+    "free_cthulu/animations/PNG/fly/fly_2.png",
+    "free_cthulu/animations/PNG/fly/fly_3.png",
+    "free_cthulu/animations/PNG/fly/fly_4.png",
+    "free_cthulu/animations/PNG/fly/fly_5.png",
+    "free_cthulu/animations/PNG/fly/fly_6.png"
+   ],
+   "hit": [
+    "free_cthulu/animations/PNG/hurt/hurt_1.png",
+    "free_cthulu/animations/PNG/hurt/hurt_2.png",
+    "free_cthulu/animations/PNG/hurt/hurt_3.png",
+    "free_cthulu/animations/PNG/hurt/hurt_4.png",
+    "free_cthulu/animations/PNG/hurt/hurt_5.png"
+   ],
+   "idle": [
+    "free_cthulu/animations/PNG/idle/idle_1.png",
+    "free_cthulu/animations/PNG/idle/idle_2.png",
+    "free_cthulu/animations/PNG/idle/idle_3.png",
+    "free_cthulu/animations/PNG/idle/idle_4.png",
+    "free_cthulu/animations/PNG/idle/idle_5.png",
+    "free_cthulu/animations/PNG/idle/idle_6.png",
+    "free_cthulu/animations/PNG/idle/idle_7.png",
+    "free_cthulu/animations/PNG/idle/idle_8.png",
+    "free_cthulu/animations/PNG/idle/idle_9.png",
+    "free_cthulu/animations/PNG/idle/idle_10.png",
+    "free_cthulu/animations/PNG/idle/idle_11.png",
+    "free_cthulu/animations/PNG/idle/idle_12.png",
+    "free_cthulu/animations/PNG/idle/idle_13.png",
+    "free_cthulu/animations/PNG/idle/idle_14.png",
+    "free_cthulu/animations/PNG/idle/idle_15.png"
+   ],
+   "run": [
+    "free_cthulu/animations/PNG/walk/walk_1.png",
+    "free_cthulu/animations/PNG/walk/walk_2.png",
+    "free_cthulu/animations/PNG/walk/walk_3.png",
+    "free_cthulu/animations/PNG/walk/walk_4.png",
+    "free_cthulu/animations/PNG/walk/walk_5.png",
+    "free_cthulu/animations/PNG/walk/walk_6.png",
+    "free_cthulu/animations/PNG/walk/walk_7.png",
+    "free_cthulu/animations/PNG/walk/walk_8.png",
+    "free_cthulu/animations/PNG/walk/walk_9.png",
+    "free_cthulu/animations/PNG/walk/walk_10.png",
+    "free_cthulu/animations/PNG/walk/walk_11.png",
+    "free_cthulu/animations/PNG/walk/walk_12.png"
+   ]
+  }
+ },
+ "boss_death": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 30,
+  "body_width": 24,
+  "canvas": [
+   29,
+   34
+  ],
+  "credit": null,
+  "feet": [
+   14,
+   32
+  ],
+  "floats": false,
+  "frames": {
+   "run": 6,
+   "run_nolamp": 6,
+   "spawn": 11
+  },
+  "fx": [],
+  "hit_frames": {},
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "Small reaper with a lamp. No idle, attack, hit or death: walk (with lamp), walk without lamp, and 'rise' (comes up out of the ground: use as spawn). body size measured on run f0.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {},
+  "radius": 8,
+  "reach_measured": {},
+  "source_fps": null,
+  "source_frame_px": {
+   "run": [
+    32,
+    48
+   ],
+   "run_nolamp": [
+    32,
+    48
+   ],
+   "spawn": [
+    32,
+    48
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "run": [
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/walk/death-lamp-walk1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/walk/death-lamp-walk2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/walk/death-lamp-walk3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/walk/death-lamp-walk4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/walk/death-lamp-walk5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/walk/death-lamp-walk6.png"
+   ],
+   "run_nolamp": [
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/No-lamp-walk/death-walk1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/No-lamp-walk/death-walk2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/No-lamp-walk/death-walk3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/No-lamp-walk/death-walk4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/No-lamp-walk/death-walk5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/No-lamp-walk/death-walk6.png"
+   ],
+   "spawn": [
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp7.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp8.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp9.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp10.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/death/Sprites/rise/death-lamp11.png"
+   ]
+  }
+ },
+ "boss_demon": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 124,
+  "body_width": 134,
+  "canvas": [
+   231,
+   172
+  ],
+  "credit": null,
+  "feet": [
+   79,
+   159
+  ],
+  "floats": true,
+  "frames": {
+   "attack": 18,
+   "attack2": 18,
+   "idle": 6
+  },
+  "fx": [
+   "boss_fx_demon_fireball",
+   "boss_fx_demon_fireball_blue"
+  ],
+  "hit_frames": {
+   "attack": [],
+   "attack2": [
+    6
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "Winged demon that hovers. Idle cells are 256x176, attack cells 312x220: idle placed at (56,44) in the attack cell (exact pixel match, 6487 of 6569 px identical). attack = swipe without breath, attack2 = same with fire breath drawn in. No walk, hit or death. Feet = lowest pixel of the hovering body (no shadow).",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {
+   "attack2": {
+    "canvas_px": [
+     117,
+     103
+    ],
+    "frame": 6,
+    "from_feet": [
+     38,
+     -56
+    ],
+    "method": "diff_attack"
+   }
+  },
+  "radius": 47,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 79,
+    "frames": [
+     3
+    ]
+   },
+   "attack2": {
+    "forward_px": 150,
+    "frames": [
+     8,
+     11,
+     14
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    312,
+    220
+   ],
+   "attack2": [
+    312,
+    220
+   ],
+   "idle": [
+    256,
+    176
+   ]
+  },
+  "source_offsets": {
+   "idle": [
+    56,
+    44
+   ]
+  },
+  "sources": {
+   "attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame7.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame8.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame9.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame10.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame11.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame12.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame13.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame14.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame15.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame16.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame17.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttack/frame18.png"
+   ],
+   "attack2": [
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame7.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame8.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame9.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame10.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame11.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame12.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame13.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame14.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame15.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame16.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame17.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/DemonAttackBreath/frame18.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Sprites/Idle/idle6.png"
+   ]
+  }
+ },
+ "boss_demon_slime": {
+  "archive": "assets_raw/bosses/chierit_free_bosses/boss_demon_slime_FREE_v1.0.zip",
+  "body_height": 105,
+  "body_width": 80,
+  "canvas": [
+   212,
+   126
+  ],
+  "credit": "chierit (https://chierit.itch.io)",
+  "feet": [
+   85,
+   124
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 15,
+   "death": 22,
+   "hit": 5,
+   "idle": 6,
+   "run": 12
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    11
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC-BY 4.0, do not resell",
+  "mirrored": true,
+  "notes": "Free version = demon form only (the slime form is in the paid version).",
+  "pack": "chierit Boss: Demon Slime (free)",
+  "projectile_spawn": {},
+  "radius": 28,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 125,
+    "frames": [
+     11
+    ]
+   }
+  },
+  "source_fps": {
+   "all_gifs": 10.0
+  },
+  "source_frame_px": {
+   "attack": [
+    288,
+    160
+   ],
+   "death": [
+    288,
+    160
+   ],
+   "hit": [
+    288,
+    160
+   ],
+   "idle": [
+    288,
+    160
+   ],
+   "run": [
+    288,
+    160
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_1.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_2.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_3.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_4.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_5.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_6.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_7.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_8.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_9.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_10.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_11.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_12.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_13.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_14.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/03_demon_cleave/demon_cleave_15.png"
+   ],
+   "death": [
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_1.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_2.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_3.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_4.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_5.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_6.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_7.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_8.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_9.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_10.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_11.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_12.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_13.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_14.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_15.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_16.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_17.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_18.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_19.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_20.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_21.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/05_demon_death/demon_death_22.png"
+   ],
+   "hit": [
+    "boss_demon_slime_FREE_v1.0/individual sprites/04_demon_take_hit/demon_take_hit_1.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/04_demon_take_hit/demon_take_hit_2.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/04_demon_take_hit/demon_take_hit_3.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/04_demon_take_hit/demon_take_hit_4.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/04_demon_take_hit/demon_take_hit_5.png"
+   ],
+   "idle": [
+    "boss_demon_slime_FREE_v1.0/individual sprites/01_demon_idle/demon_idle_1.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/01_demon_idle/demon_idle_2.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/01_demon_idle/demon_idle_3.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/01_demon_idle/demon_idle_4.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/01_demon_idle/demon_idle_5.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/01_demon_idle/demon_idle_6.png"
+   ],
+   "run": [
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_1.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_2.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_3.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_4.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_5.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_6.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_7.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_8.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_9.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_10.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_11.png",
+    "boss_demon_slime_FREE_v1.0/individual sprites/02_demon_walk/demon_walk_12.png"
+   ]
+  }
+ },
+ "boss_dragon": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 39,
+  "body_width": 71,
+  "canvas": [
+   122,
+   57
+  ],
+  "credit": null,
+  "feet": [
+   40,
+   55
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 7,
+   "attack2": 8,
+   "idle": 6
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    3,
+    4,
+    5,
+    6
+   ],
+   "attack2": [
+    6
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "Grotto Escape 2 boss dragon (small, low). attack = fire breath (fire drawn into the frames), attack2 = tail swipe. Spritesheets used (the loose sprites are named in reverse layer order). No walk, hit or death.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {
+   "attack": {
+    "canvas_px": [
+     76,
+     47
+    ],
+    "frame": 3,
+    "from_feet": [
+     36,
+     -8
+    ],
+    "method": "beyond_idle"
+   }
+  },
+  "radius": 25,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 80,
+    "frames": [
+     6
+    ]
+   },
+   "attack2": {
+    "forward_px": 64,
+    "frames": [
+     6
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    144,
+    64
+   ],
+   "attack2": [
+    144,
+    64
+   ],
+   "idle": [
+    144,
+    64
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Grotto-escape-2-boss-dragon/spritesheets/breath.png"
+   ],
+   "attack2": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Grotto-escape-2-boss-dragon/spritesheets/tail.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Grotto-escape-2-boss-dragon/spritesheets/idle.png"
+   ]
+  }
+ },
+ "boss_fire_skull": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 78,
+  "body_width": 68,
+  "canvas": [
+   91,
+   101
+  ],
+  "credit": null,
+  "feet": [
+   45,
+   99
+  ],
+  "floats": true,
+  "frames": {
+   "idle": 8,
+   "nofire": 4
+  },
+  "fx": [],
+  "hit_frames": {},
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "Floating flaming skull: no attack, hit or death animation in the pack (fire on = idle; 'nofire' is the bare skull, 54x70 cells, placed at (16,32) in the 96x112 fire cell by an exact pixel match). Feet = bottom of the flames (it floats, no shadow).",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {},
+  "radius": 24,
+  "reach_measured": {},
+  "source_fps": null,
+  "source_frame_px": {
+   "idle": [
+    96,
+    112
+   ],
+   "nofire": [
+    54,
+    70
+   ]
+  },
+  "source_offsets": {
+   "nofire": [
+    16,
+    32
+   ]
+  },
+  "sources": {
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame7.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/Fire/frame8.png"
+   ],
+   "nofire": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/NoFire/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/NoFire/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/NoFire/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Fire-Skull-Files/Sprites/NoFire/frame4.png"
+   ]
+  }
+ },
+ "boss_frost_guardian": {
+  "archive": "assets_raw/bosses/chierit_free_bosses/Frost_Guardian_FREE_v1.0.zip",
+  "body_height": 92,
+  "body_width": 79,
+  "canvas": [
+   186,
+   98
+  ],
+  "credit": "chierit (https://chierit.itch.io)",
+  "feet": [
+   92,
+   93
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 14,
+   "death": 16,
+   "hit": 7,
+   "idle": 6,
+   "run": 10
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    7,
+    8
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC-BY 4.0, do not resell",
+  "mirrored": true,
+  "notes": "",
+  "pack": "chierit Boss: Frost Guardian (free)",
+  "projectile_spawn": {},
+  "radius": 28,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 92,
+    "frames": [
+     7,
+     8
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    192,
+    128
+   ],
+   "death": [
+    192,
+    128
+   ],
+   "hit": [
+    192,
+    128
+   ],
+   "idle": [
+    192,
+    128
+   ],
+   "run": [
+    192,
+    128
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_1.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_2.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_3.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_4.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_5.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_6.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_7.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_8.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_9.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_10.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_11.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_12.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_13.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/1_atk/1_atk_14.png"
+   ],
+   "death": [
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_1.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_2.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_3.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_4.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_5.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_6.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_7.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_8.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_9.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_10.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_11.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_12.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_13.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_14.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_15.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/death/death_16.png"
+   ],
+   "hit": [
+    "Frost_Guardian_FREE_v1.0/PNG files/take_hit/take_hit_1.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/take_hit/take_hit_2.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/take_hit/take_hit_3.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/take_hit/take_hit_4.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/take_hit/take_hit_5.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/take_hit/take_hit_6.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/take_hit/take_hit_7.png"
+   ],
+   "idle": [
+    "Frost_Guardian_FREE_v1.0/PNG files/idle/idle_1.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/idle/idle_2.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/idle/idle_3.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/idle/idle_4.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/idle/idle_5.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/idle/idle_6.png"
+   ],
+   "run": [
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_1.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_2.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_3.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_4.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_5.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_6.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_7.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_8.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_9.png",
+    "Frost_Guardian_FREE_v1.0/PNG files/walk/walk_10.png"
+   ]
+  }
+ },
+ "boss_fx_demon_fireball": {
+  "canvas": [
+   134,
+   74
+  ],
+  "credit": null,
+  "frames": 5,
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "",
+  "owner": "boss_demon",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "source_crop": [
+   19,
+   14,
+   153,
+   88
+  ],
+  "source_frame_px": [
+   160,
+   96
+  ],
+  "sources": [
+   "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Spritesheets/breath-fire.png"
+  ]
+ },
+ "boss_fx_demon_fireball_blue": {
+  "canvas": [
+   134,
+   74
+  ],
+  "credit": null,
+  "frames": 5,
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "",
+  "owner": "boss_demon",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "source_crop": [
+   19,
+   14,
+   153,
+   88
+  ],
+  "source_frame_px": [
+   160,
+   96
+  ],
+  "sources": [
+   "Legacy Collection/Assets/Gothicvania/Characters/demon-Files/Spritesheets/breath.png"
+  ]
+ },
+ "boss_fx_hell_beast_fireball": {
+  "canvas": [
+   18,
+   11
+  ],
+  "credit": null,
+  "frames": 3,
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "",
+  "owner": "boss_hell_beast",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "source_crop": [
+   1,
+   2,
+   19,
+   13
+  ],
+  "source_frame_px": [
+   19,
+   16
+  ],
+  "sources": [
+   "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Fireball/Sprites/frame1.png",
+   "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Fireball/Sprites/frame2.png",
+   "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Fireball/Sprites/frame3.png"
+  ]
+ },
+ "boss_fx_mecha_golem_arm": {
+  "canvas": [
+   37,
+   16
+  ],
+  "credit": null,
+  "frames": 1,
+  "licence": "free, commercial use and editing allowed, no resale/redistribution",
+  "mirrored": false,
+  "notes": "",
+  "owner": "boss_mecha_golem",
+  "pack": "Kronovi Mecha-Stone Golem [FREE]",
+  "source_crop": [
+   59,
+   29,
+   96,
+   45
+  ],
+  "source_frame_px": [
+   100,
+   100
+  ],
+  "sources": [
+   "Mecha-stone Golem 0.1/weapon PNG/arm_projectile.png"
+  ]
+ },
+ "boss_fx_mecha_golem_arm_glow": {
+  "canvas": [
+   37,
+   16
+  ],
+  "credit": null,
+  "frames": 6,
+  "licence": "free, commercial use and editing allowed, no resale/redistribution",
+  "mirrored": false,
+  "notes": "",
+  "owner": "boss_mecha_golem",
+  "pack": "Kronovi Mecha-Stone Golem [FREE]",
+  "source_crop": [
+   59,
+   29,
+   96,
+   45
+  ],
+  "source_frame_px": [
+   100,
+   100
+  ],
+  "sources": [
+   "Mecha-stone Golem 0.1/weapon PNG/arm_projectile_glowing.png"
+  ]
+ },
+ "boss_fx_mecha_golem_laser": {
+  "canvas": [
+   272,
+   46
+  ],
+  "credit": null,
+  "frames": 14,
+  "licence": "free, commercial use and editing allowed, no resale/redistribution",
+  "mirrored": false,
+  "notes": "",
+  "owner": "boss_mecha_golem",
+  "pack": "Kronovi Mecha-Stone Golem [FREE]",
+  "source_crop": [
+   29,
+   10,
+   301,
+   56
+  ],
+  "source_frame_px": [
+   300,
+   100
+  ],
+  "sources": [
+   "Mecha-stone Golem 0.1/weapon PNG/Laser_sheet.png"
+  ]
+ },
+ "boss_fx_terrible_knight_dagger": {
+  "canvas": [
+   25,
+   8
+  ],
+  "credit": null,
+  "frames": 1,
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": false,
+  "notes": "",
+  "owner": "boss_terrible_knight",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "source_crop": [
+   4,
+   12,
+   29,
+   20
+  ],
+  "source_frame_px": [
+   32,
+   32
+  ],
+  "sources": [
+   "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Projectiles/dagger.png"
+  ]
+ },
+ "boss_fx_terrible_knight_dagger_hit": {
+  "canvas": [
+   33,
+   34
+  ],
+  "credit": null,
+  "frames": 3,
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": false,
+  "notes": "",
+  "owner": "boss_terrible_knight",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "source_crop": [
+   -1,
+   -1,
+   32,
+   33
+  ],
+  "source_frame_px": [
+   31,
+   32
+  ],
+  "sources": [
+   "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Projectiles/Hit/Sprites/hit1.png",
+   "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Projectiles/Hit/Sprites/hit2.png",
+   "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Projectiles/Hit/Sprites/hit3.png"
+  ]
+ },
+ "boss_gollux": {
+  "archive": "assets_raw/bosses/admurin_bosses_gollux/Bosses_Gollux.zip",
+  "body_height": 60,
+  "body_width": 65,
+  "canvas": [
+   106,
+   92
+  ],
+  "credit": null,
+  "feet": [
+   34,
+   90
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 17,
+   "attack2": 19,
+   "heal": 25,
+   "hit": 4,
+   "idle": 5,
+   "run": 8
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    4
+   ],
+   "attack2": [
+    5
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "free, commercial use and modification allowed, no resale/NFT/AI training",
+  "mirrored": false,
+  "notes": "Idle cells are 128x128, all others 384x128: idle placed at (128,0) in the 384 cell (exact pixel match with attack A frame 0). No death animation in the pack.",
+  "pack": "Admurin Bosses - Gollux",
+  "projectile_spawn": {},
+  "radius": 23,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 39,
+    "frames": [
+     6,
+     7
+    ]
+   },
+   "attack2": {
+    "forward_px": 70,
+    "frames": [
+     6
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    384,
+    128
+   ],
+   "attack2": [
+    384,
+    128
+   ],
+   "heal": [
+    384,
+    128
+   ],
+   "hit": [
+    384,
+    128
+   ],
+   "idle": [
+    128,
+    128
+   ],
+   "run": [
+    384,
+    128
+   ]
+  },
+  "source_offsets": {
+   "idle": [
+    128,
+    0
+   ]
+  },
+  "sources": {
+   "attack": [
+    "Gollux/gollux_attack_A.png"
+   ],
+   "attack2": [
+    "Gollux/gollux_attack_B.png"
+   ],
+   "heal": [
+    "Gollux/gollux_healing.png"
+   ],
+   "hit": [
+    "Gollux/gollux_hit.png"
+   ],
+   "idle": [
+    "Gollux/gollux_idle.png"
+   ],
+   "run": [
+    "Gollux/gollux_move.png"
+   ]
+  }
+ },
+ "boss_hell_beast": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 60,
+  "body_width": 44,
+  "canvas": [
+   74,
+   161
+  ],
+  "credit": null,
+  "feet": [
+   39,
+   159
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 4,
+   "attack2": 6,
+   "idle": 6
+  },
+  "fx": [
+   "boss_fx_hell_beast_fireball"
+  ],
+  "hit_frames": {
+   "attack": [
+    3
+   ],
+   "attack2": [
+    4,
+    5
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "attack = rears up and breathes (spits the fireball fx); attack2 = 'Burn': turns into a tall fire pillar (canvas is tall because of it). No walk, hit or death. The Burn spritesheet has 74 px cells while its single sprites are 80 px: the single 80x160 sprites are used.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {
+   "attack": {
+    "canvas_px": [
+     56,
+     132
+    ],
+    "frame": 3,
+    "from_feet": [
+     17,
+     -27
+    ],
+    "method": "rightmost"
+   }
+  },
+  "radius": 15,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 18,
+    "frames": [
+     0,
+     3
+    ]
+   },
+   "attack2": {
+    "forward_px": 33,
+    "frames": [
+     4
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    80,
+    160
+   ],
+   "attack2": [
+    80,
+    160
+   ],
+   "idle": [
+    80,
+    160
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Breath/Sprites/hell-beast-breath1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Breath/Sprites/hell-beast-breath2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Breath/Sprites/hell-beast-breath3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Breath/Sprites/hell-beast-breath4.png"
+   ],
+   "attack2": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Burn/Sprites/hell-beast-burn1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Burn/Sprites/hell-beast-burn2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Burn/Sprites/hell-beast-burn3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Burn/Sprites/hell-beast-burn4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Burn/Sprites/hell-beast-burn5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Burn/Sprites/hell-beast-burn6.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Beast-Files/Idle/Sprites/hell-beast-idle6.png"
+   ]
+  }
+ },
+ "boss_hell_hound": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 24,
+  "body_width": 38,
+  "canvas": [
+   51,
+   45
+  ],
+  "credit": null,
+  "feet": [
+   29,
+   43
+  ],
+  "floats": false,
+  "frames": {
+   "dash": 5,
+   "idle": 11,
+   "jump": 6,
+   "run": 12
+  },
+  "fx": [],
+  "hit_frames": {},
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "Mini-boss size. run = walk cycle, dash = gallop. Jump can serve as the pounce attack. No hit or death.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {},
+  "radius": 13,
+  "reach_measured": {},
+  "source_fps": null,
+  "source_frame_px": {
+   "dash": [
+    64,
+    48
+   ],
+   "idle": [
+    64,
+    48
+   ],
+   "jump": [
+    64,
+    48
+   ],
+   "run": [
+    64,
+    48
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "dash": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Run/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Run/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Run/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Run/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Run/frame5.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame7.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame8.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame9.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame10.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Idle/frame11.png"
+   ],
+   "jump": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Jump/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Jump/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Jump/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Jump/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Jump/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Jump/frame6.png"
+   ],
+   "run": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame7.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame8.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame9.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame10.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame11.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Hell-Hound-Files/Sprites/Walk/frame12.png"
+   ]
+  }
+ },
+ "boss_mecha_golem": {
+  "archive": "assets_raw/bosses/kronovi_mecha_stone_golem/Mecha-stone Golem 0.1.zip",
+  "body_height": 46,
+  "body_width": 48,
+  "canvas": [
+   73,
+   73
+  ],
+  "credit": null,
+  "feet": [
+   26,
+   47
+  ],
+  "floats": true,
+  "frames": {
+   "attack": 9,
+   "attack2": 7,
+   "block": 8,
+   "buff": 10,
+   "cast": 7,
+   "death": 14,
+   "glow": 8,
+   "idle": 4,
+   "run": 4
+  },
+  "fx": [
+   "boss_fx_mecha_golem_arm",
+   "boss_fx_mecha_golem_arm_glow",
+   "boss_fx_mecha_golem_laser"
+  ],
+  "hit_frames": {
+   "attack": [
+    8
+   ],
+   "attack2": [
+    6
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "free, commercial use and editing allowed, no resale/redistribution",
+  "mirrored": false,
+  "notes": "One 1000x1000 sheet of 100x100 cells. Rows: 0 idle/move (4; run = the same 4 frames, as the pack says), 1 glow 8, 2 ranged arm shot 9 (attack), 3 block 8 (page says 9), 4 melee 7 (attack2), 5 laser cast 7, 6 armour buff 10 (page says 11), 7+8 defeated 14 (death; played backwards = appearance). No hit animation. Faces right in the source. Hovers: no legs, feet = bottom of the body. Laser fx: beam starts at its left end and runs to the right edge of its 300 px cell; frame 0 of the laser sheet was empty and is dropped (14 frames remain: 7 charge + 7 beam).",
+  "pack": "Kronovi Mecha-Stone Golem [FREE]",
+  "projectile_spawn": {
+   "attack": {
+    "canvas_px": [
+     71,
+     15
+    ],
+    "frame": 7,
+    "from_feet": [
+     45,
+     -32
+    ],
+    "method": "rightmost"
+   },
+   "cast": {
+    "canvas_px": [
+     28,
+     4
+    ],
+    "frame": 6,
+    "from_feet": [
+     2,
+     -43
+    ],
+    "method": "cyan"
+   }
+  },
+  "radius": 17,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 45,
+    "frames": [
+     7
+    ]
+   },
+   "attack2": {
+    "forward_px": 36,
+    "frames": [
+     6
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    100,
+    100
+   ],
+   "attack2": [
+    100,
+    100
+   ],
+   "block": [
+    100,
+    100
+   ],
+   "buff": [
+    100,
+    100
+   ],
+   "cast": [
+    100,
+    100
+   ],
+   "death": [
+    100,
+    100
+   ],
+   "glow": [
+    100,
+    100
+   ],
+   "idle": [
+    100,
+    100
+   ],
+   "run": [
+    100,
+    100
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "attack2": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "block": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "buff": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "cast": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "death": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "glow": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "idle": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ],
+   "run": [
+    "Mecha-stone Golem 0.1/PNG sheet/Character_sheet.png"
+   ]
+  }
+ },
+ "boss_minotaur": {
+  "archive": "assets_raw/bosses/chierit_free_bosses/mino_v1.1_free.zip",
+  "body_height": 100,
+  "body_width": 104,
+  "canvas": [
+   206,
+   124
+  ],
+  "credit": "chierit (https://chierit.itch.io)",
+  "feet": [
+   63,
+   119
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 16,
+   "idle": 16,
+   "run": 12
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    6
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC-BY 4.0, do not resell",
+  "mirrored": true,
+  "notes": "Free version has NO hit and NO death animation (paid version has them).",
+  "pack": "chierit Boss: Minotaur (free)",
+  "projectile_spawn": {},
+  "radius": 36,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 141,
+    "frames": [
+     6
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    288,
+    160
+   ],
+   "idle": [
+    288,
+    160
+   ],
+   "run": [
+    288,
+    160
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "mino_v1.1_free/animations/atk_1/atk_1_1.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_2.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_3.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_4.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_5.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_6.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_7.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_8.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_9.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_10.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_11.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_12.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_13.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_14.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_15.png",
+    "mino_v1.1_free/animations/atk_1/atk_1_16.png"
+   ],
+   "idle": [
+    "mino_v1.1_free/animations/idle/idle_1.png",
+    "mino_v1.1_free/animations/idle/idle_2.png",
+    "mino_v1.1_free/animations/idle/idle_3.png",
+    "mino_v1.1_free/animations/idle/idle_4.png",
+    "mino_v1.1_free/animations/idle/idle_5.png",
+    "mino_v1.1_free/animations/idle/idle_6.png",
+    "mino_v1.1_free/animations/idle/idle_7.png",
+    "mino_v1.1_free/animations/idle/idle_8.png",
+    "mino_v1.1_free/animations/idle/idle_9.png",
+    "mino_v1.1_free/animations/idle/idle_10.png",
+    "mino_v1.1_free/animations/idle/idle_11.png",
+    "mino_v1.1_free/animations/idle/idle_12.png",
+    "mino_v1.1_free/animations/idle/idle_13.png",
+    "mino_v1.1_free/animations/idle/idle_14.png",
+    "mino_v1.1_free/animations/idle/idle_15.png",
+    "mino_v1.1_free/animations/idle/idle_16.png"
+   ],
+   "run": [
+    "mino_v1.1_free/animations/walk/walk_1.png",
+    "mino_v1.1_free/animations/walk/walk_2.png",
+    "mino_v1.1_free/animations/walk/walk_3.png",
+    "mino_v1.1_free/animations/walk/walk_4.png",
+    "mino_v1.1_free/animations/walk/walk_5.png",
+    "mino_v1.1_free/animations/walk/walk_6.png",
+    "mino_v1.1_free/animations/walk/walk_7.png",
+    "mino_v1.1_free/animations/walk/walk_8.png",
+    "mino_v1.1_free/animations/walk/walk_9.png",
+    "mino_v1.1_free/animations/walk/walk_10.png",
+    "mino_v1.1_free/animations/walk/walk_11.png",
+    "mino_v1.1_free/animations/walk/walk_12.png"
+   ]
+  }
+ },
+ "boss_mutant_toad": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 36,
+  "body_width": 48,
+  "canvas": [
+   74,
+   60
+  ],
+  "credit": null,
+  "feet": [
+   32,
+   58
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 3,
+   "idle": 4,
+   "jump": 4
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    2
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": false,
+  "notes": "Mini-boss size. attack = tongue lash. No hit or death.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {},
+  "radius": 17,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 40,
+    "frames": [
+     2
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    80,
+    64
+   ],
+   "idle": [
+    80,
+    64
+   ],
+   "jump": [
+    80,
+    64
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/attack/mutant-toad-attack1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/attack/mutant-toad-attack2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/attack/mutant-toad-attack3.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/idle/mutant-toad-idle1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/idle/mutant-toad-idle2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/idle/mutant-toad-idle3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/idle/mutant-toad-idle4.png"
+   ],
+   "jump": [
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/jump/mutant-toad-jump1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/jump/mutant-toad-jump2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/jump/mutant-toad-jump3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/mutant-toad/Sprites/jump/mutant-toad-jump4.png"
+   ]
+  }
+ },
+ "boss_nightmare": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 81,
+  "body_width": 91,
+  "canvas": [
+   121,
+   91
+  ],
+  "credit": null,
+  "feet": [
+   70,
+   89
+  ],
+  "floats": false,
+  "frames": {
+   "idle": 4,
+   "run": 3
+  },
+  "fx": [],
+  "hit_frames": {},
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "Fire horse. Only idle and run in the pack: no attack, hit or death.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {},
+  "radius": 32,
+  "reach_measured": {},
+  "source_fps": null,
+  "source_frame_px": {
+   "idle": [
+    160,
+    96
+   ],
+   "run": [
+    160,
+    96
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Idle/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Idle/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Idle/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Idle/frame4.png"
+   ],
+   "run": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Run/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Run/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Nightmare-Files/Sprites/Run/frame3.png"
+   ]
+  }
+ },
+ "boss_ogre": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 58,
+  "body_width": 64,
+  "canvas": [
+   107,
+   78
+  ],
+  "credit": null,
+  "feet": [
+   46,
+   76
+  ],
+  "floats": false,
+  "frames": {
+   "attack": 7,
+   "idle": 4,
+   "idle_unarmed": 4,
+   "run": 6,
+   "run_unarmed": 6
+  },
+  "fx": [],
+  "hit_frames": {
+   "attack": [
+    4
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": true,
+  "notes": "No hit or death animation in the pack. Club overhead smash.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {},
+  "radius": 22,
+  "reach_measured": {
+   "attack": {
+    "forward_px": 59,
+    "frames": [
+     5
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "attack": [
+    144,
+    80
+   ],
+   "idle": [
+    144,
+    80
+   ],
+   "idle_unarmed": [
+    144,
+    80
+   ],
+   "run": [
+    144,
+    80
+   ],
+   "run_unarmed": [
+    144,
+    80
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Attack/ogre-attack1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Attack/ogre-attack2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Attack/ogre-attack3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Attack/ogre-attack4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Attack/ogre-attack5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Attack/ogre-attack6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Attack/ogre-attack7.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Idle/ogre-idle1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Idle/ogre-idle2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Idle/ogre-idle3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/Idle/ogre-idle4.png"
+   ],
+   "idle_unarmed": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/idle-unarmed/ogre-idle-unarmed1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/idle-unarmed/ogre-idle-unarmed2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/idle-unarmed/ogre-idle-unarmed3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/idle-unarmed/ogre-idle-unarmed4.png"
+   ],
+   "run": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk/ogre-walk1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk/ogre-walk2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk/ogre-walk3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk/ogre-walk4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk/ogre-walk5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk/ogre-walk6.png"
+   ],
+   "run_unarmed": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Ogre/Sprites/walk-unarmed/ogre-walk-unarmed6.png"
+   ]
+  }
+ },
+ "boss_terrible_knight": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 39,
+  "body_width": 28,
+  "canvas": [
+   86,
+   59
+  ],
+  "credit": null,
+  "feet": [
+   34,
+   57
+  ],
+  "floats": false,
+  "frames": {
+   "air_slash": 6,
+   "attack": 6,
+   "attack2": 2,
+   "attack3": 3,
+   "crouch": 2,
+   "crouch_attack": 4,
+   "hit": 3,
+   "idle": 4,
+   "jump": 4,
+   "jump_attack": 3,
+   "run": 12
+  },
+  "fx": [
+   "boss_fx_terrible_knight_dagger",
+   "boss_fx_terrible_knight_dagger_hit"
+  ],
+  "hit_frames": {
+   "air_slash": [
+    4
+   ],
+   "attack": [
+    2
+   ],
+   "attack2": [
+    1
+   ],
+   "attack3": [
+    2
+   ],
+   "crouch_attack": [
+    1
+   ],
+   "jump_attack": [
+    2
+   ]
+  },
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": false,
+  "notes": "Platformer knight (mini-boss size). AttackSide = throws the dagger fx. ClimbLedge and AttackCrouch (platformer only) not imported. No death animation.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {
+   "attack2": {
+    "canvas_px": [
+     54,
+     47
+    ],
+    "frame": 1,
+    "from_feet": [
+     20,
+     -10
+    ],
+    "method": "rightmost"
+   }
+  },
+  "radius": 10,
+  "reach_measured": {
+   "air_slash": {
+    "forward_px": 39,
+    "frames": [
+     4
+    ]
+   },
+   "attack": {
+    "forward_px": 47,
+    "frames": [
+     2
+    ]
+   },
+   "attack2": {
+    "forward_px": 20,
+    "frames": [
+     1
+    ]
+   },
+   "attack3": {
+    "forward_px": 13,
+    "frames": [
+     0
+    ]
+   },
+   "crouch_attack": {
+    "forward_px": 50,
+    "frames": [
+     1
+    ]
+   },
+   "jump_attack": {
+    "forward_px": 22,
+    "frames": [
+     2
+    ]
+   }
+  },
+  "source_fps": null,
+  "source_frame_px": {
+   "air_slash": [
+    128,
+    96
+   ],
+   "attack": [
+    128,
+    96
+   ],
+   "attack2": [
+    128,
+    96
+   ],
+   "attack3": [
+    128,
+    96
+   ],
+   "crouch": [
+    128,
+    96
+   ],
+   "crouch_attack": [
+    128,
+    96
+   ],
+   "hit": [
+    128,
+    96
+   ],
+   "idle": [
+    128,
+    96
+   ],
+   "jump": [
+    128,
+    96
+   ],
+   "jump_attack": [
+    128,
+    96
+   ],
+   "run": [
+    128,
+    96
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "air_slash": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AirSwordSlash/AirSwordSlash-export1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AirSwordSlash/AirSwordSlash-export2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AirSwordSlash/AirSwordSlash-export3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AirSwordSlash/AirSwordSlash-export4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AirSwordSlash/AirSwordSlash-export5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AirSwordSlash/AirSwordSlash-export6.png"
+   ],
+   "attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/SwordSlash/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/SwordSlash/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/SwordSlash/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/SwordSlash/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/SwordSlash/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/SwordSlash/frame6.png"
+   ],
+   "attack2": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AttackSide/attackside-export1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AttackSide/attackside-export2.png"
+   ],
+   "attack3": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AttackUp/attackUp-export1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AttackUp/attackUp-export2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/AttackUp/attackUp-export3.png"
+   ],
+   "crouch": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Crouch/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Crouch/frame2.png"
+   ],
+   "crouch_attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/CrouchSwordSlash/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/CrouchSwordSlash/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/CrouchSwordSlash/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/CrouchSwordSlash/frame4.png"
+   ],
+   "hit": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Hurt/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Hurt/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Hurt/frame3.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Idle/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Idle/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Idle/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Idle/frame4.png"
+   ],
+   "jump": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Jump/Jump1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Jump/Jump2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Jump/Jump3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Jump/Jump4.png"
+   ],
+   "jump_attack": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/JumpAttack/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/JumpAttack/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/JumpAttack/frame3.png"
+   ],
+   "run": [
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame6.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame7.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame8.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame9.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame10.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame11.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/Terrible Knight/Sprites/Run/frame12.png"
+   ]
+  }
+ },
+ "boss_werewolf": {
+  "archive": "assets_raw/bosses/ansimuz_legacy_collection/Legacy_Collection_bosses_trimmed.zip",
+  "body_height": 39,
+  "body_width": 57,
+  "canvas": [
+   79,
+   56
+  ],
+  "credit": null,
+  "feet": [
+   40,
+   54
+  ],
+  "floats": false,
+  "frames": {
+   "fall": 2,
+   "idle": 5,
+   "jump": 2,
+   "run": 6
+  },
+  "fx": [],
+  "hit_frames": {},
+  "hit_frames_how": "hand-picked from the contact sheet where listed in HITS, else the measured furthest-forward frame(s)",
+  "licence": "CC0 1.0 (no attribution needed)",
+  "mirrored": false,
+  "notes": "Mini-boss size. Only idle, run, jump, fall: no attack, hit or death.",
+  "pack": "ansimuz Legacy Collection (Gothicvania)",
+  "projectile_spawn": {},
+  "radius": 20,
+  "reach_measured": {},
+  "source_fps": null,
+  "source_frame_px": {
+   "fall": [
+    96,
+    76
+   ],
+   "idle": [
+    96,
+    76
+   ],
+   "jump": [
+    96,
+    76
+   ],
+   "run": [
+    96,
+    76
+   ]
+  },
+  "source_offsets": {},
+  "sources": {
+   "fall": [
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/fall/werewolf-fall1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/fall/werewolf-fall2.png"
+   ],
+   "idle": [
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/Idle/werewolf-idle1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/Idle/werewolf-idle2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/Idle/werewolf-idle3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/Idle/werewolf-idle4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/Idle/werewolf-idle5.png"
+   ],
+   "jump": [
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/jump/werewolf-jump1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/jump/werewolf-jump2.png"
+   ],
+   "run": [
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run1.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run2.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run3.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run4.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run5.png",
+    "Legacy Collection/Assets/Gothicvania/Characters/WereWolf/Sprites/run/werewolf-run6.png"
+   ]
+  }
+ }
+}

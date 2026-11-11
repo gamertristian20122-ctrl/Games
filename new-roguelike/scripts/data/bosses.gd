@@ -9,15 +9,16 @@ extends RefCounted
 ##   script   file name in scripts/entities/bosses/ (without .gd)
 ##   speed, touch   like enemies.gd
 ##   radius   body circle in px          hit_up   how far above the feet the middle of the hit circle is (px)
-##            (both measured from the sprite at its scale when left out)
+##            (both measured from the sprite at its scale when left out; "radius" is kept here because
+##            the boss files use it for charges and slams, "hit_up" is left to the measurement)
 ##   params   numbers the boss file understands
 
 const ALL := {
 	"gravekeeper": {"name": "The Gravekeeper", "sprite": "pc_zombie_muscle", "scale": 2.0, "hp": 150.0, "floors": [1, 3],
-		"script": "gravekeeper", "speed": 26.0, "radius": 12.0, "hit_up": 16.0, "touch": 1, "shot": "enemy",
+		"script": "gravekeeper", "speed": 26.0, "radius": 12.0, "touch": 1, "shot": "enemy",
 		"params": {"charge_speed": 170.0, "slam_radius": 40.0}},
 	"stonejaw": {"name": "Stonejaw", "sprite": "pc_orc_warrior", "scale": 2.0, "hp": 150.0, "floors": [2, 4],
-		"script": "stonejaw", "speed": 30.0, "radius": 13.0, "hit_up": 18.0, "touch": 1, "shot": "enemy",
+		"script": "stonejaw", "speed": 30.0, "radius": 13.0, "touch": 1, "shot": "enemy",
 		"params": {"leap_time": 0.9, "shock_radius": 34.0}},
 }
 
