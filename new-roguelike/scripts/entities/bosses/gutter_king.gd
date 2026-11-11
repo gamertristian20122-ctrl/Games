@@ -91,7 +91,7 @@ func tick(e, delta: float) -> void:
 			if e.t <= 0.0:
 				e.stop()
 				e.state = SIT
-				e.t = e.rng.randf_range(0.3, 0.6) if mean else e.rng.randf_range(0.6, 1.0)
+				e.t = e.rng.randf_range(0.5, 0.9) if mean else e.rng.randf_range(0.9, 1.4)
 
 
 func _pick(e, mean: bool) -> void:
@@ -144,7 +144,7 @@ func _begin_hop(e) -> void:
 	e.state = BUSY
 	var to: Vector2 = e.player.position
 	e.target = Vector2(clampf(to.x, 16.0, G.ROOM_W - 16.0), clampf(to.y, 14.0, G.ROOM_H - 10.0))
-	var crouch := 0.3 if mean else 0.45
+	var crouch := 0.4 if mean else 0.45
 	e.pose("jump", 1)
 	_turn(e, e.target.x - e.position.x)
 	e.tell(crouch)
@@ -177,7 +177,7 @@ func _land(e, mean: bool) -> void:
 	e.run.hitstop(0.04)
 	Sfx.play("explosion", -6.0, 0.0, 1.3)
 	var shots := int(e.p.get("hop_shots", 8))
-	e.ring_from(e.position, shots - 2 if mean else shots, 58.0, "slime", e.rng.randf() * TAU)
+	e.ring_from(e.position, maxi(shots - 2, 3) if mean else shots, 58.0, "slime", e.rng.randf() * TAU)   # three smaller rings in phase 2
 	if mean:
 		_puddle(e, e.position, float(e.p.get("puddle_radius", 15.0)), float(e.p.get("puddle_seconds", 3.5)))
 	e.mem["hops"] = int(e.mem["hops"]) - 1
@@ -312,7 +312,7 @@ func _begin_spit(e, mean: bool) -> void:
 
 func _spit(e) -> void:
 	for d: Vector2 in e.mem["dirs"]:
-		e.shoot_from(e.mem["mouth"], d, float(e.p.get("spit_speed", 80.0)), "slime", {"bounce": 2, "range": 330.0, "size": 1.25})
+		e.shoot_from(e.mem["mouth"], d, float(e.p.get("spit_speed", 80.0)), "slime", {"bounce": 2, "range": 230.0, "size": 1.25})
 	e.run.fx.burst(e.at_feet(MOUTH), SPLASH, 8, 60.0, 0.3, 2.0, Vector2(e.facing, 0.0))
 	Sfx.play("enemy_shoot", -2.0, 0.0, 0.6)
 	e.state = REST

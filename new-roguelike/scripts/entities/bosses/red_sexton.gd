@@ -135,7 +135,7 @@ func _begin_sink(e, from: int, seconds: float) -> void:
 	e.mem["sink"] = seconds
 	e.harmful = false
 	e.run.fx.burst(e.position, EMBERS, 8, 40.0, 0.4, 2.0)
-	Sfx.play("door_close", -6.0, 0.05, 1.7)
+	Sfx.play("door_close", -6.0, 0.05, 0.75)   # a deep thud (the Curse uses this sound high)
 
 
 ## Where it comes up: beside the hero, in the way he is walking, on free floor.

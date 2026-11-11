@@ -55,9 +55,9 @@ const ALL := {
 	# the Red Sexton's thrown knives (the dagger of the same ansimuz pack, CC0)
 	"sexton_blade": {"color": Color(1.0, 0.86, 0.80), "edge": Color(0.80, 0.12, 0.10), "radius": 3.0, "trail": 0,
 		"sprite": "boss_fx_terrible_knight_dagger", "points": "right", "anchor": Vector2(20, 4), "under": Color(0.16, 0.01, 0.03, 1.0),
-		"dot": Color(1.0, 0.92, 0.80), "tint": Color(1.35, 0.85, 0.8)},
+		"dot": Color(1.0, 0.92, 0.80), "tint": Color(1.6, 0.6, 0.5)},
 	# the Gutter King's slime: green and slow, with a dark rim (never pale gold: that is the Curse)
-	"slime": {"color": Color(0.72, 1.0, 0.36), "edge": Color(0.06, 0.26, 0.05), "radius": 3.6, "trail": 1, "sprite": ""},
+	"slime": {"color": Color(0.72, 1.0, 0.36), "edge": Color(0.06, 0.26, 0.05), "radius": 3.3, "trail": 1, "sprite": ""},
 }
 
 const FALLBACK := "enemy"
