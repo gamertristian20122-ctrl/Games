@@ -205,7 +205,7 @@ func _ossuary_refresh(player: Node) -> void:
 func howling_scar_on_hurt(_run: Node, player: Node, half_hearts: int, cause: String) -> void:
 	if not _bitten(half_hearts, cause):
 		return
-	var damage: float = player.stats.v("damage") * 5.0
+	var damage: float = player.stats.v("damage") * 8.0      # (5 was tried: the bot did no better with the item than without)
 	for e in run.room.enemies.duplicate():
 		if is_instance_valid(e) and e.hittable:
 			e.hurt(damage, ((e.position as Vector2) - player.position).normalized(), 2.0)

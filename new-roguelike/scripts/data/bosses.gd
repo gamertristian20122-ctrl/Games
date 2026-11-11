@@ -21,6 +21,8 @@ extends RefCounted
 ##   phases   health shares where the next phase starts (default [0.5]; [0.5, 0.2] gives a phase 3)
 ##   hit_frames   {animation: [frames]} to overrule boss_cast.json     muzzle   {animation: [x, y]} from the feet
 ##   stagger_dmg  how much harder shots hit while it is staggered (default 1.0)
+##   north    px of floor it keeps between its feet and the back wall (default: from its height, 0 to 40,
+##            so the head of a very tall boss stays on the screen)
 ##   layout   the boss room layout it needs (scripts/data/room_layouts.gd), for bodies too big for pillars
 ##   final    true = killing it wins the run; its death is longer (death_time overrules the seconds)
 ##   params   numbers its fight file understands (explained at the top of that file)

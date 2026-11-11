@@ -43,8 +43,9 @@ const GROW_SIZE := 1.25
 const GROW_REACH := 30.0
 const REAP_DAMAGE := 1.4       ## Reaping Hook, per kill
 const REAP_SIZE := 1.2
-const REAP_REACH := 30.0
+const REAP_REACH := 40.0
 const REAP_MAX := 4
+const REAP_HOMING := 4.0       ## after a kill it curves at the next monster (radians a second)
 const EAT_DAMAGE := 1.19       ## Starveling Blade, per enemy shot swallowed (4 times = double)
 const EAT_SIZE := 1.125
 const EAT_MAX := 4
@@ -448,6 +449,7 @@ func _step_shots(delta: float) -> void:
 					if b & B_REAP != 0 and e.dead and int(fed[i]) & 15 < REAP_MAX:
 						fed[i] += 1                   # Reaping Hook: the kill feeds the shot and it flies on
 						_swell(i, REAP_DAMAGE, REAP_SIZE, REAP_REACH)
+						homing[i] = maxf(homing[i], REAP_HOMING)
 						continue
 					if pierce[i] > 0:
 						pierce[i] -= 1

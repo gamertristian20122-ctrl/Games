@@ -25,6 +25,9 @@ item makes it bigger.
   code-drawn disc).
 - Every asset must be human-made with a licence that allows a commercial closed-source game
   (CC0 preferred; CC-BY / OFL only for music and fonts). Record each one in `scripts/data/credits.gd`.
+  **CC-BY art is allowed only with its credit row in the game** (the Credits screen is built from
+  `credits.gd`). Today that is one boss: the Cinder Tyrant, art by chierit, CC-BY 4.0. It is a spare:
+  to drop it, delete its row in `scripts/data/bosses.gd` and its credit row together.
   Raw downloads with their licence evidence live in `assets_raw/` (each pack has a SOURCE.txt; the two
   biggest audio source folders are not in git, their notes are in `assets_raw/licence_notes/`).
 - **The GitHub repo must stay PRIVATE.** It holds the purchased "Pixel Crawler" art by Anokolisa
@@ -58,7 +61,7 @@ KEY_PASS=... ./tools/build_apk.sh                       # signed APK in build/
 ```
 Flags (after `--`): `--autotest` (a bot plays), `--hero=`, `--seed=`, `--speed=`, `--time=<game seconds>`,
 `--god`, `--floor=<1-4>`, `--give=id,id`, `--goto=boss|shop|treasure|secret`, `--shots=<dir>`, `--nosave`,
-`--uitour`. Software rendering is slow, so drive tests by game time and wrap runs in `timeout`.
+`--uitour`, `--boss=<id>` (see "Bosses"). Software rendering is slow, so drive tests by game time and wrap runs in `timeout`.
 
 ## Where things are
 - `scripts/core/` autoloads: `G` (constants, event bus, flags), `Art` (sprite lookup by file name),
@@ -223,8 +226,7 @@ Added by the cast builder. Every character on screen is a purchased Pixel Crawle
   (shown as Bone Mage), `lantern_head` (Ember Husk).
 - **Flashes:** a hit = pure white for `HIT_FLASH` (0.06 s). A wind-up (`tell()`) blinks PALE, not white
   (`TELL_SHADER`), so tall sprites never turn into a blank white shape.
-- **Bosses (`scripts/data/bosses.gd`):** a floor creature at `"scale": 2.0` (whole numbers only).
-  New boss fights are not written yet: the two old fights are reused on all four floors.
+- **Bosses:** no longer Pixel Crawler creatures at double size. See the "Bosses" section.
 - **Helpers:** familiars are tinted `pc_bat_small` using the flying loop (`scripts/data/familiars.gd`;
   row keys `wisp`, `tithe_imp` must stay). The shopkeeper is `pc_npc_tavern_a` (`shopkeeper.gd`).
 - **Look at it:** `xvfb-run -a -s "-screen 0 1600x720x24" godot --path . --rendering-driver opengl3
@@ -275,3 +277,64 @@ layout letters in that section still hold.
 - Still old: HUD hearts (0x72, the only full/half/empty set), explosions (ansimuz), the 6 px Curse skull badge.
 - Pickup rows: `scripts/data/pickups.gd` (sprite list: the first id that exists wins). HUD icons: `UI.hud_icon` in theme.gd.
 - Test flag `--lockchests`: every chest is locked (to look at the locked chest).
+
+## Bosses
+Seven bosses drawn from their own art at real size (never scaled). Names are placeholders the owner
+may change (`"name"` in `scripts/data/bosses.gd`; the row KEY is what saves and unlocks remember).
+
+| Floor | Row key | Name | Sprite | State |
+| --- | --- | --- | --- | --- |
+| 1 | `pyre_saint` | The Pyre Saint | `boss_fire_skull` | stub |
+| 1 | `red_sexton` | The Red Sexton | `boss_death` | stub |
+| 2 | `stonejaw` | Stonejaw | `boss_ogre` | full fight (reference) |
+| 2 | `gutter_king` | The Gutter King | `boss_mutant_toad` | stub |
+| 3 | `forge_warden` | The Forge Warden | `boss_mecha_golem` | stub |
+| 3 | `cinder_tyrant` | The Cinder Tyrant | `boss_demon_slime` (CC-BY, chierit) | full fight (reference) |
+| 4 | `starved_king` | The Starved King (FINAL) | `boss_demon` | stub |
+
+A floor with two bosses picks one per run (seeded). Killing the row with `"final": true` wins the run
+(`run.boss_killed`); its death is longer. A row's `"layout"` forces the boss room layout (the King
+and the Tyrant are too big for pillars).
+
+- **Art:** `assets/art/boss/` (cut by `tools/import_bosses.py`), described by
+  `assets/art/boss/boss_cast.json` (read its `_about` key): canvas, feet point, hover height, body
+  size, radius, frames per animation, frame rates, hit frames, shot spawn points, effect sprites,
+  notes. `Art` loads every animation that file lists and `Art.meta(id)` hands the entry out.
+  17 bosses are cut; ten are unused spares.
+- **Files:** `scripts/data/bosses.gd` (rows; every key is explained at its top),
+  `scripts/entities/boss.gd` (the base and THE TOOLKIT, listed at its top),
+  `scripts/entities/bosses/<row key>.gd` (one fight each).
+- **Writing a fight:** copy `stonejaw.gd` or `cinder_tyrant.gd`. A fight is a small state machine
+  (`start`, `tick`, optional `phase_changed`) whose attacks are: put a red mark on the floor
+  (`e.mark_circle / mark_lane / mark_charge / mark_cone / mark_ring`), play the animation so its
+  hit frame lands when the mark is full (`e.strike(anim, seconds, on_hit, on_end)`), and in the
+  callback hurt what is inside (`e.strike_circle / _lane / _cone / _ring`) and fire shots
+  (`e.shoot_from / fan_from / ring_from` from `e.muzzle(anim)`). `e.after(seconds, callback)` is the
+  timer, `e.stagger(seconds)` the breather, `e.burn_ground()` fire that stays, `e.fx_sprite()` a
+  `boss_fx_*` animation, `e.cut_sprite()` a piece of one of its own frames (Stonejaw's thrown club),
+  `e.summon_minions()` helpers on marked spots. Numbers go in the row's `params`.
+- **Rules of a fight:** every blow has a wind-up and a red floor mark of at least 0.5 s on floor 1
+  and never under 0.35 s; there is always somewhere safe to stand; 3 to 4 attacks, a breather, and
+  a phase 2 under half health that changes the pattern (`"phases": [0.5, 0.2]` adds a phase 3);
+  45 to 90 s (final boss 90 to 150 s); under about 120 shots on screen (`e.shoot_from` and friends
+  stop at `SHOT_CAP`). Marks are RED: pale-gold rings and stripes on the floor belong to the Curse.
+  Burning ground is a ragged orange patch without a rim, so it is neither a mark nor the Curse.
+- **Made by code where the pack drew nothing:** the hit flash (a pale flash, not pure white), the
+  phase roar, the dazed look of a stagger, and the death (shake, bursts in the boss's own colours,
+  fade, slow motion). The pack's `hit` and `death` frames are used where they exist.
+- **Test flags:** `--goto=boss --floor=N --boss=<row key>` (that boss on any floor; the bot walks
+  straight in), `--bosshp=<n>` (to reach phase 2 or the death quickly), `--bosslog` (prints phases,
+  staggers, the fight time and WHAT hurt the hero: which mark, its body, a shot, a helper, the Curse).
+  Example: `godot --headless --path . res://dev/world_test.tscn -- --autotest --nosave --bosslog
+  --hero=witch --seed=5 --speed=8 --time=130 --goto=boss --floor=3 --boss=cinder_tyrant`.
+- **The bot in a boss room** (`scripts/run/bot.gd`): steps out of circles, lanes, cones and rings
+  (`run.fx.hazards`), keeps its distance from a boss's SIDE, never walks into its body, and shoots
+  a helper that is right on top of it.
+- **Measured (bot, no items, `--speed=8`):** Stonejaw 42 to 64 s, Cinder Tyrant 52 to 62 s; the bot
+  wins about half of those fights with a bare hero. The five stubs are not balanced.
+- **Old saves:** `Bosses.RENAMED` maps a retired boss id (`gravekeeper`) to the boss that took its
+  place, so `boss_killed:<id>` counters and rules stay true. `./tools/check.sh` checks every row:
+  its file loads, every listed animation exists, every floor has a boss.
+- **Licences:** ansimuz "Legacy Collection" CC0; Kronovi "Mecha-Stone Golem" free for commercial use
+  (no redistribution: one more reason the repo stays private); chierit "Demon Slime" CC-BY 4.0
+  (credit required). Evidence: `assets_raw/bosses/*/SOURCE.txt`.

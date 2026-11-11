@@ -93,7 +93,7 @@ const ALL := {
 		"mods": {"flags": {"return": 1}}},
 	"stonebiter": {"name": "Stonebiter", "desc": "Shots bounce once more and grow with every bounce.", "icon": "icon_stonebiter", "cursed": false, "pools": ["treasure", "secret"],
 		"mods": {"flags": {"bounce": 1, "bounce_grow": 1}}},
-	"reaping_hook": {"name": "Reaping Hook", "desc": "A shot that kills flies on, bigger with each kill.", "icon": "icon_reaping_hook", "cursed": false, "pools": ["treasure", "boss"], "locked": true,
+	"reaping_hook": {"name": "Reaping Hook", "desc": "A shot that kills flies on to the next monster, bigger with each kill.", "icon": "icon_reaping_hook", "cursed": false, "pools": ["treasure", "boss"], "locked": true,
 		"mods": {"flags": {"reap": 1}}},
 	"starveling_blade": {"name": "Starveling Blade", "desc": "Your shots swallow enemy shots and grow on them.", "icon": "icon_starveling_blade", "cursed": false, "pools": ["treasure", "shop", "boss"],
 		"mods": {"flags": {"eat_shots": 1}}},

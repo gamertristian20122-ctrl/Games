@@ -327,6 +327,10 @@ func _draw_boss_bar() -> void:
 		_boss_bar.draw_rect(Rect2(1, 1, fill, h - 2), UI.C_RED)
 		_boss_bar.draw_rect(Rect2(1, 1, fill, 1), Color("f08a6e"))
 		_boss_bar.draw_rect(Rect2(1, h - 2, fill, 1), UI.C_BLOOD)
+	# a notch where each later phase of the boss begins
+	if _boss != null and is_instance_valid(_boss) and "phase_marks" in _boss:
+		for share in _boss.phase_marks:
+			_boss_bar.draw_rect(Rect2(1.0 + roundf(inner * float(share)), 1, 1, h - 2), UI.C_INK)
 
 
 func _on_boss_started(boss: Node) -> void:

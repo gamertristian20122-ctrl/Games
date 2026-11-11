@@ -21,9 +21,9 @@ extends RefCounted
 const CHILL_SLOW := 0.25         ## slower per chill (two chills = half speed)
 const CHILL_FADE := 2.5          ## seconds after the last hit before the chill is gone
 const CHILLS_TO_FREEZE := 3
-const FREEZE_TIME := 1.8
+const FREEZE_TIME := 2.2
 const FREEZE_TIME_BIG := 0.9     ## elites and "big" monsters
-const THAW_GUARD := 3.0          ## seconds after thawing in which it cannot be chilled again
+const THAW_GUARD := 2.0          ## seconds after thawing in which it cannot be chilled again
 const FROZEN_KNOCK := 2.0
 const BOSS_SLOW := 0.15
 

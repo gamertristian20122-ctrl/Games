@@ -483,7 +483,7 @@ func _physics_process(delta: float) -> void:
 			zones.remove_at(k)
 		elif embers:
 			var zc: Color = z[4]
-			burst(z[0] + Vector2.RIGHT.rotated(randf() * TAU) * randf() * float(z[1]) * 0.85, [zc, zc.lightened(0.35)], 1, 8.0, 0.5, 1.6, Vector2.UP, -30.0)
+			burst(z[0] + Vector2.RIGHT.rotated(randf() * TAU) * randf() * float(z[1]) * 0.85, [zc, zc.lightened(0.4), Color(1.0, 0.85, 0.35)], 2, 10.0, 0.55, 2.0, Vector2.UP, -45.0)
 	if _flash_t > 0.0:
 		_flash_t -= delta
 	_step_motes(delta)
@@ -573,9 +573,15 @@ func _draw_ground() -> void:
 		var zr: float = z[1]
 		var fade := clampf((float(z[3]) - float(z[2])) / 0.5, 0.0, 1.0) * clampf(float(z[2]) / 0.12, 0.0, 1.0)
 		var flick := 0.8 + 0.2 * sin(float(z[2]) * 19.0 + zr)
-		ground.draw_circle(z[0], zr, Color(zc.r * 0.45, zc.g * 0.2, zc.b * 0.2, 0.42 * fade))
-		ground.draw_circle(z[0], zr * 0.72, Color(zc.r, zc.g, zc.b, 0.30 * fade * flick))
-		ground.draw_arc(z[0], zr, 0.0, TAU, 28, Color(0.75, 0.10, 0.06, 0.8 * fade), 1.0)
+		# fire, not a warning and not the Curse: no rim, a ragged patch of overlapping blobs that flicker
+		for n in 6:
+			var lobe: Vector2 = (z[0] as Vector2) + Vector2.RIGHT.rotated(TAU * float(n) / 6.0 + zr) * zr * 0.5
+			ground.draw_circle(lobe, zr * 0.5, Color(zc.r * 0.4, zc.g * 0.15, zc.b * 0.15, 0.34 * fade))
+		for n in 5:
+			var wob := 0.75 + 0.25 * sin(float(z[2]) * (13.0 + 3.0 * float(n)) + float(n) * 2.1)
+			var blob: Vector2 = (z[0] as Vector2) + Vector2.RIGHT.rotated(TAU * float(n) / 5.0 + zr * 2.0) * zr * 0.42
+			ground.draw_circle(blob, zr * 0.36 * wob, Color(zc.r, zc.g, zc.b, 0.40 * fade))
+		ground.draw_circle(z[0], zr * 0.34 * flick, Color(1.0, 0.82, 0.3, 0.45 * fade))
 	for w in warns:
 		var k: float = clampf(w[4] / w[5], 0.0, 1.0)
 		var col: Color = w[6]
@@ -589,8 +595,9 @@ func _draw_ground() -> void:
 			var part := PackedVector2Array([tip])
 			for n in 13:
 				var d := Vector2.RIGHT.rotated(a0 + float(w[3]) * 2.0 * float(n) / 12.0)
-				full.append(tip + d * reach)
-				part.append(tip + d * reach * k)
+				var seen := _reach_in_room(tip, d, reach)       # the wedge stops at the walls
+				full.append(tip + d * seen)
+				part.append(tip + d * minf(reach * k, seen))
 			ground.draw_colored_polygon(full, Color(col.r, col.g, col.b, 0.12))
 			if k > 0.04:
 				ground.draw_colored_polygon(part, Color(col.r, col.g, col.b, 0.24 * pulse))
@@ -613,12 +620,28 @@ func _draw_ground() -> void:
 		else:
 			var a: Vector2 = w[1]
 			var b: Vector2 = w[2]
+			if a.distance_to(b) > 1.0:
+				b = a + (b - a).normalized() * _reach_in_room(a, (b - a).normalized(), a.distance_to(b))   # a lane stops at the walls
 			ground.draw_line(a, b, Color(col.r, col.g, col.b, 0.16), w[3] * 2.0)
 			ground.draw_line(a, a.lerp(b, k), Color(col.r, col.g, col.b, 0.30 * pulse), w[3] * 2.0)
 			ground.draw_line(a, b, Color(col.r, col.g, col.b, 0.9 * pulse), 1.0)
 	for r in rings:
 		if r[7]:
 			_ring(ground, r)
+
+
+## How far a mark may run from `from` along the unit vector `d` before it leaves the floor.
+func _reach_in_room(from: Vector2, d: Vector2, max_len: float) -> float:
+	var k := max_len
+	if d.x > 0.001:
+		k = minf(k, (G.ROOM_W - from.x) / d.x)
+	elif d.x < -0.001:
+		k = minf(k, -from.x / d.x)
+	if d.y > 0.001:
+		k = minf(k, (G.ROOM_H - from.y) / d.y)
+	elif d.y < -0.001:
+		k = minf(k, -from.y / d.y)
+	return maxf(k, 0.0)
 
 
 func _ring(canvas: Node2D, r: Array) -> void:

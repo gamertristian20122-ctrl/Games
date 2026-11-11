@@ -52,6 +52,8 @@ extends "res://scripts/entities/enemy.gd"
 ##     e.cut_sprite(anim, frame, rect)             a piece cut out of one of its own frames (a thrown weapon)
 ## Hit flash, phase roar and death are made here: the pack's own "hit" / "death" frames where it
 ## has them, otherwise code effects (white flash, shake, bursts in its own colours, fade).
+## Test flags: --boss=<row key> (this boss on any floor), --bosshp=<n> (its hit points),
+## --bosslog (prints phases, staggers and WHAT hurt the hero), with --goto=boss --floor=N.
 ## Rules: every blow gets a mark of at least 0.5 s on floor 1 and never under 0.35 s; marks are RED
 ## (pale gold on the floor belongs to the Hungry Curse); always leave somewhere safe to stand.
 
@@ -88,6 +90,7 @@ var _body_w := 24.0
 var _bob := 0.0
 var _bob_t := 0.0
 var _stagger_dmg := 1.0
+var _north := 0.0                ## it never stands closer than this to the back wall (px of floor)
 var _real_hit := false
 var _real_death := false
 var _play := ""
@@ -111,6 +114,14 @@ var _death_wave := 0
 var _log := false                ## --bosslog: print what happens in the fight (see _say)
 var _fight_t := 0.0
 var _hurt_by := ""
+
+
+static func hit_material() -> ShaderMaterial:
+	if _hit_mat == null:
+		_hit_mat = ShaderMaterial.new()
+		_hit_mat.shader = Shader.new()
+		_hit_mat.shader.code = HIT_SHADER
+	return _hit_mat
 
 
 func _row(enemy_id: String) -> Dictionary:
@@ -152,6 +163,12 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	mass = 40.0
 	_bob = float(data.get("bob", 1.0 if _lifted > 0.0 else 0.0))
 	_stagger_dmg = float(data.get("stagger_dmg", 1.0))
+	# a very tall boss keeps off the back wall, or its head would leave the screen
+	_north = float(data.get("north", clampf(_body_h + _lifted - 80.0, 0.0, 40.0)))
+	if G.arg("bosshp") != "":
+		# --bosshp=<n>: a test flag, to reach phase 2 or the death quickly
+		max_hp = maxf(float(G.arg("bosshp")), 1.0)
+		hp = max_hp
 	phase_marks = data.get("phases", [0.5])
 	_base_scale = 1.0
 	sprite.scale = Vector2.ONE
@@ -212,6 +229,8 @@ func _physics_process(delta: float) -> void:
 	if dead:
 		return
 	super._physics_process(delta)
+	if position.y < _north and lift <= 0.0:
+		position.y = minf(position.y + 60.0 * delta, _north)
 	if not dead and phase <= phase_marks.size() and hp <= max_hp * float(phase_marks[phase - 1]):
 		_next_phase()
 
@@ -725,11 +744,7 @@ func _update_look(delta: float) -> void:
 	sprite.self_modulate = Color(0.72, 0.74, 0.86) if staggered > 0.0 else Color(1, 1, 1)
 	if _flash > 0.0:
 		_flash -= delta
-		if _hit_mat == null:
-			_hit_mat = ShaderMaterial.new()
-			_hit_mat.shader = Shader.new()
-			_hit_mat.shader.code = HIT_SHADER
-		sprite.material = _hit_mat
+		sprite.material = hit_material()
 	elif _tell > 0.0:
 		_tell -= delta
 		var k := 1.0 - _tell / maxf(_tell_dur, 0.01)
@@ -806,7 +821,7 @@ func _tick_death(delta: float) -> void:
 		sprite.frame = mini(int(k / 0.8 * float(n)), n - 1)
 		sprite.self_modulate.a = clampf((1.0 - k) / 0.12, 0.0, 1.0)
 	else:
-		sprite.material = white_material() if fmod(dying * 14.0, 1.0) < 0.35 else null
+		sprite.material = hit_material() if fmod(dying * 14.0, 1.0) < 0.35 else null
 		sprite.position.x = randf_range(-1.5, 1.5) * (1.0 + k)
 		sprite.self_modulate.a = clampf((1.0 - k) / 0.3, 0.0, 1.0)
 	shadow.modulate.a = clampf((1.0 - k) / 0.3, 0.0, 1.0)

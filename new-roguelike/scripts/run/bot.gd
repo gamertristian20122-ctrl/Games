@@ -360,15 +360,22 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 			var turn := mid.angle_to(rel2)
 			var far2 := rel2.length()
 			if far2 < mid.length() + 14.0 and absf(turn) < float(h[3]) + 14.0 / maxf(far2, 14.0):
-				var side_dir := mid.normalized().orthogonal() * (1.0 if turn >= 0.0 else -1.0)
-				var side_way := far2 * sin(clampf(float(h[3]) - absf(turn), 0.0, 1.5)) + 14.0
+				var side_dir := mid.normalized().orthogonal()
+				if rel2.dot(side_dir) < 0.0:
+					side_dir = -side_dir            # the side of the middle line we are already on
 				var out_dir := rel2.normalized() if far2 > 0.5 else mid.normalized()
-				var out_way := mid.length() + 14.0 - far2
-				var side_end := pos + side_dir * side_way
-				var out_end := pos + out_dir * out_way
-				var side_ok := side_end.x > 6.0 and side_end.x < G.ROOM_W - 6.0 and side_end.y > 6.0 and side_end.y < G.ROOM_H - 6.0
-				var out_ok := out_end.x > 6.0 and out_end.x < G.ROOM_W - 6.0 and out_end.y > 6.0 and out_end.y < G.ROOM_H - 6.0
-				move += (side_dir if (side_ok and (side_way <= out_way or not out_ok)) or not out_ok else out_dir) * 3.5
+				# three ways out: over the near edge, over the far edge, out of the end; the shortest that stays in the room
+				var ways := [[side_dir, far2 * sin(clampf(float(h[3]) - absf(turn), 0.0, 1.5)) + 14.0],
+					[-side_dir, far2 * sin(clampf(float(h[3]) + absf(turn), 0.0, 1.5)) + 14.0],
+					[out_dir, mid.length() + 14.0 - far2]]
+				var best_dir: Vector2 = side_dir
+				var best_way := INF
+				for way: Array in ways:
+					var end: Vector2 = pos + (way[0] as Vector2) * float(way[1])
+					if float(way[1]) < best_way and end.x > 6.0 and end.x < G.ROOM_W - 6.0 and end.y > 6.0 and end.y < G.ROOM_H - 6.0:
+						best_way = float(way[1])
+						best_dir = way[0]
+				move += best_dir * 3.5
 				_danger += 2.0
 		elif h[0] == 3:
 			# a boss's ring: step inside it or outside it, whichever edge is nearer
@@ -400,6 +407,25 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 	var curse: Node2D = room.curse
 	if curse != null and is_instance_valid(curse) and curse.solid:
 		move = _curse_moves(p, room, curse, move.limit_length(1.0), delta)
+	# ---- never walk into a boss's body (touching it hurts, and the pushes above can add up to exactly that)
+	var big: Node = run.boss
+	if big != null and is_instance_valid(big) and big.harmful and big.lift < 6.0:
+		var from_boss: Vector2 = pos - big.position
+		var keep: float = big.radius + p.radius + 8.0
+		if from_boss.length() < keep + 12.0 and from_boss.length() > 0.01:
+			var out := from_boss.normalized()
+			var probe := pos + out * 24.0
+			if probe.x < 8.0 or probe.x > G.ROOM_W - 8.0 or probe.y < 8.0 or probe.y > G.ROOM_H - 8.0:
+				# backed against a wall: run round the boss toward the open side of the room
+				var round_it := out.orthogonal()
+				if round_it.dot(G.ROOM_CENTER - pos) < 0.0:
+					round_it = -round_it
+				move = (round_it + out * 0.3).limit_length(1.0)
+			else:
+				if move.dot(out) < 0.0:
+					move -= out * move.dot(out)         # slide round it instead of walking in
+				if from_boss.length() < keep:
+					move = (move + out * 2.0).limit_length(1.0)
 	return [move.limit_length(1.0) if move.length() > 0.15 else Vector2.ZERO, aim]
 
 
