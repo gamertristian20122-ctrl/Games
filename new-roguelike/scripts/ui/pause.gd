@@ -99,7 +99,7 @@ func build() -> void:
 	if ids.is_empty():
 		_detail_name.text = "No items yet"
 		_detail_name.add_theme_color_override("font_color", UI.C_DIM)
-		_detail.text = "Things you pick up are listed here. Tap one to read what it does."
+		_detail.text = "Things you pick up are listed here with what they do."
 		_detail.add_theme_color_override("font_color", UI.C_DIM)
 	else:
 		_show_item(String(ids[ids.size() - 1]))

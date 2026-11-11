@@ -8,12 +8,13 @@ const Heroes = preload("res://scripts/data/heroes.gd")
 const Pips = preload("res://scripts/ui/pips.gd")
 const Arrow = preload("res://scripts/ui/arrow.gd")
 
-## Each stat pip row: label, hero field(s), the value that shows 1 pip and the value that shows 5.
+## Each stat pip row: label, hero field, the value that shows 1 pip, the value that shows 5,
+## and a short label for when a big font leaves no room for the long one.
 const STATS := [
-	["Health", "hp", 4.0, 10.0],
-	["Damage", "damage", 2.0, 4.5],
-	["Speed", "speed", 80.0, 112.0],
-	["Rate", "rate", 1.6, 3.2],
+	["Health", "hp", 4.0, 10.0, "HP"],
+	["Damage", "damage", 2.0, 4.5, "Dmg"],
+	["Speed", "speed", 80.0, 112.0, "Spd"],
+	["Rate", "rate", 1.6, 3.2, "Rate"],
 ]
 
 var _index := 0
@@ -24,6 +25,7 @@ var _desc: Label
 var _passive: Label
 var _stats: GridContainer
 var _pips: Array = []
+var _stat_labels: Array[Label] = []
 var _locked_box: VBoxContainer
 var _hint: Label
 var _start: Button
@@ -93,6 +95,7 @@ func build() -> void:
 		var l := UI.label(row[0], "Small")
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_stats.add_child(l)
+		_stat_labels.append(l)
 		var p := Pips.new()
 		p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_stats.add_child(p)
@@ -144,13 +147,16 @@ func _layout() -> void:
 	_next.position = Vector2(spot.x + 22.0, spot.y + 10.0)
 	_dots.position = Vector2(spot.x, spot.y + 19.0)
 	_dots.queue_redraw()
-	# two stats per row when the panel is wide enough for this font, otherwise one
-	var widths: Array[float] = []
-	for row: Array in STATS:
-		widths.append(UI.font_body.get_string_size(row[0], HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_small).x)
-	var need := maxf(widths[0], widths[2]) + maxf(widths[1], widths[3]) + 2.0 * 34.0 + 3.0 * 4.0
+	# two stats per row; with a big font the labels switch to their short form to keep fitting
 	var room := size.x - insets.z - 6.0 - roundf(left_edge) - 13.0
-	_stats.columns = 4 if need <= room else 2
+	for use_short: bool in [false, true]:
+		var widths: Array[float] = []
+		for i in STATS.size():
+			var text: String = STATS[i][4] if use_short else STATS[i][0]
+			_stat_labels[i].text = text
+			widths.append(UI.font_body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_small).x)
+		if maxf(widths[0], widths[2]) + maxf(widths[1], widths[3]) + 2.0 * 34.0 + 3.0 * 4.0 <= room:
+			break
 
 
 func _draw_dots() -> void:

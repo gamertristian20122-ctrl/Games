@@ -5,6 +5,10 @@ extends Node
 ##       --resolution 1280x720 -- --uitour --shots=/tmp/shots
 ## Run it at 1280x720 (16:9) and 1600x720 (20:9 phone) and LOOK at the pictures.
 ## When you add a screen or a HUD state, add a step for it in _run_tour().
+##
+## A second mode, --uitour=flow, plays the real game's whole flow with key presses (title ->
+## hero select -> run -> pause -> settings -> death -> try again -> give up -> menu) and prints
+## "[flow] ok ..." or "[flow] FAIL ..." for every step. Use it after changing main.gd.
 
 const UI = preload("res://scripts/ui/theme.gd")
 const Items = preload("res://scripts/data/items.gd")
@@ -12,11 +16,15 @@ const Unlocks = preload("res://scripts/data/unlocks.gd")
 
 var main: Node            ## scripts/main.gd, set by it
 var _count := 0
+var _fails := 0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_run_tour.call_deferred()
+	if G.arg("uitour") == "flow":
+		_run_flow.call_deferred()
+	else:
+		_run_tour.call_deferred()
 
 
 func _settle(seconds: float = 0.3) -> void:
@@ -198,3 +206,141 @@ func _run_tour() -> void:
 
 	print("[tour] done, %d screenshots" % _count)
 	get_tree().quit()
+
+
+# ------------------------------------------------------------------ the flow test (--uitour=flow)
+func _key(keycode: Key) -> void:
+	for pressed: bool in [true, false]:
+		var ev := InputEventKey.new()
+		ev.keycode = keycode
+		ev.physical_keycode = keycode
+		ev.pressed = pressed
+		Input.parse_input_event(ev)
+		await get_tree().process_frame
+		await get_tree().process_frame
+
+
+func _check(what: String, ok: bool) -> void:
+	_count += 1
+	if ok:
+		print("[flow] ok    ", what)
+	else:
+		_fails += 1
+		print("[flow] FAIL  ", what)
+
+
+func _focus_text() -> String:
+	var f := get_viewport().gui_get_focus_owner()
+	return String(f.get("text")) if f != null and f.get("text") != null else ""
+
+
+func _run_flow() -> void:
+	main.call("show_title")
+	await _settle()
+	_check("title is open", main.call("top_name") == "title")
+	_check("Play has the focus", _focus_text() == "Play")
+	await G.save_shot("flow_01_title.png")
+	await _key(KEY_DOWN)
+	_check("down moves focus to Collection", _focus_text() == "Collection")
+	await _key(KEY_UP)
+	# a finger tap on Play (touch reaches buttons as an emulated mouse click)
+	var play := get_viewport().gui_get_focus_owner()
+	var centre := play.get_global_rect().get_center()
+	_touch(0, centre, true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_touch(0, centre, false)
+	await _settle()
+	_check("a tap on Play opens hero select", main.call("top_name") == "hero_select")
+	_check("a touch switches to touch controls", Controls.using_touch)
+	await _key(KEY_RIGHT)
+	_check("a key switches them off again", not Controls.using_touch)
+	_check("right shows the next hero", String(main.call("top_screen").call("current")["id"]) != "knight")
+	await _key(KEY_LEFT)
+	_check("left goes back to the first hero", String(main.call("top_screen").call("current")["id"]) == "knight")
+	# a swipe to the left shows the next hero too
+	_touch(0, Vector2(110, 60), true)
+	await get_tree().process_frame
+	_drag(0, Vector2(70, 62))
+	await get_tree().process_frame
+	_touch(0, Vector2(50, 62), false)
+	await _settle()
+	_check("a swipe changes the hero", String(main.call("top_screen").call("current")["id"]) != "knight")
+	await _key(KEY_LEFT)
+	await _key(KEY_ESCAPE)
+	await _settle()
+	_check("Esc goes back to the title", main.call("top_name") == "title")
+	await _key(KEY_ENTER)
+	await _settle()
+	await _key(KEY_ENTER)
+	await _settle(1.2)
+	var run: Node = main.get("run")
+	_check("Start creates a run", is_instance_valid(run) and G.run == run)
+	_check("menus are closed during the run", main.call("top_name") == "")
+	_check("the HUD is showing", main.get("hud").visible)
+	if not is_instance_valid(run):
+		get_tree().quit(1)
+		return
+	await _settle(1.5)
+	await G.save_shot("flow_02_run.png")
+
+	# pause and resume
+	var before := float(run.get("time_s"))
+	await _key(KEY_ESCAPE)
+	await _settle(0.8)
+	_check("Esc pauses", get_tree().paused and main.call("top_name") == "pause")
+	_check("the run's clock stands still while paused", absf(float(run.get("time_s")) - before) < 0.3)
+	await G.save_shot("flow_03_pause.png")
+	await _key(KEY_DOWN)
+	await _key(KEY_ENTER)
+	await _settle()
+	_check("Settings opens from the pause menu", main.call("top_name") == "settings")
+	await _key(KEY_ESCAPE)
+	await _settle()
+	_check("Esc returns to the pause menu", main.call("top_name") == "pause" and get_tree().paused)
+	await _key(KEY_ESCAPE)
+	await _settle()
+	_check("Esc resumes", not get_tree().paused and main.call("top_name") == "")
+	var t2 := float(run.get("time_s"))
+	await _settle(0.6)
+	_check("the run's clock runs again", float(run.get("time_s")) > t2)
+
+	# die
+	var deaths := Save.stat_get("deaths")
+	run.call("player_died", "the flow test")
+	await _settle(3.5)
+	_check("death opens the end screen", main.call("top_name") == "end")
+	_check("the run was freed", main.get("run") == null and G.run == null)
+	_check("the death was recorded once", Save.stat_get("deaths") == deaths + 1 and Save.stat_get("runs") == deaths + 1)
+	await G.save_shot("flow_04_game_over.png")
+	_check("Try again has the focus", _focus_text() == "Try again")
+	await _key(KEY_ENTER)
+	await _settle(1.5)
+	run = main.get("run")
+	_check("Try again starts a new run", is_instance_valid(run) and main.call("top_name") == "")
+
+	# give up
+	await _key(KEY_ESCAPE)
+	await _settle()
+	await _key(KEY_DOWN)
+	await _key(KEY_DOWN)
+	_check("Give up can be reached", _focus_text() == "Give up")
+	await _key(KEY_ENTER)
+	await _settle()
+	_check("the question keeps the safe answer focused", _focus_text() == "Keep going")
+	await _key(KEY_RIGHT)
+	await _key(KEY_ENTER)
+	await _settle(1.5)
+	_check("giving up opens the end screen", main.call("top_name") == "end" and not get_tree().paused)
+	_check("giving up counts as a death", Save.stat_get("deaths") == deaths + 2)
+	await G.save_shot("flow_05_gave_up.png")
+	await _key(KEY_DOWN)
+	_check("Menu can be reached", _focus_text() == "Menu")
+	await _key(KEY_ENTER)
+	await _settle(1.0)
+	_check("Menu returns to the title", main.call("top_name") == "title" and main.get("run") == null)
+	await _key(KEY_ESCAPE)
+	await _settle()
+	_check("Esc on the title asks before quitting", _focus_text() == "Stay")
+	print("[flow] done: %d checks, %d failed" % [_count, _fails])
+	get_tree().quit(1 if _fails > 0 else 0)

@@ -161,6 +161,8 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	hit_up = float(data.get("hit_up", 0.0))
 	_base_scale = float(data.get("scale", 1.0))
 	_tint = data.get("tint", Color(1, 1, 1))
+	if minion:
+		max_hp *= Enemies.MINION_HP
 	if elite:
 		max_hp *= Enemies.ELITE_HP
 		speed *= Enemies.ELITE_SPEED

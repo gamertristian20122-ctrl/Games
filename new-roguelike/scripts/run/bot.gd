@@ -60,6 +60,7 @@ var _fight_start := 0.0
 func setup(the_run: Node) -> void:
 	run = the_run
 	base_seed = run.seed_value
+	max_floor = run.floor_index + 1
 	time_limit = float(G.arg("time", str(DEFAULT_TIME)))
 	Controls.bot = true
 	G.room_cleared.connect(_on_room_cleared)
@@ -157,6 +158,12 @@ func _physics_process(delta: float) -> void:
 	var aim := Vector2.ZERO
 	if p != null and not p.dead and not run.over and run.room != null:
 		var room: Node = run.room
+		if room.fighting and room.fight_time > 45.0 and fmod(room.fight_time, 15.0) < delta:
+			# a fight that drags on is worth a line in the log: who is left, and where
+			var left: Array = []
+			for e in room.enemies:
+				left.append("%s@%d,%d hp=%d state=%d" % [e.id, int(e.position.x), int(e.position.y), int(e.hp), e.state])
+			_log("slow_fight %.0fs layout=%s player@%d,%d left=%s" % [room.fight_time, room.rs.get("layout", ""), int(p.position.x), int(p.position.y), left])
 		if not room.enemies.is_empty():
 			var out := _fight(p, room, delta)
 			move = out[0]
@@ -185,6 +192,11 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 		var d: float = pos.distance_to(e.position)
 		if not room.sight_clear(pos, e.position):
 			d += 60.0
+		# like a player would: go for the summoner, not for the things it keeps raising
+		if e.minion:
+			d += 45.0
+		elif e.data.get("ai", "") == "summoner":
+			d -= 50.0
 		if d < best:
 			best = d
 			target = e

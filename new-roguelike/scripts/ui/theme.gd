@@ -36,16 +36,17 @@ const FONT_BODY := "body.ttf"            ## everything else
 ## A pixel font is only crisp at whole multiples of the size it was drawn at ("native size").
 ## The fonts on the project's shortlist are recognised by the name stored inside the file.
 ## Each row: native size, extra pixels above a line, extra pixels below, extra pixels between letters.
-## (Very compact fonts get a little air between lines; very wide ones are tightened by a pixel.)
+## (Compact fonts get a little air between lines, airy ones lose some, wide ones are tightened a
+## pixel, so that every body font ends up with lines 10 to 13 pixels apart on this small screen.)
 const FONT_TUNING := {
 	"Alkhemikal": [16, 0, 0, 0],
 	"Jacquard 12": [21, 0, 0, 0],
 	"Jacquard 24": [43, 0, 0, 0],
-	"Pixel Operator": [16, 0, 0, 0],
-	"Pixel Operator 8": [8, 1, 2, -1],
-	"Pixel Operator Mono": [16, 0, 0, 0],
-	"Pixel Operator Mono 8": [8, 1, 2, -1],
-	"m5x7": [16, 0, 0, 0],
+	"Pixel Operator": [16, -2, -1, 0],
+	"Pixel Operator 8": [8, 1, 1, -1],
+	"Pixel Operator Mono": [16, -2, -1, 0],
+	"Pixel Operator Mono 8": [8, 1, 1, -1],
+	"m5x7": [16, -2, -1, 0],
 }
 ## Any other font: set its native size here (the font's own page says what it is).
 const DISPLAY_PX := 16

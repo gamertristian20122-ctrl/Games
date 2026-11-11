@@ -55,6 +55,7 @@ var _card: PanelContainer
 var _card_queue: Array[String] = []
 var _card_tween: Tween
 var _dirty := false
+var _fresh := false               ## begin() was called and nothing has been drawn since
 
 
 func _ready() -> void:
@@ -103,17 +104,14 @@ func _ready() -> void:
 
 	G.hud_changed.connect(func() -> void: _dirty = true)
 	G.room_entered.connect(func(_c: Vector2i, _t: int, _f: bool) -> void: _dirty = true)
-	G.run_started.connect(func(r: Node) -> void:
-		if run == null:
-			begin(r))
+	G.run_started.connect(begin)
 	G.floor_started.connect(_on_floor_started)
 	G.player_hurt.connect(_on_player_hurt)
 	G.pickup_collected.connect(_on_pickup)
 	G.item_acquired.connect(_on_item_acquired)
 	G.boss_started.connect(_on_boss_started)
 	G.boss_defeated.connect(func(_id: String) -> void: _hide_boss())
-	G.toast.connect(func(title: String, subtitle: String) -> void:
-		_queue_banner({"style": "toast", "title": title, "sub": subtitle}))
+	G.toast.connect(_on_toast)
 	Save.unlocked.connect(_on_unlocked)
 	Controls.device_changed.connect(func(_t: bool) -> void: _layout())
 	get_viewport().size_changed.connect(_layout)
@@ -123,6 +121,9 @@ func _ready() -> void:
 # ------------------------------------------------------------------ start / stop
 ## main.gd calls this right after it created a run.
 func begin(r: Node) -> void:
+	if r == run and _fresh:
+		return                    # main.gd and G.run_started both call this for a new run
+	_fresh = true
 	run = r
 	_boss = null
 	_boss_box.visible = false
@@ -211,6 +212,7 @@ func _process(delta: float) -> void:
 		return
 	if _dirty:
 		_dirty = false
+		_fresh = false
 		_refresh()
 	# the coin counter ticks towards its real value
 	if _coins_shown != _coins_target:
@@ -404,6 +406,13 @@ func _draw_rule() -> void:
 func _on_floor_started(floor_index: int, floor_name: String) -> void:
 	_dirty = true
 	_queue_banner({"style": "floor", "over": "Floor %d" % (floor_index + 1), "title": floor_name, "sub": ""})
+
+
+func _on_toast(title: String, subtitle: String) -> void:
+	# the floor's name already gets the big banner from G.floor_started; do not show it twice
+	if is_instance_valid(run) and title == String(run.get("floor_name")) and title != "":
+		return
+	_queue_banner({"style": "toast", "title": title, "sub": subtitle})
 
 
 func _on_unlocked(id: String) -> void:

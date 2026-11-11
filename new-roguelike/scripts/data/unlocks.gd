@@ -16,7 +16,9 @@ extends RefCounted
 ##   recorded by the shell when an item is picked up:
 ##     items_taken, cursed_taken
 ##   sent by the world with G.stat.emit(key, amount):
-##     boss_killed or boss_killed:<boss id>, secret_found, chest_opened, and anything else it likes
+##     boss_killed and boss_killed:<boss id>, secret_found, chest_opened, rooms_cleared, key_used,
+##     bomb_used, shop_buy, kills, coins, floor_reached:<n> ... and anything else it likes
+##     (kills and coins also feed total_kills / total_coins at once; floor_reached feeds best_floor)
 ## A rule that watches "boss_killed" also counts every "boss_killed:<something>".
 ##
 ## To add an unlock: add one row. Nothing else needs to change.

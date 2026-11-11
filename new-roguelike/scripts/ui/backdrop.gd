@@ -46,7 +46,7 @@ func _ready() -> void:
 
 
 func _layout() -> void:
-	var spot := Vector2(roundf(size.x * hero_x), 128.0)
+	var spot := Vector2(roundf(size.x * hero_x), 134.0)
 	_scene.position = (spot - HERO_FEET * ZOOM).round()
 
 

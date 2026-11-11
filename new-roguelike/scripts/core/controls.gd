@@ -36,6 +36,7 @@ var bot_aim := Vector2.ZERO
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	using_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+	get_window().window_input.connect(_watch_device)
 
 
 func _set_touch(on: bool) -> void:
@@ -45,7 +46,8 @@ func _set_touch(on: bool) -> void:
 
 
 ## Only watches WHICH device is in use; the real handling is below and in scripts/ui/touch.gd.
-func _input(event: InputEvent) -> void:
+## (Connected to the window itself so it also sees events that a menu has already used up.)
+func _watch_device(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			_set_touch(true)

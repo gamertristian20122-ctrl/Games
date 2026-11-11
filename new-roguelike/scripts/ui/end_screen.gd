@@ -11,6 +11,9 @@ var victory := false             ## set by main.gd
 var summary := {}                ## set by main.gd
 var unlocks: Array = []          ## ids unlocked during this run, set by main.gd
 var _rack: Control
+var _inner: VBoxContainer
+var _extras: Control
+var _rack_rows := 2
 
 
 func build() -> void:
@@ -47,7 +50,9 @@ func build() -> void:
 	var panel := UI.panel("panel")
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cols.add_child(panel)
-	var inner := UI.vbox(4)
+	var inner := UI.vbox(5)
+	inner.alignment = BoxContainer.ALIGNMENT_CENTER
+	_inner = inner
 	panel.add_child(inner)
 	var tiles := UI.hbox(3)
 	inner.add_child(tiles)
@@ -86,6 +91,7 @@ func build() -> void:
 		extras.add_child(cell)
 	if extras.get_child_count() > 0:
 		inner.add_child(extras)
+		_extras = extras
 	else:
 		extras.free()
 
@@ -101,7 +107,6 @@ func build() -> void:
 
 	# new unlocks: one gold box with every name
 	if not unlocks.is_empty():
-		inner.add_child(UI.spacer(0, 0, true))
 		var names: Array[String] = []
 		for id: Variant in unlocks:
 			if names.size() >= 4:
@@ -117,6 +122,17 @@ func build() -> void:
 		v.add_child(UI.label(text + ".", "", 10.0))
 		inner.add_child(box)
 	UI.pop_in(cols)
+	_squeeze.call_deferred()
+
+
+## With a very large font the panel can be taller than the screen: drop the least important parts.
+func _squeeze() -> void:
+	var room := size.y - 12.0 - UI.safe_insets(self).y - UI.safe_insets(self).w - 10.0
+	if _inner.get_combined_minimum_size().y > room and is_instance_valid(_extras):
+		_extras.visible = false
+	if _inner.get_combined_minimum_size().y > room and is_instance_valid(_rack):
+		_rack_rows = 1
+		_rack.call("set_items", summary.get("items", []), _rack.size.x, 1)
 
 
 ## The item row is as wide as the panel turns out to be.
@@ -124,24 +140,30 @@ func _fit_rack() -> void:
 	var ids: Variant = summary.get("items", [])
 	var w := _rack.get_parent_control().size.x
 	if ids is Array and absf(w - _rack.size.x) > 1.0 and w > 40.0:
-		_rack.set_items(ids, w, 2)
+		_rack.call("set_items", ids, w, _rack_rows)
 
 
 ## One line about what happened.
 func _story() -> String:
-	var hero := Heroes.by_id(String(summary.get("hero", "knight")))
+	var hero := String(Heroes.by_id(String(summary.get("hero", "knight")))["name"])
 	var where := String(summary.get("floor_name", ""))
 	if victory:
-		return "%s climbs back into the light. The dungeon is quiet." % hero["name"]
+		return "%s climbs back into the light. The dungeon is quiet." % hero
 	var cause := String(summary.get("cause", ""))
-	var text := "The dark takes %s." % hero["name"]
+	var place := " in %s" % where if where != "" else ""
 	if cause == "gave_up":
-		text = "%s turns back." % hero["name"]
-	elif cause != "":
-		text = "%s was slain by %s." % [hero["name"], cause]
-	if where != "":
-		text += " " + where + "."
-	return text
+		return "%s turns back%s." % [hero, place]
+	if cause == "":
+		return "The dark takes %s%s." % [hero, place]
+	return "%s was slain by %s%s." % [hero, _with_article(cause), place]
+
+
+## "Gnasher" -> "a Gnasher", "Imp" -> "an Imp"; "the dark", "your own bomb" and "The Warden" stay as they are.
+static func _with_article(cause: String) -> String:
+	var first := cause.substr(0, 1)
+	if first != first.to_upper() or first == first.to_lower() or cause.begins_with("The ") or cause.begins_with("A ") or cause.begins_with("An "):
+		return cause
+	return ("an " if first in ["A", "E", "I", "O", "U"] else "a ") + cause
 
 
 ## Back on the end screen goes to the menu.

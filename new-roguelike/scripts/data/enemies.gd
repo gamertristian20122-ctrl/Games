@@ -39,7 +39,7 @@ const ALL := {
 	"pit_fiend": {"name": "Pit Fiend", "sprite": "chort", "hp": 13.0, "speed": 50.0, "radius": 5.0,
 		"ai": "chaser", "params": {"weave": 0.35, "lunge": 1.5}, "touch": 1, "flying": false, "floors": [3, 4], "cost": 2.0, "coin": 0.20, "heart": 0.04},
 	"bone_caller": {"name": "Bone Caller", "sprite": "necromancer", "hp": 20.0, "speed": 34.0, "radius": 5.0,
-		"ai": "summoner", "params": {"minion": "shambler", "count": 2, "cooldown": 4.5, "max_minions": 4, "keep": 75.0}, "touch": 1, "flying": false, "floors": [3, 4], "cost": 4.5, "coin": 0.40, "heart": 0.06},
+		"ai": "summoner", "params": {"minion": "shambler", "count": 2, "cooldown": 6.0, "max_minions": 3, "keep": 75.0}, "touch": 1, "flying": false, "floors": [3, 4], "cost": 4.5, "coin": 0.40, "heart": 0.06},
 	"lantern_head": {"name": "Lantern Head", "sprite": "pumpkin_dude", "hp": 11.0, "speed": 58.0, "radius": 5.0,
 		"ai": "exploder", "params": {"fuse": 0.6, "trigger": 26.0, "shots": 10, "shot_speed": 78.0}, "touch": 1, "flying": false, "floors": [3, 4], "cost": 2.5, "coin": 0.20, "heart": 0.04, "shot": "enemy"},
 	"frost_hulk": {"name": "Frost Hulk", "sprite": "ice_zombie", "hp": 40.0, "speed": 22.0, "radius": 5.5, "scale": 1.25,
@@ -48,6 +48,8 @@ const ALL := {
 
 ## How much stronger enemies get per floor (hp x (1 + this x floor_index)).
 const HP_PER_FLOOR := 0.35
+## Summoned minions are weaker than the real thing (hp x this).
+const MINION_HP := 0.6
 ## Elite enemies: tinted aura, more hp, faster, always drop coins. They start on this floor (1 = first).
 const ELITE_FROM_FLOOR := 2
 const ELITE_HP := 2.0

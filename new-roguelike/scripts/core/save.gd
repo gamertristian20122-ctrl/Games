@@ -35,6 +35,12 @@ var disk := true
 ## Ids unlocked since the current run started (the end screen lists them).
 var run_unlocks: Array[String] = []
 var _run_recorded := false
+## Kills and coins already added to the lifetime totals during the current run.
+var _live_kills := 0
+var _live_coins := 0
+## Counters this file keeps by itself. If the world also sends them with G.stat they are
+## ignored, so nothing is ever counted twice.
+const OWN_KEYS := ["runs", "deaths", "wins", "best_floor", "fastest_win", "total_kills", "total_coins", "items_taken", "cursed_taken"]
 
 
 func _ready() -> void:
@@ -227,11 +233,27 @@ func _notification(what: int) -> void:
 func _on_run_started(_run: Node) -> void:
 	run_unlocks.clear()
 	_run_recorded = false
+	_live_kills = 0
+	_live_coins = 0
 
 
 func _on_stat(key: String, amount: int) -> void:
+	if key in OWN_KEYS or key.begins_with("wins:"):
+		return                                  # counted by record_run() / _on_item_acquired()
 	stat_add(key, amount)
 	check_unlocks(key)
+	# a few of the world's counters also feed the totals straight away, so unlocks pop mid-run
+	if key == "kills":
+		_live_kills += amount
+		stat_add("total_kills", amount)
+		check_unlocks("total_kills")
+	elif key == "coins":
+		_live_coins += amount
+		stat_add("total_coins", amount)
+		check_unlocks("total_coins")
+	elif key.begins_with("floor_reached:"):
+		stat_max("best_floor", int(key.get_slice(":", 1)))
+		check_unlocks("best_floor")
 
 
 func _on_item_acquired(item_id: String) -> void:
@@ -266,7 +288,8 @@ func record_run(victory: bool, summary: Dictionary) -> void:
 	else:
 		stat_add("deaths")
 	stat_max("best_floor", int(summary.get("floor", 1)))
-	stat_add("total_kills", int(summary.get("kills", 0)))
-	stat_add("total_coins", int(summary.get("coins", 0)))
+	# whatever was not already counted live during the run
+	stat_add("total_kills", maxi(int(summary.get("kills", 0)) - _live_kills, 0))
+	stat_add("total_coins", maxi(int(summary.get("coins", 0)) - _live_coins, 0))
 	check_unlocks()
 	flush()

@@ -8,6 +8,7 @@ extends Node
 ## Command-line flags (after "--"):
 ##   --autotest         no menus: start a run at once (--hero, --seed); a new one starts when it ends
 ##   --uitour           walk through every screen with a fake run and save screenshots (--shots=<dir>)
+##   --uitour=flow      play the whole flow with the REAL game using key presses, and check each step
 ##   --time=<sec>       quit after this much game time
 ##   --fakerun          use the fake run (scripts/ui/dev_fake_run.gd) instead of the real one
 ##   --safe=l,t,r,b     pretend the phone has a notch this many game pixels deep on each side
@@ -54,6 +55,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().quit_on_go_back = false       # the phone's Back button is handled in _back()
 	_time_limit = float(G.arg("time", "0"))
+	if _time_limit > 0.0 and G.flag("autotest"):
+		_time_limit += 3.0             # the world's bot prints its report and quits first; this is the safety net
 	var safe := G.arg("safe").split_floats(",")
 	if safe.size() == 4:
 		UI.fake_safe = Vector4(safe[0], safe[1], safe[2], safe[3])
@@ -62,7 +65,7 @@ func _ready() -> void:
 	G.run_ended.connect(_on_run_ended)
 	Controls.pause_pressed.connect(_back)
 	if G.flag("uitour"):
-		UI.instant = true
+		UI.instant = G.arg("uitour") != "flow"       # the flow test keeps the animations on
 		var tour: Node = load("res://scripts/ui/ui_tour.gd").new()
 		tour.set("main", self)
 		add_child(tour)
@@ -229,7 +232,7 @@ func start_run(hero_id: String, seed_value: int) -> void:
 	_ending = false
 	Save.set_setting("last_hero", hero_id)
 	var path := RUN_SCRIPT
-	if G.flag("uitour") or G.flag("fakerun") or not ResourceLoader.exists(RUN_SCRIPT):
+	if (G.flag("uitour") and G.arg("uitour") != "flow") or G.flag("fakerun") or not ResourceLoader.exists(RUN_SCRIPT):
 		path = FAKE_RUN_SCRIPT
 	run = (load(path) as Script).new()
 	hud.call("begin", run)          # before setup(), so the HUD hears the run's first signals
@@ -257,12 +260,16 @@ func _on_run_ended(victory: bool, summary: Dictionary) -> void:
 	_ending = true
 	_refresh_layers()
 	if G.flag("autotest"):
-		print("[main] run ended: victory=%s floor=%s time=%ds kills=%s (starting another)" % [
+		print("[main] run ended: victory=%s floor=%s time=%ds kills=%s" % [
 			victory, summary.get("floor", "?"), int(summary.get("time_s", 0)), summary.get("kills", "?")])
+		_ending = false
+		if run.has_method("restart") and is_instance_valid(run.get("bot")):
+			return                      # the world's own bot starts the next run in the same node
 		_seed += 1
 		start_run.call_deferred(_hero_id, _seed)
 		return
-	_show_end(victory, summary, 1.0)
+	# (the world has already let the death or the win play out before it sends run_ended)
+	_show_end(victory, summary, 0.4)
 
 
 func _show_end(victory: bool, summary: Dictionary, delay: float) -> void:
