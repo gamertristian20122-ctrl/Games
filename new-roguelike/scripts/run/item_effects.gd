@@ -137,12 +137,13 @@ func _mid(player: Node) -> Vector2:
 
 
 # =============================================================================== Bone Thistle
-## Three splinters (40% damage each) where a shot ends: at the end of its reach, on a wall, or on the
-## monster it was used up on (they fly on past that monster and never hurt it).
+## Three splinters (half damage each) where a shot ends: at the end of its reach, on a wall, or on the
+## monster it was used up on (they fly on past that monster and never hurt it). They lean toward
+## the nearest monster ahead of them, or they would hit one in a dozen.
 func bone_thistle_on_shot_end(_run: Node, _player: Node, pos: Vector2, dir: Vector2, damage: float, _hit: bool) -> void:
-	var extra := {"knock": 0.3, "bits": Shots.B_CHILD, "skip": run.shots.end_victim}
+	var extra := {"knock": 0.3, "bits": Shots.B_CHILD, "skip": run.shots.end_victim, "homing": 2.0}
 	for turn: float in [-0.45, 0.0, 0.45]:
-		run.shots.fire(pos, dir.rotated(turn) * 150.0, Shots.SIDE_PLAYER, maxf(0.5, damage * 0.4), 44.0, "shard", extra)
+		run.shots.fire(pos, dir.rotated(turn) * 150.0, Shots.SIDE_PLAYER, maxf(0.5, damage * 0.5), 60.0, "shard", extra)
 
 
 # =============================================================================== Winter Nail / Pyre Kindling

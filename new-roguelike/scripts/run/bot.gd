@@ -280,7 +280,8 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 			d += 60.0
 		# like a player would: go for the summoner, not for the things it keeps raising
 		if e.minion:
-			d += 45.0
+			# ... unless a boss's helper is right on top of us: shoot that one first
+			d += -30.0 if room.type == G.RoomType.BOSS and d < 40.0 else 45.0
 		elif e.data.get("ai", "") == "summoner":
 			d -= 50.0
 		if d < best:
@@ -291,14 +292,20 @@ func _fight(p: Node, room: Node, delta: float) -> Array:
 	if target != null:
 		var tp: Vector2 = target.position - Vector2(0, target.hit_up)
 		var dist := pos.distance_to(tp)
+		var see_at := tp                    # the spot the bot must see and walk toward
+		if "boss_id" in target:
+			# a boss is big: keep the distance from its SIDE, not from its middle (or the bot stands on its feet),
+			# and look at its feet (the middle of a tall boss near the back wall is outside the room)
+			dist = maxf(dist - (target.radius + target.hit_grow) * 0.8, 1.0)
+			see_at = target.position
 		var lead: Vector2 = tp + target.vel_est * (dist / shot_speed) * 0.85
 		aim = (lead - pos).normalized()
 		# ---- keep a comfortable distance and circle
 		# (a short-range hero fights near the end of his reach instead of in the monsters' faces)
 		var want := clampf(maxf(shot_range * 0.62, minf(shot_range - 22.0, 64.0)), 42.0, 78.0)
 		var to: Vector2 = (tp - pos).normalized()
-		if dist > shot_range * 0.85 or not room.sight_clear(pos, tp):
-			move += _path_dir(room, pos, tp) * 1.0
+		if dist > shot_range * 0.85 or not room.sight_clear(pos, see_at):
+			move += _path_dir(room, pos, see_at) * 1.0
 		elif dist < want:
 			move -= to * (1.2 * (want - dist) / want + 0.3)
 		_strafe_t -= delta

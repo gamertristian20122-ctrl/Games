@@ -35,6 +35,7 @@ const B_HIT := 1024      ## (state) has hit a monster
 ## The numbers of the shot items (the item rows in scripts/data/items.gd only switch them on).
 const RETURN_SPEED := 1.25     ## Tethered Sickle: speed, damage and reach of the flight home
 const RETURN_DAMAGE := 0.7
+const RETURN_PIERCE := 99      ## ... and on the way home it cuts through every monster in its path
 const RETURN_REACH := 1.5
 const RETURN_CATCH := 10.0     ## px from the hero at which a returning shot is caught
 const GROW_DAMAGE := 1.5       ## Stonebiter, per bounce
@@ -94,6 +95,7 @@ var _look := ShotLook.new()        ## draws the shots (scripts/run/shot_look.gd)
 var _e_nodes: Array = []
 var _e_pos := PackedVector2Array()
 var _e_rad := PackedFloat32Array()
+var _e_ids := PackedInt64Array()
 var _foe_shots := PackedInt32Array()
 var _shove_left := 0.0
 var _dark_kind := 0
@@ -255,6 +257,7 @@ func _finish(i: int, at: Vector2, dir: Vector2, victim: int = 0) -> void:
 		dmg[i] *= RETURN_DAMAGE
 		left[i] = reach[i] * RETURN_REACH
 		homing[i] = 0.0
+		pierce[i] = RETURN_PIERCE
 		last_hit[i] = victim                                 # it never cuts the same monster twice in a row
 	else:
 		if victim == 0:
@@ -322,9 +325,11 @@ func _step_shots(delta: float) -> void:
 	_e_nodes.clear()
 	_e_pos.clear()
 	_e_rad.clear()
+	_e_ids.clear()
 	for e in room.enemies:
 		if e.hittable:
 			_e_nodes.append(e)
+			_e_ids.append(e.get_instance_id())
 			_e_pos.append(e.position - Vector2(0.0, e.hit_up))
 			_e_rad.append(e.radius + e.hit_grow)
 	var e_count := _e_nodes.size()
@@ -358,9 +363,10 @@ func _step_shots(delta: float) -> void:
 		if homing[i] > 0.0 and e_count > 0:
 			var best := -1
 			var best_d := 90.0 * 90.0
+			var skip := last_hit[i]            # never curve back at the monster it has just hit (or must fly past)
 			for k in e_count:
 				var d2 := p.distance_squared_to(_e_pos[k])
-				if d2 < best_d and v.dot(_e_pos[k] - p) > 0.0:
+				if d2 < best_d and _e_ids[k] != skip and v.dot(_e_pos[k] - p) > 0.0:
 					best_d = d2
 					best = k
 			if best >= 0:
@@ -430,7 +436,7 @@ func _step_shots(delta: float) -> void:
 				var rr := r + _e_rad[k]
 				if np.distance_squared_to(_e_pos[k]) < rr * rr:
 					var e: Node = _e_nodes[k]
-					var eid := e.get_instance_id()
+					var eid := _e_ids[k]
 					if eid == last_hit[i] or not e.hittable:
 						continue
 					last_hit[i] = eid

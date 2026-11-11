@@ -20,7 +20,7 @@ const REST := 4
 const HURL_AIM := 5
 const CLUB_FLY := 6
 const CROUCH := 0.45
-const POUND_RADIUS := 50.0
+const POUND_RADIUS := 44.0
 ## The club in frame 0 of "idle" (canvas px). cut_sprite() cuts it out for the throw: the artist's
 ## own pixels, nothing drawn.
 const CLUB_RECT := Rect2(53, 64, 24, 13)
@@ -194,7 +194,7 @@ func _land(e, mean: bool) -> void:
 	e.run.shake(0.75)
 	e.run.hitstop(0.04)
 	Sfx.play("explosion", -5.0)
-	e.ring_from(e.position, 12 if mean else 8, 62.0, "", e.rng.randf() * TAU)
+	e.ring_from(e.position, 10 if mean else 8, 62.0, "", e.rng.randf() * TAU)
 	e.mem["leaps"] = int(e.mem["leaps"]) - 1
 	if int(e.mem["leaps"]) > 0:
 		_begin_leap(e, e.player.position, r)

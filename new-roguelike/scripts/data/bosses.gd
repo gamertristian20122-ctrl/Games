@@ -27,18 +27,18 @@ extends RefCounted
 
 const ALL := {
 	# ---- floor 1, the Crypt
-	"pyre_saint": {"name": "The Pyre Saint", "sprite": "boss_fire_skull", "floors": [1], "hp": 250.0,
+	"pyre_saint": {"name": "The Pyre Saint", "sprite": "boss_fire_skull", "floors": [1], "hp": 300.0,
 		"speed": 30.0, "touch": 1, "shot": "enemy", "flying": true, "hover": 10.0, "no_facing": true,
 		"params": {}},
-	"red_sexton": {"name": "The Red Sexton", "sprite": "boss_death", "floors": [1], "hp": 220.0,
+	"red_sexton": {"name": "The Red Sexton", "sprite": "boss_death", "floors": [1], "hp": 270.0,
 		"speed": 46.0, "touch": 1, "shot": "enemy", "idle": "run", "enter": "spawn",
 		"params": {}},
 	# ---- floor 2, the Warrens
-	"stonejaw": {"name": "Stonejaw", "sprite": "boss_ogre", "floors": [2], "hp": 350.0,
+	"stonejaw": {"name": "Stonejaw", "sprite": "boss_ogre", "floors": [2], "hp": 420.0,
 		"speed": 30.0, "touch": 1, "shot": "enemy", "stagger_dmg": 1.25,
 		"params": {"leap_time": 0.9, "shock_radius": 34.0, "smash_warn": 0.9, "smash_reach": 50.0, "smash_radius": 26.0,
 			"wave_inner": 30.0, "wave_outer": 58.0, "club_speed": 230.0, "club_warn": 0.8}},
-	"gutter_king": {"name": "The Gutter King", "sprite": "boss_mutant_toad", "floors": [2], "hp": 330.0,
+	"gutter_king": {"name": "The Gutter King", "sprite": "boss_mutant_toad", "floors": [2], "hp": 400.0,
 		"speed": 34.0, "touch": 1, "shot": "enemy",
 		"params": {}},
 	# ---- floor 3, the Ashen Halls
@@ -47,12 +47,12 @@ const ALL := {
 		"params": {}},
 	# art by chierit, CC-BY 4.0: needs its credit row in credits.gd (it is a spare; remove both together)
 	"cinder_tyrant": {"name": "The Cinder Tyrant", "sprite": "boss_demon_slime", "floors": [3], "hp": 480.0,
-		"speed": 26.0, "touch": 1, "shot": "enemy", "radius": 22.0, "layout": "boss_embers", "stagger_dmg": 1.25,
+		"speed": 26.0, "touch": 1, "shot": "enemy", "radius": 18.0, "layout": "boss_embers", "stagger_dmg": 1.25,
 		"params": {"charge_speed": 175.0, "charge_warn": 0.75, "cleave_warn": 0.9, "cleave_reach": 122.0, "cleave_angle": 0.5,
-			"burn_seconds": 3.5, "minion": "dust_mummy"}},
+			"slam_radius": 44.0, "slam_warn": 0.8, "burn_seconds": 3.5}},
 	# ---- floor 4, the Pit: the final boss
 	"starved_king": {"name": "The Starved King", "sprite": "boss_demon", "floors": [4], "hp": 1100.0,
-		"speed": 24.0, "touch": 1, "shot": "enemy", "radius": 23.0, "flying": true, "final": true, "layout": "boss_arena",
+		"speed": 24.0, "touch": 1, "shot": "enemy", "radius": 20.0, "flying": true, "final": true, "layout": "boss_arena",
 		"params": {}},
 }
 

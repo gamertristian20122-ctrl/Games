@@ -63,8 +63,12 @@ const SHOT_CAP := 120            ## boss shots stop being fired when this many s
 const SHOT_RANGE := 300.0
 const RED := Color(1.0, 0.22, 0.16)
 const EMBER := Color(1.0, 0.42, 0.12)
+## The hit flash of a boss: most of the way to white, but the drawing stays readable (a pure white
+## shape this size, several times a second, hid the boss).
+const HIT_SHADER := "shader_type canvas_item;\nrender_mode unshaded;\nvoid fragment() {\n\tvec4 c = texture(TEXTURE, UV);\n\tCOLOR = vec4(mix(c.rgb, vec3(1.0), 0.7), c.a);\n}\n"
 
 static var _fx_frames := {}
+static var _hit_mat: ShaderMaterial
 
 var phase := 1
 var boss_id := ""
@@ -104,6 +108,9 @@ var _fx_nodes: Array = []        ## [node, seconds left (looping ones) or -1]
 var _death_total := 1.0
 var _death_puff := 0.0
 var _death_wave := 0
+var _log := false                ## --bosslog: print what happens in the fight (see _say)
+var _fight_t := 0.0
+var _hurt_by := ""
 
 
 func _row(enemy_id: String) -> Dictionary:
@@ -167,6 +174,10 @@ func _appear() -> void:
 	G.toast.emit(display_name, "")
 	face_player()
 	facing = _face
+	_log = G.flag("bosslog")
+	if _log:
+		G.player_hurt.connect(_on_player_hurt)
+		_say("appears with %d hp" % int(max_hp))
 	if ai.has_method("start"):
 		ai.start(self)
 	# the row's "enter": an animation it arrives with (the fight starts when it is over)
@@ -183,6 +194,7 @@ func _physics_process(delta: float) -> void:
 		_tick_death(delta)
 		return
 	if not dead and appear <= 0.0:
+		_fight_t += delta
 		_tick_burns(delta)
 		_tick_fx(delta)
 		if stun > 0.0:
@@ -204,8 +216,33 @@ func _physics_process(delta: float) -> void:
 		_next_phase()
 
 
+## --bosslog (a test flag): prints one line per event of the fight, so a builder can see how long
+## the fight and each phase last and WHAT hurt the hero (which mark, the body, or a shot).
+func _say(what: String) -> void:
+	if _log:
+		print("BOSSLOG %s t=%.1f phase=%d state=%d hp=%d%% %s" % [boss_id, _fight_t, phase, state, int(100.0 * hp / max_hp), what])
+
+
+func _on_player_hurt(_half_hearts: int) -> void:
+	var why := _hurt_by
+	if why == "":
+		# a guess from who stands next to the hero (the boss file's own marks are named exactly)
+		why = "a shot (or a lobbed rock)"
+		var curse: Node2D = room.curse
+		if harmful and position.distance_to(player.position) < radius + player.radius + 2.0:
+			why = "its body"
+		elif curse != null and is_instance_valid(curse) and curse.position.distance_to(player.position) < 30.0:
+			why = "the Curse"
+		else:
+			for e in room.enemies:
+				if e != self and e.position.distance_to(player.position) < e.radius + player.radius + 3.0:
+					why = "a helper"
+	_say("hero hurt by %s (%d px from the boss)" % [why, int(position.distance_to(player.position))])
+
+
 func _next_phase() -> void:
 	phase += 1
+	_say("phase %d begins" % phase)
 	cancel()
 	hittable = true
 	harmful = true
@@ -468,27 +505,29 @@ func in_ring(at: Vector2, r_inner: float, r_outer: float) -> bool:
 	return far > r_inner - player.hit_radius + 2.0 and far < r_outer + player.hit_radius - 2.0
 
 
-func _strike(inside: bool, from: Vector2, damage: int) -> bool:
+func _strike(inside: bool, from: Vector2, damage: int, what: String) -> bool:
 	if not inside or not player.can_be_hit():
 		return false
+	_hurt_by = what
 	player.hurt(damage, from, display_name)
+	_hurt_by = ""
 	return true
 
 
 func strike_circle(at: Vector2, r: float, damage: int = 1) -> bool:
-	return _strike(in_circle(at, r), at, damage)
+	return _strike(in_circle(at, r), at, damage, "a circle")
 
 
 func strike_lane(from: Vector2, to: Vector2, half_width: float, damage: int = 1) -> bool:
-	return _strike(in_lane(from, to, half_width), from, damage)
+	return _strike(in_lane(from, to, half_width), from, damage, "a lane")
 
 
 func strike_cone(tip: Vector2, d: Vector2, length: float, half_angle: float, damage: int = 1) -> bool:
-	return _strike(in_cone(tip, d, length, half_angle), tip, damage)
+	return _strike(in_cone(tip, d, length, half_angle), tip, damage, "a cone")
 
 
 func strike_ring(at: Vector2, r_inner: float, r_outer: float, damage: int = 1) -> bool:
-	return _strike(in_ring(at, r_inner, r_outer), at, damage)
+	return _strike(in_ring(at, r_inner, r_outer), at, damage, "a ring")
 
 
 ## Ground that burns for `seconds` and hurts the hero who stands in it. It starts to hurt after
@@ -505,8 +544,8 @@ func _tick_burns(delta: float) -> void:
 		b[3] -= delta
 		if b[2] <= 0.0:
 			_burns.remove_at(k)
-		elif b[3] <= 0.0 and player.can_be_hit() and (b[0] as Vector2).distance_to(player.position) < float(b[1]) - 2.0:
-			player.hurt(1, b[0], display_name)
+		elif b[3] <= 0.0:
+			_strike((b[0] as Vector2).distance_to(player.position) < float(b[1]) - 2.0, b[0], 1, "burning ground")
 
 
 # =============================================================================== time and rhythm
@@ -539,6 +578,7 @@ func stagger(seconds: float, anim: String = "") -> void:
 	stop()
 	staggered = seconds
 	stun = maxf(stun, seconds)
+	_say("staggered for %.1f s" % seconds)
 	lift = 0.0
 	_tell = 0.0
 	if anim != "" and sprite.sprite_frames.has_animation(anim):
@@ -685,7 +725,11 @@ func _update_look(delta: float) -> void:
 	sprite.self_modulate = Color(0.72, 0.74, 0.86) if staggered > 0.0 else Color(1, 1, 1)
 	if _flash > 0.0:
 		_flash -= delta
-		sprite.material = white_material()
+		if _hit_mat == null:
+			_hit_mat = ShaderMaterial.new()
+			_hit_mat.shader = Shader.new()
+			_hit_mat.shader.code = HIT_SHADER
+		sprite.material = _hit_mat
 	elif _tell > 0.0:
 		_tell -= delta
 		var k := 1.0 - _tell / maxf(_tell_dur, 0.01)
@@ -719,6 +763,7 @@ func die(_drops: bool = true) -> void:
 	dead = true
 	hittable = false
 	harmful = false
+	_say("dies")
 	cancel()
 	_burns.clear()
 	_free_fx()

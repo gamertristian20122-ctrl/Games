@@ -1,12 +1,13 @@
 extends RefCounted
 ## Familiar behaviour "porter": the Blood Porter. Red hearts the hero has no room for go to the bat
 ## instead of staying on the floor (player.gd asks can_carry() and hands them over with stash()).
-## It shows what it carries as small hearts hanging under it. When the hero has been short of red
+## It arrives carrying all it can hold, and shows what it carries as small hearts hanging under it. When the hero has been short of red
 ## health for `wait` seconds, it feeds him what he is missing and keeps the rest.
 ## params:  carry  half hearts it can hold      wait  seconds before it feeds
 
 func start(f) -> void:
-	f.mem = {"held": 0, "wait": 0.0, "icons": []}
+	f.mem = {"held": int(f.p.get("carry", 2)), "wait": 0.0, "icons": []}      # it arrives with its hands full
+	_show(f)
 
 
 func can_carry(f, _amount: int) -> bool:
