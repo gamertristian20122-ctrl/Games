@@ -166,7 +166,7 @@ func _show_item(id: String) -> void:
 
 
 func _ask_leave() -> void:
-	ask("Walk back to the camp? You keep your items and bank your coins.", "To camp", "Keep going", func() -> void: send("leave_run"), false)
+	ask("Walk back to the camp? You keep your items and ALL your coins go into the camp chest (only half if you fall).", "To camp", "Keep going", func() -> void: send("leave_run"), false)
 
 
 func _ask_give_up() -> void:

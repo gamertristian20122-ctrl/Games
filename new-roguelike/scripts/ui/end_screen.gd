@@ -60,7 +60,7 @@ func build() -> void:
 			["Floor", str(int(summary.get("floor", 1)))],
 			["Time", UI.time_text(float(summary.get("time_s", 0.0)))],
 			["Kills", str(int(summary.get("kills", 0)))],
-			["Coins", str(int(summary.get("coins", 0)))]]:
+			["To chest" if summary.has("banked") else "Coins", str(int(summary.get("banked", summary.get("coins", 0))))]]:
 		var tile := UI.panel("well")
 		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var t := UI.vbox(0)

@@ -57,6 +57,7 @@ var _busy := false               ## a fade is running: ignore buttons
 var _ending := false             ## the run is over and the end screen is on its way
 var _hero_id := "knight"
 var _level_id := ""              ## the story level being played ("" = none)
+var _waiting_talk: Variant = null    ## words that could not be shown yet (see _on_action "talk")
 var _seed := 0
 var _clock := 0.0
 var _time_limit := 0.0
@@ -170,6 +171,16 @@ func close_top() -> void:
 	if not _stack.is_empty():
 		_stack.back().call("set_covered", false)
 	_refresh_layers()
+	if _stack.is_empty():
+		_show_waiting_talk.call_deferred()
+
+
+func _show_waiting_talk() -> void:
+	if _waiting_talk == null or _busy or not _stack.is_empty() or not is_instance_valid(hub):
+		return
+	var words: Variant = _waiting_talk
+	_waiting_talk = null
+	open("hub_talk", {"info": words})
 
 
 func close_all() -> void:
@@ -236,6 +247,9 @@ func _drop_hub() -> void:
 
 ## Every request a screen can send ends up here.
 func _on_action(what: String, arg: Variant) -> void:
+	if what == "talk" and (_busy or not _stack.is_empty()):
+		_waiting_talk = arg          # a story moment that came during a fade or over another window: shown right after
+		return
 	if _busy:
 		return
 	match what:
@@ -277,6 +291,9 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("retalk")
+		"hub_intro":
+			close_top()
+			open("hub_talk", {"info": Story.OPENING.duplicate(true)})
 		"hub_sleep":
 			close_top()
 			if is_instance_valid(hub):
@@ -393,6 +410,9 @@ func _on_run_ended(victory: bool, summary: Dictionary) -> void:
 		_level_id = String(summary["level"])
 		if victory:
 			Story.walk_out(summary.get("items", []), int(summary.get("coins_held", 0)))
+			summary["banked"] = int(summary.get("coins_held", 0))
+		elif run.get("training") != true:
+			summary["banked"] = Story.fall(int(summary.get("coins_held", 0)))
 	if G.flag("autotest") and String(summary.get("level", "")) != "":
 		print("[main] level %s victory=%s chapter=%d kit=%s joined=%s" % [summary["level"], victory, Story.chapter(), Story.kit(), summary.get("joined", "")])
 	if G.flag("autotest"):
@@ -530,6 +550,7 @@ func _transition(change: Callable) -> void:
 	await change.call()
 	await _fade_to(0.0)
 	_busy = false
+	_show_waiting_talk()
 
 
 func _fade_to(alpha: float, time: float = 0.16) -> void:

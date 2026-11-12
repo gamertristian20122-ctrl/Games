@@ -20,7 +20,10 @@ extends RefCounted
 ##   "boss"   a row key of scripts/data/bosses.gd      "rooms"  how many rooms
 ##   "final"  the last level
 ## Dying only repeats the level he died in. The items he carries are kept each time a level is cleared
-## and when he walks out. Coins are banked at the camp only when he walks out alive (or wins).
+## and when he walks out. His coins go into the camp chest: all of them when he walks out alive or
+## wins, FALLEN_SHARE of them when he falls (the Warden drags him out; v0.9.0 kept none, and the
+## owner's chest stayed empty, so nothing in the camp could be bought).
+const FALLEN_SHARE := 0.5
 ##
 ## CHAPTER = how many levels are cleared (0 to LEVELS.size()). An NPC's "story" gives pages per
 ## chapter; the newest entry not above the current chapter is spoken. A gold "!" shows over anyone
@@ -61,9 +64,12 @@ const BOSS_SAYS := {
 }
 
 ## THE OPENING: shown once, before the player first gets control (in the room at the tavern).
-const OPENING := {"name": "", "title": "", "sprite": "", "pages": [
-	"Night. Rain on the forest road. One rider, one sword.",
-	"Long ago the order of the Seal sent forty knights to the Hollow Hill. Aldous is the one it has left.",
+const OPENING := {"name": "", "title": "", "sprite": "", "black": true, "heading": "Hollow Hill", "pages": [
+	"Long ago a king asked for one thing: never to want again. He was given a hunger without end.",
+	"He ate his kingdom bare. Four orders buried him under the Hollow Hill, behind four seals, with keepers to watch them.",
+	"Forty knights swore to bring the keepers bread each spring. One spring nobody came.",
+	"Now the seals are cracking, and the dead walk in the forest.",
+	"Night. Rain on the forest road. One rider, one sword. Aldous, the last knight of the order.",
 	"The village under the hill gave him a room at the Hollow Flagon and asked no questions.",
 	"Morning. Somewhere below, something very old is hungry. Find the Druid by the rune stones.",
 ]}
@@ -280,6 +286,14 @@ static func walk_out(items: Array, coins: int) -> void:
 		Save.hub_set("kit:" + String(item_id), n)
 	Save.hub_set("bank:coins", Save.hub_get("bank:coins") + maxi(coins, 0))
 	Save.flush()
+
+
+## He fell: part of his purse still reaches the chest. Returns how many coins that was.
+static func fall(coins: int) -> int:
+	var saved := int(floor(maxi(coins, 0) * FALLEN_SHARE))
+	Save.hub_set("bank:coins", Save.hub_get("bank:coins") + saved)
+	Save.flush()
+	return saved
 
 
 ## The pages `npc_id` speaks now and the chapter they belong to: [pages, chapter key], or [[], -1].

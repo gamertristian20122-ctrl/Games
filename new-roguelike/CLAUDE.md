@@ -535,6 +535,25 @@ played by a person yet: every number is a first guess.
   not a written boss fight (a werewolf and nine other spare bosses are cut and unused); weapons other
   than the sword have no "look" choice; rain has no sound; prices and rewards are untested.
 
+## v0.9.1 (12 Nov 2026): "your buttons for menus keep not working", and the intro
+- **Most likely cause, fixed:** every buy button in the camp (smith, cook, barkeep, forge) was DISABLED
+  while the camp chest was empty, and the chest only filled when the hero walked out alive. A player who
+  died or never used "Back to camp" had 0 coins for ever and a camp full of dead buttons. Now: a choice
+  you cannot take is greyed but still answers (it says why: `hub_talk.gd _say_why`, option key `"why"`),
+  and HALF the coins carried reach the chest on death (`Story.fall`, `FALLEN_SHARE`); the end screen
+  shows "To chest". NEVER ship a disabled button without a reason on screen.
+- **Checked and ruled out:** a second finger tapping a button while the first rests on the walking
+  stick. The flow test does exactly that and passes with the engine's own touch handling.
+- **Story moments could be lost** when they fired during a fade on a slow phone (and were still marked
+  seen). `main.gd` now keeps the words (`_waiting_talk`) and shows them when the fade or the open window
+  is done.
+- **The intro** (`Story.OPENING`): seven pages on a black screen under the game's name, right after Play
+  the first time (save key `seen:opening2`, so players of v0.9.0 see it once too). The bed in your room
+  has "Remember how it began" to watch it again. `--hub=room --story --shots=<dir>` photographs it.
+- A tap on the talk box is counted once (a phone sends a touch and a click for one tap).
+- Still NOT confirmed on the owner's phone: which buttons they meant. If it comes up again, ask which
+  screen, which button, and what they see.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

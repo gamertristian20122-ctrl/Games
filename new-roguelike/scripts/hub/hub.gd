@@ -155,7 +155,13 @@ func _ready() -> void:
 		_story_moment()                  # (--story: also while taking test pictures)
 	if G.arg("clock") != "":
 		G.world_clock = float(G.arg("clock")) * DAY_LENGTH      # test: --clock=0.7 is deep night
-	if G.arg("shots") != "" and G.flag("hub"):
+	if G.arg("shots") != "" and G.flag("story"):
+		# test: a picture of the story moment, then quit
+		get_tree().create_timer(2.0).timeout.connect(func() -> void:
+			await G.save_shot("hub_story_%s.png" % place_id)
+			await get_tree().create_timer(0.3).timeout
+			G.quit(0))
+	elif G.arg("shots") != "" and G.flag("hub"):
 		if place_id == "village":
 			_tour = [Vector2(376, 170), Vector2(180, 276), Vector2(360, 300), Vector2(540, 276), Vector2(150, 176)]
 		else:
@@ -166,8 +172,9 @@ func _ready() -> void:
 ## first words (once, in the village), and a scene in the village after each seal.
 func _story_moment() -> void:
 	var say := {}
-	if place_id == "room" and Save.hub_get("seen:opening") == 0:
-		Save.hub_set("seen:opening", 1)
+	if place_id == "room" and Save.hub_get("seen:opening2") == 0:
+		# ("opening2": in v0.9.0 a slow phone could miss the opening and still mark it seen)
+		Save.hub_set("seen:opening2", 1)
 		say = Story.OPENING.duplicate(true)
 	elif place_id == "village" and Save.hub_get("seen:intro") == 0:
 		Save.hub_set("seen:intro", 1)
@@ -179,7 +186,7 @@ func _story_moment() -> void:
 	if not say.is_empty():
 		if G.flag("story"):
 			print("[hub] story moment in %s: %s" % [place_id, String(say["pages"][0])])
-		get_tree().create_timer(0.7).timeout.connect(func() -> void: action.emit("talk", say))
+		get_tree().create_timer(0.1 if say.get("black", false) else 0.7).timeout.connect(func() -> void: action.emit("talk", say))
 
 
 ## Shows a place (scripts/data/places.gd) with the hero at `at` (or at its own spawn point).
@@ -799,15 +806,16 @@ func _talk(index: int) -> void:
 			info["lines"].append(["Your room at the Hollow Flagon. The looking glass by the bed changes your name, armour and sword.", UI.C_DIM])
 			info["lines"].append(["You carry %d item%s. Camp chest: %d coins." % [carried.size(), "" if carried.size() == 1 else "s", Upgrades.coins()], UI.C_GOLD])
 			info["options"].append({"text": "Sleep until morning" if _is_night() else "Sleep until nightfall", "what": "hub_sleep"})
+			info["options"].append({"text": "Remember how it began (the intro)", "what": "hub_intro"})
 		"shop":
 			for entry: Array in Shop.stock():
 				var item: Dictionary = Items.ALL[String(entry[0])]
 				info["lines"].append(["%s: %s" % [item["name"], item["desc"]], UI.C_DIM])
 				info["options"].append({"text": "%s: %d coins" % [item["name"], int(entry[1])], "what": "hub_shop", "arg": {"slot": int(entry[2])},
-					"off": Upgrades.coins() < int(entry[1])})
+					"off": Upgrades.coins() < int(entry[1]), "why": _poor(int(entry[1]))})
 			for row2: Dictionary in Shop.SUPPLIES:
 				info["options"].append({"text": "%s: %d coins" % [row2["name"], int(row2["price"])], "what": "hub_shop", "arg": {"supply": row2["id"]},
-					"off": Upgrades.coins() < int(row2["price"])})
+					"off": Upgrades.coins() < int(row2["price"]), "why": _poor(int(row2["price"]))})
 			info["lines"].append(["Camp chest: %d coins. The shelf changes each time you go down." % Upgrades.coins(), UI.C_GOLD])
 		"pack":
 			info["lines"].append([_pack_line(), UI.C_GOLD])
@@ -829,7 +837,7 @@ func _talk(index: int) -> void:
 		var price := Upgrades.cost(up)
 		info["lines"].append(["%s %d/%d: %s" % [up["name"], t, Upgrades.steps(up), up["text"]], UI.C_DIM if price >= 0 else UI.C_FAINT])
 		if price >= 0:
-			info["options"].append({"text": "%s: %d coins" % [up["name"], price], "what": "hub_buy", "arg": up["id"], "off": Upgrades.coins() < price})
+			info["options"].append({"text": "%s: %d coins" % [up["name"], price], "what": "hub_buy", "arg": up["id"], "off": Upgrades.coins() < price, "why": _poor(price)})
 	if id == "smith":
 		# the weapons he can fit: carried, owned, forged here, or still out in the world
 		var carried := Weapons.current()
@@ -842,16 +850,21 @@ func _talk(index: int) -> void:
 				info["options"].append({"text": "Carry the %s" % String(w["name"]).to_lower(), "what": "hub_weapon", "arg": wid})
 			elif w.has("price"):
 				info["options"].append({"text": "Forge the %s: %d coins" % [String(w["name"]).to_lower(), int(w["price"])], "what": "hub_forge", "arg": wid,
-					"off": Upgrades.coins() < int(w["price"])})
+					"off": Upgrades.coins() < int(w["price"]), "why": _poor(int(w["price"]))})
 			else:
 				info["lines"].append(["%s: %s." % [w["name"], w["how"]], UI.C_FAINT])
 	if sells:
-		info["lines"].append(["Camp chest: %d coins. Walk out of the hill alive to fill it." % Upgrades.coins(), UI.C_GOLD])
+		info["lines"].append(["Camp chest: %d coins. What you carry out of the hill goes in (half if you fall)." % Upgrades.coins(), UI.C_GOLD])
 	# heard it already this visit and nothing new: straight to the choices
 	if not Story.has_news(id) and _talked.has(id) and not ((info["options"] as Array).is_empty() and (info["lines"] as Array).is_empty()):
 		info["pages"] = []
 	_talked[id] = true
 	action.emit("talk", info)
+
+
+## Why a thing cannot be bought, and where coins come from.
+func _poor(price: int) -> String:
+	return "It costs %d coins and the camp chest holds %d. Coins you carry out of the hill go into the chest: all of them when you walk out or win, half when you fall." % [price, Upgrades.coins()]
 
 
 func _pack_line() -> String:

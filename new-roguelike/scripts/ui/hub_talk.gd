@@ -22,10 +22,27 @@ var _more: Label
 var _box: Control
 var _choices: Control
 var _blink := 0.0
+var _last_tap := -1000
+var _why: Label                  ## says why a greyed choice cannot be taken
 
 
 func build() -> void:
 	_pages = info.get("pages", [])
+	if bool(info.get("black", false)):
+		# an intro: the words stand on a black screen, nothing else to look at
+		var night := ColorRect.new()
+		night.color = UI.C_VOID
+		night.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		night.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(night)
+		var big := UI.label(String(info.get("heading", "")), "Title")
+		UI.style_title(big, UI.C_GOLD, Color("7a4a12"))
+		big.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+		big.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		big.offset_top = 22
+		add_child(big)
+		UI.pop_in(big, Vector2(0, -6))
 	if _pages.is_empty():
 		_show_choices()
 		return
@@ -126,9 +143,13 @@ func _advance() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if (event is InputEventMouseButton and event.pressed) or (event is InputEventScreenTouch and event.pressed):
+	# a phone sends a touch AND a click for one tap: count it once
+	if (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) or (event is InputEventScreenTouch and event.pressed):
 		accept_event()
-		_advance()
+		var now := Time.get_ticks_msec()
+		if now - _last_tap > 120:
+			_last_tap = now
+			_advance()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -137,6 +158,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") or (event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A):
 		get_viewport().set_input_as_handled()
 		_advance()
+
+
+func _say_why(why: String) -> void:
+	_why.text = why
+	_why.visible = true
+	UI.pop_in(_why, Vector2(0, 2))
 
 
 ## After the words: what you can ask of them.
@@ -170,12 +197,22 @@ func _show_choices() -> void:
 	for opt: Dictionary in info.get("options", []):
 		var what := String(opt.get("what", "back"))
 		var arg: Variant = opt.get("arg")
-		var b := UI.button(String(opt["text"]), func() -> void: send(what, arg))
+		var off := bool(opt.get("off", false))
+		var why := String(opt.get("why", "You cannot do that yet."))
+		# a choice you cannot take is greyed but still answers a tap: it says why (a dead button
+		# looked like a broken one: the owner, 12 Nov 2026, "your buttons for menus keep not working")
+		var b := UI.button(String(opt["text"]), (func() -> void: _say_why(why)) if off else (func() -> void: send(what, arg)), "", "ui_back" if off else "ui_click")
 		b.custom_minimum_size = Vector2(220, 15)
-		b.disabled = bool(opt.get("off", false))
+		if off:
+			for colour: String in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+				b.add_theme_color_override(colour, UI.C_FAINT)
 		col.add_child(b)
-		if first == null and not b.disabled:
+		if first == null and not off:
 			first = b
+	_why = UI.label("", "Small", 220.0)
+	_why.add_theme_color_override("font_color", UI.C_ORANGE)
+	_why.visible = false
+	col.add_child(_why)
 	var back := UI.button("Leave", on_back, "", "")
 	back.custom_minimum_size = Vector2(220, 15)
 	col.add_child(back)

@@ -41,6 +41,18 @@ func _shot(shot_name: String) -> void:
 	print("[tour] ", file)
 
 
+func _find_button(node: Node, starts_with: String) -> Button:
+	if node == null:
+		return null
+	if node is Button and (node as Button).text.begins_with(starts_with) and (node as Button).is_visible_in_tree():
+		return node
+	for c in node.get_children():
+		var hit := _find_button(c, starts_with)
+		if hit != null:
+			return hit
+	return null
+
+
 ## Pretends a finger touches the screen at a position given in game pixels.
 func _touch(finger: int, game_pos: Vector2, pressed: bool) -> void:
 	var scale := Vector2(DisplayServer.window_get_size()) / UI.screen_size(self)
@@ -368,6 +380,23 @@ func _run_flow() -> void:
 	await _key(KEY_ENTER)
 	await _settle()
 	_check("Leave closes the talk box", main.call("top_name") == "" and is_instance_valid(main.get("hub")))
+	# the same on a phone, with the left thumb still resting on the walking stick (finger 0)
+	_touch(0, Vector2(50, 130), true)
+	await _settle()
+	main.get("hub").call("talk_to", "cook")
+	await _settle()
+	var leave := get_viewport().gui_get_focus_owner()
+	_check("the Leave button is there", leave is Button and (leave as Button).text == "Leave")
+	if leave is Button:
+		var at := (leave as Button).get_global_rect().get_center()
+		_touch(1, at, true)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_touch(1, at, false)
+		await _settle()
+	_check("a second finger can press Leave while the first rests on the stick", main.call("top_name") == "")
+	_touch(0, Vector2(50, 130), false)
+	await _settle()
 	# the smith sharpens the blade for coins from the camp chest
 	Save.hub_set("bank:coins", 40)
 	main.call("_on_action", "hub_buy", "edge")
@@ -377,6 +406,23 @@ func _run_flow() -> void:
 		await _key(KEY_ESCAPE)
 		await _settle()
 	Save.hub_set("bank:coins", 0)
+	# with an empty chest a greyed choice must still answer the tap and say why
+	main.get("hub").call("talk_to", "smith")
+	await _settle()
+	for i in 4:
+		if _find_button(main.call("top_screen"), "Balance") == null:
+			await _key(KEY_ENTER)
+	await _settle()
+	var poor := _find_button(main.call("top_screen"), "Balance")
+	_check("the smith offers Balance the hilt", poor != null)
+	if poor != null:
+		poor.pressed.emit()
+		await _settle()
+		var why: Variant = main.call("top_screen").get("_why")
+		_check("a choice you cannot afford says why", why is Label and (why as Label).visible and (why as Label).text.contains("coins"))
+		_check("... and the window stays open", main.call("top_name") == "hub_talk")
+	await _key(KEY_ESCAPE)
+	await _settle()
 	# down into the hill and back out alive
 	main.call("_on_action", "hub_level", "crypt_1")
 	await _settle(1.5)
