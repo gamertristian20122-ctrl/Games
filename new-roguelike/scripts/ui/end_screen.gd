@@ -148,6 +148,8 @@ func _story() -> String:
 	var hero := String(Heroes.by_id(String(summary.get("hero", "knight")))["name"])
 	var where := String(summary.get("floor_name", ""))
 	if victory and String(summary.get("level", "")) != "":
+		if String(summary.get("side", "")) != "":
+			return "%s walks out of %s. The wood is quiet behind him." % [hero, String(summary.get("level_name", where))]
 		return "%s climbs out of the Hollow Hill. The last seal holds." % hero
 	if victory:
 		return "%s climbs back into the light. The dungeon is quiet." % hero

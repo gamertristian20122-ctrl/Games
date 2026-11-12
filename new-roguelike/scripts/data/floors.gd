@@ -107,6 +107,24 @@ const LIST := [
 ]
 
 
+## Looks that are not one of the four floors of the hill. A story level names one with "look"
+## (scripts/data/story.gd SIDE). "outdoor": true = scripts/run/forest_look.gd dresses the rooms.
+## "enemies" lists the monsters; "tiles" is not used out of doors.
+const EXTRA := {
+	"forest": {
+		"id": "forest", "name": "The Elfwood", "rooms": 7, "outdoor": true,
+		"enemies": ["thorn_elf", "elf_stalker", "elf_hexer", "wood_beast", "sporeling", "long_cap", "old_cap"],
+		"tiles": "crypt", "ambient": Color("c2d6c6"), "light": Color(0.82, 1.0, 0.86), "torch_power": 1.0,
+		"motes": {"count": 18, "color": Color(0.8, 1.0, 0.6, 0.7), "size": 1.0, "rise": -3.0, "drift": 5.0, "twinkle": 0.8},
+		"vignette": 0.38, "music": "floor2", "boss_music": "boss",
+	},
+}
+
+
+static func extra(id: String) -> Dictionary:
+	return EXTRA.get(id, LIST[0])
+
+
 static func count() -> int:
 	return LIST.size()
 

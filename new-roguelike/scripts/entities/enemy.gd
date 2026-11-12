@@ -31,6 +31,7 @@ const Enemies = preload("res://scripts/data/enemies.gd")
 const Shots = preload("res://scripts/run/shots.gd")
 
 const Hands = preload("res://scripts/entities/hands.gd")
+const CHAMPION_HP := 5.0          ## a side level's champion has this many times its kind's health
 const CORPSE_FADE := 0.45       ## seconds a fallen body takes to fade after its death animation
 const SHOT_PLANE := 7.0         ## shots are drawn this far above the floor (see shot_look.gd)
 
@@ -189,7 +190,7 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	owner_id = int(opts.get("owner", 0))
 	elite = opts.get("elite", false)
 	if not opts.has("elite") and not minion and not opts.get("boss", false):
-		elite = run.floor_index + 1 >= Enemies.ELITE_FROM_FLOOR and randf() < run.elite_chance
+		elite = run.scale_floor + 1 >= Enemies.ELITE_FROM_FLOOR and randf() < run.elite_chance
 	max_hp = float(data["hp"]) * _hp_scale()
 	speed = float(data["speed"])
 	touch = int(data.get("touch", 1))
@@ -214,6 +215,9 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	# shots test ONE circle around the middle of the body: halfway between half its width and half
 	# its height, so a shot that visibly touches the chest or the head counts
 	hit_grow = clampf((body_w + body_h) * 0.25 - radius, 0.0, 4.0 * _base_scale) if not m.is_empty() else 0.0
+	if opts.get("champion", false):
+		max_hp *= CHAMPION_HP             # the champion that ends a side level
+		display_name = "the " + display_name
 	if minion:
 		max_hp *= Enemies.MINION_HP
 	if elite:
@@ -249,7 +253,7 @@ func _row(enemy_id: String) -> Dictionary:
 
 
 func _hp_scale() -> float:
-	return (1.0 + Enemies.HP_PER_FLOOR * run.floor_index) * G.diff("enemy_hp")
+	return (1.0 + Enemies.HP_PER_FLOOR * run.scale_floor) * G.diff("enemy_hp")
 
 
 func _load_ai() -> RefCounted:

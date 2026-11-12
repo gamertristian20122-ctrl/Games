@@ -40,7 +40,7 @@ const PROPS := [
 	# a few bushes and young trees at the edges; the middle stays open
 	["hub_bush_green_1", 262, 372, 12, 5], ["hub_bush_orange_2", 462, 334, 9, 4], ["hub_bush_deep_1", 252, 214, 10, 4],
 	["hub_bush_rust_2", 478, 222, 9, 4], ["hub_tree_pink_4", 276, 418, 4, 5], ["hub_tree_teal_4", 440, 420, 4, 5],
-	["hub_tree_pink_3", 664, 168, 6, 6], ["hub_tree_green_3", 56, 344, 6, 6], ["hub_tree_teal_3", 668, 326, 6, 6],
+ ["hub_tree_green_3", 56, 344, 6, 6], ["hub_tree_teal_3", 668, 326, 6, 6],
 ]
 
 ## The forest wall round the clearing is planted by hub.gd from these (it fits itself to MAP):
@@ -54,7 +54,9 @@ const GATE_GAP := [296.0, 424.0]            ## no big tree in front of the crypt
 const TAVERN_GAP := [40.0, 250.0]           ## ... nor in front of the tavern
 ## Walls the hero cannot walk through (rectangles), and doors that lead somewhere else.
 const BLOCKS := [Rect2(60, 96, 128, 56)]
-const EXITS := [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)}]
+const EXITS := [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)},
+	{"rect": Rect2(674, 176, 10, 56), "to": "elfwood", "at": Vector2(52, 204)}]       # the road east, into the Elfwood
+const OPEN := [Rect2(690, 140, 60, 130)]    ## no forest tree stands here: the road leaves the village
 const GATE_SPOT := Vector2(360, 150)        ## where he stands when he comes back out of the hill
 const BEHIND_GATE := [["hub_tree_pink_2", 360, 60], ["hub_tree_green_2", 296, 80], ["hub_tree_teal_2", 426, 80]]
 
@@ -63,6 +65,7 @@ const PATHS := [
 	[Vector2(360, 130), Vector2(360, 236)], [Vector2(360, 270), Vector2(360, 336)],
 	[Vector2(338, 262), Vector2(196, 252)], [Vector2(384, 262), Vector2(548, 252)],
 	[Vector2(372, 322), Vector2(512, 380)], [Vector2(346, 322), Vector2(204, 392)],
+	[Vector2(572, 232), Vector2(640, 206), Vector2(716, 204)],
 ]
 
 ## How many small flat things are scattered on the grass (seeded, the same every time).

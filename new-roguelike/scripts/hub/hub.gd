@@ -64,6 +64,9 @@ var _news := false              ## a quest is waiting to be handed in
 var _talked := {}               ## npc ids spoken to during this visit
 var _quests: Control
 var _small := false              ## the place fits on the screen: the camera stands still
+var _entered := false
+var _arrive_t := 0.0
+var _banner: Label
 
 
 func _ready() -> void:
@@ -90,6 +93,16 @@ func _ready() -> void:
 	_quests.position = Vector2(ins.x + 2.0, ins.y + 2.0)
 	_quests.modulate.a = 0.92
 	layer.add_child(_quests)
+	_banner = UI.label("", "Head")
+	_banner.theme = UI.theme()
+	_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_banner.offset_top = 8
+	_banner.add_theme_color_override("font_outline_color", UI.C_INK)
+	_banner.add_theme_constant_override("outline_size", 4)
+	_banner.visible = false
+	layer.add_child(_banner)
 	_fade = ColorRect.new()
 	_fade.color = Color(UI.C_VOID, 0.0)
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -165,6 +178,9 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		_cam.limit_bottom = int(size.y) if size.y > view.y else int((size.y + view.y) / 2.0)
 		_cam.position = _hero.position.round()
 	_cam.reset_smoothing()
+	if _entered:
+		_arrive_t = 2.2                 # the place's name floats up for a moment
+	_entered = true
 
 
 ## Through a door or off the edge of the screen: a short fade, then the next place.
@@ -484,6 +500,13 @@ func _physics_process(delta: float) -> void:
 	_off_hand.update(delta, moving, _face)
 	if not _small:
 		_cam.position = _hero.position.round()
+	if _arrive_t > 0.0:
+		_arrive_t -= delta
+		_banner.text = String(place.get("name", ""))
+		_banner.visible = not frozen
+		_banner.modulate.a = clampf(_arrive_t / 0.6, 0.0, 1.0)
+	elif _banner.visible:
+		_banner.visible = false
 	_update_people(delta)
 
 
@@ -594,6 +617,24 @@ func _talk(index: int) -> void:
 		"lines": [], "options": []}
 	match String(row.get("role", "chat")):
 		"gate":
+			if String(row.get("area", "")) != "":
+				# the gate of a side area (the Elfwood): its own short descent
+				var area := String(row["area"])
+				var rows := Story.side_levels(area)
+				var ahead := Story.next_side(area)
+				var done := 0
+				for lv: Dictionary in rows:
+					if Story.cleared(String(lv["id"])):
+						done += 1
+				if not ahead.is_empty():
+					info["options"].append({"text": "Go in: %s" % String(ahead["name"]), "what": "hub_level", "arg": ahead["id"]})
+				if done > 0:
+					info["options"].append({"text": "Go in from the start", "what": "hub_level", "arg": rows[0]["id"]})
+				info["lines"].append(["Groves freed: %d of %d. Walk out from the pause menu when no fight is on." % [done, rows.size()], UI.C_DIM])
+				info["lines"].append([_pack_line(), UI.C_GOLD])
+				action.emit("talk", info)
+				_talked[id] = true
+				return
 			var next := Story.next_level()
 			if next.is_empty():
 				info["lines"].append(["Every seal is mended.", UI.C_GOLD])

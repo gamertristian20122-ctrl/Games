@@ -36,6 +36,19 @@ const LEVELS := [
 	{"id": "pit_1", "area": "The Pit", "name": "The Hungry Hall", "floor": 4, "boss": "starved_king", "rooms": 10, "final": true},
 ]
 
+## SIDE LEVELS: areas off the main road, each its own short descent, entered from a place in the
+## world (the Elfwood is entered at the glade east of the village). Same rows as LEVELS, plus:
+##   "side"      which area's gate offers it        "look"   a theme of scripts/data/floors.gd EXTRA
+##   "tier"      how strong its monsters are (0 = like the Crypt, 1 = like the Warrens ...)
+##   "champion"  instead of a boss: one monster of this kind, far tougher, with a guard of others
+##   "gives"     a weapon id the hero is handed when it is cleared (scripts/data/weapons.gd)
+const SIDE := [
+	{"id": "wood_1", "side": "forest", "area": "The Elfwood", "name": "The Thornwood", "floor": 1, "look": "forest", "tier": 0,
+		"champion": "wood_beast", "rooms": 6},
+	{"id": "wood_2", "side": "forest", "area": "The Elfwood", "name": "The Singing Glade", "floor": 1, "look": "forest", "tier": 1,
+		"champion": "elf_hexer", "rooms": 7, "gives": "spear"},
+]
+
 ## What each guardian says when the fight begins and as it falls (shown as a banner over the fight).
 const BOSS_SAYS := {
 	"pyre_saint": {"start": "Come closer, child. Be warm.", "end": "At last... the cold."},
@@ -113,8 +126,25 @@ static func chapter() -> int:
 
 
 static func level(id: String) -> Dictionary:
-	for lv: Dictionary in LEVELS:
+	for lv: Dictionary in LEVELS + SIDE:
 		if String(lv["id"]) == id:
+			return lv
+	return {}
+
+
+## The rows of a side area, in order.
+static func side_levels(area: String) -> Array:
+	var out: Array = []
+	for lv: Dictionary in SIDE:
+		if String(lv.get("side", "")) == area:
+			out.append(lv)
+	return out
+
+
+## The first level of a side area not cleared yet, or {} when all are.
+static func next_side(area: String) -> Dictionary:
+	for lv: Dictionary in side_levels(area):
+		if not cleared(String(lv["id"])):
 			return lv
 	return {}
 
@@ -178,12 +208,20 @@ static func after(id: String) -> Dictionary:
 	for i in LEVELS.size() - 1:
 		if String(LEVELS[i]["id"]) == id:
 			return LEVELS[i + 1]
+	var mine := level(id)
+	if mine.has("side"):
+		var rows := side_levels(String(mine["side"]))
+		for i in rows.size() - 1:
+			if String(rows[i]["id"]) == id:
+				return rows[i + 1]
 	return {}
 
 
 ## How far into its area a level is (0 = the first level with that look): later ones are a bit harder.
 static func step_in_area(id: String) -> int:
 	var lv := level(id)
+	if lv.has("side"):
+		return 0                       # a side level says how hard it is itself ("tier")
 	var n := 0
 	for other: Dictionary in LEVELS:
 		if String(other["id"]) == id:

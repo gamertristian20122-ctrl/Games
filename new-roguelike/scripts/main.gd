@@ -291,7 +291,7 @@ func _on_action(what: String, arg: Variant) -> void:
 			else:
 				_transition(start_run.bind(_hero_id, _fresh_seed()))
 		"menu":
-			_transition(show_hub.bind("village", HubData.GATE_SPOT))         # after a run you stand at the gate again
+			_transition(_back_to_world)       # after a run you stand at the gate you went in by
 		"title":
 			_transition(show_title)
 		"resume":
@@ -364,6 +364,10 @@ func _on_run_ended(victory: bool, summary: Dictionary) -> void:
 		_level_id = String(summary["level"])
 		if victory:
 			Story.walk_out(summary.get("items", []), int(summary.get("coins_held", 0)))
+			var gift := String(Story.level(_level_id).get("gives", ""))       # a weapon won (scripts/data/weapons.gd)
+			if gift != "" and Save.hub_get("wpn:" + gift) == 0:
+				Save.hub_set("wpn:" + gift, 1)
+				summary["gift"] = gift
 	if G.flag("autotest") and String(summary.get("level", "")) != "":
 		print("[main] level %s victory=%s chapter=%d kit=%s joined=%s" % [summary["level"], victory, Story.chapter(), Story.kit(), summary.get("joined", "")])
 	if G.flag("autotest"):
@@ -407,6 +411,14 @@ func resume() -> void:
 	Save.flush()
 
 
+## Where a run puts you back: the village's crypt gate, or the glade for the Elfwood's levels.
+func _back_to_world() -> void:
+	if String(Story.level(_level_id).get("side", "")) == "forest":
+		await show_hub("glade", Vector2(300, 236))
+	else:
+		await show_hub("village", HubData.GATE_SPOT)
+
+
 ## "Back to camp" in the pause menu (only offered while no fight is on): the hero walks out alive.
 ## He keeps his items, his coins go into the camp's chest, and cleared levels stay cleared.
 func leave_run() -> void:
@@ -418,7 +430,12 @@ func leave_run() -> void:
 		Story.walk_out(p.get("items"), int(p.get("coins")))
 	_ending = true
 	_busy = false
-	await _transition(show_hub.bind("village", Vector2(620, 330) if yard else HubData.GATE_SPOT))
+	if not yard and run.get("level") is Dictionary:
+		_level_id = String((run.get("level") as Dictionary).get("id", _level_id))
+	if yard:
+		await _transition(show_hub.bind("village", Vector2(620, 330)))
+	else:
+		await _transition(_back_to_world)
 
 
 ## "Give up" in the pause menu: the run counts as lost and the end screen is shown.

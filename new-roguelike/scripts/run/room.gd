@@ -20,6 +20,7 @@ extends Node2D
 
 const Layouts = preload("res://scripts/data/room_layouts.gd")
 const RoomLook = preload("res://scripts/run/room_look.gd")
+const ForestLook = preload("res://scripts/run/forest_look.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
@@ -162,7 +163,7 @@ func _build_nodes() -> void:
 	door_fx.z_index = 2
 	add_child(door_fx)
 	door_fx.draw.connect(_draw_doors)
-	look = RoomLook.new()
+	look = ForestLook.new() if bool(run.theme.get("outdoor", false)) else RoomLook.new()
 	add_child(look)
 
 
@@ -211,9 +212,9 @@ func _pick_layout() -> Dictionary:
 		G.RoomType.BOSS: kind = "boss"
 	var lo := 1
 	var hi := 2
-	if run.floor_index == 1:
+	if run.scale_floor == 1:
 		hi = 3
-	elif run.floor_index >= 2:
+	elif run.scale_floor >= 2:
 		lo = 2
 		hi = 3
 	var list := Layouts.pick_list(kind, lo, hi, run.floor_index + 1)
@@ -919,6 +920,14 @@ func _start_fight() -> void:
 	_doors_changed()
 	_spawn_curse()
 	var player_pos: Vector2 = run.player.position
+	if type == G.RoomType.BOSS and run.level.has("champion"):
+		# a side level ends with a champion and its guard, not with a boss
+		spawn_enemy(String(run.level["champion"]), G.ROOM_CENTER + Vector2(0, -8), {"elite": true, "champion": true, "delay": 1.1})
+		for k in 3:
+			var who: String = run.enemy_pool[rng.randi() % run.enemy_pool.size()]
+			spawn_enemy(who, random_spawn_spot(player_pos, false), {"delay": 1.3 + 0.1 * k, "elite": false})
+		G.toast.emit(String(Enemies.info(String(run.level["champion"])).get("name", "Champion")), "The champion of %s" % String(run.level.get("name", "")))
+		return
 	if type == G.RoomType.BOSS:
 		spawn_enemy(run.boss_id, G.ROOM_CENTER + Vector2(0, -8), {"boss": true, "delay": 1.1})
 		return
@@ -981,7 +990,7 @@ func _roll_enemies() -> Array[String]:
 	var out: Array[String] = []
 	if pool.is_empty():
 		return out
-	var budget: float = float(G.arg("budget", str(run.SPAWN_BUDGET_BASE))) + run.level_bonus() + G.diff("budget") + run.SPAWN_BUDGET_PER_FLOOR * run.floor_index + run.SPAWN_BUDGET_PER_ROOM * run.rooms_cleared_floor
+	var budget: float = float(G.arg("budget", str(run.SPAWN_BUDGET_BASE))) + run.level_bonus() + G.diff("budget") + run.SPAWN_BUDGET_PER_FLOOR * run.scale_floor + run.SPAWN_BUDGET_PER_ROOM * run.rooms_cleared_floor
 	# two or three kinds per room keeps fights readable
 	var kinds: Array[String] = []
 	var want := 2 + rng.randi() % 2
@@ -1028,6 +1037,8 @@ func _room_cleared() -> void:
 	Sfx.play("door_open")
 	_doors_changed()
 	run.on_room_cleared(self)
+	if type == G.RoomType.BOSS and run.level.has("champion"):
+		run.champion_fell()
 	if type == G.RoomType.BOSS:
 		var item: String = run.take_item("boss", rng)
 		if item != "":

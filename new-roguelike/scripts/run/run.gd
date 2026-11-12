@@ -51,6 +51,7 @@ const TYPE_NAMES := ["start", "combat", "treasure", "shop", "secret", "boss", "a
 # ------------------------------------------------------------------ what the shell may read (see g.gd)
 var hero_id := "knight"
 var floor_index := 0
+var scale_floor := 0             ## how strong the monsters are: the floor, or a side level's "tier"
 ## Story mode (scripts/data/story.gd): the level being played, or {} for the old endless descent.
 ## A level is ONE small floor that ends when its boss falls. The camp passes it in G.next_run:
 ##   {"level": <row of Story.LEVELS>, "kit": [item ids the hero carries], "pack": {coins, bombs, keys}}
@@ -209,7 +210,7 @@ func _begin() -> void:
 	if not level.is_empty():
 		asked["floor"] = int(level.get("floor", 1))
 	floor_index = clampi(int(G.arg("floor", str(asked.get("floor", 1)))) - 1, 0, floor_count - 1)
-	theme = Floors.get_floor(floor_index)
+	theme = _theme()
 	effects = ItemEffects.new(self)
 	_generate_floor()
 	player = PlayerScript.new()
@@ -290,8 +291,9 @@ func _start_floor() -> void:
 ## Builds the map of the current floor (no signals yet, nothing on screen).
 func _generate_floor() -> void:
 	cur = Vector2i.ZERO
-	theme = Floors.get_floor(floor_index)
+	theme = _theme()
 	floor_name = String(theme["name"])
+	scale_floor = int(level.get("tier", floor_index))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed_value, floor_index, "floor"])
 	rooms = FloorGen.generate(rng, int(level.get("rooms", theme["rooms"])))
@@ -309,6 +311,7 @@ func _generate_floor() -> void:
 	boss_id = guards[rng.randi() % guards.size()]
 	if not level.is_empty() and Bosses.known(String(level.get("boss", ""))):
 		boss_id = String(level["boss"])
+	if not level.is_empty():
 		floor_name = String(level.get("name", floor_name))
 	# --boss=<id>: this boss guards the floor, whichever floor it is (for tests and screenshots)
 	var forced_boss := G.arg("boss")
@@ -369,6 +372,20 @@ func _enter_floor() -> void:
 
 
 ## Walk onto the exit: fade out, then build the next floor.
+## The look and the monsters of what is being played: one of the hill's floors, or a level's own "look".
+func _theme() -> Dictionary:
+	if not level.is_empty() and level.has("look"):
+		return Floors.extra(String(level["look"]))
+	return Floors.get_floor(floor_index)
+
+
+## A side level's champion fell (room.gd tells us when its glade is cleared).
+func champion_fell() -> void:
+	bosses_beaten.append(String(level.get("champion", "")))
+	G.stat.emit("champions", 1)
+	_level_done()
+
+
 ## Story: is there a level below the one being played?
 func has_next_level() -> bool:
 	return not level.is_empty() and not bool(level.get("final", false)) and not Story.after(String(level["id"])).is_empty()
@@ -552,24 +569,28 @@ func boss_killed(b: Node) -> void:
 	Sfx.music(String(theme.get("music", "")))
 	# the run is won when the final boss falls (the row's "final"), or whatever boss guards the last floor
 	if not level.is_empty():
-		# story: the level is cleared for good and what he carries is kept; the stair leads on
-		Story.clear(String(level["id"]), player.items)
-		G.stat.emit("levels_cleared_live", 1)
-		if not has_next_level():
-			victory = true
-			over = true
-			_end_t = 2.6
-			Sfx.play("victory_sting")
-		else:
-			player.hp = mini(player.max_hp, player.hp + LEVEL_HEAL)
-			G.hud_changed.emit()
-			G.toast.emit("Seal shard taken", "The stair leads deeper")
+		_level_done()
 		return
 	if floor_index >= floor_count - 1 or Bosses.info(id).get("final", false):
 		victory = true
 		over = true
 		_end_t = 2.6
 		Sfx.play("victory_sting")
+
+
+## Story: the level is cleared for good and what he carries is kept; the stair leads on, or it is over.
+func _level_done() -> void:
+	Story.clear(String(level["id"]), player.items)
+	G.stat.emit("levels_cleared_live", 1)
+	if not has_next_level():
+		victory = true
+		over = true
+		_end_t = 2.6
+		Sfx.play("victory_sting")
+	else:
+		player.hp = mini(player.max_hp, player.hp + LEVEL_HEAL)
+		G.hud_changed.emit()
+		G.toast.emit("Seal shard taken" if not level.has("side") else "The way is clear", "The stair leads deeper" if not level.has("side") else "The path leads on")
 
 
 func player_died(cause: String) -> void:
@@ -602,7 +623,7 @@ func summary() -> Dictionary:
 		"items": player.items.duplicate() if player != null else [],
 		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
-		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")),
+		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")), "side": String(level.get("side", "")),
 		"coins_held": player.coins if player != null else 0,
 	}
 

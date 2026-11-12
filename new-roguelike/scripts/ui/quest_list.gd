@@ -53,8 +53,11 @@ func refresh() -> void:
 	if is_instance_valid(run) and run.get("training") == true:
 		lines.append(["Train. Pause to go back.", UI.C_GOLD])
 	elif not level.is_empty():
-		var boss := String(Bosses.info(String(level.get("boss", ""))).get("name", "the guardian"))
-		lines.append(["Beat " + boss, UI.C_GOLD])
+		if level.has("champion"):
+			lines.append(["Beat the champion of " + String(level.get("name", "the grove")), UI.C_GOLD])
+		else:
+			var boss := String(Bosses.info(String(level.get("boss", ""))).get("name", "the guardian"))
+			lines.append(["Beat " + boss, UI.C_GOLD])
 	elif in_camp:
 		var next := Story.next_level()
 		lines.append(["Go down: " + String(next["name"]) if not next.is_empty() else "The hill is quiet", UI.C_GOLD])
