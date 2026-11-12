@@ -25,3 +25,7 @@ Game-ready files made from this source:
   ../../music/alt/boss_alt_army_approaching.ogg <- Action2 - Army Approaching.ogg
 
 Processing for the game-ready files in ../../music/: decode, one fixed gain per track to reach about -16 LUFS integrated (no compressor, no dynamic loudness filter), stereo 44.1 kHz Ogg Vorbis at about 100 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.
+
+Added 12 Nov 2026 (sound pass): one more loop of the same zip (sha256 5a320c6e3d60a8b69700989f84691f6d87eca86e0c2817c3586fb108b64d5ad6),
+same processing (gain to about -16 LUFS integrated, stereo 44.1 kHz Ogg Vorbis 96 kbps):
+  ../../music/battle.ogg <- Action3 - Preparing For Battle.ogg  (every turn-based battle that is not a boss)

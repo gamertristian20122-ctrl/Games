@@ -710,6 +710,7 @@ func _fall(unit: Dictionary) -> void:
 	if not is_instance_valid(node):
 		return
 	_say("%s falls." % String(unit["name"]))
+	Sfx.play("enemy_die", -8.0)
 	for c in node.get_children():
 		if c is Node3D and not (c as Node3D).rotation.is_zero_approx() or c.has_method("set_tint"):
 			(c as Node3D).visible = false      # hands and sword: the death pictures do not hold them
@@ -761,7 +762,7 @@ func _finish() -> void:
 		if String(reward["gear"]) != "" and Gear.grant(String(reward["gear"])):
 			lines.append("Found: %s" % String(Gear.row(String(reward["gear"]))["name"]))
 		Save.flush()
-		Sfx.play("victory_sting", -6.0)
+		Sfx.victory()
 	elif outcome == "lose":
 		head = "You fall..."
 		lines.append("Somebody carries you back to your bed.")

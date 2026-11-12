@@ -228,6 +228,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		_stage.free()
 	place_id = id
 	place = Places.get_place(id)
+	Sfx.place(id)                          # its music, ambience and ground underfoot
 	_solids.clear()
 	_people.clear()
 	_near = -1
@@ -976,6 +977,7 @@ func _physics_process(delta: float) -> void:
 		if not _tour.is_empty():
 			move = _tour_step(delta)
 	var moving := move.length() > 0.12
+	Sfx.walking(moving and not _changing, delta, float(place.get("speed", 1.0)))
 	if moving:
 		var was := _hero.position
 		var to := _hero.position + move.limit_length(1.0) * SPEED * float(place.get("speed", 1.0)) * delta

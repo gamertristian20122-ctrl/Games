@@ -1,0 +1,44 @@
+Place ambience loops and footsteps (added 12 Nov 2026, sound pass of the revamp)
+All four sources are human recordings published on OpenGameArt years before generative audio
+tools existed. Retrieved 2026-11-12 (UTC). The untouched downloads are in ../audio/ambience_src/,
+with the script that made the game files (build_place_audio.sh: gain to a loudness target, a
+1.2 to 1.5 s crossfade at the loop seam, re-encoding; nothing synthesised, no effects added).
+
+1. Forest Ambience - TinyWorlds
+   Page: https://opengameart.org/content/forest-ambience   (posted 2014-05-05)
+   Licence: CC0 (page field "License(s): CC0")   Credit not required.
+   File: Forest_Ambience.mp3  sha256 9850aa1d0d5d66bd9c5daf8bb77c6d852e01f2f4de22f283bd5621e8bed13b75
+   Game file: assets/audio/sfx/amb_woods.ogg (the Elfwood, the Rune Glade, the Deepwood)
+
+2. Ambient Bird Sounds - isaiah658
+   Page: https://opengameart.org/content/ambient-bird-sounds   (posted 2017-04-14)
+   Licence: CC0 (page field "License(s): CC0")   Credit not required.
+   Human-made evidence, page text: "the microphone on my camera is actually pretty good for
+   recording ambient sounds. I still had to heavily clean up the audio with Audacity."
+   File: birds-isaiah658_0.ogg  sha256 359e4e3f9da9d75aac64cede511c7e3ef8b461f9d9f8c230f8f80e44c4b3e35f
+   Game file: assets/audio/sfx/amb_birds.ogg (Wickmere)
+
+3. Wind - IgnasD
+   Page: https://opengameart.org/content/wind   (posted 2015-03-04)
+   Licence: CC0 (page field "License(s): CC0")   Credit not required.
+   File: wind.zip  sha256 8f6185f6eb836a5c35c492e8dabd276e507ba3e4dca0e7d551d04c689d0c0d63
+   Game file: assets/audio/sfx/amb_wind.ogg <- wind/Wind.ogg (the world map, the beacon hill, Dustwatch)
+
+4. Footsteps on different surfaces - congusbongus (used in the open-source game C-Dogs SDL)
+   Page: https://opengameart.org/content/footsteps-on-different-surfaces   (posted 2021-12-17)
+   Licence: CC-BY 3.0 (page field)   CREDIT REQUIRED (see the credit line below).
+   Each folder's license.txt names the freesound.org recordings it was mastered from:
+     grass  <- "footstep-grass.wav" by swuing, https://freesound.org/people/swuing/sounds/38874/ (CC-BY 3.0)
+     boots  <- "footstep-concrete.wav" by swuing, https://freesound.org/people/swuing/sounds/38873/ (CC-BY 3.0)
+     wood   <- "footstep-wood.wav" by swuing, https://freesound.org/people/swuing/sounds/38876/ (CC-BY 3.0)
+     gravel <- pack "Gravel Footsteps" by Ali_6868, https://freesound.org/people/Ali_6868/packs/21608/ (CC0)
+   File: footsteps.zip  sha256 542564e7f6b3a0b89a0d08542438e030e77a46303855fe5bf1644a48185861e9
+   Game files (0.ogg..4.ogg of each folder, loudness-matched, mono):
+     assets/audio/sfx/step_grass_1..5.ogg <- grass     step_stone_1..5.ogg <- boots
+     assets/audio/sfx/step_wood_1..5.ogg  <- wood      step_sand_1..5.ogg  <- gravel
+   Credit line for scripts/data/credits.gd:
+     "Footsteps on different surfaces" by congusbongus (OpenGameArt), from recordings by swuing
+     (freesound.org), CC-BY 3.0 - https://opengameart.org/content/footsteps-on-different-surfaces
+
+AI check: every page was read for AI / generated / Suno / Udio wording; none found. All four
+were published between 2014 and 2021 by named people.
