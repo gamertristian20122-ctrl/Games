@@ -79,7 +79,7 @@ render_mode cull_disabled, specular_disabled;
 " + FLOOR_PART + "
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
-uniform float dark = 0.55;
+uniform float dark = 0.6;
 void vertex() {
 	at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 }
@@ -112,6 +112,7 @@ var _flies: CPUParticles3D
 var _outdoor := false
 var _dist := 21.0
 var _pitch := PITCH
+var _lift := 0.0                   ## how much the darks are lifted towards a warm haze (soft light)
 var _up := Vector3.UP              ## "up" for a standing card: straight up, leaned back by the tilt
 
 
@@ -138,8 +139,8 @@ func setup(the_hub: Node2D) -> void:
 	_env.glow_enabled = true
 	_env.glow_intensity = 0.8
 	_env.glow_strength = 1.05
-	_env.glow_bloom = 0.0
-	_env.glow_hdr_threshold = 1.25           # only fires and glowing stones bloom, never bright sand
+	_env.glow_bloom = 0.03
+	_env.glow_hdr_threshold = 1.2            # fires and glowing stones bloom, bright sand only a breath
 	_env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
 	var we := WorldEnvironment.new()
 	we.environment = _env
@@ -667,16 +668,18 @@ func _sync_light() -> void:
 		sky = (hub._sky_node as CanvasModulate).color
 	var bright := clampf((sky.g - 0.55) / 0.45, 0.0, 1.0)           # 1 by day, 0 in the middle of the night
 	if _outdoor:
-		_sun.light_color = sky.lerp(Color.WHITE, 0.3)
-		_sun.light_energy = lerpf(0.30, 0.72, bright)
-		_env.ambient_light_color = sky.lerp(Color(0.55, 0.65, 1.0), 0.35 * (1.0 - bright))
-		_env.ambient_light_energy = lerpf(0.36, 0.56, bright)
-		var mist := Color(0.06, 0.10, 0.18).lerp(Color(0.50, 0.62, 0.70), bright) * sky
+		# soft, warm light by day (the owner: "very soft light"): a golden sun, cooler shade
+		_sun.light_color = (sky * Color(1.0, 0.88, 0.68)).lerp(sky, 1.0 - bright)
+		_sun.light_energy = lerpf(0.30, 0.86, bright)
+		_env.ambient_light_color = sky.lerp(Color(0.55, 0.65, 1.0), 0.35 * (1.0 - bright)) * Color(0.86, 0.9, 1.0)
+		_env.ambient_light_energy = lerpf(0.36, 0.54, bright)
+		var mist := Color(0.06, 0.10, 0.18).lerp(Color(0.66, 0.60, 0.46), bright) * sky
 		_env.background_color = mist
 		_env.fog_enabled = true
 		_env.fog_light_color = mist
-		_env.fog_density = 0.0035
+		_env.fog_density = 0.003
 		_env.fog_sky_affect = 1.0
+		_lift = 0.03 * bright
 	else:
 		_sun.light_color = Color(1.0, 0.96, 0.9)
 		_sun.light_energy = 0.6
@@ -684,6 +687,7 @@ func _sync_light() -> void:
 		_env.ambient_light_energy = 0.55
 		_env.background_color = Color("07060a")
 		_env.fog_enabled = false
+		_lift = 0.02
 	for pair: Array in _lamps:
 		if is_instance_valid(pair[0]) and is_instance_valid(pair[1]):
 			(pair[1] as OmniLight3D).light_energy = (pair[0] as PointLight2D).energy * LAMP_ENERGY
@@ -733,4 +737,6 @@ func _sync(_delta: float) -> void:
 	mat.set_shader_parameter("falloff", _dist * 0.9)
 	mat.set_shader_parameter("blur_px", 5.0)
 	mat.set_shader_parameter("rim", 0.38)
+	mat.set_shader_parameter("lift", _lift)
+	mat.set_shader_parameter("haze", Vector3(1.0, 0.85, 0.63))
 	_sync_words(zoom)

@@ -166,6 +166,8 @@ func _ready() -> void:
 	Story.migrate()
 	var begin: Array = [start_place, start_at] if start_place != "" else Places.start()      # Play: the camp you last walked into
 	enter(String(begin[0]), begin[1])
+	if G.arg("hubfight") != "":          # test: that roamer touches him after a second (with --autobattle a bot fights)
+		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_encounter", int(G.arg("hubfight"))))
 	if G.arg("hublevel") != "":          # test: go down into that level after a second
 		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_level", G.arg("hublevel")))
 	elif (G.arg("shots") == "" and not G.flag("uitour")) or G.flag("story"):

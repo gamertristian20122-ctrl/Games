@@ -30,6 +30,31 @@ The game is now a **story adventure in the spirit of old 2D adventure games**, n
    (before and after bosses, when someone joins), **camp upgrades** bought with coins.
 Top-down, one screen per room, twin-stick. Four dungeon looks, seven bosses, three heroes.
 
+## Direction since 12 Nov 2026 (late night): BUILD THE WHOLE GAME BASE (this overrules the sections below)
+The owner, with three more pictures of the same reference game (a harbour at dusk, a golden
+woodland road, a lamp-lit town square): "now you need to build the entire game base ... like a
+legend of Zelda with 2D RPG cuz it's turn-based. The dungeons are only temporary. They're not real
+part of the game. We need a real story like something happened that [they have to] stop and save
+it and they [meet] a number of companions along the way. Revamp the camp and revamp everything and
+make sure to have that very soft light like this." Read as:
+- **The game is a turn-based adventure RPG**: a world to walk, towns, a real story with a threat to
+  stop, SEVERAL companions met along the way (this overrules "ONE companion at a time").
+- **The present dungeons, story levels and camps are PLACEHOLDERS.** Do not polish them; they are
+  to be replaced by the real story's places. The old real-time rooms still run behind the story
+  gates only because nothing has replaced them yet.
+- **Soft warm light everywhere** (golden sun, long soft shadows, gentle glow, blur near and far).
+- Still the house rules: an original game (same KIND as the references, nothing copied from
+  them), only the purchased / free human-made art, no AI art or audio.
+- **Done so far:** the look test (v0.16.1), every walking place in the look (v0.17.0), turn-based
+  battles on the map + the soft light pass (v0.18.0).
+- **Next, in order:** (1) THE STORY: the owner picks from story ideas (asked at the end of the
+  v0.18.0 session; see "The story" below once chosen), (2) the story's first town and its people in
+  place of the village camp, (3) companions who join with a scene each and fight in the party
+  (battles already seat four), items and an inn so health can carry between battles, (4) dungeons
+  as walking places with battles and bosses, retiring `scripts/run/` rooms, (5) title and intro in
+  the look, (6) balance. An APK after each.
+- The owner has still not said how any of it runs on the phone. Keep Settings > "3D look" working.
+
 ## Direction since 12 Nov 2026 (night): the LIT 3D LOOK, then TURN-BASED battles
 The owner sent six pictures of a famous "pixel people in a lit 3D world" turn-based RPG and wrote:
 "I'm hoping to ... get it to this level and then turn it into turn-based RPG game". This overrules
@@ -901,6 +926,42 @@ everybody in it. `scripts/hub/view3d.gd` shows that picture as a lit 3D place in
 - **Not done / rough:** rain is still the flat 2D rain over the picture; rooms are lit evenly (no
   lamps of their own); the far ground past a place's edge is plain grass; nothing is known about
   speed on a real phone (the world map paints a 2672 x 1536 floor texture once per visit).
+
+## v0.18.0 (12 Nov 2026): turn-based battles, and soft light
+**A roamer's touch on the world map now starts a turn-based battle** (it used to start a
+one-room real-time fight). Three files, kept apart on purpose:
+- **`scripts/data/battles.gd`**: every number and word. `knight()` and `party()` turn the knight's
+  level, stat points, worn gear and learned skills (and the companion who travels with him) into
+  battle fighters; `foe()` scales a row of `enemies.gd`; `pack_for(spot)` is a roamer's pack;
+  `SKILL` says what each skill of `skills.gd` does in a battle; `ALLY` is a companion's numbers
+  and skills; `reward()` is XP, coins and sometimes gear.
+- **`scripts/battle/fight.gd`**: the rules with nothing to look at. A round = everybody acts once,
+  quickest first. Actions: attack, skill, guard, flee. It returns a list of events to show.
+- **`scripts/battle/battle.gd`**: the screen on the 3D stage: fighters (the knight gets his sword
+  and hands, others their hand pieces), turn order faces, party bars, the menu (Attack / Skills /
+  Guard / Flee; tap a monster or a friend to aim), floating numbers, the result. All Buttons, so
+  touch, keys and a pad work. `main.gd show_battle()` / `_on_battle_finished()`: win = back on
+  the same spot, that roamer gone for a while; fled = same spot; lost = wake in bed, nothing lost.
+- **Rules chosen for now (tell the owner; all easy to change):** everybody starts every battle
+  with full health and mana (no potions or inns exist yet); no "Items" order yet; every learned
+  skill is offered (the two skill buttons were for real-time); nobody is raised by a heal.
+- **Stage** (`stage.gd`): `LOOKS` now has `forest` (late golden day), `forest_night` (the fire),
+  `desert`, `rock`; scenery is data (`features`, `glowers`, optional `fire`). The camera looks low
+  (`AIM`) so fighters stand above the menus.
+- **Soft light:** the last pass got `lift` + `haze` (darks lifted towards a warm colour); day
+  looks use a low warm sun, long shadows (never longer than 1.15 x height), gentle bloom. The
+  first try was a brown fog: keep `mist_density` near 0.004 and `lift` near 0.03 by day.
+  `view3d.gd` got the same warm sun by day.
+- **Tests:** `dev/battle_sim.tscn` plays hundreds of battles without a screen and prints win
+  rates per level and land (use it before changing numbers). `--battle=<spot>` opens a battle
+  (`--knight=<level> --with=sera --night --autotest`). `--hub=world --hubfight=<spot>
+  --autobattle` runs touch > battle > back on the map. The flow test (82 checks) fights a whole
+  battle with the Enter key.
+- **Measured (bot, grass land):** level 1 alone wins always with about half his health left;
+  the sands and the road are too hard alone before level 4 (he can flee, 75%).
+- **Gone:** `scripts/battle/preview.gd`, the title's test button, `--look`.
+- **Not done:** bosses and story dungeons as battles; items; more than one companion in the data;
+  attack effects (blows are a step, a flash and a number); battle music of its own.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

@@ -602,7 +602,7 @@ func _run_flow() -> void:
 	await _key(KEY_ESCAPE)
 	await _settle()
 	_check("Esc closes it and you are still in the camp", main.call("top_name") == "" and is_instance_valid(main.get("hub")))
-	# roamers: monsters walk the world map; a touch starts one fight room; winning puts him back
+	# roamers: monsters walk the world map; a touch starts a turn-based battle; winning puts him back
 	main.call("show_hub", "world")
 	await _settle(1.5)
 	var world: Node = main.get("hub")
@@ -610,17 +610,25 @@ func _run_flow() -> void:
 	await G.save_shot("flow_10_world_roamers.png")
 	var stood: Vector2 = world.call("hero_pos")
 	main.call("_on_action", "hub_encounter", 0)
-	await _settle(2.5)
-	var ambush: Node = main.get("run")
-	_check("a roamer's touch starts a one-room fight", is_instance_valid(ambush) and ambush.call("is_encounter") and (ambush.get("rooms") as Dictionary).size() == 1)
-	await G.save_shot("flow_11_ambush.png")
-	if is_instance_valid(ambush):
-		for foe: Node in (ambush.get("room").get("enemies") as Array).duplicate():
-			if is_instance_valid(foe):
-				foe.call("die")
-	await _settle(5.0)
+	await _settle(3.0)
+	var ambush: Node = main.get("battle")
+	_check("a roamer's touch starts a turn-based battle", is_instance_valid(ambush) and main.get("hub") == null
+		and (ambush.get("fight").get("foes") as Array).size() >= 1 and (ambush.get("fight").get("party") as Array).size() >= 1)
+	await G.save_shot("flow_11_battle.png")
+	var waited := 0
+	while _focus_text() != "Attack" and waited < 20:      # (a quicker monster may strike first)
+		await _settle(0.4)
+		waited += 1
+	_check("his turn opens on Attack", _focus_text() == "Attack")
+	# Enter, again and again: Attack, the first monster, ... and Continue on the last screen
+	var presses := 0
+	while is_instance_valid(main.get("battle")) and presses < 90:
+		await _key(KEY_ENTER)
+		await _settle(0.5)
+		presses += 1
+	await _settle(2.0)
 	world = main.get("hub")
-	_check("winning puts him back on the same spot of the map", main.get("run") == null and is_instance_valid(world) and String(world.get("place_id")) == "world" and (world.call("hero_pos") as Vector2).distance_to(stood) < 2.0)
+	_check("winning puts him back on the same spot of the map", main.get("battle") == null and is_instance_valid(world) and String(world.get("place_id")) == "world" and (world.call("hero_pos") as Vector2).distance_to(stood) < 4.0)
 	_check("the beaten roamer is gone for a while", not Roamers.here(0) and main.call("top_name") == "")
 	await G.save_shot("flow_12_back_on_the_map.png")
 	await _key(KEY_ESCAPE)

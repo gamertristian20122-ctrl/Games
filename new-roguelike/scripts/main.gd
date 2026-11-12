@@ -50,7 +50,7 @@ const HubData = preload("res://scripts/data/hub.gd")
 var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
 var intro: Node                  ## the animated intro while it plays (scripts/hub/intro.gd), or null
-var preview: Node                ## the look test of the new battle screen (scripts/battle/preview.gd), or null
+var battle: Node                 ## the turn-based battle being fought (scripts/battle/battle.gd), or null
 var hud: CanvasLayer             ## scripts/ui/hud.gd
 var touch: CanvasLayer           ## scripts/ui/touch.gd
 var backdrop: Control            ## scripts/ui/backdrop.gd
@@ -93,6 +93,13 @@ func _ready() -> void:
 		var tour: Node = load("res://scripts/ui/ui_tour.gd").new()
 		tour.set("main", self)
 		add_child(tour)
+	elif G.args.has("battle"):           # --battle=<roamer spot>: straight into that turn-based battle
+		if G.args.has("knight"):         # test: --knight=<his level>, --with=<companion id>
+			Save.hub_set("rpg:lvl", int(G.arg("knight", "1")))
+		if G.arg("with") != "":
+			Allies.join(G.arg("with"))
+			Allies.set_with(G.arg("with"))
+		show_battle(int(G.arg("battle", "0")), G.flag("night"))
 	elif G.flag("autotest"):
 		if G.flag("yard"):               # --yard: the bot spars in the training yard
 			G.next_run = {"training": true, "kit": []}
@@ -101,8 +108,6 @@ func _ready() -> void:
 		if G.arg("encounter") != "":   # --encounter=<spot number>: the bot fights that roamer's pack
 			G.next_run = {"level": Roamers.fight(int(G.arg("encounter"))), "kit": []}
 		start_run(G.arg("hero", "knight"), int(G.arg("seed", "1")))
-	elif G.flag("look"):                 # --look: straight into the look test of the new battle screen
-		show_preview()
 	elif G.flag("intro"):
 		show_intro()                   # test: --intro plays the cutscene at once
 	elif G.flag("hub"):
@@ -219,7 +224,7 @@ func top_screen() -> Control:
 func _refresh_layers() -> void:
 	var in_run := run != null
 	var in_hub := is_instance_valid(hub)
-	backdrop.visible = not in_run and not in_hub and not is_instance_valid(intro) and not is_instance_valid(preview)
+	backdrop.visible = not in_run and not in_hub and not is_instance_valid(intro) and not is_instance_valid(battle)
 	backdrop.call("set_dimmed", not _names.is_empty() and not (_names.back() in BRIGHT))
 	_shade.visible = (in_run or in_hub) and not _stack.is_empty()
 	hud.visible = in_run and _stack.is_empty()      # the pause menu shows its own numbers
@@ -233,33 +238,74 @@ func show_title() -> void:
 	await _drop_run()
 	_drop_hub()
 	_drop_intro()
-	_drop_preview()
+	_drop_battle()
 	get_tree().paused = false
 	close_all()
 	open("title")
 	Sfx.music("title")
 
 
-## The look test of the new battle screen (scripts/battle/preview.gd): one lit 3D scene to look at.
-func show_preview() -> void:
+## A turn-based battle (scripts/battle/battle.gd) with the pack of a roamer of the world map.
+func show_battle(spot: int, night: bool = false) -> void:
 	await _drop_run()
 	_drop_hub()
 	_drop_intro()
-	_drop_preview()
+	_drop_battle()
 	get_tree().paused = false
 	close_all()
-	preview = (load("res://scripts/battle/preview.gd") as Script).new()
-	preview.name = "Preview"
-	preview.connect("finished", func() -> void: _transition(show_title))
-	_world.add_child(preview)
+	battle = (load("res://scripts/battle/battle.gd") as Script).new()
+	battle.name = "Battle"
+	battle.set("spot", spot)
+	battle.set("night", night)
+	battle.connect("finished", _on_battle_finished)
+	_world.add_child(battle)
+	_refresh_layers()
+	Sfx.music("run")
+
+
+func _drop_battle() -> void:
+	if is_instance_valid(battle):
+		battle.queue_free()
+	battle = null
 	_refresh_layers()
 
 
-func _drop_preview() -> void:
-	if is_instance_valid(preview):
-		preview.queue_free()
-	preview = null
-	_refresh_layers()
+## A battle is over. Won: that roamer stays away for a while and the knight stands on the same
+## spot of the map again. Fled: the same spot, the roamer still there (it leaves him be for a
+## moment). Lost: he wakes in his bed; nothing is taken from him.
+func _on_battle_finished(outcome: String, summary: Dictionary) -> void:
+	if G.args.has("battle"):
+		print("[main] battle %s: %s" % [outcome, summary])
+		G.quit(0)
+		return
+	if _busy:
+		return
+	match outcome:
+		"win":
+			Roamers.beaten(int(summary.get("spot", -1)))
+			_news = "Won: +%d XP, %d coins to the camp chest" % [int(summary.get("xp", 0)), int(summary.get("coins", 0))]
+		"lose":
+			_news = "You wake in your bed."
+			_from_place = ""
+		_:
+			_news = "You got away."
+	await _transition(_after_battle)
+
+
+func _after_battle() -> void:
+	if _from_place != "" and _from_at != Vector2.INF:
+		await show_hub(_from_place, _from_at)
+	else:
+		await show_hub()
+	if is_instance_valid(hub) and _news != "":
+		hub.call("say", _news)
+	if G.flag("autobattle"):             # test: --hub=world --hubfight=<spot> --autobattle ends here
+		print("[main] after the battle: %s, in %s at %s" % [_news, hub.get("place_id"), hub.call("hero_pos")])
+		await get_tree().create_timer(1.0).timeout
+		if G.arg("shots") != "":
+			await G.save_shot("after_battle.png")
+		G.quit(0)
+	_news = ""
 
 
 ## The animated intro (scripts/hub/intro.gd). When it ends, or is skipped, you wake in your room.
@@ -290,6 +336,7 @@ func _drop_intro() -> void:
 func show_hub(place: String = "", at: Vector2 = Vector2.INF) -> void:
 	await _drop_run()
 	_drop_intro()
+	_drop_battle()
 	_drop_hub()
 	get_tree().paused = false
 	close_all()
@@ -326,8 +373,6 @@ func _on_action(what: String, arg: Variant) -> void:
 				close_top()             # in the camp a talk window is the only screen open: Leave must close it
 				if is_instance_valid(hub) and _stack.is_empty():
 					hub.call("refresh_heroes")      # the mirror may have changed his looks
-		"look":
-			_transition(show_preview)
 		"play":
 			if Save.hub_get("seen:cutscene") == 0 and not G.flag("uitour"):
 				_transition(show_intro)     # the first time: the animated intro, then your room
@@ -349,14 +394,15 @@ func _on_action(what: String, arg: Variant) -> void:
 		"talk":
 			open("hub_talk", {"info": arg})
 		"hub_encounter":
-			# a roamer touched the knight on the world map: one fight room, then back to this spot
-			_encounter = Roamers.fight(int(arg))
-			_level_id = String(_encounter["id"])
+			# a roamer touched the knight on the world map: a turn-based battle, then back to this spot
+			_encounter = {}
 			_from_place = ""
+			var dark := false
 			if is_instance_valid(hub):
 				_from_place = String(hub.get("place_id"))
 				_from_at = hub.call("hero_pos")
-			_transition(_start_level)
+				dark = bool(hub.call("_is_night"))
+			_transition(show_battle.bind(int(arg), dark))
 		"hub_level":
 			_encounter = {}
 			_level_id = String(arg)
@@ -663,8 +709,8 @@ func _back() -> void:
 		_stack.back().call("on_back")
 	elif run != null:
 		pause()
-	elif is_instance_valid(preview):
-		_transition(show_title)        # Back in the look test: to the title
+	elif is_instance_valid(battle):
+		battle.call("on_back")         # Back in a battle: one step back in its menu
 	elif is_instance_valid(intro):
 		intro.call("skip")             # Back during the intro: skip it
 	elif is_instance_valid(hub):
