@@ -2,23 +2,34 @@ import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
-import { Glyph, type GlyphName } from '../components/art/Glyph';
-import { ANCHOR_LABEL, CADENCE_LABEL } from '../components/QuestBits';
-import { Button, Card, IconButton, Pill, Row, Screen, SectionTitle, T } from '../components/ui';
+import { GLYPH_NAMES, Glyph, glyphFor, type GlyphName } from '../components/art/Glyph';
+import { ANCHOR_LABEL, CADENCE_LABEL, ProBadge, ProUpsell } from '../components/QuestBits';
+import { Button, Card, IconButton, Pill, Row, Screen, SectionTitle, Segmented, T } from '../components/ui';
 import * as repo from '../db/repo';
+import { LIBRARY } from '../db/schema';
+import { magicBreakdown, splitBrainDump, type BrainDumpItem } from '../lib/smartMatch';
 import type { Anchor, Cadence } from '../lib/types';
 import { useAssistant } from '../lib/useAssistant';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space, type as typeScale } from '../theme/tokens';
 
-const ICONS: GlyphName[] = ['sparkle', 'broom', 'box', 'notepad', 'bath', 'basket', 'pan', 'phone', 'mail', 'plant', 'backpack', 'books', 'calendar', 'heart', 'laptop', 'paw'];
+const QUICK_ICONS: GlyphName[] = ['sparkle', 'broom', 'box', 'notepad', 'bath', 'basket', 'pan', 'phone', 'mail', 'plant', 'backpack', 'books', 'calendar', 'heart', 'laptop', 'paw'];
+const MODES = [
+  { value: 'one', label: 'One task' },
+  { value: 'dump', label: 'Brain dump' },
+] as const;
 const MAX_STEPS = 10;
 
 export default function CustomQuest() {
   const db = useSQLiteContext();
   const { c } = useTheme();
-  const { touchData } = useApp();
+  const { touchData, isPro, tap } = useApp();
+  const [mode, setMode] = useState<'one' | 'dump'>('one');
+  const [allIcons, setAllIcons] = useState(false);
+  const [dump, setDump] = useState('');
+  const [dumpItems, setDumpItems] = useState<BrainDumpItem[]>([]);
+  const [addedCount, setAddedCount] = useState<number | null>(null);
   const assistant = useAssistant();
   const [task, setTask] = useState('');
   const [title, setTitle] = useState('');
@@ -35,14 +46,47 @@ export default function CustomQuest() {
     { color: c.ink, backgroundColor: c.surface, borderColor: c.border, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: space.md, minHeight: 52 },
   ];
 
+  /** Magic Break Down: 3–5 ultra-tiny starter steps for any task title. */
   const breakDown = async () => {
     const text = task.trim();
     if (text.length < 3) return;
-    const result = assistant.breakDownTask(text);
+    tap();
+    const result = magicBreakdown(text, LIBRARY);
     setSteps(result.steps);
+    setEmoji(glyphFor(result.icon));
     if (!title) setTitle(text.length > 40 ? `${text.slice(0, 38)}…` : text.charAt(0).toUpperCase() + text.slice(1));
-    if (result.matchedTitle) setNote(`Smart Match borrowed steps from "${result.matchedTitle}". Edit anything you like.`);
+    if (result.matchedTitle) setNote(`Borrowed tiny steps from "${result.matchedTitle}". Edit anything you like.`);
     else setNote('Here is a gentle starter plan. Edit the steps so they fit you.');
+  };
+
+  const splitDump = () => {
+    tap();
+    setAddedCount(null);
+    setDumpItems(splitBrainDump(dump, LIBRARY));
+  };
+
+  const addAll = async () => {
+    if (saving || dumpItems.length === 0) return;
+    setSaving(true);
+    try {
+      for (const item of dumpItems) {
+        await repo.createQuest(db, {
+          title: item.title,
+          emoji: item.icon,
+          anchor: 'anytime',
+          cadence: 'once',
+          invite: 'Want to try this one together? One tiny step at a time.',
+          steps: item.steps,
+          source: 'custom',
+        });
+      }
+      touchData();
+      setAddedCount(dumpItems.length);
+      setDumpItems([]);
+      setDump('');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const soften = async () => {
@@ -79,8 +123,69 @@ export default function CustomQuest() {
         <View style={{ width: 44 }} />
       </Row>
 
+      <View style={{ marginTop: space.lg }}>
+        <Segmented options={MODES} value={mode} onChange={setMode} />
+      </View>
+
+      {mode === 'dump' ? (
+        <View style={{ marginTop: space.lg, gap: space.md }}>
+          <Row gap={space.sm}>
+            <T variant="title">Brain-Dump Splitter</T>
+            <ProBadge />
+          </Row>
+          <T variant="small">
+            Pour out everything on your mind, as messy as you like. Each thing becomes its own tiny-step quest. It all happens on your phone, offline.
+          </T>
+          {!isPro ? (
+            <ProUpsell title="Part of MochiNook Plus" body="Try it free for 7 days. One task at a time stays free forever, with Magic Break Down." />
+          ) : (
+            <>
+              <TextInput
+                value={dump}
+                onChangeText={(t) => {
+                  setDump(t);
+                  setAddedCount(null);
+                }}
+                placeholder={'laundry, call the dentist and pay rent\nugh homework\ntake a shower'}
+                placeholderTextColor={c.inkSoft}
+                multiline
+                maxLength={1200}
+                accessibilityLabel="Brain dump"
+                style={[inputStyle, { minHeight: 140, textAlignVertical: 'top' }]}
+              />
+              <Button label="Split my brain dump" icon="scissors" disabled={dump.trim().length < 3} onPress={splitDump} />
+              {addedCount !== null ? (
+                <Card tone="accent">
+                  <T variant="bodyBold">Added {addedCount} {addedCount === 1 ? 'quest' : 'quests'} to your routine.</T>
+                  <T variant="small">They wait under Anytime on Today. Do them in any order, or not at all today.</T>
+                </Card>
+              ) : null}
+              {dumpItems.map((item, i) => (
+                <Card key={`${item.title}-${i}`} style={{ gap: space.sm }}>
+                  <Row>
+                    <Glyph name={item.icon} size={30} />
+                    <T variant="bodyBold" style={{ flex: 1 }}>
+                      {item.title}
+                    </T>
+                    <IconButton icon="close" label={`Remove ${item.title}`} tone="clear" size={36} onPress={() => setDumpItems((all) => all.filter((_, j) => j !== i))} />
+                  </Row>
+                  {item.steps.map((s, j) => (
+                    <T key={j} variant="small" color={c.ink}>
+                      {j + 1}. {s}
+                    </T>
+                  ))}
+                </Card>
+              ))}
+              {dumpItems.length > 0 ? (
+                <Button label={saving ? 'Adding…' : `Add all ${dumpItems.length} quests`} icon="plus" disabled={saving} onPress={addAll} />
+              ) : null}
+            </>
+          )}
+        </View>
+      ) : (
+        <>
       <T variant="title" style={{ marginTop: space.lg }}>
-        What’s the messy task?
+        What’s the task?
       </T>
       <T variant="small" style={{ marginBottom: space.md }}>
         Type it however it lives in your head. Messy is perfect.
@@ -88,7 +193,7 @@ export default function CustomQuest() {
       <TextInput
         value={task}
         onChangeText={setTask}
-        placeholder="ugh clean my whole room before the weekend"
+        placeholder="Clean room, Do homework, Take a shower…"
         placeholderTextColor={c.inkSoft}
         multiline
         maxLength={400}
@@ -96,15 +201,9 @@ export default function CustomQuest() {
         style={[inputStyle, { minHeight: 96, textAlignVertical: 'top' }]}
       />
       <T variant="small" style={{ marginTop: space.sm }}>
-        Smart Match will find tiny steps from the quest library.
+        Magic Break Down turns it into 3–5 ultra-tiny starter steps, offline.
       </T>
-      <Button
-        label="Break it into tiny steps"
-        icon="scissors"
-        disabled={task.trim().length < 3}
-        style={{ marginTop: space.md }}
-        onPress={breakDown}
-      />
+      <Button label="Magic Break Down" icon="wand" disabled={task.trim().length < 3} style={{ marginTop: space.md }} onPress={breakDown} />
 
       {steps.length > 0 ? (
         <>
@@ -142,7 +241,7 @@ export default function CustomQuest() {
           <SectionTitle>Name it and pick an icon</SectionTitle>
           <TextInput value={title} onChangeText={setTitle} maxLength={80} accessibilityLabel="Quest name" placeholder="Room glow-up" placeholderTextColor={c.inkSoft} style={inputStyle} />
           <Row gap={space.sm} style={{ flexWrap: 'wrap', marginTop: space.md }}>
-            {ICONS.map((g) => (
+            {(allIcons ? GLYPH_NAMES.filter((g) => g !== 'pebble') : Array.from(new Set([emoji, ...QUICK_ICONS]))).map((g) => (
               <Pressable
                 key={g}
                 accessibilityRole="radio"
@@ -164,6 +263,13 @@ export default function CustomQuest() {
               </Pressable>
             ))}
           </Row>
+          <Button
+            label={allIcons ? 'Fewer icons' : `Show all ${GLYPH_NAMES.length - 1} icons`}
+            kind="ghost"
+            small
+            style={{ alignSelf: 'flex-start', marginTop: space.sm }}
+            onPress={() => setAllIcons((v) => !v)}
+          />
 
           <SectionTitle>How your pet will invite you</SectionTitle>
           <TextInput
@@ -207,6 +313,8 @@ export default function CustomQuest() {
           />
         </>
       ) : null}
+        </>
+      )}
     </Screen>
   );
 }

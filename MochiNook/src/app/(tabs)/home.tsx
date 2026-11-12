@@ -18,6 +18,9 @@ import { useApp } from '../../state/AppContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, space } from '../../theme/tokens';
 
+/** Tried in order when the day is shrunk: the first one with a step left is shown. */
+const SHRINK_QUESTS = ['water-break', 'hard-day-kit', 'sensory-reset'];
+
 const ANCHOR_SEQUENCE: Record<Exclude<Anchor, 'anytime'>, Anchor[]> = {
   morning: ['morning', 'anytime', 'daytime', 'evening'],
   daytime: ['daytime', 'anytime', 'evening', 'morning'],
@@ -42,12 +45,24 @@ export default function Home() {
   const [showAll, setShowAll] = useState(false);
   const now = minutesNow();
   const today = dayKey();
+  const shrunk = settings.shrinkDay === today;
 
   useFocusEffect(
     useCallback(() => {
       let alive = true;
-      repo.getTodayQuests(db, today).then((q) => {
-        if (alive) setQuests(q);
+      (async () => {
+        if (shrunk) {
+          // "Shrink my day": a single tiny self-care quest, even if it isn't in the routine.
+          for (const id of SHRINK_QUESTS) {
+            const q = await repo.getQuest(db, id, today);
+            if (q && !q.completedToday && q.steps.some((s) => !s.done)) return q;
+          }
+          return null;
+        }
+        return null;
+      })().then(async (single) => {
+        const list = shrunk ? (single ? [single] : []) : await repo.getTodayQuests(db, today);
+        if (alive) setQuests(list);
       });
       repo.getCheckins(db, today, today).then((rows) => {
         if (alive) setCheckedIn(rows.length > 0);
@@ -60,12 +75,12 @@ export default function Home() {
       };
       // dataVersion is a deliberate refetch trigger: it bumps whenever any quest data changes.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [db, today, dataVersion]),
+    }, [db, today, dataVersion, shrunk]),
   );
 
   const spoonSaving = settings.energy === 'low';
   // Small lists: plain derivations are plenty fast (and the React Compiler memoizes them).
-  const visible = spoonSaving && !showAll ? quests.filter((q) => q.essential === 1) : quests;
+  const visible = shrunk ? quests : spoonSaving && !showAll ? quests.filter((q) => q.essential === 1) : quests;
   const part = currentAnchor(settings.anchors, now);
   const order = ANCHOR_SEQUENCE[part];
   const ordered = [...visible].sort((a, b) => order.indexOf(a.anchor) - order.indexOf(b.anchor));
@@ -95,13 +110,31 @@ export default function Home() {
 
   return (
     <Screen>
-      <Row style={{ justifyContent: 'space-between', paddingTop: space.lg, paddingBottom: space.lg }}>
-        <View style={{ flex: 1 }}>
-          <T variant="label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()}</T>
-          <T variant="title">{greeting(now)}</T>
+      <View style={{ paddingTop: space.lg, paddingBottom: space.lg, gap: space.sm }}>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <T variant="label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()}</T>
+            <T variant="title">{greeting(now)}</T>
+          </View>
+        </Row>
+        <Row gap={space.sm}>
+          <OverwhelmedButton />
+          <CalmButton />
+        </Row>
+      </View>
+      {shrunk ? (
+        <View style={[styles.note, { backgroundColor: c.lavenderSoft, borderColor: c.border, marginTop: 0, marginBottom: space.md }]}>
+          <T variant="bodyBold">Your day is shrunk to one tiny thing.</T>
+          <T variant="small" color={c.ink}>
+            Everything else is safely waiting for tomorrow (or whenever you’re ready).
+          </T>
+          <Pressable accessibilityRole="button" onPress={() => app.updateSettings({ shrinkDay: null })} hitSlop={8}>
+            <T variant="small" color={c.accentInk} style={{ marginTop: 6 }}>
+              Bring back my whole day
+            </T>
+          </Pressable>
         </View>
-        <CalmButton />
-      </Row>
+      ) : null}
 
       <PetCard line={line} sleepy={welcomeBackLine !== null} />
       {welcomeBackLine ? (
@@ -124,7 +157,7 @@ export default function Home() {
         </Pressable>
       ) : null}
 
-      {checkedIn === false ? (
+      {checkedIn === false && !shrunk ? (
         <Card tone="lavender" style={{ marginTop: space.lg, gap: space.md }}>
           <T variant="heading">How are you arriving today?</T>
           <Row gap={space.xs} style={{ justifyContent: 'space-between' }}>
@@ -216,6 +249,8 @@ export default function Home() {
         </Card>
       )}
 
+      {shrunk ? null : (
+        <>
       <SectionTitle>Spoons today</SectionTitle>
       <Row gap={space.sm}>
         <Pill label="Low" icon="spoon" selected={settings.energy === 'low'} onPress={() => setEnergy('low')} />
@@ -256,11 +291,33 @@ export default function Home() {
           </View>
         ))}
       </View>
-      <Button label="Add a quest of my own" icon="plus" kind="soft" style={{ marginTop: space.xl }} onPress={() => router.push('/custom-quest')} />
+        </>
+      )}
+      {shrunk ? null : (
+        <Button label="Add a quest of my own" icon="plus" kind="soft" style={{ marginTop: space.xl }} onPress={() => router.push('/custom-quest')} />
+      )}
 
       {/* Free tier only. Calm Mode also hides it: zero clutter. */}
-      {!isPro && !calm ? <SponsorCard /> : null}
+      {!isPro && !calm && !shrunk ? <SponsorCard /> : null}
     </Screen>
+  );
+}
+
+function OverwhelmedButton() {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Overwhelmed?"
+      accessibilityHint="Opens a calm breathing space and lets you shrink today to one tiny step"
+      onPress={() => router.push('/overwhelmed')}
+      style={({ pressed }) => [styles.calm, { backgroundColor: c.lavenderSoft, borderColor: c.lavender, opacity: pressed ? 0.8 : 1 }]}
+    >
+      <Glyph name="bubbles" size={22} />
+      <T variant="small" color={c.ink} style={{ fontFamily: 'AtkinsonHyperlegible_700Bold' }}>
+        Overwhelmed?
+      </T>
+    </Pressable>
   );
 }
 

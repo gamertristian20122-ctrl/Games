@@ -41,6 +41,7 @@ function Navigator() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="quest/[id]" options={{ animation: 'slide_from_right' }} />
@@ -50,6 +51,7 @@ function Navigator() {
         <Stack.Screen name="share" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="legal" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="focus" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="overwhelmed" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
         <Stack.Screen name="race" options={{ animation: 'slide_from_right' }} />
       </Stack>
       <PebblePop />

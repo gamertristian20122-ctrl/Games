@@ -128,7 +128,7 @@ export function SponsorCard() {
         <T variant="label" color={c.inkSoft}>
           {s.sponsored ? `SPONSORED · ${s.tag.toUpperCase()}` : 'CALM PICK'}
         </T>
-        <Pressable accessibilityRole="button" accessibilityLabel="Hide this card with Pro" onPress={() => router.push('/pro')} hitSlop={10}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Hide this card with Plus" onPress={() => router.push('/pro')} hitSlop={10}>
           <T variant="small" color={c.accentInk}>
             Hide
           </T>
@@ -147,7 +147,7 @@ export function ProBadge() {
   return (
     <View style={{ backgroundColor: c.lavender, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 }}>
       <T variant="label" color={c.ink}>
-        PRO
+        PLUS
       </T>
     </View>
   );
@@ -160,7 +160,7 @@ export function ProUpsell({ title, body }: { title: string; body: string }) {
       <T variant="small" style={{ marginTop: 4, marginBottom: space.md }}>
         {body}
       </T>
-      <Button label="See MochiNook Pro" kind="lavender" icon="sparkle" onPress={() => router.push('/pro')} small />
+      <Button label="See MochiNook Plus" kind="lavender" icon="sparkle" onPress={() => router.push('/pro')} small />
     </Card>
   );
 }

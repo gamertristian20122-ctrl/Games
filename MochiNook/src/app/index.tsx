@@ -4,5 +4,5 @@ import { useApp } from '../state/AppContext';
 
 export default function Index() {
   const { settings } = useApp();
-  return <Redirect href={settings.onboarded ? '/home' : '/onboarding'} />;
+  return <Redirect href={settings.onboarded ? '/home' : '/welcome'} />;
 }

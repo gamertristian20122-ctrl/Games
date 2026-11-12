@@ -3,11 +3,12 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { useEffect, useRef, useState } from 'react';
 import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Circle, Rect } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import { Pet } from '../components/Pet';
 import { Room } from '../components/Room';
-import { Button, IconButton, Pill, Row, Screen, T } from '../components/ui';
+import { Button, IconButton, Pill, Row, Screen, Segmented, T } from '../components/ui';
 import * as repo from '../db/repo';
+import { playAmbient, stopAmbient } from '../lib/ambient';
 import { cancelNotification, scheduleTimerEnd } from '../lib/notifications';
 import { dayKey } from '../lib/time';
 import { useApp } from '../state/AppContext';
@@ -16,7 +17,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { radius, space } from '../theme/tokens';
 
 const LENGTHS = [5, 15, 25] as const;
-const RING = 2 * Math.PI * 54;
 
 interface Session {
   id: number;
@@ -34,7 +34,15 @@ function mmss(ms: number): string {
 export default function Focus() {
   const db = useSQLiteContext();
   const { c, motionLevel, calm, scheme } = useTheme();
-  const { pet, owned, completeFocus } = useApp();
+  const { pet, owned, completeFocus, settings, updateSettings } = useApp();
+
+  // Background sound plays only while this screen is open.
+  useEffect(() => {
+    if (settings.focusSound !== 'off') playAmbient(settings.focusSound).catch(() => undefined);
+    return () => stopAmbient();
+    // Start once on open with the saved choice; later changes are handled by the switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [minutes, setMinutes] = useState<(typeof LENGTHS)[number]>(15);
   const [session, setSession] = useState<Session | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -113,28 +121,31 @@ export default function Focus() {
 
       <View style={{ alignItems: 'center', marginTop: space.xl }}>
         <GlowRing active={!!session} level={motionLevel} color={c.lavender} />
-        <Svg width={140} height={140} viewBox="0 0 140 140">
-          <Circle cx={70} cy={70} r={54} stroke={c.surfaceAlt} strokeWidth={12} fill="none" />
-          <Circle
-            cx={70}
-            cy={70}
-            r={54}
-            stroke={c.lavender}
-            strokeWidth={12}
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={`${RING}`}
-            strokeDashoffset={RING * (1 - Math.max(0, Math.min(1, progress)))}
-            transform="rotate(-90 70 70)"
-          />
-        </Svg>
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <View style={{ height: 140, alignItems: 'center', justifyContent: 'center' }}>
-            <T variant="title" accessibilityLiveRegion="polite">
-              {mmss(remaining)}
-            </T>
-          </View>
+        <MeltingPie fraction={1 - Math.max(0, Math.min(1, progress))} color={c.lavender} track={c.surfaceAlt} ink={c.inkSoft} />
+        <View style={[styles.timeChip, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <T variant="heading" accessibilityLiveRegion="polite" accessibilityLabel={`${Math.ceil(remaining / 60000)} minutes left`}>
+            {mmss(remaining)}
+          </T>
         </View>
+      </View>
+
+      <View style={{ marginTop: space.xxl, gap: space.sm }}>
+        <T variant="small" style={{ textAlign: 'center' }}>
+          Background sound
+        </T>
+        <Segmented
+          options={[
+            { value: 'off', label: 'Quiet' },
+            { value: 'brown', label: 'Brown noise' },
+            { value: 'rain', label: 'Soft rain' },
+          ]}
+          value={settings.focusSound}
+          onChange={(v) => {
+            updateSettings({ focusSound: v }).catch(() => undefined);
+            if (v === 'off') stopAmbient();
+            else playAmbient(v).catch(() => undefined);
+          }}
+        />
       </View>
 
       {session ? (
@@ -167,6 +178,49 @@ export default function Focus() {
   );
 }
 
+/**
+ * Time-blindness friendly countdown: a pie that melts away clockwise, so how much
+ * time is left can be seen at a glance (like a visual kitchen timer).
+ */
+function MeltingPie({ fraction, color, track, ink }: { fraction: number; color: string; track: string; ink: string }) {
+  const cx = 80;
+  const cy = 80;
+  const r = 66;
+  const f = Math.max(0, Math.min(1, fraction));
+  let wedge: React.ReactNode = null;
+  if (f >= 0.999) {
+    wedge = <Circle cx={cx} cy={cy} r={r} fill={color} />;
+  } else if (f > 0.001) {
+    // The wedge spans the time LEFT, starting at 12 o'clock and shrinking toward it.
+    const angle = f * 2 * Math.PI;
+    const x = cx + r * Math.sin(angle);
+    const y = cy - r * Math.cos(angle);
+    wedge = <Path d={`M${cx} ${cy} L${cx} ${cy - r} A${r} ${r} 0 ${f > 0.5 ? 1 : 0} 1 ${x} ${y} Z`} fill={color} />;
+  }
+  return (
+    <Svg width={160} height={160} viewBox="0 0 160 160">
+      <Circle cx={cx} cy={cy} r={r + 6} fill={track} />
+      {wedge}
+      {Array.from({ length: 12 }, (_, i) => {
+        const a = (i / 12) * 2 * Math.PI;
+        return (
+          <Line
+            key={i}
+            x1={cx + (r + 1) * Math.sin(a)}
+            y1={cy - (r + 1) * Math.cos(a)}
+            x2={cx + (r + 5) * Math.sin(a)}
+            y2={cy - (r + 5) * Math.cos(a)}
+            stroke={ink}
+            strokeWidth={i % 3 === 0 ? 2.4 : 1.2}
+            strokeLinecap="round"
+          />
+        );
+      })}
+      <Circle cx={cx} cy={cy} r={4} fill={ink} />
+    </Svg>
+  );
+}
+
 /** A soft halo that breathes in and out behind the timer while you focus (4s cycle; still when motion is off). */
 function GlowRing({ active, level, color }: { active: boolean; level: MotionLevel; color: string }) {
   const v = useSharedValue(0);
@@ -187,6 +241,7 @@ function GlowRing({ active, level, color }: { active: boolean; level: MotionLeve
 }
 
 const styles = StyleSheet.create({
-  glow: { position: 'absolute', top: -10, width: 160, height: 160, borderRadius: 80, borderWidth: 10 },
+  timeChip: { position: 'absolute', bottom: -18, borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: space.md, paddingVertical: 2 },
+  glow: { position: 'absolute', top: -12, width: 184, height: 184, borderRadius: 92, borderWidth: 10 },
   stage: { height: 230, borderRadius: radius.xl, borderWidth: 1, overflow: 'hidden', justifyContent: 'flex-end', marginTop: space.lg },
 });

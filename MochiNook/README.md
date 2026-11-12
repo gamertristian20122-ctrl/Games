@@ -29,7 +29,7 @@ npx expo start --dev-client
 ```bash
 npm run typecheck   # TypeScript, strict
 npm run lint        # Expo ESLint config (incl. React Compiler rules)
-npm test            # 38 tests: quest library, share codes, Smart Match, and every SQLite query
+npm test            # 44 tests: quest library, share codes, Smart Match, and every SQLite query
 npx expo-doctor     # dependency + config checks
 ```
 
@@ -37,13 +37,15 @@ npx expo-doctor     # dependency + config checks
 
 ```
 src/app/              screens (Expo Router)
-  onboarding.tsx      name the pet + 3-question quiz + reminder opt-in
+  welcome.tsx         first launch: privacy promise, hatch + name, friction triage, Plus preview
+  onboarding.tsx      "Fine-tune my routine": brain, energy and daily times
+  overwhelmed.tsx     calming drawer: 4-4-6 breathing + Shrink my day
   (tabs)/home.tsx     pet card, "Today's single next step", spoons, today's plan, sponsor card
   (tabs)/quests.tsx   my routine + the 47-quest library
   (tabs)/week.tsx     weekly Mochi Sprint, seasonal rewards, check-in pattern, cheers
-  (tabs)/nook.tsx     wardrobe & rooms (Pro items locked on Free), Pebble shop
+  (tabs)/nook.tsx     wardrobe & rooms (Plus items locked on Free), Pebble shop, Mystery Pouch
   focus.tsx, race.tsx body-double focus timer, 15-minute friend race (codes)
-  (tabs)/settings.tsx Calm Mode, sounds, times, Pro, tip jar, share code, dev toggle
+  (tabs)/settings.tsx sensory style, sounds, times, Plus, tip jar, share code, widget preview, dev toggle
   quest/[id].tsx      check off steps, "Break into smaller steps"
   custom-quest.tsx    messy task -> tiny steps (Smart Match)
   pro.tsx, tip-jar.tsx, share.tsx
@@ -55,12 +57,15 @@ src/theme/            color tokens (light, dark, calm light, calm dark), type sc
 tests/                Node tests (run the real SQL against Node's built-in SQLite)
 ```
 
-## Free vs Pro
+## Free vs Plus
 
-| | Free | Pro ($5.99/month, the only plan) |
+| | Free | Plus ($6.99/month or $34.99/year, 7-day free trial) |
 |---|---|---|
 | Onboarding routine, 47 quests, reminders, pet growth | ✅ | ✅ |
-| Breaking tasks down (Smart Match, offline) | ✅ | ✅ |
+| Magic Break Down (one task → 3–5 tiny steps, offline) | ✅ | ✅ |
+| Brain-Dump Splitter (messy list → many quests, offline) | — | ✅ |
+| Overwhelmed drawer, Shrink my day, focus timer + brown noise / rain | ✅ | ✅ |
+| Cozy Mystery Pouch (15 pebbles) | ✅ | ✅ |
 | Wardrobe & rooms | 2 colors, 1 hat, 1 room | Everything |
 | Calm pick card (static, local text; labelled SPONSORED only for real paid placements) | Shown | Hidden |
 | Pebbles (1 per step, +3 per quest) and the Pebble shop | ✅ | ✅ |
@@ -69,18 +74,18 @@ Tips ($2.99 / $4.99 / $9.99) are one-time, unlock nothing, and are always option
 
 ## Setting up real payments (RevenueCat)
 
-Until you add keys, the app runs in **store testing mode**: buying Pro or tipping shows a "nothing will be charged" test dialog.
+Until you add keys, the app runs in **store testing mode**: buying Plus or tipping shows a "nothing will be charged" test dialog.
 
 1. Make products in the stores:
-   - Subscription `mochinook_pro_monthly` at $5.99/month
+   - Subscriptions `mochinook_plus_monthly` ($6.99/month) and `mochinook_plus_annual` ($34.99/year), each with a 7-day free-trial offer
    - Consumable in-app products `mochinook_tip_small` ($2.99), `mochinook_tip_medium` ($4.99), `mochinook_tip_large` ($9.99)
-2. In RevenueCat: add an entitlement called `pro`, attach the subscription to it, and put it in the **current offering** as the **Monthly** package.
+2. In RevenueCat: add an entitlement called `pro`, attach both subscriptions to it, and put them in the **current offering** as the **Monthly** and **Annual** packages. The paywall shows "Start my 7-day free trial" automatically when the store reports a free trial.
    Set the tip products as consumables.
 3. Paste your public SDK keys into `app.json` → `expo.extra.revenueCat.appleApiKey` / `googleApiKey`, then rebuild.
 
 > App Store and Google Play developer accounts must be owned by an adult (18+). A parent or guardian can own the account and the payouts.
 
-**Hidden developer toggle:** Settings → tap the version number 5 times → "Force Free / Force Pro / Real status".
+**Hidden developer toggle:** Settings → tap the version number 5 times → "Force Free / Force Plus / Real status".
 It (and free test purchases) only exist in development builds or builds without store keys. Once the RevenueCat keys are in `app.json`, they are switched off completely.
 
 ## On-device AI

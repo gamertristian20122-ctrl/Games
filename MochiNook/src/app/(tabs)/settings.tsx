@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, Pressable, TextInput, View } from 'react-native';
 import { Button, Card, Divider, LinkRow, Pill, Row, Screen, Segmented, SectionTitle, T, TimeStepper, ToggleRow } from '../../components/ui';
+import { WidgetPreview } from '../../components/WidgetPreview';
 import { PET_NAMES } from '../../data/cosmetics';
 import { confirmAction } from '../../lib/dialogs';
 import { TEST_TOOLS_ALLOWED, restorePurchases } from '../../lib/purchases';
@@ -35,7 +36,7 @@ export default function SettingsScreen() {
       taps.current = [];
       const unlocked = !settings.devUnlocked;
       app.updateSettings({ devUnlocked: unlocked, devOverride: unlocked ? settings.devOverride : 'auto' }).catch(() => undefined);
-      Alert.alert(unlocked ? 'Developer tools on' : 'Developer tools off', unlocked ? 'You can now flip between Free and Pro for testing.' : 'Back to normal.');
+      Alert.alert(unlocked ? 'Developer tools on' : 'Developer tools off', unlocked ? 'You can now flip between Free and Plus for testing.' : 'Back to normal.');
     }
   };
 
@@ -59,9 +60,9 @@ export default function SettingsScreen() {
   const onDeleteAll = () => {
     const run = async () => {
       await app.deleteAllData();
-      router.replace('/onboarding');
+      router.replace('/welcome');
     };
-    const message = `This erases your routine, custom quests, ${pet.name}, Pebbles, shop items and settings from this phone, and cancels reminders. It can’t be undone. A Pro subscription keeps running until you cancel it in Google Play.`;
+    const message = `This erases your routine, custom quests, ${pet.name}, Pebbles, shop items and settings from this phone, and cancels reminders. It can’t be undone. A Plus subscription keeps running until you cancel it in Google Play.`;
     confirmAction('Delete all your data?', message, 'Delete everything', () => run().catch(() => undefined), {
       cancelText: 'Keep everything',
       destructive: true,
@@ -176,11 +177,11 @@ export default function SettingsScreen() {
         <ToggleRow label="Gentle reminders" hint="Up to four soft nudges a day, plus step timers." value={settings.reminders} onChange={onReminders} />
       </Card>
 
-      <SectionTitle>MochiNook Pro</SectionTitle>
+      <SectionTitle>MochiNook Plus</SectionTitle>
       <Card tone="lavender" style={{ paddingVertical: space.sm }}>
         <LinkRow
           icon="sparkle"
-          label={isPro ? 'Pro is on. Thank you!' : 'Get Pro · $5.99/month'}
+          label={isPro ? 'Plus is on. Thank you!' : 'Get Plus · 7-day free trial'}
           hint="Full wardrobe, all rooms, no Calm pick card."
           onPress={() => router.push('/pro')}
         />
@@ -194,8 +195,13 @@ export default function SettingsScreen() {
         <Divider />
         <LinkRow icon="heart" label="Tip jar" hint="Support the 14-year-old solo dev." onPress={() => router.push('/tip-jar')} />
         <Divider />
-        <LinkRow icon="list" label="Rebuild my starter routine" hint="Retake the 3-question quiz." onPress={() => router.push('/onboarding')} />
+        <LinkRow icon="list" label="Fine-tune my routine" hint="3 quick questions: your brain, energy and daily times." onPress={() => router.push('/onboarding')} />
+        <Divider />
+        <LinkRow icon="sparkle" label="Replay the welcome" hint="See the first-launch hatching again." onPress={() => router.push({ pathname: '/welcome', params: { replay: '1' } })} />
       </Card>
+
+      <SectionTitle>Home-screen widget</SectionTitle>
+      <WidgetPreview />
 
       <SectionTitle>Privacy</SectionTitle>
       <Card style={{ paddingVertical: space.sm }}>
@@ -220,7 +226,7 @@ export default function SettingsScreen() {
               {(['auto', 'free', 'pro'] as DevOverride[]).map((o) => (
                 <Pill
                   key={o}
-                  label={o === 'auto' ? 'Real status' : o === 'free' ? 'Force Free' : 'Force Pro'}
+                  label={o === 'auto' ? 'Real status' : o === 'free' ? 'Force Free' : 'Force Plus'}
                   selected={settings.devOverride === o}
                   onPress={() => app.updateSettings({ devOverride: o })}
                 />
@@ -228,7 +234,7 @@ export default function SettingsScreen() {
             </Row>
             {mockStore ? (
               <Button
-                label={settings.mockPro ? 'Cancel test Pro purchase' : 'Simulate Pro purchase'}
+                label={settings.mockPro ? 'Cancel test Plus purchase' : 'Simulate Plus purchase'}
                 kind="soft"
                 small
                 onPress={() => app.updateSettings({ mockPro: !settings.mockPro })}

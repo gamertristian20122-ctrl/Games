@@ -3,14 +3,15 @@ import { test } from 'node:test';
 import library from '../src/data/quests.json';
 import { HATS, PET_COLORS, ROOMS, SCARVES, seasonalRewards } from '../src/data/cosmetics';
 import { SHOP_ITEMS } from '../src/data/shop';
+import { synthNoise, wavBytes } from '../src/lib/noiseSynth';
 import { PRIVACY_POLICY, TERMS_OF_USE } from '../src/data/legal';
 import { levelFromXp, xpForNextLevel } from '../src/lib/progression';
-import { buildStarterRoutine } from '../src/lib/routineBuilder';
+import { FRICTION_QUESTS, buildFrictionRoutine, buildStarterRoutine } from '../src/lib/routineBuilder';
 import { decodeRaceResult, decodeShareCode, encodeRaceResult, encodeShareCode } from '../src/lib/shareCode';
 import { SEASON_GLYPH, seasonFor, sprintTiers, weekDays, weekStart } from '../src/lib/season';
 import { glyphFor, isGlyphName } from '../src/components/art/glyphNames';
 import { CHEERS } from '../src/lib/copy';
-import { bestLibraryMatch, canMakeSmaller, genericSteps, smallerSteps, smartBreakdown, softenText } from '../src/lib/smartMatch';
+import { bestLibraryMatch, canMakeSmaller, genericSteps, magicBreakdown, smallerSteps, smartBreakdown, softenText, splitBrainDump } from '../src/lib/smartMatch';
 import { currentAnchor, daysBetween, formatClock } from '../src/lib/time';
 import type { LibraryQuest } from '../src/lib/types';
 
@@ -183,7 +184,7 @@ test('Pebble shop has 8–10 starter items, all earnable', () => {
 });
 
 test('free tier has a starter look; everything else is Pro', () => {
-  assert.deepEqual(PET_COLORS.filter((c) => c.free).map((c) => c.id), ['cream', 'peach']);
+  assert.deepEqual(PET_COLORS.filter((c) => c.free).map((c) => c.id), ['cream', 'peach', 'mint']);
   assert.deepEqual(HATS.filter((c) => c.free).map((c) => c.id), ['none', 'sprout']);
   assert.deepEqual(SCARVES.filter((c) => c.free).map((c) => c.id), ['none']);
   assert.deepEqual(ROOMS.filter((c) => c.free).map((c) => c.id), ['sunny']);
@@ -195,7 +196,7 @@ test('privacy policy and terms cover what Google Play asks for', () => {
   const privacy = all(PRIVACY_POLICY);
   for (const must of ['RevenueCat', 'Delete all my data', 'children', 'Notifications', 'contact']) assert.match(privacy, new RegExp(must, 'i'), must);
   const terms = all(TERMS_OF_USE);
-  for (const must of ['5.99', 'cancel', 'not medical advice']) assert.match(terms, new RegExp(must, 'i'), must);
+  for (const must of ['6.99', '34.99', 'free trial', 'cancel', 'not medical advice']) assert.match(terms, new RegExp(must, 'i'), must);
 });
 
 test('seasons, weeks and sprint goals', () => {
@@ -248,4 +249,61 @@ test('every season and shop item has art', () => {
   for (const s of ['autumn', 'winter', 'spring', 'summer'] as const) assert.ok(isGlyphName(SEASON_GLYPH[s]));
   const decorIds = ['rug', 'lights', 'poster', 'books', 'fern', 'plush', 'beanbag', 'lamp'];
   assert.deepEqual(SHOP_ITEMS.filter((i) => i.kind === 'decor').map((i) => i.id).sort(), decorIds.sort());
+});
+
+test('friction triage pre-loads real, matching starter quests', () => {
+  for (const f of ['starting', 'time', 'sensory', 'bedtime'] as const) {
+    const ids = buildFrictionRoutine(f);
+    assert.equal(new Set(ids).size, ids.length);
+    for (const id of ids) assert.ok(LIB.some((q) => q.id === id), `${f}: ${id}`);
+    for (const id of FRICTION_QUESTS[f]) assert.ok(ids.includes(id));
+  }
+  assert.ok(buildFrictionRoutine('sensory').includes('sensory-reset'));
+  assert.ok(buildFrictionRoutine('bedtime').includes('bedtime-wind-down'));
+  assert.ok(buildFrictionRoutine(null).length >= 5, 'skipping still gives a gentle core');
+});
+
+test('Magic Break Down gives 3–5 tiny starter steps', () => {
+  for (const title of ['Clean room', 'Do homework', 'Take a shower', 'do the laundry', 'assemble my new desk']) {
+    const r = magicBreakdown(title, LIB);
+    assert.ok(r.steps.length >= 3 && r.steps.length <= 5, `${title}: ${r.steps.length}`);
+    for (const s of r.steps) assert.ok(s.length > 2 && s.length < 120);
+  }
+  const shower = magicBreakdown('Take a shower', LIB);
+  assert.equal(shower.steps[0], 'Grab a towel', 'opens with the tiniest possible step');
+  assert.equal(shower.icon, 'shower');
+  assert.equal(magicBreakdown('Clean room', LIB).icon, 'broom');
+  assert.equal(magicBreakdown('assemble my new desk', LIB).matchedTitle, null);
+});
+
+test('Brain-Dump Splitter turns a messy list into separate quests', () => {
+  const items = splitBrainDump('ugh I need to do laundry, call the dentist and pay rent\nalso homework!!\n- take a shower\nlaundry', LIB);
+  assert.deepEqual(items.map((i) => i.title), ['Do laundry', 'Call the dentist', 'Pay rent', 'Homework', 'Take a shower']);
+  for (const i of items) assert.ok(i.steps.length >= 3 && i.steps.length <= 5, i.title);
+  assert.equal(items.find((i) => i.title === 'Pay rent')?.icon, 'receipt');
+  assert.deepEqual(splitBrainDump('   ,, ;; ', LIB), []);
+  assert.equal(splitBrainDump(Array.from({ length: 20 }, (_, i) => `task number ${i}`).join(', '), LIB).length, 8);
+});
+
+test('ambient noise is generated in code, loops seamlessly and stays gentle', () => {
+  for (const kind of ['brown', 'rain'] as const) {
+    const s = synthNoise(kind, 2, 8000);
+    assert.equal(s.length, 16000);
+    let peak = 0;
+    for (const v of s) {
+      assert.ok(Number.isFinite(v));
+      peak = Math.max(peak, Math.abs(v));
+    }
+    assert.ok(peak <= 0.4501 && peak > 0.3, `${kind} peak ${peak}`);
+    assert.ok(Math.abs(s[s.length - 1]! - s[0]!) < 0.05, `${kind} loop seam`);
+  }
+  // Brown noise is smooth (low frequencies): neighbouring samples barely differ.
+  const brown = synthNoise('brown', 1, 8000);
+  let diff = 0;
+  for (let i = 1; i < brown.length; i++) diff += Math.abs(brown[i]! - brown[i - 1]!);
+  assert.ok(diff / brown.length < 0.05, 'over 6x smoother than white noise (~0.3)');
+  const wav = wavBytes(new Float32Array([0, 0.5, -0.5]), 8000);
+  assert.equal(String.fromCharCode(...wav.slice(0, 4)), 'RIFF');
+  assert.equal(String.fromCharCode(...wav.slice(8, 12)), 'WAVE');
+  assert.equal(wav.length, 44 + 6);
 });

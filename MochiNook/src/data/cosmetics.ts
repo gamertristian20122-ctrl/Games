@@ -2,7 +2,7 @@ import type { Season } from '../lib/season';
 
 export type CosmeticKind = 'color' | 'hat' | 'scarf' | 'room';
 
-/** Seasonal items are earned (by everyone, Free or Pro) through weekly Mochi Sprints and kept forever. */
+/** Seasonal items are earned (by everyone, Free or Plus) through weekly Mochi Sprints and kept forever. */
 export interface SeasonalTag {
   season?: Season;
   tier?: 1 | 2 | 3;
@@ -30,7 +30,7 @@ export const PET_COLORS: PetColor[] = [
   { id: 'cream', name: 'Mochi Cream', body: '#FFF8EE', outline: '#DEC8B2', blush: '#F6B0A0', ear: '#FCE6DA', free: true },
   { id: 'peach', name: 'Peach Bun', body: '#FDE1D0', outline: '#E3B79C', blush: '#F29C8C', ear: '#FBD0BC', free: true },
   { id: 'lavender', name: 'Lavender Puff', body: '#ECE3F8', outline: '#C2B2DD', blush: '#F2A7B8', ear: '#E0D3F3', free: false },
-  { id: 'mint', name: 'Matcha Mint', body: '#E2F0DD', outline: '#A9C6A1', blush: '#F2AFA2', ear: '#D3E8CC', free: false },
+  { id: 'mint', name: 'Matcha Mint', body: '#E2F0DD', outline: '#A9C6A1', blush: '#F2AFA2', ear: '#D3E8CC', free: true },
   { id: 'sky', name: 'Cloud Blue', body: '#E1EEF6', outline: '#A9C4D6', blush: '#F2AFB4', ear: '#D2E4EF', free: false },
   { id: 'butter', name: 'Butter Toast', body: '#FBF0CC', outline: '#DCC88A', blush: '#F3AA94', ear: '#F6E5AE', free: false },
   { id: 'strawberry', name: 'Strawberry Milk', body: '#FCE0E6', outline: '#E3AEBA', blush: '#EE8EA2', ear: '#F9CDD6', free: false },

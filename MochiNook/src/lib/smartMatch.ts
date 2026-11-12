@@ -158,3 +158,90 @@ export function softenText(text: string): string {
   const lowered = t.charAt(0).toLowerCase() + t.slice(1);
   return `Want to ${lowered} together? Only if it feels okay.`;
 }
+
+// ---------- Magic Break Down & Brain-Dump Splitter (offline, no AI) ----------
+
+/** Share of the user's meaningful words that the quest's keywords or title contain. */
+function coverage(task: string, quest: LibraryQuest): number {
+  const words = tokenize(task).map(stem);
+  if (words.length === 0) return 0;
+  const vocab = new Set<string>();
+  for (const kw of quest.keywords) for (const w of tokenize(kw)) vocab.add(stem(w));
+  for (const w of tokenize(quest.title)) vocab.add(stem(w));
+  return words.filter((w) => vocab.has(w)).length / words.length;
+}
+
+export interface MagicResult {
+  steps: string[];
+  /** Icon of the library quest it matched, so the new quest gets a fitting picture. */
+  icon: string;
+  matchedTitle: string | null;
+}
+
+/**
+ * Turns one task title into 3–5 ultra-tiny starter steps.
+ * Uses the matching library quest and expands its first step into hand-written
+ * micro-steps when it has them, so the very first thing to do is as small as possible.
+ */
+export function magicBreakdown(title: string, library: readonly LibraryQuest[]): MagicResult {
+  const match = bestLibraryMatch(title, library);
+  // At least half of the task's meaningful words must belong to the matched quest, so
+  // "take a shower" matches the Shower Quest but "assemble my new desk" doesn't become a desk tidy.
+  if (match.quest && match.score >= 2 && coverage(title, match.quest) >= 0.5) {
+    const [first, ...rest] = match.quest.steps;
+    const opening = first?.tiny && first.tiny.length > 0 ? first.tiny : first ? [first.text] : [];
+    const steps = [...opening, ...rest.map((s) => s.text)].slice(0, 5);
+    return { steps, icon: match.quest.emoji, matchedTitle: match.quest.title };
+  }
+  const t = cleanTask(title) || 'this task';
+  return {
+    steps: [
+      `Go to the place where "${t}" happens`,
+      'Get out the one thing you need first',
+      'Do only the very first 2 minutes',
+      'Pause and decide: keep going, or stop here (both are fine)',
+    ],
+    icon: 'sparkle',
+    matchedTitle: null,
+  };
+}
+
+export interface BrainDumpItem {
+  title: string;
+  steps: string[];
+  icon: string;
+}
+
+const FILLER = /^(and|also|then|plus|oh|ugh+|um+|ok|okay|so|maybe|i need to|i have to|i should|i gotta|need to|have to|gotta|should|must|remember to|don't forget to|dont forget to|pls|please)\b[\s,:-]*/i;
+
+function capitalizeFirst(t: string): string {
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/**
+ * Brain-Dump Splitter: pour out a messy list ("laundry, call mom and the dentist, ugh homework")
+ * and get one tidy quest per thing, each with tiny starter steps. Fully offline.
+ */
+export function splitBrainDump(text: string, library: readonly LibraryQuest[], max = 8): BrainDumpItem[] {
+  const parts = text
+    .split(/\n|;|,|•|·|\s-\s|\.\s+|\band also\b|\balso\b|\bplus\b|\band then\b|\bthen\b/i)
+    .flatMap((p) => p.split(/\s+and\s+(?=(?:call|email|text|clean|do|wash|pay|book|buy|get|make|finish|study|reply|take|go|feed|water|fold|vacuum|tidy|cook|send|write|read|pack|empty|walk)\b)/i))
+    .map((p) => {
+      let t = p.replace(/^[\s*\-•\d.)]+/, '').trim();
+      for (let i = 0; i < 3; i++) t = t.replace(FILLER, '').trim();
+      return t.replace(/[.!?]+$/, '').replace(/\s+/g, ' ');
+    })
+    .filter((p) => p.length >= 3 && /[a-z]/i.test(p));
+  const seen = new Set<string>();
+  const items: BrainDumpItem[] = [];
+  for (const p of parts) {
+    // "do laundry" and "laundry" are the same task: compare the meaningful words only.
+    const key = tokenize(p).join(' ') || p.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const magic = magicBreakdown(p, library);
+    items.push({ title: capitalizeFirst(p).slice(0, 60), steps: magic.steps, icon: magic.icon });
+    if (items.length >= max) break;
+  }
+  return items;
+}

@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { cosmeticKey, seasonalRewards, type CosmeticKind, type SeasonalReward } from '../data/cosmetics';
-import { findShopItem } from '../data/shop';
+import { HATS, cosmeticKey, seasonalRewards, type CosmeticKind, type SeasonalReward } from '../data/cosmetics';
+import { POUCH_PRICE, SHOP_ITEMS, findShopItem } from '../data/shop';
 import { weekDays, type Season } from '../lib/season';
 import { LIBRARY } from './schema';
 import { daysBetween } from '../lib/time';
@@ -46,6 +46,9 @@ export const DEFAULT_SETTINGS: Settings = {
   lastPatAt: 0,
   lastSnackDay: null,
   lastTuckDay: null,
+  friction: null,
+  shrinkDay: null,
+  focusSound: 'off',
 };
 
 type SettingKey = keyof Settings;
@@ -631,4 +634,48 @@ export async function syncSeasonRewards(
     }
   }
   return earned;
+}
+
+// ---------- Cozy Mystery Pouch ----------
+
+export interface PouchPrize {
+  kind: 'decor' | 'hat';
+  id: string;
+  name: string;
+}
+
+export type PouchResult = { ok: true; prize: PouchPrize } | { ok: false; reason: 'pebbles' | 'empty' };
+
+/**
+ * Opens a Mystery Pouch: a random room item or hat the user can't use yet.
+ * Never charges when there is nothing left to win. Decor arrives already placed in the room.
+ */
+export async function openMysteryPouch(db: SQLiteDatabase, hasPlus: boolean, rng: () => number = Math.random): Promise<PouchResult> {
+  let result: PouchResult = { ok: false, reason: 'empty' };
+  await db.withTransactionAsync(async () => {
+    const owned = new Set((await db.getAllAsync<{ item_id: string }>('SELECT item_id FROM owned_items')).map((r) => r.item_id));
+    const earned = new Set(await getOwnedCosmetics(db));
+    const pool: PouchPrize[] = [
+      ...SHOP_ITEMS.filter((i) => i.kind === 'decor' && !owned.has(i.id)).map((i) => ({ kind: 'decor' as const, id: i.id, name: i.name })),
+      // Hats Plus already unlocks aren't a surprise for Plus members, so only offer them on Free.
+      ...HATS.filter((h) => !h.free && !h.season && !hasPlus && !earned.has(cosmeticKey('hat', h.id))).map((h) => ({ kind: 'hat' as const, id: h.id, name: h.name })),
+    ];
+    if (pool.length === 0) {
+      result = { ok: false, reason: 'empty' };
+      return;
+    }
+    const spent = await db.runAsync('UPDATE pet SET pebbles = pebbles - ? WHERE id = 1 AND pebbles >= ?', POUCH_PRICE, POUCH_PRICE);
+    if (spent.changes === 0) {
+      result = { ok: false, reason: 'pebbles' };
+      return;
+    }
+    const prize = pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))]!;
+    if (prize.kind === 'decor') {
+      await db.runAsync('INSERT INTO owned_items (item_id, placed, acquired_at) VALUES (?, 1, ?)', prize.id, Date.now());
+    } else {
+      await db.runAsync('INSERT OR IGNORE INTO owned_cosmetics (cosmetic_key, source, acquired_at) VALUES (?, ?, ?)', cosmeticKey('hat', prize.id), 'pouch', Date.now());
+    }
+    result = { ok: true, prize };
+  });
+  return result;
 }

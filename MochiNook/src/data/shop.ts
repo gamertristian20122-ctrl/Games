@@ -31,3 +31,6 @@ export const SHOP_ITEMS: ShopItem[] = [
 export function findShopItem(id: string): ShopItem | undefined {
   return SHOP_ITEMS.find((i) => i.id === id);
 }
+
+/** The Cozy Mystery Pouch: a surprise unowned room item or hat. */
+export const POUCH_PRICE = 15;

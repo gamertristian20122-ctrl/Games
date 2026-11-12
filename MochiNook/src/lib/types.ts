@@ -6,6 +6,9 @@ export type BlockKind = 'school' | 'work' | 'none';
 export type ThemePref = 'system' | 'light' | 'dark';
 export type QuestSource = 'library' | 'custom' | 'shared';
 export type DevOverride = 'auto' | 'free' | 'pro';
+/** The one thing that's hardest lately (welcome step 3). */
+export type Friction = 'starting' | 'time' | 'sensory' | 'bedtime';
+export type FocusSound = 'off' | 'brown' | 'rain';
 
 export type QuestCategory =
   | 'morning'
@@ -69,6 +72,10 @@ export interface Settings {
   lastPatAt: number;
   lastSnackDay: string | null;
   lastTuckDay: string | null;
+  friction: Friction | null;
+  /** "Shrink my day": the day it was turned on (only one tiny self-care step shows). Clears itself tomorrow. */
+  shrinkDay: string | null;
+  focusSound: FocusSound;
 }
 
 export interface Pet {

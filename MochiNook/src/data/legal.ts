@@ -34,7 +34,7 @@ export const PRIVACY_POLICY: LegalDoc = {
     {
       heading: 'What leaves your phone',
       paragraphs: [
-        'Purchases. If you buy MochiNook Pro or leave a tip, the payment is handled by Google Play. MochiNook uses RevenueCat to confirm purchases, which receives an anonymous app user ID, your purchase receipts, and basic device information (such as the operating system version). RevenueCat’s privacy policy is at revenuecat.com/privacy, and Google’s is at policies.google.com/privacy.',
+        'Purchases. If you buy MochiNook Plus or leave a tip, the payment is handled by Google Play. MochiNook uses RevenueCat to confirm purchases, which receives an anonymous app user ID, your purchase receipts, and basic device information (such as the operating system version). RevenueCat’s privacy policy is at revenuecat.com/privacy, and Google’s is at policies.google.com/privacy.',
         'Nothing else. MochiNook has no analytics, no advertising SDKs, no crash-reporting service, and no tracking.',
       ],
     },
@@ -54,7 +54,7 @@ export const PRIVACY_POLICY: LegalDoc = {
     {
       heading: 'Calm picks',
       paragraphs: [
-        'The small card at the bottom of the home screen is static text built into the app. It contains no links, tracking, or ad network, and Pro hides it.',
+        'The small card at the bottom of the home screen is static text built into the app. It contains no links, tracking, or ad network, and Plus hides it.',
       ],
     },
     {
@@ -67,7 +67,7 @@ export const PRIVACY_POLICY: LegalDoc = {
       heading: 'Deleting your data',
       paragraphs: [
         'Open Settings → Delete all my data. This erases everything MochiNook saved on your phone and cancels its reminders. Uninstalling the app does the same.',
-        'Deleting data does not cancel a subscription. You can cancel MochiNook Pro in the Google Play Store under Payments & subscriptions.',
+        'Deleting data does not cancel a subscription. You can cancel MochiNook Plus in the Google Play Store under Payments & subscriptions.',
       ],
     },
     {
@@ -92,9 +92,9 @@ export const TERMS_OF_USE: LegalDoc = {
       ],
     },
     {
-      heading: 'MochiNook Pro',
+      heading: 'MochiNook Plus',
       paragraphs: [
-        'Pro is a monthly subscription at the price shown in the app (US$5.99 per month in the United States; local prices may differ). It renews automatically through Google Play until you cancel. Cancel any time in the Google Play Store under Payments & subscriptions. Cancelling stops the next renewal; you keep Pro until the end of the period you paid for.',
+        'Plus is a subscription at the price shown in the app (in the United States, US$6.99 per month or US$34.99 per year; local prices may differ). New subscribers may get a 7-day free trial; if you cancel before the trial ends, you are not charged. After that it renews automatically through Google Play until you cancel. Cancel any time in the Google Play Store under Payments & subscriptions. Cancelling stops the next renewal; you keep Plus until the end of the period you paid for.',
       ],
     },
     {

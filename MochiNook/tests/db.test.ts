@@ -269,3 +269,42 @@ test('check-ins: one per day, updatable, clamped', async () => {
     { day: '2026-11-13', mood: 4, energy: 'high' },
   ]);
 });
+
+test('Mystery Pouch: costs 15, gives something new, never charges when empty', async () => {
+  const db = await freshDb();
+  assert.deepEqual(await repo.openMysteryPouch(db, false, () => 0), { ok: false, reason: 'pebbles' });
+  await repo.addProgress(db, 0, 0, 1000);
+  const first = await repo.openMysteryPouch(db, false, () => 0);
+  assert.ok(first.ok && first.prize.kind === 'decor');
+  assert.equal((await repo.getPet(db)).pebbles, 985);
+  assert.equal((await repo.getOwnedItems(db))[0]!.placed, 1, 'decor arrives already in the room');
+  const seen = new Set<string>();
+  for (let i = 0; i < 30; i++) {
+    const r = await repo.openMysteryPouch(db, false, () => 0.5);
+    if (!r.ok) {
+      assert.equal(r.reason, 'empty');
+      break;
+    }
+    assert.ok(!seen.has(r.prize.id), `duplicate prize ${r.prize.id}`);
+    seen.add(r.prize.id);
+  }
+  const pebblesWhenEmpty = (await repo.getPet(db)).pebbles;
+  assert.deepEqual(await repo.openMysteryPouch(db, false), { ok: false, reason: 'empty' });
+  assert.equal((await repo.getPet(db)).pebbles, pebblesWhenEmpty, 'no charge when nothing is left');
+  assert.ok((await repo.getOwnedCosmetics(db)).some((k) => k.startsWith('hat:')), 'hats can be won on Free');
+
+  const plus = await freshDb();
+  await repo.addProgress(plus, 0, 0, 1000);
+  for (let i = 0; i < 12; i++) {
+    const r = await repo.openMysteryPouch(plus, true);
+    if (r.ok) assert.equal(r.prize.kind, 'decor', 'Plus members only get things they do not have yet');
+  }
+});
+
+test('new settings persist across restarts', async () => {
+  const db = await freshDb();
+  await repo.saveSettings(db, { friction: 'sensory', shrinkDay: '2026-11-12', focusSound: 'rain' });
+  await migrateDatabase(db);
+  const s = await repo.getSettings(db);
+  assert.deepEqual([s.friction, s.shrinkDay, s.focusSound], ['sensory', '2026-11-12', 'rain']);
+});

@@ -8,6 +8,7 @@ import { Icon } from '../../components/Icon';
 import { PebbleCount, PebbleIcon } from '../../components/Pebble';
 import { Pet, PetSvg, type PetReaction } from '../../components/Pet';
 import { ProUpsell } from '../../components/QuestBits';
+import { MysteryPouch } from '../../components/MysteryPouch';
 import { Room } from '../../components/Room';
 import { Button, Row, Screen, Segmented, SectionTitle, T } from '../../components/ui';
 import { HATS, PET_COLORS, ROOMS, SCARVES, type Cosmetic, type CosmeticKind } from '../../data/cosmetics';
@@ -143,7 +144,7 @@ export default function Nook() {
                   : `${previewItem.price - pet.pebbles} more pebbles to go`
                 : previewWear?.season
                   ? `Earned in ${SEASON_INFO[previewWear.season].name} Sprints`
-                  : 'Part of MochiNook Pro'}
+                  : 'Part of MochiNook Plus'}
             </T>
           </View>
           {previewItem ? (
@@ -179,6 +180,12 @@ export default function Nook() {
       <ScrollView key={tab} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: space.xxxl }} showsVerticalScrollIndicator={false}>
         {tab === 'decor' ? (
           <>
+            <MysteryPouch
+              onWear={(hatId) => {
+                pop();
+                updatePet({ hat: hatId }).catch(() => undefined);
+              }}
+            />
             <T variant="small" style={{ marginTop: space.lg }}>
               Earn 1 pebble per tiny step (+3 for a whole quest). Tap anything to see it in the room first. Tap items you own to show or hide them.
             </T>
@@ -245,7 +252,7 @@ export default function Nook() {
                           key={item.id}
                           accessibilityRole="button"
                           accessibilityState={{ selected: wearing }}
-                          accessibilityLabel={`${item.name}${locked ? (item.season ? ', Sprint reward' : ', Pro') : ''}${wearing ? ', wearing' : ''}`}
+                          accessibilityLabel={`${item.name}${locked ? (item.season ? ', Sprint reward' : ', Plus') : ''}${wearing ? ', wearing' : ''}`}
                           onPress={() => wearTap(kind, item)}
                           style={({ pressed }) => [
                             styles.tile,
@@ -292,7 +299,7 @@ export default function Nook() {
             ))}
             {!isPro ? (
               <View style={{ marginTop: space.xl }}>
-                <ProUpsell title="Unlock the whole wardrobe" body="Every hat, scarf, color and room, and no Calm pick card. $5.99/month, cancel any time." />
+                <ProUpsell title="Unlock the whole wardrobe" body="Every hat, scarf, color and room, and no Calm pick card. 7-day free trial, then $6.99/month or $34.99/year." />
               </View>
             ) : null}
           </>

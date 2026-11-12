@@ -18,9 +18,9 @@ import { PEBBLES_PER_STEP, PEBBLES_QUEST_BONUS, findShopItem } from '../data/sho
 import { seasonFor, sprintTiers, weekStart } from '../lib/season';
 import { XP_PER_STEP, XP_QUEST_BONUS, levelFromXp } from '../lib/progression';
 import { TEST_TOOLS_ALLOWED, initPurchases, isMockStore } from '../lib/purchases';
-import { buildStarterRoutine } from '../lib/routineBuilder';
+import { buildFrictionRoutine, buildStarterRoutine } from '../lib/routineBuilder';
 import { dayKey, daysBetween } from '../lib/time';
-import type { Anchors, BrainProfile, Energy, Pet, QuestRow, Settings, StepRow } from '../lib/types';
+import type { Anchors, BrainProfile, Energy, Friction, Pet, QuestRow, Settings, StepRow } from '../lib/types';
 
 /** Everything the pet reacts to. `xp` and `pebbles` feed the floating reward badges. */
 export type PetEvent =
@@ -34,6 +34,13 @@ export type PetEvent =
 export type CareKind = 'pat' | 'snack' | 'tuck';
 
 type PetEventInput = PetEvent extends infer E ? (E extends PetEvent ? Omit<E, 'id'> : never) : never;
+
+export interface WelcomeAnswers {
+  petName: string;
+  color: string;
+  friction: Friction | null;
+  wantsReminders: boolean;
+}
 
 export interface OnboardingAnswers {
   petName: string;
@@ -58,8 +65,11 @@ interface AppState {
   /** Owned Pebble-shop decor, with whether each is shown in the room. */
   owned: repo.OwnedItem[];
   buyItem: (itemId: string) => Promise<repo.BuyResult>;
+  openPouch: () => Promise<repo.PouchResult>;
   setDecorPlaced: (itemId: string, placed: boolean) => Promise<void>;
   finishOnboarding: (answers: OnboardingAnswers) => Promise<void>;
+  /** First-launch welcome: name, color, the hardest thing lately, and reminders. */
+  finishWelcome: (answers: WelcomeAnswers) => Promise<void>;
   toggleCalm: () => Promise<void>;
   enableReminders: () => Promise<boolean>;
   checkStep: (quest: Pick<QuestRow, 'id' | 'cadence' | 'title'>, step: StepRow) => Promise<void>;
@@ -171,6 +181,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [owned, setOwned] = useState<repo.OwnedItem[]>([]);
+  const [ownedCosmetics, setOwnedCosmetics] = useState<string[]>([]);
+  useEffect(() => {
+    repo.getOwnedCosmetics(db).then(setOwnedCosmetics).catch(() => undefined);
+  }, [db]);
   useEffect(() => {
     repo.getOwnedItems(db).then(setOwned).catch(() => undefined);
   }, [db]);
@@ -203,6 +217,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPet(await repo.getPet(db));
       setDataVersion((v) => v + 1);
       if (s.reminders) await scheduleAnchorReminders(s.anchors, a.petName).catch(() => undefined);
+    },
+    [db],
+  );
+
+  const finishWelcome = useCallback(
+    async (a: WelcomeAnswers) => {
+      await repo.updatePet(db, { name: a.petName.trim().slice(0, 20) || 'Dumpling', color: a.color });
+      await repo.setRoutine(db, buildFrictionRoutine(a.friction));
+      await repo.saveSettings(db, { onboarded: true, friction: a.friction, reminders: a.wantsReminders, lastOpenDay: dayKey() });
+      setPet(await repo.getPet(db));
+      setDataVersion((v) => v + 1);
+      if (a.wantsReminders) {
+        const granted = await requestPermission().catch(() => false);
+        if (!granted) await repo.saveSettings(db, { reminders: false });
+      }
+      const s = await repo.getSettings(db);
+      setSettings(s);
+      if (s.reminders) await scheduleAnchorReminders(s.anchors, a.petName || 'Dumpling').catch(() => undefined);
     },
     [db],
   );
@@ -275,6 +307,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [db, emit, feedbackPrefs],
   );
 
+  const openPouch = useCallback(async () => {
+    const s = await repo.getSettings(db);
+    // Plus status for the pool: real entitlement, test unlock, or developer override.
+    const plus = storePro || (isMockStore && s.mockPro) || (TEST_TOOLS_ALLOWED && s.devUnlocked && s.devOverride === 'pro');
+    const result = await repo.openMysteryPouch(db, plus);
+    if (result.ok) {
+      const [p, items, cos] = await Promise.all([repo.getPet(db), repo.getOwnedItems(db), repo.getOwnedCosmetics(db)]);
+      setPet(p);
+      setOwned(items);
+      setOwnedCosmetics(cos);
+      celebrateFeedback(feedbackPrefs, 'levelup');
+    }
+    return result;
+  }, [db, storePro, feedbackPrefs]);
+
   const setDecorPlaced = useCallback(
     async (itemId: string, placed: boolean) => {
       await repo.setItemPlaced(db, itemId, placed);
@@ -283,10 +330,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [db],
   );
 
-  const [ownedCosmetics, setOwnedCosmetics] = useState<string[]>([]);
-  useEffect(() => {
-    repo.getOwnedCosmetics(db).then(setOwnedCosmetics).catch(() => undefined);
-  }, [db]);
 
   const syncSprint = useCallback(async () => {
     const s = await repo.getSettings(db);
@@ -433,8 +476,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updatePet,
       owned,
       buyItem,
+      openPouch,
       setDecorPlaced,
       finishOnboarding,
+      finishWelcome,
       toggleCalm,
       enableReminders,
       checkStep,
@@ -455,8 +500,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tap: () => tapFeedback(feedbackPrefs),
     };
   }, [
-    settings, pet, storePro, dataVersion, welcomeBackLine, petEvent, feedbackPrefs, updateSettings, updatePet, owned, buyItem, setDecorPlaced,
-    finishOnboarding, toggleCalm, enableReminders, checkStep, uncheckStep, touchData, deleteAllData,
+    settings, pet, storePro, dataVersion, welcomeBackLine, petEvent, feedbackPrefs, updateSettings, updatePet, owned, buyItem, openPouch, setDecorPlaced,
+    finishOnboarding, finishWelcome, toggleCalm, enableReminders, checkStep, uncheckStep, touchData, deleteAllData,
     ownedCosmetics, petCare, saveCheckin, completeFocus, completeRace, syncSprint,
   ]);
 

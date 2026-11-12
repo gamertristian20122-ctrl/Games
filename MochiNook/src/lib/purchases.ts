@@ -16,16 +16,19 @@ import Purchases, {
  * Mock mode: when the key for this platform is empty, every purchase is simulated
  * locally (nothing is charged) so the whole app can be tested before store setup.
  *
- * Only ONE subscription exists: Pro, monthly, $5.99. No annual or lifetime tiers.
+ * MochiNook Plus: $6.99/month or $34.99/year (save 58%), each with a 7-day free trial
+ * configured as a free-trial offer on the store products. No lifetime tier.
  */
 
 export type TipSize = 'small' | 'medium' | 'large';
+export type PlusPlan = 'monthly' | 'annual';
 
 interface RevenueCatConfig {
   appleApiKey: string;
   googleApiKey: string;
   entitlementId: string;
-  proProductId: string;
+  plusMonthlyId: string;
+  plusAnnualId: string;
   tipProductIds: Record<TipSize, string>;
 }
 
@@ -33,7 +36,8 @@ const FALLBACK: RevenueCatConfig = {
   appleApiKey: '',
   googleApiKey: '',
   entitlementId: 'pro',
-  proProductId: 'mochinook_pro_monthly',
+  plusMonthlyId: 'mochinook_plus_monthly',
+  plusAnnualId: 'mochinook_plus_annual',
   tipProductIds: { small: 'mochinook_tip_small', medium: 'mochinook_tip_medium', large: 'mochinook_tip_large' },
 };
 
@@ -50,7 +54,8 @@ function readConfig(): RevenueCatConfig {
 const config = readConfig();
 
 export const DISPLAY_PRICES = {
-  pro: '$5.99',
+  monthly: '$6.99',
+  annual: '$34.99',
   tips: { small: '$2.99', medium: '$4.99', large: '$9.99' } as Record<TipSize, string>,
 };
 
@@ -105,16 +110,34 @@ async function findProduct(id: string, category: PRODUCT_CATEGORY): Promise<Purc
   return products.find((p) => p.identifier === id || p.identifier.startsWith(`${id}:`)) ?? products[0] ?? null;
 }
 
-export async function getProPrice(): Promise<string> {
-  if (isMockStore) return DISPLAY_PRICES.pro;
+export interface PlusOffer {
+  monthly: string;
+  annual: string;
+  /** True when the store reports a free trial on the plan (Google Play free phase / App Store intro offer). */
+  trial: { monthly: boolean; annual: boolean };
+}
+
+const MOCK_OFFER: PlusOffer = { monthly: DISPLAY_PRICES.monthly, annual: DISPLAY_PRICES.annual, trial: { monthly: true, annual: true } };
+
+function hasTrial(product: PurchasesStoreProduct | undefined): boolean {
+  if (!product) return false;
+  if (product.defaultOption?.freePhase) return true;
+  return product.introPrice?.price === 0;
+}
+
+export async function getPlusOffer(): Promise<PlusOffer> {
+  if (isMockStore) return MOCK_OFFER;
   try {
-    const offerings = await Purchases.getOfferings();
-    const pkg = offerings.current?.monthly ?? null;
-    if (pkg) return pkg.product.priceString;
-    const product = await findProduct(config.proProductId, PRODUCT_CATEGORY.SUBSCRIPTION);
-    return product?.priceString ?? DISPLAY_PRICES.pro;
+    const current = (await Purchases.getOfferings()).current;
+    const m = current?.monthly?.product;
+    const a = current?.annual?.product;
+    return {
+      monthly: m?.priceString ?? DISPLAY_PRICES.monthly,
+      annual: a?.priceString ?? DISPLAY_PRICES.annual,
+      trial: { monthly: hasTrial(m), annual: hasTrial(a) },
+    };
   } catch {
-    return DISPLAY_PRICES.pro;
+    return { ...MOCK_OFFER, trial: { monthly: false, annual: false } };
   }
 }
 
@@ -134,18 +157,19 @@ export async function getTipPrices(): Promise<Record<TipSize, string>> {
   }
 }
 
-/** Buys Pro. In mock mode resolves to success without charging anything. */
-export async function purchasePro(): Promise<PurchaseOutcome> {
+/** Buys MochiNook Plus (monthly or annual). In mock mode resolves to success without charging anything. */
+export async function purchasePlus(plan: PlusPlan): Promise<PurchaseOutcome> {
   if (isMockStore) return { status: 'success' };
   try {
-    const offerings = await Purchases.getOfferings();
-    const pkg = offerings.current?.monthly ?? null;
+    const current = (await Purchases.getOfferings()).current;
+    const pkg = plan === 'annual' ? current?.annual : current?.monthly;
     if (pkg) {
       await Purchases.purchasePackage(pkg);
       return { status: 'success' };
     }
-    const product = await findProduct(config.proProductId, PRODUCT_CATEGORY.SUBSCRIPTION);
-    if (!product) return { status: 'error', message: "Pro isn't available in the store yet. Nothing was charged." };
+    const id = plan === 'annual' ? config.plusAnnualId : config.plusMonthlyId;
+    const product = await findProduct(id, PRODUCT_CATEGORY.SUBSCRIPTION);
+    if (!product) return { status: 'error', message: "Plus isn't available in the store yet. Nothing was charged." };
     await Purchases.purchaseStoreProduct(product);
     return { status: 'success' };
   } catch (e) {

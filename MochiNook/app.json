@@ -3,14 +3,14 @@
     "name": "MochiNook",
     "slug": "mochinook",
     "scheme": "mochinook",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#FBF5EC",
     "ios": {
       "bundleIdentifier": "com.mochinook.app",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "supportsTablet": true,
       "deploymentTarget": "17.0",
       "config": {
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.mochinook.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#CFE0C8",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -107,12 +107,13 @@
         "appleApiKey": "",
         "googleApiKey": "",
         "entitlementId": "pro",
-        "proProductId": "mochinook_pro_monthly",
         "tipProductIds": {
           "small": "mochinook_tip_small",
           "medium": "mochinook_tip_medium",
           "large": "mochinook_tip_large"
-        }
+        },
+        "plusMonthlyId": "mochinook_plus_monthly",
+        "plusAnnualId": "mochinook_plus_annual"
       }
     }
   }
