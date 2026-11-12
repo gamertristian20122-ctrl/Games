@@ -110,6 +110,15 @@ func setup(the_run: Node, hero_id: String) -> void:
 	if String(hero.get("hand", "")) != "":
 		off_hand = Hands.new()
 		off_hand.build(self, body, String(hero["hand"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)), true)
+		if bool(hero.get("twin", false)) and off_hand.far != null:
+			# twin daggers: the second one rides in the free hand
+			var second := Sprite2D.new()
+			second.texture = weapon.texture
+			second.centered = false
+			second.offset = weapon.offset
+			second.rotation = 0.5
+			second.show_behind_parent = true
+			off_hand.far.add_child(second)
 	if run.LIGHTING:
 		light = PointLight2D.new()
 		light.texture = run.light_tex
@@ -459,6 +468,14 @@ func _cut(share: float) -> void:
 			struck.append(next)
 			killed = killed or next.dead
 			last = next
+	# the war hammer smashes rocks and logs inside the swing
+	if bool(m.get("break", false)):
+		for i in room.grid.size():
+			if room.grid[i] != room.ROCK and room.grid[i] != room.CRATE:
+				continue
+			var to3: Vector2 = Vector2((i % G.ROOM_COLS) * 16 + 8, (i / G.ROOM_COLS) * 16 + 8) - position
+			if to3.length() <= _swing_reach + 4.0 and absf(angle_difference(aim_dir.angle(), to3.angle())) <= _swing_arc * 0.5:
+				room.break_cell(i)
 	# enemy shots inside the arc are cut down
 	var eaten := 0
 	var shots: Node = run.shots
@@ -490,6 +507,9 @@ func _cut(share: float) -> void:
 
 func _strike(e: Node, damage: float, dir: Vector2, shove: float) -> void:
 	e.hurt(damage, dir, shove)
+	var daze := float((hero["melee"] as Dictionary).get("stun", 0.0))      # the war hammer
+	if daze > 0.0 and not ("boss_id" in e) and is_instance_valid(e) and not e.dead:
+		e.stun = maxf(e.stun, daze)
 	run.effects.fire("on_hit", [e, damage, e.position])
 	run.fx.burst((e.position as Vector2) - Vector2(0, float(e.hit_up)), [Color(1, 1, 1), Color(0.8, 0.9, 1.0)], 4, 70.0, 0.2, 2.0, dir)
 

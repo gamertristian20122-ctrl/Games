@@ -39,6 +39,7 @@ const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Shop = preload("res://scripts/data/shop.gd")
+const Weapons = preload("res://scripts/data/weapons.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
@@ -275,6 +276,23 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("retalk")
+		"hub_weapon":
+			if Weapons.owned(String(arg)):
+				Save.set_setting("weapon", String(arg))
+				Sfx.play("ui_start")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("refresh_heroes")
+				hub.call("retalk")
+		"hub_forge":
+			var w := Weapons.row(String(arg))
+			if not Weapons.owned(String(arg)) and Upgrades.coins() >= int(w.get("price", 9999)):
+				Save.hub_set("bank:coins", Upgrades.coins() - int(w["price"]))
+				Weapons.grant(String(arg))
+				Sfx.play("ui_start")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("retalk")
 		"hub_claim":
 			Quests.claim(String(arg))
 			Sfx.play("ui_start")
@@ -364,10 +382,6 @@ func _on_run_ended(victory: bool, summary: Dictionary) -> void:
 		_level_id = String(summary["level"])
 		if victory:
 			Story.walk_out(summary.get("items", []), int(summary.get("coins_held", 0)))
-			var gift := String(Story.level(_level_id).get("gives", ""))       # a weapon won (scripts/data/weapons.gd)
-			if gift != "" and Save.hub_get("wpn:" + gift) == 0:
-				Save.hub_set("wpn:" + gift, 1)
-				summary["gift"] = gift
 	if G.flag("autotest") and String(summary.get("level", "")) != "":
 		print("[main] level %s victory=%s chapter=%d kit=%s joined=%s" % [summary["level"], victory, Story.chapter(), Story.kit(), summary.get("joined", "")])
 	if G.flag("autotest"):

@@ -22,6 +22,7 @@ const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Places = preload("res://scripts/data/places.gd")
 const Shop = preload("res://scripts/data/shop.gd")
+const Weapons = preload("res://scripts/data/weapons.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const QuestList = preload("res://scripts/ui/quest_list.gd")
@@ -695,6 +696,21 @@ func _talk(index: int) -> void:
 		info["lines"].append(["%s %d/%d: %s" % [up["name"], t, Upgrades.steps(up), up["text"]], UI.C_DIM if price >= 0 else UI.C_FAINT])
 		if price >= 0:
 			info["options"].append({"text": "%s: %d coins" % [up["name"], price], "what": "hub_buy", "arg": up["id"], "off": Upgrades.coins() < price})
+	if id == "smith":
+		# the weapons he can fit: carried, owned, forged here, or still out in the world
+		var carried := Weapons.current()
+		info["lines"].append(["You carry the %s: %s" % [String(carried["name"]).to_lower(), carried["text"]], UI.C_BONE])
+		for w: Dictionary in Weapons.LIST:
+			var wid := String(w["id"])
+			if wid == String(carried["id"]):
+				continue
+			if Weapons.owned(wid):
+				info["options"].append({"text": "Carry the %s" % String(w["name"]).to_lower(), "what": "hub_weapon", "arg": wid})
+			elif w.has("price"):
+				info["options"].append({"text": "Forge the %s: %d coins" % [String(w["name"]).to_lower(), int(w["price"])], "what": "hub_forge", "arg": wid,
+					"off": Upgrades.coins() < int(w["price"])})
+			else:
+				info["lines"].append(["%s: %s." % [w["name"], w["how"]], UI.C_FAINT])
 	if sells:
 		info["lines"].append(["Camp chest: %d coins. Walk out of the hill alive to fill it." % Upgrades.coins(), UI.C_GOLD])
 	# heard it already this visit and nothing new: straight to the choices

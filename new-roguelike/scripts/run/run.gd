@@ -14,6 +14,7 @@ extends Node2D
 
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Story = preload("res://scripts/data/story.gd")
+const Weapons = preload("res://scripts/data/weapons.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
@@ -580,8 +581,10 @@ func boss_killed(b: Node) -> void:
 
 ## Story: the level is cleared for good and what he carries is kept; the stair leads on, or it is over.
 func _level_done() -> void:
-	Story.clear(String(level["id"]), player.items)
+	var gift := Story.clear(String(level["id"]), player.items)
 	G.stat.emit("levels_cleared_live", 1)
+	if gift != "":
+		G.toast.emit("New weapon: " + String(Weapons.row(gift)["name"]), "Tam the Smith will fit it for you")
 	if not has_next_level():
 		victory = true
 		over = true

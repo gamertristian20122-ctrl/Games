@@ -29,7 +29,7 @@ extends RefCounted
 const LEVELS := [
 	{"id": "crypt_1", "area": "The Crypt", "name": "The Burning Chapel", "floor": 1, "boss": "pyre_saint", "rooms": 6},
 	{"id": "crypt_2", "area": "The Crypt", "name": "The Sexton's Rows", "floor": 1, "boss": "red_sexton", "rooms": 7},
-	{"id": "warrens_1", "area": "The Warrens", "name": "The Ogre's Larder", "floor": 2, "boss": "stonejaw", "rooms": 7},
+	{"id": "warrens_1", "area": "The Warrens", "name": "The Ogre's Larder", "floor": 2, "boss": "stonejaw", "rooms": 7, "gives": "hammer"},
 	{"id": "warrens_2", "area": "The Warrens", "name": "The Drowned Court", "floor": 2, "boss": "gutter_king", "rooms": 8},
 	{"id": "ashen_1", "area": "The Ashen Halls", "name": "The Cold Forge", "floor": 3, "boss": "forge_warden", "rooms": 8},
 	{"id": "ashen_2", "area": "The Ashen Halls", "name": "The Ember Throne", "floor": 3, "boss": "cinder_tyrant", "rooms": 9},
@@ -197,10 +197,16 @@ static func clear(id: String, items: Array) -> String:
 	for item_id: Variant in items:
 		n += 1
 		Save.hub_set("kit:" + String(item_id), n)
+	var gift := ""
 	if first:
 		Save.stat_add("levels_cleared")
+	# a weapon this level hands over (scripts/data/weapons.gd); returned so the game can say so
+	var what := String(lv.get("gives", ""))
+	if what != "" and Save.hub_get("wpn:" + what) == 0:
+		Save.hub_set("wpn:" + what, 1)
+		gift = what
 	Save.flush()
-	return ""
+	return gift
 
 
 ## The level after `id` in the descent, or {} after the last one.

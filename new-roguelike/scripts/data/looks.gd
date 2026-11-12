@@ -74,4 +74,4 @@ static func apply(knight: Dictionary) -> Dictionary:
 	var s := sword()
 	row["weapon"] = s["weapon"]
 	row["grip"] = s["grip"]
-	return row
+	return (load("res://scripts/data/weapons.gd") as Script).call("apply", row)     # axe, spear, hammer, daggers

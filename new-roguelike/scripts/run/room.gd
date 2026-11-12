@@ -21,6 +21,7 @@ extends Node2D
 const Layouts = preload("res://scripts/data/room_layouts.gd")
 const RoomLook = preload("res://scripts/run/room_look.gd")
 const ForestLook = preload("res://scripts/run/forest_look.gd")
+const Weapons = preload("res://scripts/data/weapons.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
@@ -910,7 +911,10 @@ func begin(first_visit: bool) -> void:
 			G.RoomType.TREASURE:
 				G.toast.emit("Treasure Room", "")
 			G.RoomType.SECRET:
-				G.toast.emit("Secret Room", "")
+				if run.floor_index == 1 and not run.level.is_empty() and Weapons.grant("daggers"):
+					G.toast.emit("Twin daggers found", "Tam the Smith will fit them for you")
+				else:
+					G.toast.emit("Secret Room", "")
 
 
 func _start_fight() -> void:
