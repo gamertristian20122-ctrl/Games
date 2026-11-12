@@ -1,5 +1,99 @@
 {
  "archive": "assets_raw/icons/raven_fantasy_icons/Free - Raven Fantasy Icons.zip",
+ "extra": {
+  "gear_cap_iron": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2052.png",
+   "shows": "open grey helm"
+  },
+  "gear_helm_bronze": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1906.png",
+   "shows": "bronze helm"
+  },
+  "gear_helm_ember": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1909.png",
+   "shows": "orange helm"
+  },
+  "gear_helm_gilded": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1911.png",
+   "shows": "golden helm"
+  },
+  "gear_helm_soldier": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1905.png",
+   "shows": "steel helm"
+  },
+  "gear_helm_visor": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2053.png",
+   "shows": "grey visored helm"
+  },
+  "gear_helm_warden": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1908.png",
+   "shows": "green helm"
+  },
+  "gear_mail_chain": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2050.png",
+   "shows": "grey harness"
+  },
+  "gear_plate_bronze": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1922.png",
+   "shows": "bronze breastplate"
+  },
+  "gear_plate_ember": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1925.png",
+   "shows": "orange breastplate"
+  },
+  "gear_plate_gilded": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1934.png",
+   "shows": "golden breastplate"
+  },
+  "gear_plate_knight": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1935.png",
+   "shows": "heavy steel plate"
+  },
+  "gear_plate_steel": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1921.png",
+   "shows": "steel breastplate"
+  },
+  "gear_plate_warden": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1924.png",
+   "shows": "green breastplate"
+  },
+  "gear_ring_ember": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2186.png",
+   "shows": "ring of red and gold"
+  },
+  "gear_ring_emerald": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1846.png",
+   "shows": "ring, green stone"
+  },
+  "gear_ring_gold": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1844.png",
+   "shows": "gold band"
+  },
+  "gear_ring_iron": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2061.png",
+   "shows": "iron ring"
+  },
+  "gear_ring_jade": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2062.png",
+   "shows": "iron ring, big green stone"
+  },
+  "gear_ring_ruby": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1845.png",
+   "shows": "gold ring, red stone"
+  },
+  "gear_ring_sapphire": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1847.png",
+   "shows": "ring, blue stone"
+  },
+  "gear_ring_silver": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1843.png",
+   "shows": "silver band"
+  },
+  "gear_vest_padded": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2049.png",
+   "shows": "grey vest"
+  }
+ },
  "icons": {
   "barrow_stone": {
    "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa314.png",

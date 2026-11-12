@@ -29,6 +29,7 @@ extends Node2D
 
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 const Shots = preload("res://scripts/run/shots.gd")
 
 const Hands = preload("res://scripts/entities/hands.gd")
@@ -631,3 +632,8 @@ func _drop_loot() -> void:
 		room.drop("coin", position)
 	if randf() < float(data.get("heart", 0.04)) + luck * 0.5:
 		room.drop("half_heart", position)
+	# a piece of gear, now and then (scripts/data/gear.gd): only for the knight, never in the yard
+	if run.get("training") != true and (player.hero as Dictionary).has("melee") and randf() < (Gear.DROP_ELITE if elite else Gear.DROP_MONSTER) + luck * 0.2 + (0.5 if G.flag("gearrain") else 0.0):      # --gearrain: a test, half the monsters drop a piece
+		var piece := Gear.roll_common(run.gear_tier(), player.stats.v("luck"))
+		if piece != "":
+			room.drop("gear:" + piece, position)

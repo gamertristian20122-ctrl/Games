@@ -20,6 +20,7 @@ const Enemies = preload("res://scripts/data/enemies.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 const FloorGen = preload("res://scripts/run/floor_gen.gd")
 const RoomScript = preload("res://scripts/run/room.gd")
 const ShotsScript = preload("res://scripts/run/shots.gd")
@@ -388,6 +389,7 @@ func _theme() -> Dictionary:
 func champion_fell() -> void:
 	bosses_beaten.append(String(level.get("champion", "")))
 	G.stat.emit("champions", 1)
+	_boss_gear()
 	_level_done()
 
 
@@ -564,6 +566,7 @@ var xp_earned := 0
 func gain_xp(amount: int) -> void:
 	if amount <= 0 or training or over or not is_instance_valid(player) or not player.hero.has("melee"):
 		return
+	amount = roundi(float(amount) * Gear.xp_mult())      # a ring may raise it
 	xp_earned += amount
 	var levels := Rpg.add_xp(amount)
 	G.xp_gained.emit(amount)
@@ -583,6 +586,43 @@ func gain_xp(amount: int) -> void:
 	Save.flush()
 
 
+## RPG: a piece of gear was picked up, or a boss left one (scripts/data/gear.gd). A new piece is
+## kept for ever (and worn at once if that slot was empty); one he already owns pays coins.
+func found_gear(id: String) -> void:
+	var r := Gear.row(id)
+	if r.is_empty() or not is_instance_valid(player):
+		return
+	var slot := Gear.slot_name(String(r["slot"])).to_lower()
+	if G.flag("autotest"):
+		print("[rpg] gear %s (%s) at %.0f s, new=%s" % [id, Gear.rarity_name(r), time_s, str(not Gear.owned(id))])
+	if Gear.grant(id):
+		gear_found.append(id)
+		G.stat.emit("gear_found", 1)
+		player.apply_rpg()
+		fx.flourish(player.position - Vector2(0, 8), Gear.color(r))
+		Sfx.play("chest_open", -4.0)
+		var how := "You put it on." if Gear.is_worn(id) else "Tap Lv, then Gear, to wear it."
+		G.toast.emit("%s (%s %s)" % [String(r["name"]), Gear.rarity_name(r), slot], "%s. %s" % [Gear.text_cap(r), how])
+	else:
+		var coins := Gear.sell_value(r)
+		player.give({"coins": coins})
+		G.toast.emit("%s again" % String(r["name"]), "You own one: sold for coins.")
+	G.hud_changed.emit()
+
+
+## The part of the world this level lies in, for gear (0 Crypt .. 3 Pit).
+func gear_tier() -> int:
+	return clampi(scale_floor, 0, 3)
+
+
+## A boss or a champion always leaves a piece (Rare, sometimes Epic). Not in the training yard.
+func _boss_gear() -> void:
+	if training or not is_instance_valid(player) or not player.hero.has("melee"):
+		return
+	found_gear(Gear.roll_boss(gear_tier()))
+
+
+var gear_found: Array[String] = []
 func _auto_spend() -> void:
 	var k := 0
 	while Rpg.points() > 0 and k < 200:
@@ -612,6 +652,7 @@ func boss_killed(b: Node) -> void:
 	G.stat.emit("boss_killed:" + id, 1)
 	G.boss_defeated.emit(id)
 	gain_xp(Rpg.xp_for_boss(b))
+	_boss_gear()
 	var says: Dictionary = Story.BOSS_SAYS.get(id, {})
 	if says.has("end"):
 		G.toast.emit(String(Bosses.info(id).get("name", "")), "\"%s\"" % String(says["end"]))

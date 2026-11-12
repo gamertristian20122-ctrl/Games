@@ -3,12 +3,19 @@ extends "res://scripts/ui/screen.gd"
 ## (scripts/data/rpg.gd holds every rule and number). Opened with the "Lv" touch button, C / Tab,
 ## gamepad Y, or the Knight button of the pause menu. Tap a stat to put one point into it.
 ## A stat that cannot take a point still answers: it says why (never a dead button).
-## Gear, skills and the party will get their own pages here in later steps.
+## Two pages, switched with the Stats / Gear buttons in the top bar:
+##   Stats  the four stats and the points
+##   Gear   what he owns and wears: weapons (scripts/data/weapons.gd) and helmets, armour, rings
+##          (scripts/data/gear.gd). Tap a piece to wear it, tap it again to take it off.
+## Skills and the party will get their own pages here in later steps.
 
 const Rpg = preload("res://scripts/data/rpg.gd")
 const Looks = preload("res://scripts/data/looks.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
+const Gear = preload("res://scripts/data/gear.gd")
+const Weapons = preload("res://scripts/data/weapons.gd")
+const Icon = preload("res://scripts/ui/icon.gd")
 
 var _stage: Control
 var _level: Label
@@ -18,6 +25,12 @@ var _points: Label
 var _hint: Label
 var _rows := {}                  ## stat id -> {"button", "value", "total"}
 var _reset: Button
+var page := "stats"              ## "stats" or "gear" (main.gd may set it before the screen builds)
+var _tabs := {}                  ## page -> its button in the top bar
+var _pages := {}                 ## page -> its column
+var _gear_list: VBoxContainer
+var _gear_name: Label
+var _gear_text: Label
 
 
 func build() -> void:
@@ -25,7 +38,19 @@ func build() -> void:
 	add_child(safe)
 	var col := UI.vbox(3)
 	safe.add_child(col)
-	col.add_child(top_bar(Looks.hero_name()))
+	var bar := top_bar(Looks.hero_name())
+	col.add_child(bar)
+	# the two pages, as buttons on the right of the top bar
+	var tabs := UI.hbox(2)
+	tabs.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	tabs.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	bar.add_child(tabs)
+	for t: Array in [["stats", "Stats"], ["gear", "Gear"]]:
+		var tb := UI.button(String(t[1]), _show_page.bind(String(t[0])))
+		tb.name = "tab_" + String(t[0])
+		tb.custom_minimum_size = Vector2(42, 19)
+		tabs.add_child(tb)
+		_tabs[t[0]] = tb
 	var centre := CenterContainer.new()
 	centre.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(centre)
@@ -63,6 +88,7 @@ func build() -> void:
 	var right := UI.vbox(2)
 	right.custom_minimum_size.x = 214
 	cols.add_child(right)
+	_pages["stats"] = right
 	_points = UI.label("", "Gold")
 	right.add_child(_points)
 	for r: Dictionary in Rpg.STATS:
@@ -77,6 +103,8 @@ func build() -> void:
 	_hint.max_lines_visible = 2
 	foot.add_child(_hint)
 	_say("Tap a stat to put a point into it. Monsters give XP; each level gives %d points." % Rpg.POINTS_PER_LEVEL)
+	cols.add_child(_build_gear_page())
+	_show_page(page)
 	refresh()
 	_show.call_deferred()
 	UI.pop_in(cols)
@@ -122,6 +150,163 @@ func _stat_row(r: Dictionary) -> Button:
 	return b
 
 
+# ------------------------------------------------------------------ the Gear page
+func _build_gear_page() -> Control:
+	var right := UI.vbox(2)
+	right.custom_minimum_size = Vector2(214, 126)
+	_pages["gear"] = right
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	right.add_child(scroll)
+	_gear_list = UI.vbox(1)
+	_gear_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_gear_list)
+	var foot := UI.panel("well")
+	right.add_child(foot)
+	var foot_col := UI.vbox(0)
+	foot.add_child(foot_col)
+	_gear_name = UI.label("", "Gold")
+	_gear_name.clip_text = true
+	foot_col.add_child(_gear_name)
+	_gear_text = UI.label("", "Small", 200.0)
+	_gear_text.custom_minimum_size.y = 2.0 * UI.font_body.get_height(UI.size_body)
+	_gear_text.max_lines_visible = 2
+	foot_col.add_child(_gear_text)
+	_gear_say("Gear", "Tap a piece to wear it. Tap it again to take it off.", UI.C_GOLD)
+	return right
+
+
+func _show_page(which: String) -> void:
+	page = which if _pages.has(which) else "stats"
+	for key: String in _pages:
+		(_pages[key] as Control).visible = key == page
+		(_tabs[key] as Button).add_theme_color_override("font_color", UI.C_GOLD if key == page else UI.C_DIM)
+	if page == "gear":
+		_fill_gear()
+
+
+func _gear_say(title: String, text: String, colour: Color = UI.C_GOLD) -> void:
+	_gear_name.text = title
+	_gear_name.add_theme_color_override("font_color", colour)
+	_gear_text.text = text
+
+
+## Rebuilds the list: the weapons, then each slot with the pieces he owns.
+func _fill_gear() -> void:
+	var keep := ""
+	var f := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	if f != null and _gear_list.is_ancestor_of(f):
+		keep = String(f.name)
+	for c in _gear_list.get_children():
+		_gear_list.remove_child(c)
+		c.queue_free()
+	_gear_list.add_child(_gear_head("Weapon"))
+	var carried := String(Weapons.current()["id"])
+	for w: Dictionary in Weapons.LIST:
+		if Weapons.owned(String(w["id"])):
+			_gear_list.add_child(_weapon_row(w, String(w["id"]) == carried))
+	for s: Dictionary in Gear.SLOTS:
+		var slot := String(s["id"])
+		_gear_list.add_child(_gear_head(String(s["name"])))
+		var rows := Gear.owned_rows(slot)
+		if rows.is_empty():
+			var none := UI.label("  None yet. Monsters, chests, bosses and smiths have them.", "Small", 200.0)
+			none.add_theme_color_override("font_color", UI.C_FAINT)
+			_gear_list.add_child(none)
+		for r: Dictionary in rows:
+			_gear_list.add_child(_gear_row(r))
+	if keep != "":
+		var again := _gear_list.get_node_or_null(NodePath(keep))
+		if again is Control:
+			(again as Control).grab_focus.call_deferred()
+
+
+func _gear_head(text: String) -> Control:
+	var l := UI.label(text, "Small")
+	l.add_theme_color_override("font_color", UI.C_DIM)
+	return l
+
+
+## One line: picture, name in its rarity's colour, and WORN when it is on.
+func _line(row_name: String, icon_id: String, title: String, colour: Color, on: bool, tag: String) -> Button:
+	var b := Button.new()
+	b.name = row_name
+	b.theme_type_variation = "Flat"
+	b.custom_minimum_size = Vector2(0, 18)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var row := UI.hbox(4)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 3
+	row.offset_right = -5
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(row)
+	var slot := CenterContainer.new()
+	slot.custom_minimum_size = Vector2(18, 0)
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(slot)
+	var ic := Icon.new()
+	ic.setup(icon_id, Vector2.ZERO, 16.0)
+	slot.add_child(ic)
+	var name_label := UI.label(title)
+	name_label.add_theme_color_override("font_color", colour)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.clip_text = true
+	row.add_child(name_label)
+	var worn := UI.label(tag if on else "", "Gold")
+	row.add_child(worn)
+	return b
+
+
+func _gear_row(r: Dictionary) -> Button:
+	var id := String(r["id"])
+	var b := _line("gear_" + id, String(r["icon"]), String(r["name"]), Gear.color(r), Gear.is_worn(id), "WORN")
+	var about := func() -> void: _gear_say("%s  (%s %s)" % [String(r["name"]), Gear.rarity_name(r), Gear.slot_name(String(r["slot"])).to_lower()], Gear.text_cap(r) + ".", Gear.color(r))
+	b.focus_entered.connect(about)
+	b.pressed.connect(func() -> void:
+		if Gear.is_worn(id):
+			Gear.take_off(String(r["slot"]))
+			Sfx.play("ui_back")
+		else:
+			Gear.wear(id)
+			Sfx.play("ui_start")
+		_gear_changed()
+		about.call())
+	return b
+
+
+func _weapon_row(w: Dictionary, carried: bool) -> Button:
+	var id := String(w["id"])
+	var icon_id := String(w.get("sprite", Looks.sword().get("weapon", "pc_weapon_castle_13")))      # the sword wears the look chosen at the mirror
+	var b := _line("weapon_" + id, icon_id, String(w["name"]), UI.C_BONE, carried, "CARRIED")
+	var numbers := "Damage x%.2f, speed x%.2f." % [float(w.get("damage", 1.0)), float(w.get("rate", 1.0))]
+	var about := func() -> void: _gear_say(String(w["name"]), "%s %s" % [String(w["text"]), numbers], UI.C_BONE)
+	b.focus_entered.connect(about)
+	b.pressed.connect(func() -> void:
+		if carried:
+			about.call()
+		elif is_instance_valid(G.run):
+			# the hero's whole swing is built from his weapon when a level starts
+			Sfx.play("ui_back")
+			_gear_say(String(w["name"]), "Weapons can only be changed in a camp, not inside a level.", UI.C_ORANGE)
+		else:
+			Save.set_setting("weapon", id)
+			Sfx.play("ui_start")
+			_fill_gear()
+			_show()
+			about.call())
+	return b
+
+
+## A piece was put on or taken off: the list, and the knight himself if a level is running.
+func _gear_changed() -> void:
+	if is_instance_valid(G.run) and is_instance_valid(G.run.get("player")):
+		G.run.get("player").call("apply_rpg")
+	_fill_gear()
+
+
+# ------------------------------------------------------------------ the Stats page
 func _spend(id: String) -> void:
 	var why := Rpg.why_not(id)
 	if why != "":

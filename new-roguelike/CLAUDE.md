@@ -46,7 +46,7 @@ The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It st
   pictures to choose from BEFORE wiring her in. Tasteful, adult, never AI-made.
 - **Gear = all three ways**: monster drops, chests and bosses, shops; Common / Rare / Epic.
 - **Size: medium.** Build in steps, an APK after each: 1 levels and XP (DONE, v0.11.0), 2 gear and an
-  inventory screen, 3 skills and mana, 4 the companion, 5 roaming monsters and the Zelda-style
+  inventory screen (DONE, v0.12.0), 3 skills and mana, 4 the companion, 5 roaming monsters and the Zelda-style
   dungeons (keys, boss key), then a balance pass.
 - The owner's standing rules: few agents, one light tester, no re-checking what already passed; small
   64-bit APK sent in a message BY ITSELF, screenshots in a separate message; never a greyed-out
@@ -675,6 +675,34 @@ you can travel faster." What was built:
 - The flow test (`--uitour=flow`) now has **57 checks** (9 new ones for the Knight screen).
 - Removed five stale `hub_fire_c_f5..9.png.import` files (their pictures were deleted long ago and
   every camp visit printed load errors).
+
+## v0.12.0 (12 Nov 2026): RPG step 2, gear and the Gear page
+- **`scripts/data/gear.gd`**: 23 pieces in three slots (helmet, armour, ring) and three rarities
+  (Common white, Rare blue, Epic purple). Every key of a row is explained at the top of the file.
+  A piece is found ONCE and owned for ever (`gear:<id>`), one is worn per slot (`worn:<slot>`); a
+  second copy is sold for coins on the spot. The first piece found for an empty slot is put on at once.
+- **What gear can do:** `hp` (hearts), `shield` (blue hearts at the start of each level), `ward`
+  (chance a blow glances off; hits are whole half hearts, so "less damage" would do nothing; capped
+  at `WARD_CAP` 50%), `mods` (damage, swing speed, walking speed, coins, luck), `xp`, `guard`.
+  `player.gd apply_rpg()` applies it together with the stat points (stats layer "gear", `glance`).
+- **Where it comes from:** monsters (`DROP_MONSTER` 1.2%, elites 10%), chests (12%, rich 35%), every
+  boss and champion (always one piece: Rare, 40% Epic; `run.gd _boss_gear()`), and the smiths
+  ("Helmets, armour and rings" -> `hub.gd shelf_info()`, the 3 cheapest pieces not owned, priced
+  rows only, by camp: `Gear.CAMP_TIER`). A piece on the floor is a pickup with the id `gear:<id>`
+  (`pickup.gd`); `run.gd found_gear()` hands it over and shows the banner. A row's `"tier"` says how
+  deep in the world it first turns up (`run.gear_tier()` = the level's monster strength, 0 to 3).
+- **Pictures:** Raven Fantasy Icons again (the pack the item icons come from), listed in `EXTRA` of
+  `tools/import_icons.py` and written as `assets/art/icons/gear_*.png`, byte for byte. The pack's zip
+  is in git now (`assets_raw/icons/raven_fantasy_icons/`; it was lost with a cloud session once). To
+  browse the pack for more pictures (skills: spell icons are numbers 737 to 1060) draw a numbered
+  sheet from the zip's `Separated Files/16x16/fa<n>.png`.
+- **The Gear page** of the Knight screen (`knight.gd`, buttons Stats / Gear in the top bar): weapons
+  (carried one marked; they can only be changed in a camp, and the row says so inside a level), then
+  each slot's pieces. Tap = wear, tap again = take off; the box below says what it does.
+- **Test flags:** `--gearrain` (half the monsters drop a piece). The bot prints `[rpg] gear <id>`.
+- The flow test has **64 checks** now. `dev/validate.gd` checks every gear row (slot, picture, effect).
+- **Guesses to check by playing:** drop rates (the bot found about one piece per level plus the
+  boss's), prices against how many coins a level pays, how strong `ward` feels.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

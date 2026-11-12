@@ -11,6 +11,7 @@ extends Node2D
 ## Test flag: --lockchests makes every chest a locked one (to look at it).
 
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 
 const BLOCK_RADIUS := 7.0
 const BLOCK_HALF_WIDTH := 12.0     ## the chest pictures are 28-32 px wide
@@ -166,6 +167,11 @@ func _spill() -> void:
 	if rich:
 		room.drop("coin5", position + Vector2(0, 6))
 	room.run.fx.burst(position - Vector2(0, 6), [Color(1, 0.9, 0.4), Color(1, 1, 0.8)], 10, 60.0, 0.45, 2.0)
+	var hero: Variant = room.run.player
+	if is_instance_valid(hero) and (hero.hero as Dictionary).has("melee") and room.run.get("training") != true and randf() < (Gear.DROP_CHEST_RICH if rich else Gear.DROP_CHEST):
+		var piece := Gear.roll_common(room.run.gear_tier(), 4.0 if rich else 0.0)       # a rich chest: Rare more often
+		if piece != "":
+			room.drop("gear:" + piece, position + Vector2(0, 8))
 	if randf() < (ITEM_CHANCE_RICH if rich else ITEM_CHANCE):
 		var item: String = room.run.take_item("treasure", room.rng)
 		if item != "":

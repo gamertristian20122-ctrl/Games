@@ -6,6 +6,7 @@ extends RefCounted
 
 const Layouts = preload("res://scripts/data/room_layouts.gd")
 const Items = preload("res://scripts/data/items.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 const ItemEffects = preload("res://scripts/run/item_effects.gd")
 const Unlocks = preload("res://scripts/data/unlocks.gd")
 ## Every item pool must hold at least this many items on a brand-new save (locked ones not counted),
@@ -91,6 +92,25 @@ static func curse(host: Node) -> Array[String]:
 
 static func all() -> Array[String]:
 	var out: Array[String] = layout_checks()
+	# ---- gear (scripts/data/gear.gd): a picture, a known slot, and every tier has Common and Rare pieces
+	var slots: Array = []
+	for sl: Dictionary in Gear.SLOTS:
+		slots.append(String(sl["id"]))
+	var seen_gear := {}
+	for g: Dictionary in Gear.LIST:
+		var gid := String(g["id"])
+		if seen_gear.has(gid):
+			out.append("gear %s: two rows share this id" % gid)
+		seen_gear[gid] = true
+		if not (String(g.get("slot", "")) in slots):
+			out.append("gear %s: unknown slot '%s'" % [gid, String(g.get("slot", ""))])
+		if not Art.has(String(g.get("icon", ""))):
+			out.append("gear %s: picture '%s' is missing (add it to EXTRA in tools/import_icons.py, run it, then the Godot import)" % [gid, String(g.get("icon", ""))])
+		if Gear.text(g) == "":
+			out.append("gear %s: it does nothing" % gid)
+	for rarity in 2:
+		if Gear.roll(0, rarity) == "":
+			out.append("gear: the first tier has no piece of rarity %d" % rarity)
 	# ---- items
 	var pool_sizes := {}
 	for id: String in Items.ALL:

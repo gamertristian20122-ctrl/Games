@@ -22,6 +22,7 @@ const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -149,17 +150,24 @@ func setup(the_run: Node, hero_id: String) -> void:
 ## RPG: turns the knight's stat points (scripts/data/rpg.gd) into numbers. Called at the start of
 ## a level, and again whenever a point is spent on the Knight screen in the middle of one.
 ## Vitality gives health at once (the new half heart comes filled).
+## The gear he wears (scripts/data/gear.gd) goes through here too: its stats layer "gear", its
+## hearts, the chance that a blow glances off, and (at the start of a level) its blue hearts.
 var _rpg_hp := 0
+var glance := 0.0                ## chance that a blow glances off his armour (Gear.ward())
 func apply_rpg(fresh: bool = false) -> void:
 	if not hero.has("melee"):
 		return
 	stats.set_layer("rpg", Rpg.mods())
-	var more := Rpg.bonus_hp() - _rpg_hp
+	stats.set_layer("gear", Gear.mods())
+	glance = Gear.ward()
+	if fresh:
+		armor = mini(armor + Gear.shield(), MAX_ARMOR)
+	var more := Rpg.bonus_hp() + Gear.bonus_hp() - _rpg_hp
 	if more != 0:
 		_rpg_hp += more
 		max_hp = clampi(max_hp + more, 2, MAX_HP)
 		hp = clampi(hp + maxi(more, 0), 1, max_hp)
-	_block_cool = maxf((BLOCK_COOLDOWN + Upgrades.block_cooldown()) * Rpg.guard_mult(), 1.5)
+	_block_cool = maxf((BLOCK_COOLDOWN + Upgrades.block_cooldown()) * Rpg.guard_mult() * Gear.guard_mult(), 1.5)
 	if not fresh:
 		G.hud_changed.emit()
 
@@ -663,6 +671,12 @@ func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 		run.fx.ring(position - Vector2(0, _mid), 6.0, 24.0, 0.3, Color(0.6, 0.85, 1.0), 2.0)
 		Sfx.play("shot_hit_wall", -2.0)
 		queue_redraw()
+		return
+	if glance > 0.0 and randf() < glance:
+		# the blow glances off his armour (gear's "ward"): sparks, a clink, a moment of safety
+		invuln = 0.4
+		run.fx.burst(position - Vector2(0, _mid), [Color(1, 1, 1), Color(0.8, 0.85, 0.95)], 5, 70.0, 0.2, 1.8)
+		Sfx.play("shot_hit_wall", -3.0, 0.06, 1.5)
 		return
 	var amount := maxi(1, int(round(float(half_hearts) * stats.v("hurt_mult"))))
 	var ransom := int(stats.flag("coin_ward"))       # Ransom Plate: the hit is paid in coins while the purse can

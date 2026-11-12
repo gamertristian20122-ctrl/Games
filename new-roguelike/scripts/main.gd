@@ -42,6 +42,7 @@ const Story = preload("res://scripts/data/story.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Shop = preload("res://scripts/data/shop.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
@@ -357,6 +358,16 @@ func _on_action(what: String, arg: Variant) -> void:
 			if not Weapons.owned(String(arg)) and Upgrades.coins() >= int(w.get("price", 9999)):
 				Save.hub_set("bank:coins", Upgrades.coins() - int(w["price"]))
 				Weapons.grant(String(arg))
+				Sfx.play("ui_start")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("retalk")
+		"hub_shelf":
+			close_top()
+			if is_instance_valid(hub):
+				open("hub_talk", {"info": hub.call("shelf_info", String(arg))})
+		"hub_gear":
+			if Gear.buy(String(arg)):
 				Sfx.play("ui_start")
 			close_top()
 			if is_instance_valid(hub):

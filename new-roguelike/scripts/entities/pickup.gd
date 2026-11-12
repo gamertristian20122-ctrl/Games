@@ -5,6 +5,7 @@ extends Node2D
 ## desc: {"id": "coin", "pos": Vector2, "pop": bool}
 
 const Pickups = preload("res://scripts/data/pickups.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 
 const MAGNET_RANGE := 28.0
@@ -21,6 +22,7 @@ var lift := 0.0
 var lift_v := 0.0
 var bounces := 0
 var age := 0.0
+var gear_id := ""               ## set when this pickup is a piece of gear ("gear:<id>")
 var _bob := 0.0
 var _ground_y := 0.0
 
@@ -29,11 +31,15 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	room = the_room
 	id = String(desc.get("id", "coin"))
 	info = Pickups.info(id)
+	if id.begins_with("gear:"):
+		# a piece of gear lying on the floor (scripts/data/gear.gd): its own icon, picked up like a coin
+		gear_id = id.substr(5)
+		info = {"sprite": [String(Gear.row(gear_id).get("icon", "prop_gem"))], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {}, "kind": "gear", "sfx": "key_pickup"}
 	position = desc.get("pos", G.ROOM_CENTER)
 	var s := float(info.get("scale", 1.0))
 	var shadow := EnemyScript.make_shadow(float(info.get("shadow", 8.0)) * s)
 	add_child(shadow)
-	var sprite_id := Pickups.sprite_for(id)
+	var sprite_id := Pickups.sprite_for(id) if gear_id == "" else String(info["sprite"][0])
 	sprite = Art.sprite(sprite_id, "default")
 	sprite.scale = Vector2(s, s)
 	sprite.modulate = info.get("tint", Color(1, 1, 1))
@@ -44,7 +50,7 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	if sprite.sprite_frames.get_frame_count("default") > 1:
 		sprite.frame = randi() % sprite.sprite_frames.get_frame_count("default")
 	add_child(sprite)
-	if String(info.get("kind", "")) == "heart":
+	if String(info.get("kind", "")) in ["heart", "gear"]:
 		_add_plate()
 	_bob = randf() * 6.0
 	if desc.get("pop", false):
@@ -112,6 +118,12 @@ func _physics_process(delta: float) -> void:
 
 
 func _collect(player: Node) -> void:
+	if gear_id != "":
+		Sfx.play("key_pickup", -6.0)
+		room.run.fx.burst(position - Vector2(0, 4), [Color(1, 1, 1), Gear.color(Gear.row(gear_id))], 8, 45.0, 0.4, 1.8)
+		room.run.found_gear(gear_id)
+		room.remove_thing(self)
+		return
 	var give: Dictionary = info.get("give", {})
 	var coins: int = player.give(give)
 	var amount := 1

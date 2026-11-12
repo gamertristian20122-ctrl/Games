@@ -19,6 +19,7 @@ const Hub = preload("res://scripts/data/hub.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Quests = preload("res://scripts/data/quests.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Places = preload("res://scripts/data/places.gd")
 const Shop = preload("res://scripts/data/shop.gd")
@@ -1052,6 +1053,8 @@ func _talk(index: int) -> void:
 					"off": Upgrades.coins() < int(w["price"]), "why": _poor(int(w["price"]))})
 			else:
 				info["lines"].append(["%s: %s." % [w["name"], w["how"]], UI.C_FAINT])
+		# helmets, armour and rings (scripts/data/gear.gd) have a window of their own: shelf_info()
+		info["options"].append({"text": "Helmets, armour and rings", "what": "hub_shelf", "arg": String(row.get("name", "The smith"))})
 	if sells:
 		info["lines"].append(["Camp chest: %d coins. What you carry out of the hill goes in (half if you fall)." % Upgrades.coins(), UI.C_GOLD])
 	# heard it already this visit and nothing new: straight to the choices
@@ -1059,6 +1062,23 @@ func _talk(index: int) -> void:
 		info["pages"] = []
 	_talked[id] = true
 	action.emit("talk", info)
+
+
+## The smith's shelf of gear: the cheapest few pieces he can make here that the knight does not
+## own yet (scripts/data/gear.gd shelf(); a camp further out has better ones).
+func shelf_info(who: String) -> Dictionary:
+	var info := {"name": who, "title": "helmets, armour, rings", "pages": [], "lines": [], "options": []}
+	var shelf := Gear.shelf(int(Gear.CAMP_TIER.get(place_id, 0)))
+	shelf.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["price"]) < int(b["price"]))
+	for g: Dictionary in shelf.slice(0, Gear.SHELF_SIZE):
+		var cost := int(g["price"])
+		info["lines"].append(["%s, %s: %s" % [g["name"], Gear.rarity_name(g).to_lower(), Gear.text(g)], Gear.color(g)])
+		info["options"].append({"text": "%s: %d coins" % [g["name"], cost], "what": "hub_gear", "arg": g["id"], "off": Upgrades.coins() < cost, "why": _poor(cost)})
+	if shelf.is_empty():
+		info["lines"].append(["The shelf is bare: you own every piece made here. Monsters, chests and bosses carry others.", UI.C_DIM])
+	else:
+		info["lines"].append(["Camp chest: %d coins. Wear what you buy: tap Lv, then Gear." % Upgrades.coins(), UI.C_GOLD])
+	return info
 
 
 ## Why a thing cannot be bought, and where coins come from.

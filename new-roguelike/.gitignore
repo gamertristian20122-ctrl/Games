@@ -10,5 +10,7 @@ assets_raw/paid_pixel_crawler/x/
 assets_raw/_paid_previews/
 # The purchased art zips must be kept (the top-level .gitignore skips *.zip).
 !assets_raw/paid_pixel_crawler/zips/*.zip
+# The free icon pack (item, gear and skill pictures are cut from it by tools/import_icons.py).
+!assets_raw/icons/raven_fantasy_icons/*.zip
 # Free boss packs chosen for the game: their (trimmed) original archives are kept too.
 !assets_raw/bosses/**/*.zip

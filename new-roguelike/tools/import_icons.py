@@ -92,8 +92,37 @@ ICONS = {
 }
 
 
+# Pictures that are not items of scripts/data/items.gd: written as <key>.png (same pack, same rules).
+# GEAR (scripts/data/gear.gd, v0.12.0): helmets, armour and rings. The key is the row's "icon".
+EXTRA = {
+    "gear_cap_iron": (2052, "open grey helm"),
+    "gear_helm_soldier": (1905, "steel helm"),
+    "gear_helm_bronze": (1906, "bronze helm"),
+    "gear_helm_warden": (1908, "green helm"),
+    "gear_helm_ember": (1909, "orange helm"),
+    "gear_helm_visor": (2053, "grey visored helm"),
+    "gear_helm_gilded": (1911, "golden helm"),
+    "gear_vest_padded": (2049, "grey vest"),
+    "gear_plate_steel": (1921, "steel breastplate"),
+    "gear_plate_bronze": (1922, "bronze breastplate"),
+    "gear_mail_chain": (2050, "grey harness"),
+    "gear_plate_warden": (1924, "green breastplate"),
+    "gear_plate_ember": (1925, "orange breastplate"),
+    "gear_plate_gilded": (1934, "golden breastplate"),
+    "gear_plate_knight": (1935, "heavy steel plate"),
+    "gear_ring_silver": (1843, "silver band"),
+    "gear_ring_gold": (1844, "gold band"),
+    "gear_ring_iron": (2061, "iron ring"),
+    "gear_ring_ruby": (1845, "gold ring, red stone"),
+    "gear_ring_emerald": (1846, "ring, green stone"),
+    "gear_ring_sapphire": (1847, "ring, blue stone"),
+    "gear_ring_jade": (2062, "iron ring, big green stone"),
+    "gear_ring_ember": (2186, "ring of red and gold"),
+}
+
+
 def main() -> None:
-    numbers = [n for n, _ in ICONS.values()]
+    numbers = [n for n, _ in ICONS.values()] + [n for n, _ in EXTRA.values()]
     twice = sorted({n for n in numbers if numbers.count(n) > 1})
     if twice:
         sys.exit("two items share picture(s) %s" % twice)
@@ -117,14 +146,24 @@ def main() -> None:
                 with open(path, "wb") as f:
                     f.write(data[item])
             table[item] = {"file": inside, "shows": what}
+    extra = {}
+    with zipfile.ZipFile(ZIP) as z:
+        for key in sorted(EXTRA):
+            number, what = EXTRA[key]
+            blob = z.read(INSIDE % number)
+            path = os.path.join(OUT, "%s.png" % key)
+            if not os.path.exists(path) or open(path, "rb").read() != blob:
+                with open(path, "wb") as f:
+                    f.write(blob)
+            extra[key] = {"file": INSIDE % number, "shows": what}
     out = {"pack": "Raven Fantasy Icons (free version) by Clockwork Raven",
            "url": "https://clockworkraven.itch.io/raven-fantasy-icons",
            "archive": "assets_raw/icons/raven_fantasy_icons/Free - Raven Fantasy Icons.zip",
-           "icons": table}
+           "icons": table, "extra": extra}
     with open(os.path.join(OUT, "icons.json"), "w", newline="\n") as f:
         json.dump(out, f, indent=1, sort_keys=True)
         f.write("\n")
-    print("%d icons written to %s" % (len(table), OUT))
+    print("%d item icons and %d other pictures written to %s" % (len(table), len(extra), OUT))
     if "--sheet" in sys.argv:
         from PIL import Image, ImageDraw
         sheet_dir = sys.argv[sys.argv.index("--sheet") + 1]
