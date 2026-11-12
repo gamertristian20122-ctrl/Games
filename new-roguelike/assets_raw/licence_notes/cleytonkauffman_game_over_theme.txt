@@ -1,0 +1,24 @@
+Pack: Game Over Theme ("No Hope (You died)", contemporary and retro versions)
+Page: https://opengameart.org/content/game-over-theme
+Author: Cleyton Kauffman (https://opengameart.org/users/cleytonkauffman)
+Published on the page: 2015-12-29
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/). No readme is bundled in the zip.
+
+Human-made evidence: Published in 2015, years before generative music tools existed. Page text, verbatim: "Music: No Hope (You died). Contemporary & Retro version. Included MP3, WAV and OGG format." Page tags: game over, jrpg, RPG, lose, lost, died, dead, piano, retro, Continue, RIP.
+AI check: published before 2022; the page text, tags and bundled files were searched for AI / generative / Suno / Udio / "generated" wording and none was found.
+
+Original download(s), kept untouched in original/:
+  GameOver-Music.zip
+    from https://opengameart.org/sites/default/files/GameOver-Music.zip
+    sha256 53d0e0628847e1540c2f45777cddc46e79136be15a84f0b48c1f62134bb4ef3e  (6093468 bytes)
+
+Files used for the game set (extracted unchanged into used/):
+  No Hope.wav  (zip path: GameOver-Music/No Hope.wav, the contemporary version)
+
+Game-ready files made from this source:
+  ../../music/gameover.ogg
+
+Processing for the game-ready file in ../../music/: leading/trailing silence trimmed (below -55 dB), one fixed gain to reach about -16 LUFS integrated, peak limiter only if the gain would push peaks above -1 dBFS, stereo 44.1 kHz Ogg Vorbis at about 100 kbps. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.

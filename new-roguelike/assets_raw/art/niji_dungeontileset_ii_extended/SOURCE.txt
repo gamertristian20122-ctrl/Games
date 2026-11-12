@@ -1,0 +1,46 @@
+PACK        : Dungeon Tileset II Extended, version 1.1   (ADD-ON to 0x72 DungeonTileset II)
+URL         : https://nijikokun.itch.io/dungeontileset-ii-extended
+              (linked by 0x72 himself on https://0x72.itch.io/dungeontileset-ii : "more tiles more items!")
+AUTHOR      : Niji (itch.io user nijikokun)
+LICENCE     : CC0 1.0 Universal - commercial use OK, no credit required
+PRICE       : free ("name your own price", $0 accepted). Nothing was paid, no account used.
+
+EXACT LICENCE TEXT (copied from the itch.io page on the download date)
+  Description : "This 16x16 dungeon tileset is FREE for anyone to use (CC-0)!"
+                "This tileset is an extension to Dungeon Tileset II by 0x72. While it is an extension it does
+                 include all of the original assets for ease of use."
+                "Credit is not necessary but you can if you would like!"
+  Info panel  : "Asset license: Creative Commons Zero v1.0 Universal"
+  The zip contains no readme. Page copy saved next to this file: SOURCE_page_snapshot.html
+
+DATES
+  Published   : v1.0 upload 2022-03-14 19:13 UTC; v1.1 upload 2022-03-19 17:14 UTC (devlog 2022-03-19)
+  Downloaded  : 2026-11-10 23:54 UTC (date -u), straight from the itch.io CDN
+
+HUMAN-MADE EVIDENCE
+  - itch.io info panel "Content: No generative AI was used"; "no-ai" tag.
+  - Published March 2022, before public image generators were released (mid/late 2022).
+  - Ships the artist's Aseprite source file (dungeontileset-extended.ase, 1024x1024, RGBA) and a palette PNG;
+    page lists "Made with: Aseprite, Pyxel Edit, Tiled ...".
+  - Drawn directly on top of 0x72's sheet: 56 of its 68 opaque colours are 0x72's exact palette colours.
+
+WHAT IT ADDS (the reason it is kept)
+  keys (2), key holes, bags (4), single coin, bomb, potion recolours (8), pink hearts,
+  animated wall torch (8 frames) + unlit torch + glow, animated floor torch (8 frames), bare flame (8 frames),
+  wall signs and sign posts, single-leaf doors (closed/open), ladder, sewer pipe and grate wall tiles,
+  ascending staircases (stone / red carpet / torn / grey), carpets and rugs, plant overlays.
+
+FILES KEPT
+  dungeontiles-extended v1.1.zip   original download, 115199 bytes
+                                   sha256 baccb8d4ff8b743dc42f7756a5946387fd05c3f007403c8aaefc76d181880b9a
+  dungeontiles-extended v1.0.zip   older upload kept for reference only (not extracted), 50206 bytes
+                                   sha256 17e939b7a8a352e54f6e7b0bdaf4d3887ae0d4509392a45a77fb6c747ddba0c5
+  dungeontiles-extended v1.1/      the v1.1 zip extracted unchanged:
+      dungeontileset-extended.png            1024x1024 atlas (content in the top-left 923x432)
+      dungeontileset-extended.ase            Aseprite source
+      dungeontileset-extended-palette.png    palette
+
+NOTE ON THE MANIFEST
+  The pack ships ONE atlas and no coordinates file. The rectangles in ../manifest.json (ids starting "niji_")
+  were measured by hand on the 16 px grid and checked on the contact sheets. Only the NEW sprites are catalogued;
+  the copies of 0x72's original sprites inside this atlas are ignored (use the 0x72 pack for those).

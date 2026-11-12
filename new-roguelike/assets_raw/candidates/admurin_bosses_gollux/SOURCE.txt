@@ -1,0 +1,18 @@
+CANDIDATE (not yet used in the game): Bosses - Gollux (rock golem)
+Downloaded: 2026-11-11 (free)
+Author: Admurin  https://admurin.itch.io/bosses-gollux
+
+Contents (page): "Idle (5 frames), Move (8 frames), Attack A (17 frames), Attack B (19 frames), Healing (25 frames),
+Hurt (4 frames)", side view, 384x128 sheets cells (idle is 128x128 cells), drawn sprite about 65x60 px. No death animation.
+
+Licence (page): "You can use this asset in any game project, personal or commercial DO NOT resell or redistribute
+AS A GAME ASSET, it has to be part of a project Credit not necessary but appreciated, if you do you can link to my
+ITCH profile Modify to suit your needs You are NOT allowed to turn any of my assets to an NFT. You are NOT allowed to
+use these assets to train AI."
+
+Human-made evidence: itch.io label "No generative AI was used"; the page says "Patrons get weekly content like this!";
+his paid Mega Pack file is named 80_Monster_Packs.zip; the licence forbids AI training on the art.
+
+Match with Pixel Crawler: same pixel density, flat chunky shading and dark outline like Pixel Crawler; colours are
+dark and low-contrast. Picture:
+/tmp/claude-0/-home-user/5364784e-e756-5c67-b396-0f57c4c58bac/scratchpad/match/pics/cmp_admurin_mono_ck.png

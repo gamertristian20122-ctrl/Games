@@ -1,0 +1,12 @@
+Pack: Pixel Art Spells
+Author: DevWizard (OpenGameArt user)
+Source URL: https://opengameart.org/content/pixel-art-spells
+Download URL: https://opengameart.org/sites/default/files/pixelart_spells_1.zip
+Original archive: pixelart_spells_1.zip sha256 bf6e751559942aad40a50359ab5ae8f9750054546de0b21b4519d39904e163cb
+Licence: CC0 1.0 (public domain dedication)
+Licence quote (page licence field): "License(s): CC0"  -> http://creativecommons.org/publicdomain/zero/1.0/
+Licence quote (page description): "I mostly used assets from here, but I noticed that there were barely any CC0 pixel art spells. I learned how to do pixelart and made these to use in my game. I decided to share them here too."
+Published: 2024-03-21 (OpenGameArt submission date); files inside the zip dated 2024-02-28 .. 2024-04-01
+Retrieved: 2026-11-11
+Human-made evidence: Newer than 2022, so positive evidence recorded: the author states on the page "I learned how to do pixelart and made these to use in my game" (his own game, Dungeon Delve); every sprite ships with its editable Aseprite source (.ase, 16x16 canvas, 4-8 hand-placed frames, headers checked); flat 3-5 colour pixel art with no gradients or noise. No AI label or AI wording on the page.
+Notes: 16x16 frames, horizontal strips. "Black And White" variants are meant to be tinted in engine. Darkness Bolt / Darkness Orb are near-black and need an outline or glow to read on a dark floor.

@@ -1,0 +1,30 @@
+Pack: 512 Sound Effects (8-bit style) / The Essential Retro Video Game Sound Effects Collection [512 sounds]
+Page: https://opengameart.org/content/512-sound-effects-8-bit-style
+Author: Juhani Junkala (SubspaceAudio)  (https://opengameart.org/users/subspaceaudio)
+Published on the page: 2016-04-07
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/); bundled INFO.txt, verbatim: "These sound effects have been released under CC0 creative commons license. You can do anything you want with these sounds."
+
+Human-made evidence: Bundled INFO.txt: "Hi, I'm Juhani Junkala, the author of this collection. I'm a classically trained composer, producer and a sound designer with over 20 years of experience."
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  The Essential Retro Video Game Sound Effects Collection [512 sounds].zip
+    from https://opengameart.org/sites/default/files/The%20Essential%20Retro%20Video%20Game%20Sound%20Effects%20Collection%20%5B512%20sounds%5D.zip
+    sha256 6d4519229c6e2c9e09502cd4967940052f68664140549a467615b56bdfd1d031  (20582855 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/Death Screams/Human/sfx_deathscream_human5.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/General Sounds/Menu Sounds/sfx_menu_move1.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/General Sounds/Menu Sounds/sfx_menu_select1.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/General Sounds/Negative Sounds/sfx_sounds_damage1.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/General Sounds/Negative Sounds/sfx_sounds_damage3.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/General Sounds/Negative Sounds/sfx_sounds_error3.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/General Sounds/Pause Sounds/sfx_sounds_pause1_out.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/General Sounds/Positive Sounds/sfx_sounds_powerup8.wav
+  The Essential Retro Video Game Sound Effects Collection [512 sounds] By Juhani Junkala/Movement/Portals and Transitions/sfx_movement_portal3.wav
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

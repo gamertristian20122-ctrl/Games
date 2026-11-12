@@ -1,0 +1,39 @@
+config_version=5
+
+[application]
+
+config/name="Hollow Hill"
+config/icon="res://icon.png"
+config/version="0.10.0"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[autoload]
+
+G="*res://scripts/core/g.gd"
+Art="*res://scripts/core/art.gd"
+Controls="*res://scripts/core/controls.gd"
+Sfx="*res://scripts/core/sfx.gd"
+Save="*res://scripts/core/save.gd"
+
+[display]
+
+window/size/viewport_width=320
+window/size/viewport_height=180
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.03, 0.03, 0.05, 1)

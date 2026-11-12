@@ -1,0 +1,21 @@
+Pack: Game Over II (one FLAC, 21 s)
+Page: https://opengameart.org/content/game-over-ii
+Author: Kistol (https://opengameart.org/users/kistol)
+Published on the page: 2013-10-12
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/); Copyright/Attribution Notice on the page, verbatim: "Music by Kistol, but credit is not required."
+
+Human-made evidence: Published in 2013, years before generative music tools existed. Page text, verbatim: "Another super exaggerated, overly tragic "Game Over" theme. Ogg version encoded at q0.5 / 160kbps vbr." Page tags: sad, game over, strings.
+AI check: published before 2022; the page text, tags and bundled files were searched for AI / generative / Suno / Udio / "generated" wording and none was found.
+
+Original download(s), kept untouched in original/:
+  Game Over II_0.flac
+    from https://opengameart.org/sites/default/files/Game%20Over%20II_0.flac
+    sha256 a7bf2248dc73ac3f7272182e2672a951a18d8e71aacf871c8b29eceacff5bc88  (3943561 bytes)
+
+Game-ready files made from this source:
+  ../../music/alt/gameover_alt_game_over_ii.ogg
+
+Processing for the game-ready file in ../../music/: leading/trailing silence trimmed (below -55 dB), one fixed gain to reach about -16 LUFS integrated, peak limiter only if the gain would push peaks above -1 dBFS, stereo 44.1 kHz Ogg Vorbis at about 100 kbps. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.

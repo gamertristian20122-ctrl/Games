@@ -1,0 +1,33 @@
+Pack: JRPG Pack 3 Evil (5 loops: Ancient Evil Awakens, Catacombs, Apocalypse, Witch's Lair, Whispers From Beyond)
+Page: https://opengameart.org/content/jrpg-pack-3-evil
+Author: Juhani Junkala, posting as SubspaceAudio (https://opengameart.org/users/subspaceaudio, https://juhanijunkala.com/)
+Published on the page: 2017-05-12
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/); bundled INFO.txt, verbatim: "Hi, I'm Juhani Junkala, the author of this music collection. I'm a classically trained composer, producer and a sound designer with over 20 years of experience. These music tracks have been released under CC0 creative commons license. You can do anything you want with these tunes."
+
+Human-made evidence: Published in 2017 (zip entries dated 2017-05-12 to 2017-05-22), years before generative music tools existed. The bundled INFO.txt is signed by the composer: "I'm a classically trained composer, producer and a sound designer with over 20 years of experience." Page tags: jrpg, RPG, evil, devil, destruction, horror, scary, dark.
+AI check: published before 2022; the page text, tags and bundled files were searched for AI / generative / Suno / Udio / "generated" wording and none was found.
+
+Original download(s), kept untouched in original/:
+  JRPG Music Pack #3 [Evil] by Juhani Junkala.zip
+    from https://opengameart.org/sites/default/files/JRPG%20Music%20Pack%20%233%20%5BEvil%5D%20by%20Juhani%20Junkala.zip
+    sha256 9f01fafed371d5f5cfdc29fcd4f2df117d4cf733633f667e66c1839f45f7ac71  (12655665 bytes)
+
+Files used for the game set (extracted unchanged into used/):
+  Evil1 - Ancient Evil Awakens.ogg
+  Evil2 - Catacombs.ogg
+  Evil3 - Apocalypse.ogg
+  Evil4 - Witch's Lair.ogg
+  Evil5 - Whispers From Beyond.ogg
+  INFO.txt
+
+Game-ready files made from this source:
+  ../../music/title.ogg  <- Evil1 - Ancient Evil Awakens.ogg
+  ../../music/floor1.ogg <- Evil2 - Catacombs.ogg
+  ../../music/floor2.ogg <- Evil4 - Witch's Lair.ogg
+  ../../music/floor3.ogg <- Evil3 - Apocalypse.ogg
+  ../../music/alt/floor_alt_whispers_from_beyond.ogg <- Evil5 - Whispers From Beyond.ogg
+
+Processing for the game-ready files in ../../music/: decode, one fixed gain per track to reach about -16 LUFS integrated (no compressor, no dynamic loudness filter), stereo 44.1 kHz Ogg Vorbis at about 100 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.

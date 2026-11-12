@@ -1,0 +1,27 @@
+CANDIDATE (not yet used in the game): Legacy Collection - FREE 16-bit Pixel Art Assets
+Downloaded: 2026-11-11 (free file "Legacy Collection.zip", 20 MB; the paid "Legacy Collection plus" was not downloaded)
+Author: ansimuz (Luis Zuno)  https://ansimuz.itch.io/gothicvania-patreon-collection   (page updated 27 October 2026)
+
+Licence, from public-license.pdf inside the zip:
+  "All assets included in this package are licensed under the Creative Commons Zero (CC0) license, which means you
+   can use them freely in any project, whether personal or commercial, without the need for attribution. There are no
+   restrictions on use, modification, or redistribution of these assets."
+Page: "Free for commercial projects."
+
+Human-made evidence: itch.io label "No generative AI was used"; page says "made by a solo dev with 15+ years of
+pixel art" and "1,000+ hand-drawn frames"; Aseprite/PSD sources are inside the zip.
+
+Boss-sized creatures inside (Assets/Gothicvania/Characters/...), sizes are the drawn sprite:
+- Ogre 44x58 (64x58 with club): idle 4, walk 6, attack 7 frames (armed and unarmed sets)
+- demon-Files 134x124 winged skull demon: idle 6, attack 18, breath attack 18 frames
+- Hell-Beast 44x60: idle 6, burn 6, breath 4 frames + fireball
+- Fire-Skull 68x78: 8-frame loop (and 4 frames without fire)
+- Nightmare 91x81 flaming horse: idle 4, run 3 frames
+- Grotto-escape-2-boss-dragon 71x39: idle 6, breath 7, tail 8 frames
+None of them has hurt or death frames (use a code flash/fade).
+Also inside: Assets/TinyRPG/Characters/Battle Sprites (front-facing battlers, idle only; judged too detailed).
+
+Match with Pixel Crawler: same pixel density; Ogre and Fire-Skull sit well; the Demon is darker and lower contrast.
+Pictures:
+/tmp/claude-0/-home-user/5364784e-e756-5c67-b396-0f57c4c58bac/scratchpad/match/pics/cmp_ansimuz_legacy.png
+/tmp/claude-0/-home-user/5364784e-e756-5c67-b396-0f57c4c58bac/scratchpad/match/pics/cmp_ansimuz_tinyrpg_battlers.png

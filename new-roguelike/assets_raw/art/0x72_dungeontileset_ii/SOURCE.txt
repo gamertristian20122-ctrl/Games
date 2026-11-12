@@ -1,0 +1,53 @@
+PACK        : 16x16 DungeonTileset II, version 1.7   (PRIMARY ART PACK)
+URL         : https://0x72.itch.io/dungeontileset-ii
+AUTHOR      : 0x72 (signs the page "Robert"), itch.io profile https://0x72.itch.io
+LICENCE     : CC0 1.0 Universal (public domain dedication) - commercial use OK, no credit required
+PRICE       : free ("name your own price", $0 accepted). Nothing was paid, no account used.
+
+EXACT LICENCE TEXT (copied from the itch.io page on the download date)
+  Description : "You can use this tileset for whatever you like (CC-0)."
+                "Credit is not necessary, but if you create something using this tileset I'd be happy
+                 to see your work (you can comment with a link)."
+                "That being said, you can still credit me if you feel like :)"
+  Info panel  : "Asset license: Creative Commons Zero v1.0 Universal"
+  The README inside the zip only explains the autotile atlases; it contains no licence text.
+  A copy of the page as downloaded is saved next to this file: SOURCE_page_snapshot.html
+
+DATES
+  First published : not shown on the itch.io page. Proof it existed long before 2022:
+                    oldest devlog post on the page is dated 2019-07-29 08:10 UTC; the upload
+                    pumpkin_dude.png is dated 2019-10-26; Superdark's add-on page (first posts April 2019)
+                    says it was made for "0x72's Dungeon Tileset I and II".
+  Last updated    : 2024-03-11 (upload 0x72_DungeonTilesetII_v1.7.zip, devlog "Version 1.7 - autotiles!")
+  Changelog (page): v1.7 autotiles / v1.6 slugs / v1.5 dwarfs, minor improvements / v1.4 bow and arrow /
+                    v1.2 added a switch and buttons / v1.1 added a spikes trap / v1.0 initial version
+  Downloaded      : 2026-11-10 23:52 UTC (date -u), straight from the itch.io CDN
+
+HUMAN-MADE EVIDENCE
+  - itch.io info panel "Content: No generative AI was used"; page carries the "no-ai" tag.
+  - Hand-pixelled 16x16 art by the same artist since 2017 (his first "16x16 Dungeon Tileset" is from July 2017),
+    years before image generators existed. The 2023/2024 additions (dwarfs, slugs, autotile atlases) use the
+    same fixed palette (66 opaque colours in the whole atlas, outline colour #222222) and the same pixel grid.
+  - Palette credit on the page: recoloured with a GrafxKid palette (lospec "linear color palette basic").
+
+FILES KEPT
+  0x72_DungeonTilesetII_v1.7.zip        original download, 416379 bytes
+                                        sha256 a5b23341ebc831d7798bfb9666d864a08c079bb7aed18e3cf023a27d517c1512
+  0x72_DungeonTilesetII_v1.7/           the zip extracted unchanged (only macOS junk __MACOSX/ and .DS_Store skipped)
+      frames/                           370 loose PNG frames  <- these are what manifest.json catalogues
+      0x72_DungeonTilesetII_v1.7.png    512x512 atlas of the same sprites + tile_list_v1.7 (name x y w h)
+      atlas_floor-16x16.png, atlas_walls_low-16x16.png, atlas_walls_high-16x32.png   autotile atlases (new in v1.7)
+      README                            autotile notes
+  extra_singles/doc.png, pumpkin_dude.png   two small extra uploads from the same page (8-frame strips, 128x32).
+                                        Both characters are also inside v1.7 frames/ (pumpkin_dude is pixel-identical,
+                                        doc is not byte-identical); the manifest uses the v1.7 frames.
+
+OLDER VERSIONS
+  The page only offers v1.7 now, so older zips could not be downloaded and compared. According to the author's
+  changelog every version only added things (see above), so nothing is known to be missing from v1.7.
+
+NOT TAKEN FROM THIS AUTHOR
+  - "16x16 DungeonTileset II - Sewers" (official extension, https://0x72.itch.io/16x16-dungeontileset-ii-sewers):
+    costs $2.00, so it was NOT downloaded (nothing may be paid for).
+  - "16x16 Dungeon Tileset" v5 (the 2017 predecessor, also CC0): static sprites only and a different, darker purple
+    palette, so it was not mixed in.

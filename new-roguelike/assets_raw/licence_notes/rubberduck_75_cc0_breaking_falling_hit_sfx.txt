@@ -1,0 +1,26 @@
+Pack: 75 CC0 breaking / falling / hit sfx
+Page: https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx
+Author: rubberduck  (https://opengameart.org/users/rubberduck)
+Published on the page: 2019-10-08
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/)
+
+Human-made evidence: Author description: "i made 75 breaking, falling and hit sounds"
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  sfx_breaking_and_falling.zip
+    from https://opengameart.org/sites/default/files/sfx_breaking_and_falling.zip
+    sha256 e6ee04d91c5f4d30cfda1260d2c9d1faf96fda36319287215fbd07bcb1a80451  (1624406 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  bfh1_hit_03.ogg
+  bfh1_hit_04.ogg
+  bfh1_hit_12.ogg
+  bfh1_rock_breaking_01.ogg
+  bfh1_rock_hit_01.ogg
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

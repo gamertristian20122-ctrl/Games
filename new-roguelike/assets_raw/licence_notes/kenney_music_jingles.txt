@@ -1,0 +1,25 @@
+Pack: 85 Short music jingles (Kenney "Music Jingles")
+Page: https://opengameart.org/content/85-short-music-jingles
+Author: Kenney (Kenney Vleugels, www.kenney.nl)  (https://opengameart.org/users/kenney)
+Published on the page: 2014-03-17
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/); bundled license.txt, verbatim: "License (CC0) http://creativecommons.org/publicdomain/zero/1.0/ You may use these graphics in personal and commercial projects. Credit (Kenney or www.kenney.nl) would be nice but is not mandatory."
+
+Human-made evidence: Published 2014; description: "17 Short music jingles for use in games played with 5 different instruments."
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  jingleSounds_Kenney.zip
+    from https://opengameart.org/sites/default/files/jingleSounds_Kenney.zip
+    sha256 be324b6cf26e35c95c2a344569a2470512819d0246cc81328bef3499de3682e5  (1089319 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  OGG/jingles_NES/jingles_NES00.ogg
+  OGG/jingles_NES/jingles_NES08.ogg
+  OGG/jingles_NES/jingles_NES11.ogg
+  OGG/jingles_NES/jingles_NES12.ogg
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

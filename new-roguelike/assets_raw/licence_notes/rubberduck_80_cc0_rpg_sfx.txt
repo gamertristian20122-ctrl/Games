@@ -1,0 +1,29 @@
+Pack: 80 CC0 RPG SFX
+Page: https://opengameart.org/content/80-cc0-rpg-sfx
+Author: rubberduck  (https://opengameart.org/users/rubberduck)
+Published on the page: 2018-07-08
+Retrieved: 2026-11-10 / 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/)
+
+Human-made evidence: Author description: "I created 80 sound effects for fantasy / rpg games"
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download(s), kept untouched in original/:
+  80-CC0-RPG-SFX_0.zip
+    from https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip
+    sha256 1c2f06ff4e8563b5b8b745b23cf213c1474142a69bb82bd8f5e10d9b3f7a7bbd  (1845114 bytes)
+
+Files used for the game set (copied unchanged into used/, same relative paths as in the download):
+  blade_01.ogg
+  blade_02.ogg
+  blade_03.ogg
+  item_coins_01.ogg
+  item_coins_02.ogg
+  item_coins_03.ogg
+  spell_01.ogg
+  spell_02.ogg
+
+Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
+Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.

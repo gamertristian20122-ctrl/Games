@@ -1,0 +1,14 @@
+.godot/
+*.apk
+*.idsig
+build/
+# Big original downloads that can be fetched again. Their licence notes are kept in assets_raw/licence_notes/.
+assets_raw/audio/sfx_src/
+assets_raw/audio/music_src/
+# Unpacked copies and store preview pictures (the original zips are kept in assets_raw/paid_pixel_crawler/zips/).
+assets_raw/paid_pixel_crawler/x/
+assets_raw/_paid_previews/
+# The purchased art zips must be kept (the top-level .gitignore skips *.zip).
+!assets_raw/paid_pixel_crawler/zips/*.zip
+# Free boss packs chosen for the game: their (trimmed) original archives are kept too.
+!assets_raw/bosses/**/*.zip

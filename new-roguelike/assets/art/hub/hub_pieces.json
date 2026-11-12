@@ -1,0 +1,3603 @@
+{
+ "hub_anvil_0": {
+  "box": [
+   1,
+   37,
+   63,
+   76
+  ],
+  "size": [
+   62,
+   39
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Anvil/Anvil.png"
+ },
+ "hub_arch_0": {
+  "box": [
+   7,
+   186,
+   57,
+   256
+  ],
+  "size": [
+   50,
+   70
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Props.png"
+ },
+ "hub_bench_0": {
+  "box": [
+   48,
+   74,
+   64,
+   112
+  ],
+  "size": [
+   16,
+   38
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Workbench/Workbench.png"
+ },
+ "hub_bench_1": {
+  "box": [
+   0,
+   84,
+   32,
+   112
+  ],
+  "size": [
+   32,
+   28
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Workbench/Workbench.png"
+ },
+ "hub_bench_long": {
+  "box": [
+   83,
+   160,
+   141,
+   192
+  ],
+  "size": [
+   58,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_bloom_0": {
+  "box": [
+   293,
+   0,
+   331,
+   46
+  ],
+  "size": [
+   38,
+   46
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bloom_1": {
+  "box": [
+   338,
+   16,
+   366,
+   46
+  ],
+  "size": [
+   28,
+   30
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bloom_2": {
+  "box": [
+   369,
+   20,
+   396,
+   46
+  ],
+  "size": [
+   27,
+   26
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bloom_3": {
+  "box": [
+   404,
+   22,
+   426,
+   46
+  ],
+  "size": [
+   22,
+   24
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bloom_4": {
+  "box": [
+   432,
+   28,
+   448,
+   47
+  ],
+  "size": [
+   16,
+   19
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bloom_5": {
+  "box": [
+   293,
+   48,
+   331,
+   96
+  ],
+  "size": [
+   38,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bloom_6": {
+  "box": [
+   338,
+   64,
+   429,
+   96
+  ],
+  "size": [
+   91,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bloom_7": {
+  "box": [
+   432,
+   76,
+   448,
+   96
+  ],
+  "size": [
+   16,
+   20
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_deep_0": {
+  "box": [
+   1,
+   96,
+   112,
+   144
+  ],
+  "size": [
+   111,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_deep_1": {
+  "box": [
+   117,
+   114,
+   157,
+   143
+  ],
+  "size": [
+   40,
+   29
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_deep_2": {
+  "box": [
+   160,
+   121,
+   191,
+   144
+  ],
+  "size": [
+   31,
+   23
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_green_0": {
+  "box": [
+   1,
+   0,
+   63,
+   48
+  ],
+  "size": [
+   62,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_green_1": {
+  "box": [
+   65,
+   16,
+   112,
+   48
+  ],
+  "size": [
+   47,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_green_2": {
+  "box": [
+   117,
+   18,
+   157,
+   47
+  ],
+  "size": [
+   40,
+   29
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_green_3": {
+  "box": [
+   160,
+   25,
+   190,
+   47
+  ],
+  "size": [
+   30,
+   22
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_orange_0": {
+  "box": [
+   1,
+   48,
+   63,
+   96
+  ],
+  "size": [
+   62,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_orange_1": {
+  "box": [
+   65,
+   64,
+   112,
+   96
+  ],
+  "size": [
+   47,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_orange_2": {
+  "box": [
+   117,
+   66,
+   157,
+   95
+  ],
+  "size": [
+   40,
+   29
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_orange_3": {
+  "box": [
+   160,
+   73,
+   190,
+   95
+  ],
+  "size": [
+   30,
+   22
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_rust_0": {
+  "box": [
+   1,
+   144,
+   112,
+   192
+  ],
+  "size": [
+   111,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_rust_1": {
+  "box": [
+   117,
+   162,
+   157,
+   191
+  ],
+  "size": [
+   40,
+   29
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bush_rust_2": {
+  "box": [
+   160,
+   169,
+   191,
+   192
+  ],
+  "size": [
+   31,
+   23
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_cactus_0": {
+  "box": [
+   114,
+   224,
+   126,
+   256
+  ],
+  "size": [
+   12,
+   32
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_cactus_1": {
+  "box": [
+   128,
+   229,
+   144,
+   255
+  ],
+  "size": [
+   16,
+   26
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_cactus_2": {
+  "box": [
+   146,
+   231,
+   158,
+   270
+  ],
+  "size": [
+   12,
+   39
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_cactus_3": {
+  "box": [
+   160,
+   219,
+   176,
+   260
+  ],
+  "size": [
+   16,
+   41
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_cactus_4": {
+  "box": [
+   184,
+   219,
+   216,
+   260
+  ],
+  "size": [
+   32,
+   41
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_cactus_5": {
+  "box": [
+   162,
+   272,
+   172,
+   288
+  ],
+  "size": [
+   10,
+   16
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_cross_0": {
+  "box": [
+   0,
+   6,
+   63,
+   66
+  ],
+  "size": [
+   63,
+   60
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_cross_1": {
+  "box": [
+   1,
+   10,
+   15,
+   32
+  ],
+  "size": [
+   14,
+   22
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_cross_2": {
+  "box": [
+   70,
+   11,
+   90,
+   64
+  ],
+  "size": [
+   20,
+   53
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_cross_3": {
+  "box": [
+   96,
+   4,
+   159,
+   64
+  ],
+  "size": [
+   63,
+   60
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_dblock_0": {
+  "box": [
+   162,
+   180,
+   175,
+   189
+  ],
+  "size": [
+   13,
+   9
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dblock_1": {
+  "box": [
+   177,
+   178,
+   191,
+   192
+  ],
+  "size": [
+   14,
+   14
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dblock_2": {
+  "box": [
+   163,
+   198,
+   173,
+   204
+  ],
+  "size": [
+   10,
+   6
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dblock_3": {
+  "box": [
+   180,
+   196,
+   188,
+   205
+  ],
+  "size": [
+   8,
+   9
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dboulder_0": {
+  "box": [
+   162,
+   103,
+   208,
+   144
+  ],
+  "size": [
+   46,
+   41
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dboulder_1": {
+  "box": [
+   210,
+   114,
+   240,
+   144
+  ],
+  "size": [
+   30,
+   30
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dbush_0": {
+  "box": [
+   64,
+   240,
+   110,
+   304
+  ],
+  "size": [
+   46,
+   64
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dbush_1": {
+  "box": [
+   112,
+   256,
+   144,
+   304
+  ],
+  "size": [
+   32,
+   48
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dbush_2": {
+  "box": [
+   144,
+   272,
+   160,
+   304
+  ],
+  "size": [
+   16,
+   32
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dcave": {
+  "box": [
+   96,
+   64,
+   160,
+   128
+  ],
+  "size": [
+   64,
+   64
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dchest": {
+  "box": [
+   97,
+   9,
+   127,
+   32
+  ],
+  "size": [
+   30,
+   23
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_ddoor": {
+  "box": [
+   96,
+   176,
+   160,
+   224
+  ],
+  "size": [
+   64,
+   48
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dgrass_0": {
+  "box": [
+   161,
+   80,
+   175,
+   96
+  ],
+  "size": [
+   14,
+   16
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dgrass_1": {
+  "box": [
+   178,
+   83,
+   190,
+   94
+  ],
+  "size": [
+   12,
+   11
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dgrass_2": {
+  "box": [
+   193,
+   81,
+   208,
+   94
+  ],
+  "size": [
+   15,
+   13
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dgrass_3": {
+  "box": [
+   210,
+   81,
+   222,
+   94
+  ],
+  "size": [
+   12,
+   13
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dirt": {
+  "box": [
+   16,
+   280,
+   48,
+   312
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
+ },
+ "hub_doorway": {
+  "box": [
+   1,
+   23,
+   31,
+   64
+  ],
+  "size": [
+   30,
+   41
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_dpebble_0": {
+  "box": [
+   112,
+   0,
+   128,
+   14
+  ],
+  "size": [
+   16,
+   14
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dpebble_1": {
+  "box": [
+   128,
+   2,
+   142,
+   14
+  ],
+  "size": [
+   14,
+   12
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dpillar_0": {
+  "box": [
+   0,
+   240,
+   16,
+   296
+  ],
+  "size": [
+   16,
+   56
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dpillar_1": {
+  "box": [
+   16,
+   240,
+   32,
+   296
+  ],
+  "size": [
+   16,
+   56
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dpillar_2": {
+  "box": [
+   32,
+   251,
+   48,
+   296
+  ],
+  "size": [
+   16,
+   45
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dpillar_3": {
+  "box": [
+   48,
+   270,
+   62,
+   296
+  ],
+  "size": [
+   14,
+   26
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dpot_0": {
+  "box": [
+   97,
+   78,
+   111,
+   94
+  ],
+  "size": [
+   14,
+   16
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_dpot_1": {
+  "box": [
+   115,
+   74,
+   125,
+   94
+  ],
+  "size": [
+   10,
+   20
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_drock": {
+  "box": [
+   184,
+   24,
+   216,
+   56
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_drockbed": {
+  "box": [
+   160,
+   0,
+   240,
+   80
+  ],
+  "size": [
+   80,
+   80
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dshrub": {
+  "box": [
+   176,
+   275,
+   208,
+   302
+  ],
+  "size": [
+   32,
+   27
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dspire_0": {
+  "box": [
+   96,
+   24,
+   112,
+   56
+  ],
+  "size": [
+   16,
+   32
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dspire_1": {
+  "box": [
+   136,
+   24,
+   160,
+   64
+  ],
+  "size": [
+   24,
+   40
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dstairs": {
+  "box": [
+   96,
+   128,
+   160,
+   178
+  ],
+  "size": [
+   64,
+   50
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_dstone_0": {
+  "box": [
+   3,
+   128,
+   29,
+   174
+  ],
+  "size": [
+   26,
+   46
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_dstone_1": {
+  "box": [
+   35,
+   140,
+   61,
+   174
+  ],
+  "size": [
+   26,
+   34
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_dstone_2": {
+  "box": [
+   67,
+   148,
+   93,
+   174
+  ],
+  "size": [
+   26,
+   26
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_dtree_0": {
+  "box": [
+   0,
+   262,
+   64,
+   336
+  ],
+  "size": [
+   64,
+   74
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_dtree_1": {
+  "box": [
+   66,
+   256,
+   91,
+   285
+  ],
+  "size": [
+   25,
+   29
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_farch": {
+  "box": [
+   224,
+   0,
+   272,
+   76
+  ],
+  "size": [
+   48,
+   76
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_farm_0": {
+  "box": [
+   256,
+   2,
+   272,
+   14
+  ],
+  "size": [
+   16,
+   12
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Farm.png"
+ },
+ "hub_farm_1": {
+  "box": [
+   273,
+   0,
+   400,
+   80
+  ],
+  "size": [
+   127,
+   80
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Farm.png"
+ },
+ "hub_farm_2": {
+  "box": [
+   250,
+   33,
+   268,
+   80
+  ],
+  "size": [
+   18,
+   47
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Farm.png"
+ },
+ "hub_farm_3": {
+  "box": [
+   256,
+   16,
+   271,
+   32
+  ],
+  "size": [
+   15,
+   16
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Farm.png"
+ },
+ "hub_farm_4": {
+  "box": [
+   366,
+   79,
+   388,
+   99
+  ],
+  "size": [
+   22,
+   20
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Farm.png"
+ },
+ "hub_farm_5": {
+  "box": [
+   291,
+   87,
+   333,
+   130
+  ],
+  "size": [
+   42,
+   43
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Farm.png"
+ },
+ "hub_farm_6": {
+  "box": [
+   352,
+   112,
+   368,
+   130
+  ],
+  "size": [
+   16,
+   18
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Farm.png"
+ },
+ "hub_fbanner": {
+  "box": [
+   282,
+   8,
+   310,
+   68
+  ],
+  "size": [
+   28,
+   60
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fbarrel_0": {
+  "box": [
+   112,
+   250,
+   128,
+   272
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fbarrel_1": {
+  "box": [
+   128,
+   250,
+   144,
+   272
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fbarrel_2": {
+  "box": [
+   112,
+   282,
+   128,
+   304
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fbroken": {
+  "box": [
+   226,
+   164,
+   254,
+   208
+  ],
+  "size": [
+   28,
+   44
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fbust": {
+  "box": [
+   194,
+   150,
+   222,
+   206
+  ],
+  "size": [
+   28,
+   56
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fchest": {
+  "box": [
+   240,
+   88,
+   272,
+   112
+  ],
+  "size": [
+   32,
+   24
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fcrate_0": {
+  "box": [
+   160,
+   249,
+   176,
+   272
+  ],
+  "size": [
+   16,
+   23
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fcrate_1": {
+  "box": [
+   176,
+   249,
+   208,
+   272
+  ],
+  "size": [
+   32,
+   23
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fflag": {
+  "box": [
+   32,
+   112,
+   64,
+   144
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fire_a_f0": {
+  "box": [
+   0,
+   0,
+   32,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_01-Sheet.png"
+ },
+ "hub_fire_a_f1": {
+  "box": [
+   32,
+   0,
+   64,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_01-Sheet.png"
+ },
+ "hub_fire_a_f2": {
+  "box": [
+   64,
+   0,
+   96,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_01-Sheet.png"
+ },
+ "hub_fire_a_f3": {
+  "box": [
+   96,
+   0,
+   128,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_01-Sheet.png"
+ },
+ "hub_fire_b_f0": {
+  "box": [
+   0,
+   0,
+   32,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_05-Sheet.png"
+ },
+ "hub_fire_b_f1": {
+  "box": [
+   32,
+   0,
+   64,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_05-Sheet.png"
+ },
+ "hub_fire_b_f2": {
+  "box": [
+   64,
+   0,
+   96,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_05-Sheet.png"
+ },
+ "hub_fire_b_f3": {
+  "box": [
+   96,
+   0,
+   128,
+   32
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_05-Sheet.png"
+ },
+ "hub_fire_c_f0": {
+  "box": [
+   0,
+   0,
+   64,
+   32
+  ],
+  "size": [
+   64,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_09-Sheet.png"
+ },
+ "hub_fire_c_f1": {
+  "box": [
+   64,
+   0,
+   128,
+   32
+  ],
+  "size": [
+   64,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_09-Sheet.png"
+ },
+ "hub_fire_c_f2": {
+  "box": [
+   128,
+   0,
+   192,
+   32
+  ],
+  "size": [
+   64,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_09-Sheet.png"
+ },
+ "hub_fire_c_f3": {
+  "box": [
+   192,
+   0,
+   256,
+   32
+  ],
+  "size": [
+   64,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_09-Sheet.png"
+ },
+ "hub_fire_c_f4": {
+  "box": [
+   256,
+   0,
+   320,
+   32
+  ],
+  "size": [
+   64,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Bonfire_09-Sheet.png"
+ },
+ "hub_flame_f0": {
+  "box": [
+   0,
+   0,
+   32,
+   48
+  ],
+  "size": [
+   32,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Fire_01-Sheet.png"
+ },
+ "hub_flame_f1": {
+  "box": [
+   32,
+   0,
+   64,
+   48
+  ],
+  "size": [
+   32,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Fire_01-Sheet.png"
+ },
+ "hub_flame_f2": {
+  "box": [
+   64,
+   0,
+   96,
+   48
+  ],
+  "size": [
+   32,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Fire_01-Sheet.png"
+ },
+ "hub_flame_f3": {
+  "box": [
+   96,
+   0,
+   128,
+   48
+  ],
+  "size": [
+   32,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Bonfire/Fire_01-Sheet.png"
+ },
+ "hub_flava": {
+  "box": [
+   304,
+   208,
+   352,
+   256
+  ],
+  "size": [
+   48,
+   48
+  ],
+  "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_flower_0": {
+  "box": [
+   226,
+   130,
+   238,
+   142
+  ],
+  "size": [
+   12,
+   12
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_1": {
+  "box": [
+   195,
+   132,
+   206,
+   141
+  ],
+  "size": [
+   11,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_10": {
+  "box": [
+   228,
+   164,
+   236,
+   172
+  ],
+  "size": [
+   8,
+   8
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_11": {
+  "box": [
+   244,
+   166,
+   250,
+   172
+  ],
+  "size": [
+   6,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_12": {
+  "box": [
+   196,
+   183,
+   203,
+   187
+  ],
+  "size": [
+   7,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_13": {
+  "box": [
+   196,
+   197,
+   203,
+   203
+  ],
+  "size": [
+   7,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_14": {
+  "box": [
+   212,
+   182,
+   219,
+   188
+  ],
+  "size": [
+   7,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_15": {
+  "box": [
+   212,
+   196,
+   219,
+   205
+  ],
+  "size": [
+   7,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_16": {
+  "box": [
+   228,
+   182,
+   236,
+   187
+  ],
+  "size": [
+   8,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_17": {
+  "box": [
+   228,
+   196,
+   236,
+   204
+  ],
+  "size": [
+   8,
+   8
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_18": {
+  "box": [
+   244,
+   184,
+   250,
+   187
+  ],
+  "size": [
+   6,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_19": {
+  "box": [
+   244,
+   198,
+   250,
+   204
+  ],
+  "size": [
+   6,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_2": {
+  "box": [
+   196,
+   150,
+   204,
+   156
+  ],
+  "size": [
+   8,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_20": {
+  "box": [
+   263,
+   183,
+   266,
+   186
+  ],
+  "size": [
+   3,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_21": {
+  "box": [
+   196,
+   215,
+   203,
+   219
+  ],
+  "size": [
+   7,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_22": {
+  "box": [
+   212,
+   214,
+   219,
+   220
+  ],
+  "size": [
+   7,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_23": {
+  "box": [
+   228,
+   214,
+   236,
+   219
+  ],
+  "size": [
+   8,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_24": {
+  "box": [
+   244,
+   216,
+   250,
+   219
+  ],
+  "size": [
+   6,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_25": {
+  "box": [
+   263,
+   215,
+   266,
+   218
+  ],
+  "size": [
+   3,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_3": {
+  "box": [
+   212,
+   132,
+   222,
+   141
+  ],
+  "size": [
+   10,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_4": {
+  "box": [
+   213,
+   151,
+   220,
+   156
+  ],
+  "size": [
+   7,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_5": {
+  "box": [
+   230,
+   151,
+   234,
+   155
+  ],
+  "size": [
+   4,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_6": {
+  "box": [
+   243,
+   133,
+   252,
+   141
+  ],
+  "size": [
+   9,
+   8
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_7": {
+  "box": [
+   247,
+   152,
+   250,
+   155
+  ],
+  "size": [
+   3,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_8": {
+  "box": [
+   196,
+   165,
+   203,
+   171
+  ],
+  "size": [
+   7,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_flower_9": {
+  "box": [
+   212,
+   164,
+   219,
+   173
+  ],
+  "size": [
+   7,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_gate_0": {
+  "box": [
+   0,
+   3,
+   52,
+   86
+  ],
+  "size": [
+   52,
+   83
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Props.png"
+ },
+ "hub_grass": {
+  "box": [
+   0,
+   224,
+   112,
+   272
+  ],
+  "size": [
+   112,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
+ },
+ "hub_in_hall": {
+  "box": [
+   168,
+   88,
+   632,
+   350
+  ],
+  "size": [
+   464,
+   262
+  ],
+  "source": "Pixel Crawler - Free Pack/MockUps/Tavern.png"
+ },
+ "hub_in_room": {
+  "box": [
+   488,
+   470,
+   632,
+   634
+  ],
+  "size": [
+   144,
+   164
+  ],
+  "source": "Pixel Crawler - Free Pack/MockUps/Tavern.png"
+ },
+ "hub_note": {
+  "box": [
+   35,
+   130,
+   44,
+   141
+  ],
+  "size": [
+   9,
+   11
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Esoteric.png"
+ },
+ "hub_obelisk_0": {
+  "box": [
+   0,
+   7,
+   32,
+   128
+  ],
+  "size": [
+   32,
+   121
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_obelisk_1": {
+  "box": [
+   32,
+   47,
+   64,
+   128
+  ],
+  "size": [
+   32,
+   81
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_obelisk_2": {
+  "box": [
+   64,
+   64,
+   96,
+   128
+  ],
+  "size": [
+   32,
+   64
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_patch_0": {
+  "box": [
+   0,
+   128,
+   48,
+   176
+  ],
+  "size": [
+   48,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
+ },
+ "hub_patch_1": {
+  "box": [
+   0,
+   176,
+   48,
+   224
+  ],
+  "size": [
+   48,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
+ },
+ "hub_paving": {
+  "box": [
+   160,
+   144,
+   192,
+   176
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_pebble_0": {
+  "box": [
+   1,
+   323,
+   15,
+   332
+  ],
+  "size": [
+   14,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_1": {
+  "box": [
+   81,
+   322,
+   95,
+   332
+  ],
+  "size": [
+   14,
+   10
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_10": {
+  "box": [
+   70,
+   343,
+   73,
+   345
+  ],
+  "size": [
+   3,
+   2
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_11": {
+  "box": [
+   81,
+   339,
+   95,
+   348
+  ],
+  "size": [
+   14,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_12": {
+  "box": [
+   99,
+   324,
+   109,
+   332
+  ],
+  "size": [
+   10,
+   8
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_13": {
+  "box": [
+   99,
+   341,
+   109,
+   348
+  ],
+  "size": [
+   10,
+   7
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_14": {
+  "box": [
+   116,
+   325,
+   124,
+   331
+  ],
+  "size": [
+   8,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_15": {
+  "box": [
+   116,
+   342,
+   124,
+   347
+  ],
+  "size": [
+   8,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_16": {
+  "box": [
+   133,
+   326,
+   138,
+   330
+  ],
+  "size": [
+   5,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_17": {
+  "box": [
+   133,
+   342,
+   138,
+   346
+  ],
+  "size": [
+   5,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_18": {
+  "box": [
+   150,
+   327,
+   153,
+   329
+  ],
+  "size": [
+   3,
+   2
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_19": {
+  "box": [
+   150,
+   343,
+   153,
+   345
+  ],
+  "size": [
+   3,
+   2
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_2": {
+  "box": [
+   1,
+   339,
+   15,
+   348
+  ],
+  "size": [
+   14,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_3": {
+  "box": [
+   19,
+   325,
+   29,
+   332
+  ],
+  "size": [
+   10,
+   7
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_4": {
+  "box": [
+   19,
+   341,
+   29,
+   348
+  ],
+  "size": [
+   10,
+   7
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_5": {
+  "box": [
+   36,
+   326,
+   44,
+   331
+  ],
+  "size": [
+   8,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_6": {
+  "box": [
+   36,
+   342,
+   44,
+   347
+  ],
+  "size": [
+   8,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_7": {
+  "box": [
+   53,
+   326,
+   58,
+   330
+  ],
+  "size": [
+   5,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_8": {
+  "box": [
+   53,
+   342,
+   58,
+   346
+  ],
+  "size": [
+   5,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_pebble_9": {
+  "box": [
+   70,
+   327,
+   73,
+   329
+  ],
+  "size": [
+   3,
+   2
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_plant_0": {
+  "box": [
+   196,
+   108,
+   204,
+   127
+  ],
+  "size": [
+   8,
+   19
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_plant_1": {
+  "box": [
+   211,
+   101,
+   221,
+   127
+  ],
+  "size": [
+   10,
+   26
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_plant_2": {
+  "box": [
+   226,
+   97,
+   237,
+   128
+  ],
+  "size": [
+   11,
+   31
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_plant_3": {
+  "box": [
+   242,
+   96,
+   253,
+   128
+  ],
+  "size": [
+   11,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_plant_4": {
+  "box": [
+   258,
+   100,
+   269,
+   128
+  ],
+  "size": [
+   11,
+   28
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_plant_5": {
+  "box": [
+   272,
+   96,
+   288,
+   112
+  ],
+  "size": [
+   16,
+   16
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_plant_6": {
+  "box": [
+   272,
+   116,
+   287,
+   127
+  ],
+  "size": [
+   15,
+   11
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_0": {
+  "box": [
+   2,
+   224,
+   42,
+   272
+  ],
+  "size": [
+   40,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_1": {
+  "box": [
+   50,
+   226,
+   93,
+   271
+  ],
+  "size": [
+   43,
+   45
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_2": {
+  "box": [
+   99,
+   226,
+   158,
+   270
+  ],
+  "size": [
+   59,
+   44
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_3": {
+  "box": [
+   33,
+   259,
+   47,
+   271
+  ],
+  "size": [
+   14,
+   12
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_moss_0": {
+  "box": [
+   2,
+   272,
+   42,
+   320
+  ],
+  "size": [
+   40,
+   48
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_moss_1": {
+  "box": [
+   50,
+   273,
+   93,
+   319
+  ],
+  "size": [
+   43,
+   46
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_moss_2": {
+  "box": [
+   99,
+   273,
+   158,
+   318
+  ],
+  "size": [
+   59,
+   45
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rock_moss_3": {
+  "box": [
+   33,
+   307,
+   47,
+   319
+  ],
+  "size": [
+   14,
+   12
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_roof_wood": {
+  "box": [
+   0,
+   6,
+   128,
+   95
+  ],
+  "size": [
+   128,
+   89
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
+ },
+ "hub_rune_0": {
+  "box": [
+   179,
+   289,
+   207,
+   320
+  ],
+  "size": [
+   28,
+   31
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rune_1": {
+  "box": [
+   212,
+   280,
+   254,
+   320
+  ],
+  "size": [
+   42,
+   40
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_rune_2": {
+  "box": [
+   160,
+   304,
+   175,
+   320
+  ],
+  "size": [
+   15,
+   16
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_sand": {
+  "box": [
+   32,
+   20,
+   64,
+   52
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_shroom_0": {
+  "box": [
+   293,
+   163,
+   311,
+   192
+  ],
+  "size": [
+   18,
+   29
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_shroom_1": {
+  "box": [
+   321,
+   165,
+   336,
+   192
+  ],
+  "size": [
+   15,
+   27
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_shroom_2": {
+  "box": [
+   337,
+   176,
+   350,
+   192
+  ],
+  "size": [
+   13,
+   16
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_shroom_3": {
+  "box": [
+   355,
+   178,
+   366,
+   192
+  ],
+  "size": [
+   11,
+   14
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_shroom_4": {
+  "box": [
+   372,
+   183,
+   380,
+   192
+  ],
+  "size": [
+   8,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_statue_0": {
+  "box": [
+   8,
+   200,
+   24,
+   234
+  ],
+  "size": [
+   16,
+   34
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_statue_1": {
+  "box": [
+   32,
+   201,
+   64,
+   234
+  ],
+  "size": [
+   32,
+   33
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_statue_2": {
+  "box": [
+   65,
+   194,
+   95,
+   235
+  ],
+  "size": [
+   30,
+   41
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_stone_0": {
+  "box": [
+   179,
+   241,
+   207,
+   272
+  ],
+  "size": [
+   28,
+   31
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_stone_1": {
+  "box": [
+   212,
+   232,
+   254,
+   272
+  ],
+  "size": [
+   42,
+   40
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_stone_2": {
+  "box": [
+   160,
+   256,
+   175,
+   272
+  ],
+  "size": [
+   15,
+   16
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_stump_0": {
+  "box": [
+   28,
+   1581,
+   79,
+   1600
+  ],
+  "size": [
+   51,
+   19
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_stump_1": {
+  "box": [
+   118,
+   1588,
+   145,
+   1600
+  ],
+  "size": [
+   27,
+   12
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_stump_2": {
+  "box": [
+   174,
+   1590,
+   193,
+   1600
+  ],
+  "size": [
+   19,
+   10
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_stump_3": {
+  "box": [
+   14,
+   1616,
+   82,
+   1640
+  ],
+  "size": [
+   68,
+   24
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_stump_4": {
+  "box": [
+   105,
+   1616,
+   159,
+   1640
+  ],
+  "size": [
+   54,
+   24
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_stump_5": {
+  "box": [
+   163,
+   1616,
+   201,
+   1632
+  ],
+  "size": [
+   38,
+   16
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tomb_0": {
+  "box": [
+   0,
+   92,
+   48,
+   144
+  ],
+  "size": [
+   48,
+   52
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_1": {
+  "box": [
+   37,
+   105,
+   59,
+   144
+  ],
+  "size": [
+   22,
+   39
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_2": {
+  "box": [
+   69,
+   105,
+   91,
+   144
+  ],
+  "size": [
+   22,
+   39
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_3": {
+  "box": [
+   100,
+   96,
+   124,
+   192
+  ],
+  "size": [
+   24,
+   96
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_4": {
+  "box": [
+   161,
+   92,
+   191,
+   192
+  ],
+  "size": [
+   30,
+   100
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_5": {
+  "box": [
+   193,
+   92,
+   215,
+   192
+  ],
+  "size": [
+   22,
+   100
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_6": {
+  "box": [
+   132,
+   114,
+   156,
+   192
+  ],
+  "size": [
+   24,
+   78
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_7": {
+  "box": [
+   4,
+   146,
+   28,
+   185
+  ],
+  "size": [
+   24,
+   39
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_8": {
+  "box": [
+   36,
+   146,
+   60,
+   188
+  ],
+  "size": [
+   24,
+   42
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tomb_9": {
+  "box": [
+   68,
+   146,
+   92,
+   190
+  ],
+  "size": [
+   24,
+   44
+  ],
+  "source": "Pixel Crawler - Cemetery/Environment/Props/Graves.png"
+ },
+ "hub_tree_green_0": {
+  "box": [
+   2,
+   9,
+   188,
+   224
+  ],
+  "size": [
+   186,
+   215
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_green_1": {
+  "box": [
+   198,
+   30,
+   331,
+   224
+  ],
+  "size": [
+   133,
+   194
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_green_2": {
+  "box": [
+   336,
+   78,
+   447,
+   224
+  ],
+  "size": [
+   111,
+   146
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_green_3": {
+  "box": [
+   471,
+   134,
+   521,
+   224
+  ],
+  "size": [
+   50,
+   90
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_green_4": {
+  "box": [
+   531,
+   165,
+   571,
+   224
+  ],
+  "size": [
+   40,
+   59
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_green_5": {
+  "box": [
+   584,
+   192,
+   601,
+   224
+  ],
+  "size": [
+   17,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_pink_0": {
+  "box": [
+   2,
+   681,
+   188,
+   896
+  ],
+  "size": [
+   186,
+   215
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_pink_1": {
+  "box": [
+   198,
+   702,
+   331,
+   896
+  ],
+  "size": [
+   133,
+   194
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_pink_2": {
+  "box": [
+   336,
+   750,
+   447,
+   896
+  ],
+  "size": [
+   111,
+   146
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_pink_3": {
+  "box": [
+   471,
+   806,
+   521,
+   896
+  ],
+  "size": [
+   50,
+   90
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_pink_4": {
+  "box": [
+   531,
+   837,
+   571,
+   896
+  ],
+  "size": [
+   40,
+   59
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_pink_5": {
+  "box": [
+   584,
+   864,
+   601,
+   896
+  ],
+  "size": [
+   17,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_teal_0": {
+  "box": [
+   626,
+   681,
+   812,
+   896
+  ],
+  "size": [
+   186,
+   215
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_teal_1": {
+  "box": [
+   822,
+   702,
+   955,
+   896
+  ],
+  "size": [
+   133,
+   194
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_teal_2": {
+  "box": [
+   960,
+   750,
+   1071,
+   896
+  ],
+  "size": [
+   111,
+   146
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_teal_3": {
+  "box": [
+   1095,
+   806,
+   1145,
+   896
+  ],
+  "size": [
+   50,
+   90
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_teal_4": {
+  "box": [
+   1155,
+   837,
+   1195,
+   896
+  ],
+  "size": [
+   40,
+   59
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tree_teal_5": {
+  "box": [
+   1208,
+   864,
+   1225,
+   896
+  ],
+  "size": [
+   17,
+   32
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tree.png"
+ },
+ "hub_tuft_0": {
+  "box": [
+   195,
+   5,
+   202,
+   14
+  ],
+  "size": [
+   7,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_1": {
+  "box": [
+   211,
+   6,
+   222,
+   14
+  ],
+  "size": [
+   11,
+   8
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_10": {
+  "box": [
+   211,
+   53,
+   218,
+   61
+  ],
+  "size": [
+   7,
+   8
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_11": {
+  "box": [
+   216,
+   38,
+   221,
+   42
+  ],
+  "size": [
+   5,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_12": {
+  "box": [
+   226,
+   51,
+   235,
+   61
+  ],
+  "size": [
+   9,
+   10
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_13": {
+  "box": [
+   229,
+   36,
+   234,
+   42
+  ],
+  "size": [
+   5,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_14": {
+  "box": [
+   242,
+   50,
+   254,
+   61
+  ],
+  "size": [
+   12,
+   11
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_15": {
+  "box": [
+   246,
+   38,
+   252,
+   41
+  ],
+  "size": [
+   6,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_16": {
+  "box": [
+   198,
+   70,
+   202,
+   73
+  ],
+  "size": [
+   4,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_17": {
+  "box": [
+   214,
+   70,
+   220,
+   74
+  ],
+  "size": [
+   6,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_18": {
+  "box": [
+   229,
+   70,
+   236,
+   75
+  ],
+  "size": [
+   7,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_19": {
+  "box": [
+   245,
+   70,
+   252,
+   76
+  ],
+  "size": [
+   7,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_2": {
+  "box": [
+   226,
+   4,
+   239,
+   15
+  ],
+  "size": [
+   13,
+   11
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_20": {
+  "box": [
+   198,
+   86,
+   202,
+   89
+  ],
+  "size": [
+   4,
+   3
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_21": {
+  "box": [
+   214,
+   86,
+   220,
+   90
+  ],
+  "size": [
+   6,
+   4
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_22": {
+  "box": [
+   229,
+   86,
+   236,
+   91
+  ],
+  "size": [
+   7,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_23": {
+  "box": [
+   245,
+   86,
+   252,
+   92
+  ],
+  "size": [
+   7,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_3": {
+  "box": [
+   244,
+   5,
+   254,
+   11
+  ],
+  "size": [
+   10,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_4": {
+  "box": [
+   194,
+   21,
+   205,
+   30
+  ],
+  "size": [
+   11,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_5": {
+  "box": [
+   210,
+   21,
+   223,
+   31
+  ],
+  "size": [
+   13,
+   10
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_6": {
+  "box": [
+   224,
+   20,
+   239,
+   31
+  ],
+  "size": [
+   15,
+   11
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_7": {
+  "box": [
+   245,
+   21,
+   255,
+   27
+  ],
+  "size": [
+   10,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_8": {
+  "box": [
+   196,
+   37,
+   202,
+   42
+  ],
+  "size": [
+   6,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tuft_9": {
+  "box": [
+   199,
+   56,
+   202,
+   61
+  ],
+  "size": [
+   3,
+   5
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_tusk_0": {
+  "box": [
+   2,
+   178,
+   58,
+   249
+  ],
+  "size": [
+   56,
+   71
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_tusk_1": {
+  "box": [
+   68,
+   176,
+   107,
+   224
+  ],
+  "size": [
+   39,
+   48
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_tusk_2": {
+  "box": [
+   113,
+   178,
+   142,
+   210
+  ],
+  "size": [
+   29,
+   32
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Props.png"
+ },
+ "hub_twig_0": {
+  "box": [
+   257,
+   5,
+   271,
+   12
+  ],
+  "size": [
+   14,
+   7
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_1": {
+  "box": [
+   272,
+   1,
+   288,
+   16
+  ],
+  "size": [
+   16,
+   15
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_10": {
+  "box": [
+   262,
+   85,
+   267,
+   91
+  ],
+  "size": [
+   5,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_11": {
+  "box": [
+   277,
+   85,
+   283,
+   91
+  ],
+  "size": [
+   6,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_2": {
+  "box": [
+   257,
+   19,
+   271,
+   28
+  ],
+  "size": [
+   14,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_3": {
+  "box": [
+   273,
+   35,
+   287,
+   47
+  ],
+  "size": [
+   14,
+   12
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_4": {
+  "box": [
+   275,
+   20,
+   285,
+   30
+  ],
+  "size": [
+   10,
+   10
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_5": {
+  "box": [
+   259,
+   37,
+   271,
+   43
+  ],
+  "size": [
+   12,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_6": {
+  "box": [
+   262,
+   52,
+   270,
+   60
+  ],
+  "size": [
+   8,
+   8
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_7": {
+  "box": [
+   274,
+   51,
+   284,
+   60
+  ],
+  "size": [
+   10,
+   9
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_8": {
+  "box": [
+   261,
+   69,
+   268,
+   75
+  ],
+  "size": [
+   7,
+   6
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_twig_9": {
+  "box": [
+   276,
+   67,
+   283,
+   74
+  ],
+  "size": [
+   7,
+   7
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_vine_0": {
+  "box": [
+   290,
+   97,
+   334,
+   159
+  ],
+  "size": [
+   44,
+   62
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_vine_1": {
+  "box": [
+   341,
+   117,
+   363,
+   159
+  ],
+  "size": [
+   22,
+   42
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_vine_2": {
+  "box": [
+   369,
+   129,
+   393,
+   160
+  ],
+  "size": [
+   24,
+   31
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_vine_3": {
+  "box": [
+   400,
+   141,
+   415,
+   160
+  ],
+  "size": [
+   15,
+   19
+  ],
+  "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_wall_plaster": {
+  "box": [
+   288,
+   184,
+   416,
+   240
+  ],
+  "size": [
+   128,
+   56
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
+ "hub_window": {
+  "box": [
+   132,
+   99,
+   156,
+   124
+  ],
+  "size": [
+   24,
+   25
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ }
+}

@@ -1,0 +1,12 @@
+Pack: Explosion Animations Pack (free file "explosion pack 1.zip")
+Author: ansimuz (Luis Zuno)
+Source URL: https://ansimuz.itch.io/explosion-animations-pack
+Download: itch.io free download ("No thanks, just take me to the downloads"), upload id 20114193. The paid "3 Bonus Pack.zip" was NOT taken.
+Original archive: explosion pack 1.zip sha256 25e514b6dbeb6b5c058a44cdeccc9319d0c527d056218111d3af90d640a833e7
+Licence: CC0 1.0 (Creative Commons Zero v1.0 Universal)
+Licence quote (bundled public-license.pdf): "All assets included in this package are licensed under the Creative Commons Zero (CC0) license, which means you can use them freely in any project, whether personal or commercial, without the need for attribution. There are no restrictions on use, modification, or redistribution of these assets."
+Licence quote (itch.io page): "Asset license: Creative Commons Zero v1.0 Universal" and "You may use these assets in personal or commercial projects. Credit is not required but always appreciated."
+Published: itch.io page shows no publish date, only "Updated 29 October 2026". File dates inside the zip: explosion-1-a, -b, -c, -d, -e, -f sheets are dated 2015-03-18; explosion-1-g 2024-08-19 (devlog "New Explosion Aug 19, 2024").
+Retrieved: 2026-11-11
+Human-made evidence: itch.io content disclosure on the page: "No generative AI was used". Sheets a/b/f carry 2015 file dates (long before generative image tools). public-license.pdf is signed "Luis Zuno aka Ansimuz", a long-established pixel artist. Explosion g is from 2024 and relies on the page disclosure only.
+Notes: Extracted only the four explosions that fit the 16 px art (32, 48, 48 and 64 px frames). Left inside the zip: explosion-1-c (128x80), -d (128x128), -e (192x192), the bonus explosion-b (80x48) and a "water blob" bonus added in October 2026. Horizontal strips.

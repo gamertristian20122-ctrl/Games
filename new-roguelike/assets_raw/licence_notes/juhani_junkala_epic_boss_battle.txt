@@ -1,0 +1,21 @@
+Pack: Boss Battle Music ("Epic Boss Battle [Seamlessly Looping]", one WAV)
+Page: https://opengameart.org/content/boss-battle-music
+Author: Juhani Junkala, posting as SubspaceAudio (https://opengameart.org/users/subspaceaudio, https://juhanijunkala.com/)
+Published on the page: 2016-04-19
+Retrieved: 2026-11-11 (UTC)
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0" (the CC0 badge links to http://creativecommons.org/publicdomain/zero/1.0/). No readme is bundled with the single WAV; the same author's JRPG packs carry an INFO.txt saying: "Hi, I'm Juhani Junkala, the author of this music collection. I'm a classically trained composer, producer and a sound designer with over 20 years of experience. These music tracks have been released under CC0 creative commons license. You can do anything you want with these tunes."
+
+Human-made evidence: Published in 2016, years before generative music tools existed, by the same composer as the JRPG packs. Page text, verbatim: "Epic boss battle music inspired by God of War game series. Loops seamlessly!" Page tags: orchestral, epic, boss battle.
+AI check: published before 2022; the page text, tags and bundled files were searched for AI / generative / Suno / Udio / "generated" wording and none was found.
+
+Original download(s), kept untouched in original/:
+  Juhani Junkala - Epic Boss Battle [Seamlessly Looping].wav
+    from https://opengameart.org/sites/default/files/Juhani%20Junkala%20-%20Epic%20Boss%20Battle%20%5BSeamlessly%20Looping%5D.wav
+    sha256 35f75b4381dfbb053992876f7dfc567d9fd959d61b73954d5b1cd519753e7df1  (21773152 bytes)
+
+Game-ready files made from this source:
+  ../../music/final_boss.ogg
+
+Processing for the game-ready files in ../../music/: decode, one fixed gain per track to reach about -16 LUFS integrated (no compressor, no dynamic loudness filter), stereo 44.1 kHz Ogg Vorbis at about 100 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.

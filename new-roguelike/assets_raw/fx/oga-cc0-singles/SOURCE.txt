@@ -1,0 +1,29 @@
+Pack: Three single CC0 sprite sheets from OpenGameArt (each is one PNG, no archive exists)
+Retrieved: 2026-11-11
+
+FILE 1: koasuna_blood_splatter_sprite_sheet.png  (original name blood_splatter_sprite_sheet.png, sha256 5f58ff8f4736fec5e77dcc32e2584a33664813607156d4d082cdc25d7baefda6)
+  Title / Author: Simple blood splatter / Ko'asuna
+  Source URL: https://opengameart.org/content/simple-blood-splatter
+  Download URL: https://opengameart.org/sites/default/files/blood_splatter_sprite_sheet.png
+  Licence: CC0 1.0 - page licence field: "License(s): CC0"
+  Page description: "Simple blood splatter sprite sheeet can be used for death animation or something."
+  Published: 2021-11-05
+  Human-made evidence: Published November 2021 (before 2022). Two flat reds, single hard pixels, 7 frames.
+
+FILE 2: aidan_walker_smoke_puff.png  (original name smoke_5.png, sha256 246e0f333142c5d388dab36d50caf19fe508e8274ad4ecf7c7b96c0b92b0b8f8)
+  Title / Author: Smoke Puff / Aidan_Walker
+  Source URL: https://opengameart.org/content/smoke-puff
+  Download URL: https://opengameart.org/sites/default/files/smoke_5.png
+  Licence: CC0 1.0 - page licence field: "License(s): CC0"
+  Page description: "A smoke puff effect i made for this game jam: https://aidanwalker.itch.io/fractured-grief"
+  Published: 2024-03-11
+  Human-made evidence: Newer than 2022, so positive evidence recorded: the author says "A smoke puff effect i made for this game jam". The sprite is a one-colour (pure white) 7-frame puff of hard pixels - nothing a generator would produce. Weakest evidence in this folder; trivial to redraw if a stricter standard is wanted.
+
+FILE 3: rodhakgames_portalsSpriteSheet.png  (original name portalsSpriteSheet.png, sha256 4247a8f4d7f1a4ebfd98cedf11078de097113116e90a0365c437306c4c1ffe69)
+  Title / Author: Portals 32 x 48 / RodHakGames
+  Source URL: https://opengameart.org/content/portals-32-x-48
+  Download URL: https://opengameart.org/sites/default/files/portalsSpriteSheet.png
+  Licence: CC0 1.0 - page licence field: "License(s): CC0"
+  Page description: "These are some portals that you can use on your games / These are 32 x 48 :D"
+  Published: 2020-05-12
+  Human-made evidence: Published May 2020, before generative image tools existed. Flat banded pixel art.
