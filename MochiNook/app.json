@@ -1,0 +1,108 @@
+{
+  "expo": {
+    "name": "MochiNook",
+    "slug": "mochinook",
+    "scheme": "mochinook",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FBF5EC",
+    "ios": {
+      "bundleIdentifier": "com.mochinook.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "deploymentTarget": "17.0",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.mochinook.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#CFE0C8",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "com.android.vending.BILLING"
+      ],
+      "blockedPermissions": [
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.USE_EXACT_ALARM"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FBF5EC",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#2B2724"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#8DAA86",
+          "enableRemoteNotifications": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      "react-native-blob-util",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "revenueCat": {
+        "appleApiKey": "",
+        "googleApiKey": "",
+        "entitlementId": "pro",
+        "proProductId": "mochinook_pro_monthly",
+        "tipProductIds": {
+          "small": "mochinook_tip_small",
+          "medium": "mochinook_tip_medium",
+          "large": "mochinook_tip_large"
+        }
+      }
+    }
+  }
+}

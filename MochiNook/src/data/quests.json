@@ -1,0 +1,813 @@
+[
+  {
+    "id": "morning-water",
+    "title": "Morning Sip",
+    "emoji": "💧",
+    "category": "morning",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": true,
+    "invite": "Want to wake up our brains with a few sips of water together?",
+    "keywords": ["water", "drink", "hydrate", "thirsty", "sip"],
+    "steps": [
+      { "text": "Find your cup or water bottle", "tiny": ["Look on your nightstand or desk first", "If you can't find it, any clean cup counts"] },
+      { "text": "Fill it with water from the tap or fridge" },
+      { "text": "Take 3 sips" }
+    ]
+  },
+  {
+    "id": "morning-meds",
+    "title": "Meds & Vitamins",
+    "emoji": "💊",
+    "category": "morning",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": true,
+    "invite": "Want to grab your meds with me? It only takes a moment.",
+    "keywords": ["meds", "medication", "medicine", "pills", "vitamins", "adderall", "prescription"],
+    "steps": [
+      { "text": "Walk to the spot where you keep your meds" },
+      { "text": "Get a glass of water ready" },
+      { "text": "Take today's meds with a sip of water" },
+      { "text": "Close the container and put it back in its spot" }
+    ]
+  },
+  {
+    "id": "morning-teeth",
+    "title": "Brush Teeth (Morning)",
+    "emoji": "🪥",
+    "category": "morning",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": true,
+    "invite": "Want to do a minty-fresh brush so we both feel sparkly?",
+    "keywords": ["teeth", "brush", "toothbrush", "floss", "mouth"],
+    "steps": [
+      { "text": "Walk to the bathroom sink" },
+      { "text": "Squeeze a pea-sized dot of toothpaste onto your brush" },
+      { "text": "Brush your top teeth for about 1 minute", "tiny": ["Brush the outside of the top teeth", "Brush the inside of the top teeth", "Brush the chewing tops"] },
+      { "text": "Brush your bottom teeth for about 1 minute", "tiny": ["Brush the outside of the bottom teeth", "Brush the inside of the bottom teeth", "Brush the chewing tops"] },
+      { "text": "Spit, rinse the brush, and put it back" }
+    ]
+  },
+  {
+    "id": "morning-face",
+    "title": "Face Splash Reset",
+    "emoji": "🫧",
+    "category": "body",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "A cool splash can feel nice. Want to try one with me?",
+    "keywords": ["face", "wash face", "skincare", "splash", "moisturizer"],
+    "steps": [
+      { "text": "Turn on the tap and find a temperature that feels okay" },
+      { "text": "Splash your face with water two times" },
+      { "text": "Pat your face dry with a towel" },
+      { "text": "If you use lotion or moisturizer, rub in a small dot" }
+    ]
+  },
+  {
+    "id": "morning-dress",
+    "title": "Get Dressed",
+    "emoji": "👕",
+    "category": "morning",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to pick some comfy clothes for today? Soft ones count.",
+    "keywords": ["dress", "clothes", "outfit", "get dressed", "change"],
+    "steps": [
+      { "text": "Pick one top and one pair of bottoms", "tiny": ["Open the drawer or closet", "Take the first comfy top you see", "Take the first comfy bottoms you see"] },
+      { "text": "Grab clean socks and underwear" },
+      { "text": "Put them on, one piece at a time" },
+      { "text": "Put your pajamas on your pillow or in the hamper" }
+    ]
+  },
+  {
+    "id": "morning-breakfast",
+    "title": "Easy Breakfast",
+    "emoji": "🍞",
+    "category": "kitchen",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to give your body some fuel? Anything easy counts.",
+    "keywords": ["breakfast", "eat", "food", "hungry", "toast", "cereal"],
+    "steps": [
+      { "text": "Pick one easy food: toast, yogurt, a banana, cereal, or a bar" },
+      { "text": "Get it ready on a plate or in a bowl" },
+      { "text": "Sit down and eat it" },
+      { "text": "Put the dish in the sink" }
+    ]
+  },
+  {
+    "id": "morning-pack-bag",
+    "title": "Pack Your Bag",
+    "emoji": "🎒",
+    "category": "morning",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to pack our bag so future-you has everything?",
+    "keywords": ["bag", "backpack", "pack", "school bag", "purse"],
+    "steps": [
+      { "text": "Put your keys, phone, and wallet or ID in the bag" },
+      { "text": "Add your charger" },
+      { "text": "Add your water bottle" },
+      { "text": "Add anything today needs: homework, lunch, or work things" },
+      { "text": "Set the bag by the door" }
+    ]
+  },
+  {
+    "id": "morning-launch",
+    "title": "Launch Pad Check",
+    "emoji": "🚀",
+    "category": "morning",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Quick pocket check before we head out? Keys, phone, wallet.",
+    "keywords": ["leave", "leaving", "keys", "wallet", "door", "launch"],
+    "steps": [
+      { "text": "Touch your keys" },
+      { "text": "Touch your phone" },
+      { "text": "Touch your wallet or ID" },
+      { "text": "Ask yourself: did I take my meds?" },
+      { "text": "Head out the door gently" }
+    ]
+  },
+  {
+    "id": "bedtime-teeth",
+    "title": "Brush Teeth (Night)",
+    "emoji": "🌙",
+    "category": "evening",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": true,
+    "invite": "Want to brush teeth together so I can get cozy for sleep?",
+    "keywords": ["teeth", "brush", "night", "bedtime", "floss"],
+    "steps": [
+      { "text": "Walk to the bathroom sink" },
+      { "text": "Squeeze a pea-sized dot of toothpaste onto your brush" },
+      { "text": "Brush all your teeth for about 2 minutes" },
+      { "text": "Spit, rinse the brush, and put it back" }
+    ]
+  },
+  {
+    "id": "bedtime-pajamas",
+    "title": "Cozy Clothes Swap",
+    "emoji": "🧦",
+    "category": "evening",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to change into something soft and comfy?",
+    "keywords": ["pajamas", "pjs", "comfy", "change", "sleepwear"],
+    "steps": [
+      { "text": "Find your pajamas or soft clothes" },
+      { "text": "Take off today's clothes" },
+      { "text": "Put dirty clothes in the hamper" },
+      { "text": "Put on the soft clothes" }
+    ]
+  },
+  {
+    "id": "bedtime-charge",
+    "title": "Plug In Your Phone",
+    "emoji": "🔌",
+    "category": "evening",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": true,
+    "invite": "Want to tuck your phone in for the night, like I tuck in?",
+    "keywords": ["charge", "phone", "charger", "alarm", "plug"],
+    "steps": [
+      { "text": "Find your charger" },
+      { "text": "Plug your phone in" },
+      { "text": "Check your alarm for tomorrow" },
+      { "text": "Put your phone face down" }
+    ]
+  },
+  {
+    "id": "bedtime-tomorrow",
+    "title": "Tomorrow-Me Setup",
+    "emoji": "📋",
+    "category": "evening",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to leave a little gift for tomorrow-you?",
+    "keywords": ["tomorrow", "plan", "prepare", "lay out", "schedule"],
+    "steps": [
+      { "text": "Look at tomorrow on your calendar or planner" },
+      { "text": "Lay out tomorrow's clothes" },
+      { "text": "Put your bag by the door" },
+      { "text": "Write one thing to remember on a sticky note" }
+    ]
+  },
+  {
+    "id": "bedtime-wind-down",
+    "title": "Wind-Down Ritual",
+    "emoji": "🕯️",
+    "category": "evening",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to slow things down with me? I'll dim my room too.",
+    "keywords": ["sleep", "wind down", "relax", "bed", "insomnia", "night"],
+    "steps": [
+      { "text": "Turn off the big light and use a small lamp" },
+      { "text": "Turn your screen brightness down or switch on night mode" },
+      { "text": "Drink a little water" },
+      { "text": "Get into bed and take 5 slow breaths" }
+    ]
+  },
+  {
+    "id": "evening-meds",
+    "title": "Evening Meds",
+    "emoji": "🌛",
+    "category": "evening",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Any evening meds today? Want to take them together?",
+    "keywords": ["meds", "evening meds", "night meds", "pills", "medication"],
+    "steps": [
+      { "text": "Walk to the spot where you keep your meds" },
+      { "text": "Take tonight's meds with a sip of water" },
+      { "text": "Close the container and put it back" }
+    ]
+  },
+  {
+    "id": "shower",
+    "title": "Shower Quest",
+    "emoji": "🚿",
+    "category": "body",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want a warm, cozy rinse? We can go one tiny step at a time.",
+    "keywords": ["shower", "bath", "wash", "hygiene", "shampoo", "smell"],
+    "steps": [
+      { "text": "Grab a towel and clean clothes and bring them to the bathroom" },
+      { "text": "Turn on the water and check that the temperature feels good" },
+      { "text": "Step in and get your hair and body wet" },
+      { "text": "Shampoo your hair, then rinse it", "tiny": ["Squeeze a coin-sized blob of shampoo into your hand", "Rub it into your hair for a few seconds", "Rinse until the bubbles are gone"] },
+      { "text": "Soap your body, then rinse" },
+      { "text": "Turn off the water, dry off, and get dressed" }
+    ]
+  },
+  {
+    "id": "dishes-reset",
+    "title": "Dishes & Kitchen Reset",
+    "emoji": "🍽️",
+    "category": "kitchen",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to tackle a few dishes together so I can power up?",
+    "keywords": ["dishes", "kitchen", "sink", "plates", "counter", "wash up", "clean kitchen"],
+    "steps": [
+      { "text": "Put any trash on the counter into the bin" },
+      { "text": "Rinse the plates" },
+      { "text": "Load or wash just 5 items", "tiny": ["Pick up one item", "Wash it or put it in the dishwasher", "Do that 4 more times"] },
+      { "text": "Wipe the counter with a cloth or paper towel" }
+    ]
+  },
+  {
+    "id": "dishwasher-unload",
+    "title": "Unload the Dishwasher",
+    "emoji": "🥣",
+    "category": "kitchen",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to put clean dishes away with me? Plates first.",
+    "keywords": ["dishwasher", "unload", "put away dishes", "clean dishes"],
+    "steps": [
+      { "text": "Open the dishwasher and pull out the bottom rack" },
+      { "text": "Put the plates and bowls away" },
+      { "text": "Put the cups and glasses away" },
+      { "text": "Put the forks, spoons, and knives away" },
+      { "text": "Close the dishwasher" }
+    ]
+  },
+  {
+    "id": "fridge-check",
+    "title": "Fridge Check-In",
+    "emoji": "🧊",
+    "category": "kitchen",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to peek in the fridge together and say bye to old food?",
+    "keywords": ["fridge", "refrigerator", "expired", "leftovers", "smell", "food"],
+    "steps": [
+      { "text": "Open the fridge and take out anything old or smelly" },
+      { "text": "Put the old food in the trash" },
+      { "text": "Wipe one shelf" },
+      { "text": "Write down 3 things you are out of" }
+    ]
+  },
+  {
+    "id": "trash-out",
+    "title": "Take Out the Trash",
+    "emoji": "🗑️",
+    "category": "home",
+    "anchor": "evening",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to walk the trash out with me? Fresh air bonus.",
+    "keywords": ["trash", "garbage", "rubbish", "bin", "recycling"],
+    "steps": [
+      { "text": "Tie the trash bag closed" },
+      { "text": "Lift the bag out of the bin" },
+      { "text": "Put a new bag in the bin" },
+      { "text": "Carry the full bag to the outside bin" }
+    ]
+  },
+  {
+    "id": "simple-meal",
+    "title": "Make a Simple Meal",
+    "emoji": "🍜",
+    "category": "kitchen",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to make something easy to eat? Simple is perfect.",
+    "keywords": ["cook", "dinner", "lunch", "meal", "eat", "food", "hungry"],
+    "steps": [
+      { "text": "Pick one: pasta, a rice bowl, a sandwich, or a frozen meal" },
+      { "text": "Take out the ingredients you need" },
+      { "text": "Make it by following the package or your usual way" },
+      { "text": "Sit down and eat" },
+      { "text": "Put your dishes in the sink" }
+    ]
+  },
+  {
+    "id": "grocery-run",
+    "title": "Grocery Run",
+    "emoji": "🛒",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to plan a little food adventure? A short list is plenty.",
+    "keywords": ["grocery", "groceries", "shopping", "store", "supermarket", "food shopping"],
+    "steps": [
+      { "text": "Look in the fridge and cupboards" },
+      { "text": "Write a list of 5 to 10 things you need" },
+      { "text": "Grab bags, wallet, keys, and phone" },
+      { "text": "Go to the store" },
+      { "text": "Find the things on your list", "tiny": ["Find the first thing on the list", "Put it in the cart", "Cross it off and find the next one"] },
+      { "text": "At home, put cold things in the fridge first" }
+    ]
+  },
+  {
+    "id": "laundry",
+    "title": "Laundry Quest",
+    "emoji": "🧺",
+    "category": "laundry",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to start a cozy laundry load with me? I'll remind you when it's ready.",
+    "keywords": ["laundry", "washing", "clothes", "washer", "dryer", "wash clothes"],
+    "steps": [
+      { "text": "Gather your dirty clothes into a basket", "tiny": ["Pick up clothes from the floor", "Grab clothes from the hamper", "Put everything in one basket"] },
+      { "text": "Load the washer, add detergent, and press start", "timerMinutes": 45, "tiny": ["Put the clothes in the washer", "Pour in one cap of detergent", "Close the lid and press start"] },
+      { "text": "Move the wet clothes to the dryer" },
+      { "text": "Grab a dryer sheet and toss it in" },
+      { "text": "Clean the lint trap and start the dryer", "timerMinutes": 50 },
+      { "text": "Take the clothes out and fold or hang just 5 things" }
+    ]
+  },
+  {
+    "id": "laundry-putaway",
+    "title": "Put Clean Clothes Away",
+    "emoji": "👚",
+    "category": "laundry",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to give your clean clothes a home? Hangers first.",
+    "keywords": ["put away", "fold", "clean clothes", "closet", "drawer"],
+    "steps": [
+      { "text": "Carry the basket to your room" },
+      { "text": "Hang up anything that goes on a hanger" },
+      { "text": "Fold shirts and put them in a drawer" },
+      { "text": "Put socks and underwear in their drawer" }
+    ]
+  },
+  {
+    "id": "fresh-sheets",
+    "title": "Fresh Sheets",
+    "emoji": "🛏️",
+    "category": "laundry",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to make a fresh, crisp bed to flop into tonight?",
+    "keywords": ["sheets", "bed", "bedding", "pillowcase", "make bed"],
+    "steps": [
+      { "text": "Take the pillowcases off" },
+      { "text": "Pull off the sheet" },
+      { "text": "Carry the old sheets to the washer" },
+      { "text": "Put on a clean sheet" },
+      { "text": "Put clean pillowcases on" }
+    ]
+  },
+  {
+    "id": "bedroom-clean",
+    "title": "Clean Bedroom",
+    "emoji": "🧹",
+    "category": "home",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to give your room a little glow-up? Trash first, then clothes, then surfaces.",
+    "keywords": ["room", "bedroom", "messy", "clean room", "tidy", "declutter"],
+    "steps": [
+      { "text": "Grab a trash bag" },
+      { "text": "Pick up all the trash you can see", "tiny": ["Pick up trash on the floor", "Pick up trash on the bed", "Pick up trash on the desk and nightstand"] },
+      { "text": "Pick up clothes: dirty ones go in the hamper, clean ones go on a chair" },
+      { "text": "Clear one surface, like your desk or nightstand" },
+      { "text": "Wipe that surface with a cloth" }
+    ]
+  },
+  {
+    "id": "desk-tidy",
+    "title": "5-Minute Desk Tidy",
+    "emoji": "🗂️",
+    "category": "home",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to clear a little space for your brain to breathe?",
+    "keywords": ["desk", "workspace", "tidy", "papers", "clutter"],
+    "steps": [
+      { "text": "Take any cups or dishes to the kitchen" },
+      { "text": "Put trash in the bin" },
+      { "text": "Stack loose papers into one pile" },
+      { "text": "Put pens and pencils in one cup" }
+    ]
+  },
+  {
+    "id": "bathroom-wipe",
+    "title": "Quick Bathroom Wipe",
+    "emoji": "🧼",
+    "category": "home",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to give the bathroom a tiny sparkle with me?",
+    "keywords": ["bathroom", "toilet", "sink", "mirror", "clean bathroom"],
+    "steps": [
+      { "text": "Grab cleaning wipes or a spray and a cloth" },
+      { "text": "Wipe the sink" },
+      { "text": "Wipe the toilet seat and handle" },
+      { "text": "Hang your towel up straight" }
+    ]
+  },
+  {
+    "id": "floor-rescue",
+    "title": "Floor Rescue",
+    "emoji": "🧸",
+    "category": "home",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to rescue 10 things from the floor? I'll count with you.",
+    "keywords": ["floor", "pick up", "mess", "stuff everywhere", "clutter"],
+    "steps": [
+      { "text": "Pick up 10 things from the floor and put them on the bed" },
+      { "text": "Put away anything that has an obvious home" },
+      { "text": "Put everything else in one basket for later" }
+    ]
+  },
+  {
+    "id": "water-plants",
+    "title": "Water the Plants",
+    "emoji": "🪴",
+    "category": "home",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to give your plant friends a drink?",
+    "keywords": ["plants", "water plants", "garden", "plant"],
+    "steps": [
+      { "text": "Fill a cup or watering can with water" },
+      { "text": "Touch the soil of each plant: if it's dry, give it water" },
+      { "text": "Put the watering can back" }
+    ]
+  },
+  {
+    "id": "feed-pet",
+    "title": "Feed Your Pet",
+    "emoji": "🐾",
+    "category": "care",
+    "anchor": "morning",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to feed your real-life buddy too? They'd love that.",
+    "keywords": ["pet", "dog", "cat", "feed", "animal", "fish"],
+    "steps": [
+      { "text": "Check your pet's food bowl" },
+      { "text": "Add one scoop of food" },
+      { "text": "Give them fresh water" },
+      { "text": "Tell them they're a good friend" }
+    ]
+  },
+  {
+    "id": "water-break",
+    "title": "Water Break",
+    "emoji": "🥤",
+    "category": "body",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": true,
+    "invite": "Want to have a water break with me? I'm thirsty too.",
+    "keywords": ["water", "drink", "hydrate", "thirsty"],
+    "steps": [
+      { "text": "Fill a cup with water" },
+      { "text": "Drink half of it" }
+    ]
+  },
+  {
+    "id": "wiggle-stretch",
+    "title": "Wiggle & Stretch",
+    "emoji": "🙆",
+    "category": "body",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to do a silly little stretch? I'll wiggle too.",
+    "keywords": ["stretch", "move", "exercise", "stiff", "body", "wiggle"],
+    "steps": [
+      { "text": "Stand up" },
+      { "text": "Reach your arms up high for 5 seconds" },
+      { "text": "Roll your shoulders 5 times" },
+      { "text": "Shake out your hands" }
+    ]
+  },
+  {
+    "id": "sensory-reset",
+    "title": "Sensory Reset Break",
+    "emoji": "🎧",
+    "category": "body",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Feeling like too much? Want to find a quiet corner with me?",
+    "keywords": ["overstimulated", "sensory", "meltdown", "loud", "quiet", "shutdown", "overwhelmed"],
+    "steps": [
+      { "text": "Go to a quiet spot" },
+      { "text": "Put on headphones or earplugs if you have them" },
+      { "text": "Turn down the lights or close your eyes" },
+      { "text": "Take 10 slow breaths" },
+      { "text": "Choose what feels good: stim, rest, or a drink of water" }
+    ]
+  },
+  {
+    "id": "hard-day-kit",
+    "title": "Hard Day Kit",
+    "emoji": "🫶",
+    "category": "care",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": true,
+    "invite": "Low-spoon day? These are the only things that matter today.",
+    "keywords": ["hard day", "tired", "sad", "low energy", "exhausted", "burnout", "depressed"],
+    "steps": [
+      { "text": "Drink some water" },
+      { "text": "Eat anything (a snack totally counts)" },
+      { "text": "Take your meds if you have them" },
+      { "text": "Change into something comfy" },
+      { "text": "Rest. That's the whole quest." }
+    ]
+  },
+  {
+    "id": "step-outside",
+    "title": "Step Outside",
+    "emoji": "🌤️",
+    "category": "body",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to say hi to the sky with me for a minute?",
+    "keywords": ["outside", "walk", "fresh air", "sun", "sunlight"],
+    "steps": [
+      { "text": "Put on shoes" },
+      { "text": "Open the door and step outside" },
+      { "text": "Take 5 slow breaths" },
+      { "text": "Notice 3 things you can see" }
+    ]
+  },
+  {
+    "id": "pay-bills",
+    "title": "Pay Monthly Bills",
+    "emoji": "🧾",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "monthly",
+    "essential": false,
+    "invite": "Want to knock out one bill together? Just one is a real win.",
+    "keywords": ["bills", "pay", "rent", "money", "payment", "utilities", "invoice"],
+    "steps": [
+      { "text": "Open your bank app or website" },
+      { "text": "Write a list of bills due this month: rent, phone, internet, and others" },
+      { "text": "Pay the first bill on the list" },
+      { "text": "Take a screenshot of the confirmation" },
+      { "text": "Pay the next one, or stop here for today" }
+    ]
+  },
+  {
+    "id": "tax-docs",
+    "title": "Gather Tax Documents",
+    "emoji": "📁",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to start a tax folder together? Just gathering, no filling out yet.",
+    "keywords": ["taxes", "tax", "w2", "1099", "documents", "irs", "tax return"],
+    "steps": [
+      { "text": "Make a folder (paper or on your computer) called \"Taxes\" plus this year" },
+      { "text": "Search your email for the word \"tax\"" },
+      { "text": "Save any income forms (like a W-2 or 1099) into the folder" },
+      { "text": "Add receipts you might need" },
+      { "text": "Write down any questions for whoever helps you file" }
+    ]
+  },
+  {
+    "id": "doctor-call",
+    "title": "Doctor Appointment Call",
+    "emoji": "📞",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to book that appointment together? I have a script ready for you.",
+    "keywords": ["doctor", "appointment", "call", "dentist", "phone call", "book", "therapist"],
+    "steps": [
+      { "text": "Find the clinic's phone number or online booking page" },
+      { "text": "Write down 2 or 3 days and times you are free" },
+      { "text": "Read this script out loud once: \"Hi, I'd like to book an appointment. My name is ___ and my birthday is ___.\"" },
+      { "text": "Make the call or use the online booking" },
+      { "text": "Add the appointment to your calendar" }
+    ]
+  },
+  {
+    "id": "reply-messages",
+    "title": "Reply to Messages",
+    "emoji": "💬",
+    "category": "social",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to send just one reply? One sentence is plenty.",
+    "keywords": ["messages", "texts", "reply", "text back", "dm", "friends"],
+    "steps": [
+      { "text": "Open one messaging app" },
+      { "text": "Pick the easiest message to answer" },
+      { "text": "Type a one-sentence reply (that's enough)" },
+      { "text": "Press send" }
+    ]
+  },
+  {
+    "id": "inbox-peek",
+    "title": "Inbox Peek",
+    "emoji": "📬",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to peek at your inbox with me? No need to read everything.",
+    "keywords": ["email", "inbox", "mail", "emails"],
+    "steps": [
+      { "text": "Open your email" },
+      { "text": "Delete or archive 5 obvious junk emails" },
+      { "text": "Star 1 important email" },
+      { "text": "Reply to one email, or leave it for later" }
+    ]
+  },
+  {
+    "id": "money-peek",
+    "title": "Money Peek",
+    "emoji": "🪙",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to take a calm look at your money? Just looking, no judging.",
+    "keywords": ["budget", "money", "bank", "spending", "balance", "finances"],
+    "steps": [
+      { "text": "Open your bank app" },
+      { "text": "Look at your balance" },
+      { "text": "Read your last 5 purchases" },
+      { "text": "Write down anything that surprised you" }
+    ]
+  },
+  {
+    "id": "calendar-check",
+    "title": "Check the Week Ahead",
+    "emoji": "🗓️",
+    "category": "adulting",
+    "anchor": "evening",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to peek at the week together so nothing sneaks up on us?",
+    "keywords": ["calendar", "week", "plan", "schedule", "appointments"],
+    "steps": [
+      { "text": "Open your calendar or planner" },
+      { "text": "Read each day of the coming week" },
+      { "text": "Add anything that's missing" },
+      { "text": "Pick the one day that needs the most energy and circle it" }
+    ]
+  },
+  {
+    "id": "refill-meds",
+    "title": "Refill Prescriptions",
+    "emoji": "🏥",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "monthly",
+    "essential": false,
+    "invite": "Want to check your meds so you never run out?",
+    "keywords": ["refill", "prescription", "pharmacy", "meds running out"],
+    "steps": [
+      { "text": "Count how many days of meds you have left" },
+      { "text": "Open your pharmacy app or find their phone number" },
+      { "text": "Request the refill" },
+      { "text": "Put the pickup day in your calendar" }
+    ]
+  },
+  {
+    "id": "homework-start",
+    "title": "Homework Start",
+    "emoji": "📚",
+    "category": "school",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to just open the homework with me? Opening it is the whole first step.",
+    "keywords": ["homework", "assignment", "study", "school", "essay", "project"],
+    "steps": [
+      { "text": "Open the assignment" },
+      { "text": "Get a pen or your laptop ready" },
+      { "text": "Read only the first question" },
+      { "text": "Write anything for the first answer (messy is fine)" },
+      { "text": "Keep going for 10 minutes, or stop here", "timerMinutes": 10 }
+    ]
+  },
+  {
+    "id": "focus-sprint",
+    "title": "One Focus Sprint",
+    "emoji": "⏳",
+    "category": "school",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to do one short focus sprint? I'll keep time and nudge you when it's done.",
+    "keywords": ["focus", "pomodoro", "concentrate", "work", "sprint", "procrastinating"],
+    "steps": [
+      { "text": "Pick one task" },
+      { "text": "Put your phone face down or in another room" },
+      { "text": "Start working; I'll nudge you in 15 minutes", "timerMinutes": 15 },
+      { "text": "Stand up, stretch, and drink some water" }
+    ]
+  },
+  {
+    "id": "work-start",
+    "title": "Start the Work Block",
+    "emoji": "💻",
+    "category": "school",
+    "anchor": "daytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to ease into the work block? Just five gentle minutes.",
+    "keywords": ["work", "job", "start work", "tasks", "to do", "office"],
+    "steps": [
+      { "text": "Open your to-do list" },
+      { "text": "Pick the tiniest task on it" },
+      { "text": "Close any tabs you don't need" },
+      { "text": "Work on it for 5 minutes" }
+    ]
+  },
+  {
+    "id": "cozy-reset",
+    "title": "Cozy Corner Reset",
+    "emoji": "🧶",
+    "category": "home",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to make one corner feel cozy before bed?",
+    "keywords": ["couch", "living room", "blanket", "pillows", "cozy"],
+    "steps": [
+      { "text": "Fold the blanket on the couch" },
+      { "text": "Put the pillows back where they go" },
+      { "text": "Take any cups to the kitchen" }
+    ]
+  }
+]
