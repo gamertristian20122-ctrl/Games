@@ -32,6 +32,7 @@ const Stage = preload("res://scripts/battle/stage.gd")
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
+const WalkLight = preload("res://scripts/fx/walk_light.gd")
 
 const PX := 1.0 / 16.0
 const PITCH := 35.0                 ## how steeply the camera looks down out of doors, in degrees (low, like a stage)
@@ -55,6 +56,7 @@ uniform vec3 tint : source_color = vec3(1.0);
 uniform float shine = 0.0;
 uniform float sway = 0.0;
 varying vec2 foot;
+varying vec3 card_side;
 void vertex() {
 	// plants move a little in the wind: the top of the picture, never the foot
 	float top = 1.0 - UV.y;
@@ -69,9 +71,15 @@ void fragment() {
 	EMISSION = c.rgb * shine;
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(foot);
+	card_side = TANGENT;
 }
 void light() {
-	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);
+	// a flat picture is lit as if it were a little round: the side that faces a light is brighter,
+	// the other side darker (on average as bright as before). Lamps light the foot more than the top.
+	float side = (UV.x * 2.0 - 1.0) * dot(normalize(card_side), LIGHT);
+	float lamp = 0.35 * (1.0 + 0.55 * side) * (1.15 - 0.3 * (1.0 - UV.y));
+	float sun = sun_share * (1.0 + 0.22 * side);
+	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun : max(lamp, 0.0));
 }
 "
 ## The ground: the place's ground tile laid cell by cell, each turned at random so that no rows
@@ -232,6 +240,13 @@ var _water_mats: Array = []
 var _solid_shader: Shader
 var _water_shader: Shader
 var _dot_tex: GradientTexture2D
+var _glows: Array = []             ## per lamp: [PointLight2D, pool material, halo material, warm?, seed]
+var _windows: Array = []           ## [pool material, halo material]: window light that falls on the street at night
+var _sky_fx: Node3D                ## beams of sun and dust: follows the camera's spot
+var _shaft_mats: Array = []
+var _motes: CPUParticles3D
+var _grade := {}
+var _stats_t := 0.0
 
 
 func setup(the_hub: Node2D) -> void:
@@ -275,7 +290,7 @@ func setup(the_hub: Node2D) -> void:
 	add_child(_sun)
 	# the last pass: blur away from the knight, warm lights, cool shade, dark corners
 	var sh := Shader.new()
-	sh.code = Stage.POST_CODE
+	sh.code = WalkLight.POST_CODE
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
 	var q := QuadMesh.new()
@@ -311,6 +326,11 @@ func rebuild() -> void:
 	_live.clear()
 	_still.clear()
 	_lamps.clear()
+	_glows.clear()
+	_windows.clear()
+	_shaft_mats.clear()
+	_motes = null
+	_sky_fx = null
 	_known = 0
 	_flies = null
 	_world = Node3D.new()
@@ -357,19 +377,38 @@ func rebuild() -> void:
 	for l in _labels_under(stage):
 		_twin(l, _holder_of(l, ysort))
 	_twin(hub._prompt, null)
-	# light
-	for pair: Array in hub._lamps if _outdoor else []:
+	# light: every lamp of the place is a real light, a pool of light on the ground and a soft glow
+	for pair: Array in hub._lamps:
 		var two: PointLight2D = pair[0]
 		var three := OmniLight3D.new()
 		three.position = Vector3(two.position.x * PX, 1.1 + _height(two.position), two.position.y * PX + 0.4)
+		var flame := three.position + Vector3(0.0, 0.1, 0.0)
+		var base := two.position
+		# the flat look draws a lamp post's light round its glass, 40 px up the picture; here the
+		# light belongs AT the glass, on top of the post that stands on the ground below it
+		for spot: Vector2 in place.get("torches", []):
+			if absf(spot.x - two.position.x) < 6.0 and spot.y - two.position.y > 20.0 and spot.y - two.position.y < 60.0:
+				base = spot
+				flame = _where_at(spot) + _up * (50.0 * PX) + Vector3(0.0, 0.0, 0.05)
+				three.position = flame + Vector3(0.0, -0.4, 0.5)
+				break
 		three.light_color = two.color
 		three.omni_range = 64.0 * two.texture_scale * PX * LAMP_REACH
 		three.omni_attenuation = 1.4
 		three.shadow_enabled = false
 		_world.add_child(three)
 		_lamps.append([two, three])
+		var warm := two.color.r > two.color.b
+		var reach := 64.0 * two.texture_scale * PX * 0.62
+		var ground := Vector3(base.x * PX, _height(base), base.y * PX + (0.3 if base == two.position else 0.15))
+		var pool := WalkLight.pool(ground, reach, two.color)
+		_world.add_child(pool)
+		var halo := WalkLight.halo(flame, clampf(reach * 0.55, 0.9, 2.4), two.color)
+		_world.add_child(halo)
+		_glows.append([two, pool.material_override, halo.material_override, warm, float(_glows.size()) * 2.7])
 	if _outdoor:
 		_build_flies(place)
+		_build_sky_fx(place)
 	_sync_light()
 	_sync(0.0)
 
@@ -640,6 +679,13 @@ func _build_house(h: Dictionary, shade: SurfaceTool) -> void:
 			var wx := cx + side * float(h.get("win_dx", 30.0)) * PX
 			_face(win, [Vector3(wx - wz.x * 0.5 * PX, y0 + wz.y * PX * v, zd), Vector3(wx + wz.x * 0.5 * PX, y0 + wz.y * PX * v, zd),
 				Vector3(wx + wz.x * 0.5 * PX, y0, zd), Vector3(wx - wz.x * 0.5 * PX, y0, zd)], full, front)
+			# at night the window's light falls on the street in front of it, and glows in the air
+			var lamp_colour := Color(1.0, 0.72, 0.40)
+			var spill := WalkLight.pool(Vector3(wx, 0.0, cz + 0.9), 1.5, lamp_colour)
+			_world.add_child(spill)
+			var glow := WalkLight.halo(Vector3(wx, y0 + wz.y * PX * v * 0.5, zd + 0.05), 1.3, lamp_colour)
+			_world.add_child(glow)
+			_windows.append([spill.material_override, glow.material_override])
 	# the shadow: the outline of the whole house as the sky light throws it on the ground
 	var low := [Vector3(cx - w, 0, cz), Vector3(cx + w, 0, cz), Vector3(cx + w, 0, cz - d), Vector3(cx - w, 0, cz - d)]
 	_cast(low + high, shade)
@@ -901,6 +947,10 @@ func _where(holder: Node2D) -> Vector3:
 	return Vector3(holder.position.x * PX, _height(holder.position), holder.position.y * PX)
 
 
+func _where_at(at: Vector2) -> Vector3:
+	return Vector3(at.x * PX, _height(at), at.y * PX)
+
+
 ## How much a still picture sways in the wind (plants do, stone and wood do not).
 func _sway_of(tex: Texture2D) -> float:
 	var path := tex.resource_path
@@ -1132,6 +1182,27 @@ func _build_flies(place: Dictionary) -> void:
 	_world.add_child(_flies)
 
 
+## Beams of sun and dust in the air, by day (they follow the spot the camera looks at).
+func _build_sky_fx(place: Dictionary) -> void:
+	var g := WalkLight.grade(hub.place_id, true, 1.0, _lit())
+	_sky_fx = Node3D.new()
+	_world.add_child(_sky_fx)
+	if float(g["shafts"]) > 0.0:
+		var light_dir := Vector3(LEAN.x, -1.0, LEAN.y)
+		var many := 6 if (place["size"] as Vector2).x < 1200.0 else 8
+		_shaft_mats = WalkLight.shafts(_sky_fx, light_dir, many, 11.0, 9.0)
+	if float(g["motes"]) > 0.0:
+		_motes = WalkLight.motes(Vector3(9.0, 1.4, 6.0), _dot())
+		_motes.position = Vector3(0.0, 1.5, 0.0)
+		_sky_fx.add_child(_motes)
+
+
+## Has this land's beacon been lit (the golden dawn)?
+func _lit() -> bool:
+	var land := String(WalkLight.LAND.get(hub.place_id, ""))
+	return land != "" and Save.hub_get("tale:lit:" + land) > 0
+
+
 ## The colour of the day (hub.gd's CanvasModulate) becomes the sky light, the dark and the mist.
 func _sync_light() -> void:
 	var sky := Color.WHITE
@@ -1169,9 +1240,34 @@ func _sync_light() -> void:
 	for mat: ShaderMaterial in _water_mats:
 		mat.set_shader_parameter("day", _day)
 		mat.set_shader_parameter("sky", Vector3(sky.r, sky.g, sky.b) * Vector3(0.62, 0.78, 0.95))
-	for pair: Array in _lamps:
-		if is_instance_valid(pair[0]) and is_instance_valid(pair[1]):
-			(pair[1] as OmniLight3D).light_energy = (pair[0] as PointLight2D).energy * LAMP_ENERGY
+	_grade = WalkLight.grade(hub.place_id, _outdoor, _day, _lit())
+	var t := Time.get_ticks_msec() / 1000.0
+	var night := 1.0 - _day
+	for i in _lamps.size():
+		var pair: Array = _lamps[i]
+		if not (is_instance_valid(pair[0]) and is_instance_valid(pair[1])):
+			continue
+		var two := pair[0] as PointLight2D
+		var g: Array = _glows[i]
+		var f := WalkLight.flicker(t, float(g[4]), bool(g[3]))
+		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f
+		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.55, night) * f)
+		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.42, night) * f)
+	var dark_k := night if _outdoor else 0.0
+	for i in _windows.size():
+		var w: Array = _windows[i]
+		var f2 := WalkLight.flicker(t * 0.5, float(i) * 1.9, true)
+		(w[0] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2)
+		(w[1] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2)
+	var beams := float(_grade.get("shafts", 0.0)) * _day
+	for mat: ShaderMaterial in _shaft_mats:
+		mat.set_shader_parameter("strength", 0.075 * beams)
+		mat.set_shader_parameter("colour", _vec(_grade["haze"]))
+	if is_instance_valid(_sky_fx):
+		_sky_fx.visible = _day > 0.05
+	if is_instance_valid(_motes):
+		_motes.emitting = _day > 0.3
 	if is_instance_valid(_flies) and is_instance_valid(hub._flies):
 		_flies.emitting = (hub._flies as CPUParticles2D).emitting
 
@@ -1226,8 +1322,33 @@ func _sync(_delta: float) -> void:
 	mat.set_shader_parameter("shade", Vector3(0.88, 0.96, 1.12).lerp(Vector3(1.0, 0.94, 0.88), _day))
 	mat.set_shader_parameter("punch", lerpf(1.0, 1.07, _day))
 	mat.set_shader_parameter("rich", lerpf(1.0, 0.96, _day))
+	if not _grade.is_empty():
+		# the colour of this land at this time of day (scripts/fx/walk_light.gd GRADES)
+		mat.set_shader_parameter("warm", _grade["warm"])
+		mat.set_shader_parameter("shade", _grade["shade"])
+		mat.set_shader_parameter("punch", _grade["punch"])
+		mat.set_shader_parameter("rich", _grade["rich"])
+		mat.set_shader_parameter("rim", _grade["rim"])
+		mat.set_shader_parameter("far", _grade["far"])
+		mat.set_shader_parameter("sky_glow", _day * float(_grade["shafts"]))
+	if is_instance_valid(_sky_fx):
+		_sky_fx.position = Vector3(target.x, _height(centre), target.z)
 	_drift += _delta * 0.004
 	Sprite3.set_sun(_day, 7.0, Vector2(_drift, _drift * 0.6), pool_at, _dist * 0.8, 0.95)
 	mat.set_shader_parameter("lift", _lift)
-	mat.set_shader_parameter("haze", Vector3(1.0, 0.85, 0.63))
+	mat.set_shader_parameter("haze", _vec(_grade["haze"]) if not _grade.is_empty() else Vector3(1.0, 0.85, 0.63))
 	_sync_words(zoom)
+	if G.flag("lightstats"):
+		# test: what the 3D look costs (draw calls are what a phone feels most)
+		_stats_t += _delta
+		if _stats_t > 2.0:
+			_stats_t = 0.0
+			print("[light] %s draws=%d objects=%d prims=%d fps=%d" % [hub.place_id,
+				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
+				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
+				Engine.get_frames_per_second()])
+
+
+func _vec(c: Color) -> Vector3:
+	return Vector3(c.r, c.g, c.b)
