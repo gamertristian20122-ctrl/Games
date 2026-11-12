@@ -55,6 +55,27 @@ make sure to have that very soft light like this." Read as:
   the look, (6) balance. An APK after each.
 - The owner has still not said how any of it runs on the phone. Keep Settings > "3D look" working.
 
+## The story (PROPOSED 12 Nov 2026; the owner has NOT said yes yet: do not build it before they do)
+Asked with three choices (The Stolen Dawn / The Thorn-Sickness / The Broken Crown), the owner
+answered: story "I cant decide 1 or 4" (there was no 4; read as torn between 1 and 3, to be
+confirmed), companions "3", mood "1 and 2" = hopeful adventure AND dark and serious.
+So the proposal MERGES The Stolen Dawn with The Broken Crown:
+- **Before:** the first king set the Dawnfire in his crown and lit four beacons with it; their
+  light keeps the long night out and keeps something asleep under Hollow Hill.
+- **What happened:** the king died, the crown was broken in four, each shard was carried off by a
+  lord, and each beacon went dark. The nights grow longer. Under the hill the sleeper stirs.
+- **The hero:** Aldous, last knight of the king's guard, who was there when the crown broke.
+- **The road:** four lands, each with a town, a lord who holds a shard, and a dark beacon: the
+  Elfwood, the Sands, the Cinder Mountains, the Sunken Archive (art for all four is in the game).
+  Win the shard (not always by fighting), relight the beacon, and that land's days turn long and
+  golden again (the soft light is the reward the player SEES). Then down under Hollow Hill.
+- **Companions (3, a party of four, everyone fights):** Seraphine the sun-mage (already in),
+  Thessaly the elf warden (a ranger; already an NPC), Grukk the orc smith (heavy blows; already
+  an NPC). One joins in each of the first three lands, each with a scene and a reason of their own.
+- **Mood:** a warm world worth saving, with real loss in it: not every lord can be saved, and
+  relighting a beacon costs something each time. The ending is earned, and it is dawn.
+- Names and words are placeholders the owner may rewrite. Nothing here is built.
+
 ## Direction since 12 Nov 2026 (night): the LIT 3D LOOK, then TURN-BASED battles
 The owner sent six pictures of a famous "pixel people in a lit 3D world" turn-based RPG and wrote:
 "I'm hoping to ... get it to this level and then turn it into turn-based RPG game". This overrules
