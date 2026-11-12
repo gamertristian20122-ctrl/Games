@@ -53,7 +53,11 @@ static func get_place(id: String) -> Dictionary:
 			return Tale.deepwood()
 		"beacon":
 			return Tale.beacon()
+		"suncourt":
+			return Tale.suncourt()
 	var place := _base_place(id)
+	if id == "dustwatch" or id == "world":
+		_fit_sands(id, place)
 	# DEPTH (scripts/hub/view3d.gd): where the ground climbs, the hills, the water of each place
 	match id:
 		"elfwood":
@@ -361,3 +365,29 @@ static func _emberfall() -> Dictionary:
 		"lights": [[Vector2(300, 266), Color(1.0, 0.6, 0.35), 2.1, 0.8], [Vector2(110, 200), Color(1.0, 0.5, 0.2), 1.6, 0.9], [Vector2(490, 200), Color(1.0, 0.5, 0.2), 1.6, 0.9],
 			[Vector2(300, 130), Color(1.0, 0.45, 0.25), 1.2, 0.6]],
 	}
+
+
+## CHAPTER TWO of the story (scripts/data/tale.gd): the road to Dustwatch opens once the Elfwood
+## burns, Dustwatch's people speak for the story, Seraphine waits on its wall, and the cistern
+## stair leads down to the Sunwell (Tale.suncourt()). Only while the story is on.
+static func _fit_sands(id: String, place: Dictionary) -> void:
+	if id == "world":
+		for e: Dictionary in place["exits"]:
+			if String(e["to"]) == "dustwatch":
+				e.erase("need")
+				e["tale"] = 7
+				e["why"] = "The Sands come after the Elfwood. Captain Hale will send you."
+		for sg: Dictionary in place["signs"]:
+			if String(sg["text"]) == "Dustwatch":
+				sg.erase("need")
+		return
+	place["tint"] = Color(1.0, 0.92, 0.80) if Tale.lit("sands") else Color(0.72, 0.74, 0.92)
+	for row: Dictionary in place["people"]:
+		if ["sefa", "nib", "imre"].has(String(row["id"])):
+			row["role"] = "chat"
+	(place["people"] as Array).append({"id": "sera", "name": "Seraphine", "title": "Sun-mage of the Archive", "sprite": "pc_scholar_censor",
+		"hands": "pc_hand_library_6", "pos": Vector2(446, 200), "face": -1, "role": "chat", "text": "", "tale_from": 7, "tale_to": 8})
+	(place["exits"] as Array).append({"rect": Rect2(296, 200, 48, 10), "to": "suncourt", "at": Vector2(280, 372), "tale": 9,
+		"why": "Nobody goes down the stair tonight. Captain Sefa's orders."})
+	if Tale.lit("sands"):
+		(place["lights"] as Array).append([Vector2(320, 190), Color(1.0, 0.84, 0.52), 2.2, 0.8])     # the beacon's light up the stair

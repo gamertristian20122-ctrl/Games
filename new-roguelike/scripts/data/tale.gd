@@ -10,8 +10,12 @@ extends RefCounted
 ## SWALLOWS its shard: the crown can never be made again. Three companions join on the way.
 ##
 ## CHAPTER ONE (built): the Elfwood. Thessaly the warden joins; the Bramble Giant; the first beacon.
-## Chapters two to four (the Sands and Seraphine, the Cinder Mountains and Grukk, the Sunken
-## Archive) and the end under Hollow Hill are NOT built yet.
+## CHAPTER TWO (built, steps 7 to 14): the Sands. Dustwatch on the wide world; Seraphine, the Dune
+## Queen's daughter, joins after holding the wall with him; the Queen sends the knight after the
+## Dune Gorgon of the Bone Dunes, then gives up her shard (and with it her sight); the beacon of
+## the Sands stands in the Sunwell under the town (suncourt()).
+## Chapters three and four (the Cinder Mountains and Grukk, the Sunken Archive) and the end under
+## Hollow Hill are NOT built yet.
 ##
 ## HOW IT WORKS
 ##   step()        where the story stands: a number kept in the save ("tale:step"). STEPS[step] is
@@ -44,9 +48,17 @@ const STEPS := [
 	"Climb to the dark beacon of the wood",               # 4
 	"Set the shard in the beacon",                        # 5
 	"Bring word to Captain Hale in Wickmere",             # 6
-	"The road to the Sands opens in the next chapter",    # 7
+	# CHAPTER TWO: the Sands
+	"Cross the wide world to Dustwatch, in the Sands",    # 7
+	"Find the sun-mage on Dustwatch's wall",              # 8
+	"Go down the stair to the Dune Queen's Sunwell",      # 9
+	"Hunt the Dune Gorgon in the Bone Dunes",             # 10
+	"Bring word to the Dune Queen",                       # 11
+	"Set the second shard in the beacon of the Sands",    # 12
+	"Bring word to Captain Hale in Wickmere",             # 13
+	"The Cinder Mountains wait in the next chapter",      # 14
 ]
-const LAST_STEP := 7
+const LAST_STEP := 14
 
 ## The words under the intro's seven pictures (scripts/hub/intro.gd; the pictures are the old ones).
 const INTRO := [
@@ -73,7 +85,17 @@ const TALK := {
 			"And the shard is gone into the stone? Then there will never be a crown again. Good. A light does more than a king.",
 			"Three beacons are still dark: the Sands, the Cinder Mountains, the Sunken Archive. Rest first. Take this from the watch's chest.",
 		], "option": "Take the watch's thanks", "do": {"step": 7, "coins": 60, "say": "Chapter one is done: +60 coins"}},
-		{"from": 7, "pages": ["The road to the Sands is being cleared. Soon, knight. Until then the wild lands south of the gate will keep your sword sharp."]},
+		{"from": 7, "to": 7, "pages": [
+			"The Sands next. Out of the south gate, across the wide world, east until the grass gives up. Dustwatch is the last town before the dunes.",
+			"The Dune Queen holds the second shard. She is no thief, knight. She is a mother with a city to keep, and those are harder to talk round.",
+		]},
+		{"from": 8, "to": 12, "pages": ["The Sands, knight. Every night we look south-east and count the dark. Bring us one less."]},
+		{"from": 13, "to": 13, "pages": [
+			"Two lights now. From the wall you can see the Sands burning gold on the edge of the world, like a second sunset that will not go down.",
+			"The Queen gave it up herself? ...Then she is worth ten of the lords I have met. Drink to her tonight, all of you.",
+			"Two beacons dark: the Cinder Mountains and the Archive. Take the watch's thanks. You have earned more than we have.",
+		], "option": "Take the watch's thanks", "do": {"step": 14, "coins": 90, "say": "Chapter two is done: +90 coins"}},
+		{"from": 14, "pages": ["The smiths of the Cinder Mountains sent no word in a year. Rest, knight. The mountains are the next chapter, and they will still be there."]},
 	],
 	"barkeep": [
 		{"from": 0, "pages": ["The Hollow Flagon. Your bed is upstairs and paid for by the watch. Sleep when the night gets too long; the lamps will keep."]},
@@ -89,7 +111,8 @@ const TALK := {
 			"I am writing it all down, in case there is a morning to read it in.",
 			"Four lords took four shards: Caerwyn of the Elfwood, the Dune Queen, the Forgemaster, and the Archivist who answers no letters. Each thought the fire would keep their own people safe.",
 		]},
-		{"from": 6, "pages": ["One beacon lit, and it ate its shard to burn. I have written that down twice. A crown that cannot be remade: the lords will not like it."]},
+		{"from": 6, "to": 12, "pages": ["One beacon lit, and it ate its shard to burn. I have written that down twice. A crown that cannot be remade: the lords will not like it."]},
+		{"from": 13, "pages": ["Two beacons. The Dune Queen gave hers up with her own hand. I have written it in red ink, which I keep for the things that matter."]},
 	],
 	"ysolde": [
 		{"from": 0, "to": 2, "pages": ["I walked out of the Elfwood with thorns in my hair and my sister's name in my mouth. Thessaly would not leave the stones. If you go east, tell her Ysolde is alive."]},
@@ -145,6 +168,71 @@ const TALK := {
 		], "option": "Set the shard in the beacon", "do": {"step": 6, "light": "elfwood", "say": "The beacon of the Elfwood burns"}},
 		{"from": 6, "pages": ["The beacon burns the colour of morning. The shard is somewhere inside the fire, and the fire does not give it back."]},
 	],
+
+	# ---------------------------------------------------------------- CHAPTER TWO: the Sands
+	# Dustwatch (the town), the Sunwell under it (the Dune Queen's court and the beacon of the
+	# Sands), the Bone Dunes on the wide world (the Dune Gorgon). Seraphine joins on the wall.
+	"sefa": [
+		{"from": 7, "to": 8, "pages": [
+			"Stop there. ...The king's mark? I thought that died with him. Captain Sefa, of the Queen's wall.",
+			"If you want the Queen, you want the stair, and nobody goes down it tonight. The dead come out of the dunes at dark, and every sword I have is on the wall.",
+			"There is a mage up there who says she knew you were coming. Seraphine. The Queen's own daughter. Talk to her, not me.",
+		]},
+		{"from": 9, "to": 12, "pages": ["The stair is yours, knight. Go softly. The Queen has not slept since the night the crown broke."]},
+		{"from": 13, "pages": ["The dunes are just sand again. My people slept last night, all of them, at once. I did not know I had missed that."]},
+	],
+	"sera": [
+		{"from": 7, "to": 8, "pages": [
+			"A knight of the guard. I saw you in the stars three nights running, and I thought the stars were lying again.",
+			"I am Seraphine. I studied light at the Sunken Archive until the Archivist stopped answering letters. I came home to find my mother holding a piece of the sun in her hand.",
+			"The shard keeps the dark off Dustwatch, and only Dustwatch. And it calls the dead out of the dunes, every night a few more. She will not see it.",
+			"Here they come. Hold the wall with me, and I will take you down to her after.",
+		], "option": "Hold the wall with her", "do": {"battle": "dustwall"}},
+	],
+	"queen": [
+		{"from": 9, "to": 10, "pages": [
+			"Seraphine. You brought me a knight. The king's guard sends a knight, now that the king is past guarding.",
+			"I know what you want. Look at it, Aldous. Eleven years I have held this shard, and in eleven years not one child of Dustwatch has died in the dark.",
+			"Give it to a cold stone, and what keeps my city? Your word?",
+			"...A Gorgon walks the Bone Dunes, older than the town. It comes closer every night, for this. Kill it. Show me the dark can be fought with swords and not only with fire, and I will listen.",
+		], "option": "Hunt the Gorgon", "do": {"step": 10, "say": "The Gorgon waits in the Bone Dunes, south of Dustwatch"}},
+		{"from": 11, "to": 11, "pages": [
+			"The Gorgon is dead? ...Then you did in one night what I could not do in eleven years.",
+			"Come close, Aldous. Closer. No, I cannot see you. I have not seen anything but this light for a year. It took my eyes a little at a time, and I let it.",
+			"Seraphine, take my hand. Take the shard out of it. I am too much of a coward to open it myself.",
+			"There. It is dark. It is very dark. Go and light your beacon, knight, before I ask for it back.",
+		], "option": "Take the second shard", "do": {"step": 12, "say": "You carry the shard of the Sands"}},
+		{"from": 12, "to": 12, "pages": ["Do not wait for me. The beacon is behind me, where it has always been. I sat with my back to it so I would not have to look."]},
+		{"from": 13, "pages": ["I cannot see the beacon. But I can feel it on my face, like the morning used to be. That will do. That will do very well."]},
+	],
+	"grukk": [
+		{"from": 7, "to": 12, "pages": ["Grukk forges for the Queen's wall now. Before that, the mountains. Grukk does not talk about the mountains. Buy something."]},
+		{"from": 13, "pages": ["Two lights. The mountains next, yes? ...Grukk has been thinking. Grukk will talk about the mountains soon. Not yet."]},
+	],
+	"nib": [
+		{"from": 7, "to": 12, "pages": ["Charms against the dead, two coins. Do they work? Nobody has come back to complain."]},
+		{"from": 13, "pages": ["No dead tonight. Nobody buys a charm. Best night of my life, worst night for trade."]},
+	],
+	"imre": [
+		{"from": 7, "to": 12, "pages": ["These walls were carved by the people who built the beacons. Read them: the fire is not a thing to own. The Queen has not read them in years."]},
+		{"from": 13, "pages": ["The carvings are warm. I touched one and it was warm, like a hand. Write that down for me, I am shaking."]},
+	],
+	"site_dunes": [
+		{"from": 10, "to": 10, "pages": [
+			"Tusks of things long dead stand out of the sand. Between them, so still you take them for stones, are people. Stone people, mid-step, mid-scream.",
+			"Seraphine: \"Do not meet its eyes. Whatever you do, Aldous, watch its hands.\"",
+			"Something with a crown of snakes rises out of the dune.",
+		], "option": "Fight the Gorgon", "do": {"battle": "gorgon"}},
+		{"from": 11, "pages": ["The stone people are still stone. But the dunes are quiet, and the sand is covering them, gently."]},
+	],
+	"sandbeacon": [
+		{"from": 12, "to": 12, "pages": [
+			"The beacon of the Sands stands at the bottom of the Sunwell, where the noon sun falls straight down. Its bowl is full of sand.",
+			"Seraphine sweeps it clean with her sleeve. \"My mother brought me here when I was small. She said one day it would burn again. I think she forgot she said it.\"",
+			"Thessaly: \"Two shards gone into stone. No turning back now, for any of us.\"",
+		], "option": "Set the shard in the beacon", "do": {"step": 13, "light": "sands", "say": "The beacon of the Sands burns"}},
+		{"from": 13, "pages": ["The beacon burns white and gold. The shard is in the fire, and the fire keeps it."]},
+	],
 }
 
 ## SCENES: words that come by themselves when the knight arrives somewhere at a step of the story
@@ -196,6 +284,31 @@ const SCENES := [
 		"Ysolde: \"You look terrible.\"   Thessaly: \"You look alive.\"",
 		"They stand a long while with their foreheads together, the way elves do, and the whole square finds something else to look at.",
 	]},
+	# CHAPTER TWO: the Sands
+	{"id": "sands", "place": "dustwatch", "from": 8, "to": 8, "name": "Dustwatch", "title": "The last town before the dunes", "sprite": "", "pages": [
+		"Dustwatch sits on its wall of baked brick like a cat on a warm step. Every torch on the wall is lit, and every face on the wall looks out.",
+		"Thessaly: \"No trees. No roots. I will be honest, Aldous, I do not like it.\"",
+	]},
+	{"id": "after_wall", "place": "dustwatch", "from": 9, "to": 9, "name": "Seraphine", "title": "Sun-mage of the Archive", "sprite": "pc_scholar_censor", "pages": [
+		"They will be back tomorrow night, and more of them. They always are. That is what the shard does: it keeps us, and it calls them.",
+		"My mother is not wicked, Aldous. She is frightened, and she has been frightened for eleven years, and it has made her very strong.",
+		"I am coming with you, to the end of it. Somebody who loves her has to be there when she lets go.",
+	]},
+	{"id": "sunwell", "place": "suncourt", "from": 9, "to": 9, "name": "The Sunwell", "title": "The Dune Queen's court", "sprite": "", "pages": [
+		"The stair opens into a great round well, open to the sky. In the middle of it stands a beacon, cold, its bowl full of sand.",
+		"With her back to it sits the Dune Queen, and in her closed hand is a light so bright it shows the bones of her fingers.",
+	]},
+	{"id": "after_gorgon", "place": "world", "from": 11, "to": 11, "name": "Seraphine", "title": "Sun-mage of the Archive", "sprite": "pc_scholar_censor", "pages": [
+		"It is dead. It is really dead. Eleven years my mother sat in the dark for fear of that thing.",
+		"Back to Dustwatch, Aldous. Before I lose my nerve, or she finds hers.",
+	]},
+	{"id": "sands_dawn", "place": "suncourt", "from": 13, "to": 13, "name": "Seraphine", "title": "Sun-mage of the Archive", "sprite": "pc_scholar_censor", "pages": [
+		"Look up. The light is climbing the walls of the well, and over the top, and out across the dunes.",
+		"She is smiling. Do you see? She cannot see it, and she is smiling.",
+	]},
+	{"id": "two_lights", "place": "village", "from": 13, "to": 13, "name": "Wickmere", "title": "", "sprite": "", "pages": [
+		"The lamps of Wickmere are lit as always. But tonight, low in the south-east, there is a second glow on the sky, and the children keep climbing the wall to see it.",
+	]},
 ]
 
 ## The story's own battles. "foes": ids of scripts/data/enemies.gd, or "boss": a row of BOSSES.
@@ -211,6 +324,13 @@ const BATTLES := {
 		"win": {"step": 4, "say": "The path to the beacon is open"}},
 	"giant": {"title": "Old Bramblejaw", "look": "forest_night", "tier": 0, "boss": "bramblejaw",
 		"win": {"step": 5, "say": "The Bramble Giant falls"}},
+	# chapter two: the Sands
+	"dustwall": {"title": "The dead come out of the dunes", "look": "desert", "tier": 1,
+		"foes": ["dust_mummy", "tomb_blade", "dust_mummy"], "with": ["sera"], "xp_bonus": 30,
+		"win": {"step": 9, "join": "sera", "say": "Seraphine, Sun-mage of the Archive, travels with you"}},
+	"gorgon": {"title": "The Dune Gorgon", "look": "desert", "tier": 1, "boss": "gorgon",
+		"foes": ["dust_mummy"],
+		"win": {"step": 11, "say": "The Dune Gorgon falls"}},
 }
 
 ## Bosses of the story's battles. The numbers are for a knight of about level 4 with one companion.
@@ -219,11 +339,15 @@ const BOSSES := {
 	"bramblejaw": {"name": "Old Bramblejaw", "sprite": "boss_ogre", "tint": Color(0.72, 0.95, 0.70),
 		"hp": 185, "atk": 8.8, "def": 2.0, "speed": 8.0, "sweep": 3, "sweep_power": 0.75, "sweep_name": "Briar Sweep",
 		"xp": 90, "coins": 40},
+	"gorgon": {"name": "The Dune Gorgon", "sprite": "pc_medusa", "tint": Color(1.0, 0.92, 0.78),
+		"hp": 240, "atk": 10.0, "def": 3.0, "speed": 11.0, "sweep": 3, "sweep_power": 0.7, "sweep_name": "Stone Gaze",
+		"xp": 140, "coins": 70},
 }
 
 ## Walking into a place at a step: {place: {step: do}}.
 const ENTER := {
 	"elfwood": {1: {"step": 2}},
+	"dustwatch": {7: {"step": 8}},
 }
 
 ## What people of the old story do (open the hill's levels, hand out its quests, sell its
@@ -504,6 +628,51 @@ static func beacon() -> Dictionary:
 				"role": "chat", "text": "", "tale_from": 4, "tale_to": 4, "tint": Color(0.72, 0.95, 0.70), "solid": 16.0},
 			{"id": "beacon", "name": "The beacon", "title": "", "ghost": true, "pos": Vector2(240, 214), "top": 44, "role": "chat", "text": "",
 				"tale_from": 5},
+		],
+		"lights": lights,
+	}
+
+
+## THE SUNWELL (chapter two): a great round well open to the sky under Dustwatch, down the
+## cistern stair. The Dune Queen keeps her court here with her back to the cold beacon of the
+## Sands, the shard burning in her closed hand.
+static func suncourt() -> Dictionary:
+	var glow := lit("sands")
+	var held := step() < 12                         # the shard is still in the Queen's hand
+	var lights: Array = [[Vector2(150, 176), Color(1.0, 0.74, 0.42), 1.0, 0.5], [Vector2(410, 176), Color(1.0, 0.74, 0.42), 1.0, 0.5]]
+	if glow:
+		lights.append([Vector2(280, 170), Color(1.0, 0.86, 0.56), 3.6, 1.4])
+	else:
+		lights.append([Vector2(280, 180), Color(0.5, 0.6, 1.0), 1.2, 0.35])
+	if held:
+		lights.append([Vector2(206, 250), Color(1.0, 0.9, 0.62), 1.6, 0.9])     # the shard in her fist
+	var forest := {"top_gaps": [], "behind": [], "open": [Rect2(220, 390, 120, 90)],
+		"big": ["hub_dstone_0", "hub_obelisk_2", "hub_dstone_1", "hub_tusk_1", "hub_dpillar_3", "hub_dbush_0"],
+		"side": ["hub_dpillar_0", "hub_dstone_1", "hub_dpillar_2", "hub_cactus_3"],
+		"low": ["hub_dshrub", "hub_dbush_2", "hub_dpot_0", "hub_dstone_2", "hub_dpot_1", "hub_dbush_2"],
+		"young": ["hub_dpillar_1", "hub_cactus_2", "hub_dbush_1"]}
+	return {
+		"name": "The Sunwell", "size": Vector2(560, 420), "outdoor": true, "walk": Rect2(30, 110, 500, 280), "spawn": Vector2(280, 376),
+		"ground": "hub_sand", "tint": Color(1.0, 0.93, 0.80) if glow else Color(0.64, 0.68, 0.92),
+		"rise": {"from": 100.0, "over": 80.0, "height": 34.0},
+		"hills": [{"at": Vector2(280, 200), "radius": 150.0, "height": 22.0, "top": 84.0}],
+		"floor": [["hub_paving", Rect2(184, 144, 192, 160)]],
+		"props": [["hub_obelisk_0", 150, 186, 12, 2], ["hub_obelisk_1", 410, 186, 12, 2], ["hub_obelisk_2", 96, 330, 12, 2], ["hub_obelisk_2", 464, 330, 12, 2],
+			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_3", 390, 290, 6, 2],
+			["hub_dpot_0", 230, 316, 5, 1], ["hub_dpot_1", 330, 318, 4, 1], ["hub_dchest", 448, 226, 10, 2], ["hub_dpot_1", 470, 236, 4, 1],
+			["hub_cactus_4", 70, 214, 8, 2], ["hub_cactus_3", 500, 214, 6, 2], ["hub_dtree_1", 74, 372, 5, 2], ["hub_dbush_1", 486, 372, 8, 3],
+			["hub_tusk_2", 120, 150, 6, 2], ["hub_dblock_0", 240, 360, 0, 1], ["hub_dblock_1", 330, 362, 0, 1],
+			# the beacon: a great stone with the fire bowl on top of it
+			["hub_dstone_0", 280, 190, 16, 3]],
+		"beacon": {"pos": Vector2(280, 186), "lit": glow, "lift": 24.0},
+		"scatter": {"hub_dgrass": [4, 30], "hub_dblock": [4, 8]},
+		"forest": forest,
+		"exits": [{"rect": Rect2(230, 392, 100, 10), "to": "dustwatch", "at": Vector2(320, 228)}],
+		"people": [
+			{"id": "queen", "name": "The Dune Queen", "title": "Lady of the Sands", "sprite": "pc_scholar_director", "hands": "pc_hand_library_6",
+				"pos": Vector2(206, 262), "face": 1, "role": "chat", "text": "", "tale_from": 9},
+			{"id": "sandbeacon", "name": "The beacon", "title": "", "ghost": true, "pos": Vector2(280, 214), "top": 44, "role": "chat", "text": "",
+				"tale_from": 12},
 		],
 		"lights": lights,
 	}
