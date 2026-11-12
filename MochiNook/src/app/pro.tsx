@@ -12,7 +12,7 @@ import { space } from '../theme/tokens';
 const PERKS: { icon: IconName; title: string; body: string }[] = [
   { icon: 'shirt', title: 'The whole wardrobe', body: 'Every hat, scarf, and color for your pet.' },
   { icon: 'home', title: 'Cozy room themes', body: 'Rainy Window, Starry Loft, Forest Cabin, and Beach Hut.' },
-  { icon: 'leaf', title: 'No sponsor card', body: 'An even quieter home screen.' },
+  { icon: 'leaf', title: 'A quieter home screen', body: 'Hides the Calm pick card for zero clutter.' },
 ];
 
 export default function Pro() {
@@ -103,8 +103,12 @@ export default function Pro() {
       )}
       <Button label="Restore purchases" kind="ghost" disabled={busy} style={{ marginTop: space.sm }} onPress={restore} />
       <T variant="small" style={{ textAlign: 'center', marginTop: space.md }}>
-        Auto-renews monthly until cancelled. Payment is charged to your store account.
+        Auto-renews monthly until cancelled in Google Play → Payments & subscriptions. Payment is charged to your Google Play account.
       </T>
+      <Row gap={space.lg} style={{ justifyContent: 'center', marginTop: space.md }}>
+        <Button label="Privacy policy" kind="ghost" small onPress={() => router.push({ pathname: '/legal', params: { doc: 'privacy' } })} />
+        <Button label="Terms of use" kind="ghost" small onPress={() => router.push({ pathname: '/legal', params: { doc: 'terms' } })} />
+      </Row>
     </Screen>
   );
 }

@@ -3,10 +3,11 @@ import { AtkinsonHyperlegible_700Bold } from '@expo-google-fonts/atkinson-hyperl
 import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
 import { Nunito_800ExtraBold } from '@expo-google-fonts/nunito/800ExtraBold';
 import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, type ErrorBoundaryProps } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PebblePop } from '../components/Pebble';
 import { DATABASE_NAME, migrateDatabase } from '../db/schema';
@@ -46,6 +47,7 @@ function Navigator() {
         <Stack.Screen name="pro" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="tip-jar" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="share" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="legal" options={{ animation: 'slide_from_right' }} />
       </Stack>
       <PebblePop />
     </>
@@ -73,5 +75,25 @@ export default function RootLayout() {
         </AppProvider>
       </SQLiteProvider>
     </SafeAreaProvider>
+  );
+}
+
+/** Friendly crash screen (Expo Router shows this instead of a blank screen). */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <View style={{ flex: 1, backgroundColor: '#FBF5EC', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
+      <Text style={{ fontSize: 48 }}>🫧</Text>
+      <Text style={{ fontSize: 22, fontWeight: '800', color: '#3E3833', textAlign: 'center' }}>Oops, something got tangled.</Text>
+      <Text style={{ fontSize: 17, color: '#6B625A', textAlign: 'center' }}>
+        Your data is safe on your phone. Want to try again?
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        onPress={retry}
+        style={{ backgroundColor: '#A8C3A0', borderRadius: 999, paddingHorizontal: 28, minHeight: 52, justifyContent: 'center' }}
+      >
+        <Text style={{ fontSize: 17, fontWeight: '700', color: '#2F3A2C' }}>Try again</Text>
+      </Pressable>
+    </View>
   );
 }

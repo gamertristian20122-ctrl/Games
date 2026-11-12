@@ -4,7 +4,8 @@ import React, { useRef, useState } from 'react';
 import { Alert, Pressable, TextInput, View } from 'react-native';
 import { Button, Card, Divider, LinkRow, Pill, Row, Screen, SectionTitle, T, TimeStepper, ToggleRow } from '../../components/ui';
 import { PET_NAMES } from '../../data/cosmetics';
-import { restorePurchases } from '../../lib/purchases';
+import { confirmAction } from '../../lib/dialogs';
+import { TEST_TOOLS_ALLOWED, restorePurchases } from '../../lib/purchases';
 import type { Anchors, DevOverride } from '../../lib/types';
 import { useApp } from '../../state/AppContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
   const anchorsChanged = anchorDraft !== null && JSON.stringify(anchorDraft) !== JSON.stringify(settings.anchors);
 
   const onVersionTap = () => {
+    if (!TEST_TOOLS_ALLOWED) return;
     const now = Date.now();
     taps.current = [...taps.current.filter((t) => now - t < 3000), now];
     if (taps.current.length >= 5) {
@@ -54,6 +56,18 @@ export default function SettingsScreen() {
     }
   };
 
+  const onDeleteAll = () => {
+    const run = async () => {
+      await app.deleteAllData();
+      router.replace('/onboarding');
+    };
+    const message = `This erases your routine, custom quests, ${pet.name}, Pebbles, shop items and settings from this phone, and cancels reminders. It can’t be undone. A Pro subscription keeps running until you cancel it in Google Play.`;
+    confirmAction('Delete all your data?', message, 'Delete everything', () => run().catch(() => undefined), {
+      cancelText: 'Keep everything',
+      destructive: true,
+    });
+  };
+
   const onRestore = async () => {
     const res = await restorePurchases();
     if ('error' in res) Alert.alert('Restore', res.error);
@@ -65,12 +79,22 @@ export default function SettingsScreen() {
       <View style={{ paddingTop: space.lg }}>
         <T variant="title">Settings</T>
       </View>
+      {mockStore ? (
+        <Card tone="butter" style={{ marginTop: space.md }}>
+          <T variant="label" color={c.ink}>
+            TEST BUILD
+          </T>
+          <T variant="small" color={c.ink}>
+            Store keys aren’t set yet, so purchases are free test unlocks. Add the RevenueCat keys before publishing.
+          </T>
+        </Card>
+      ) : null}
 
       <SectionTitle>Comfort</SectionTitle>
       <Card style={{ paddingVertical: space.sm }}>
         <ToggleRow
           label="Calm Mode"
-          hint="Still pet, no sounds or vibration, softer colors, no sponsor card."
+          hint="Still pet, no sounds or vibration, softer colors, no Calm pick card."
           value={settings.calmMode}
           onChange={() => app.toggleCalm()}
         />
@@ -146,7 +170,7 @@ export default function SettingsScreen() {
         <LinkRow
           icon="sparkle"
           label={isPro ? 'Pro is on. Thank you!' : 'Get Pro · $5.99/month'}
-          hint="Full wardrobe, all rooms, no sponsor card."
+          hint="Full wardrobe, all rooms, no Calm pick card."
           onPress={() => router.push('/pro')}
         />
         <Divider />
@@ -162,7 +186,19 @@ export default function SettingsScreen() {
         <LinkRow icon="list" label="Rebuild my starter routine" hint="Retake the 3-question quiz." onPress={() => router.push('/onboarding')} />
       </Card>
 
-      {settings.devUnlocked ? (
+      <SectionTitle>Privacy</SectionTitle>
+      <Card style={{ paddingVertical: space.sm }}>
+        <LinkRow
+          icon="lock"
+          label="Privacy policy & terms"
+          hint="Everything stays on your phone. No accounts, ads, or tracking."
+          onPress={() => router.push({ pathname: '/legal', params: { doc: 'privacy' } })}
+        />
+        <Divider />
+        <LinkRow icon="trash" label="Delete all my data" hint="Erase everything MochiNook saved on this phone." onPress={onDeleteAll} />
+      </Card>
+
+      {TEST_TOOLS_ALLOWED && settings.devUnlocked ? (
         <>
           <SectionTitle>Developer tools</SectionTitle>
           <Card tone="butter" style={{ gap: space.md }}>

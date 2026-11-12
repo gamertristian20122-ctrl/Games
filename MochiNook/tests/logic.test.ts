@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import library from '../src/data/quests.json';
 import { HATS, PET_COLORS, ROOMS, SCARVES } from '../src/data/cosmetics';
 import { SHOP_ITEMS } from '../src/data/shop';
+import { PRIVACY_POLICY, TERMS_OF_USE } from '../src/data/legal';
 import { levelFromXp, xpForNextLevel } from '../src/lib/progression';
 import { buildStarterRoutine } from '../src/lib/routineBuilder';
 import { decodeShareCode, encodeShareCode } from '../src/lib/shareCode';
@@ -183,4 +184,13 @@ test('free tier has a starter look; everything else is Pro', () => {
   assert.deepEqual(HATS.filter((c) => c.free).map((c) => c.id), ['none', 'sprout']);
   assert.deepEqual(SCARVES.filter((c) => c.free).map((c) => c.id), ['none']);
   assert.deepEqual(ROOMS.filter((c) => c.free).map((c) => c.id), ['sunny']);
+});
+
+test('privacy policy and terms cover what Google Play asks for', () => {
+  const all = (d: { sections: { heading: string; paragraphs: string[] }[] }) =>
+    d.sections.map((s) => `${s.heading} ${s.paragraphs.join(' ')}`).join(' ');
+  const privacy = all(PRIVACY_POLICY);
+  for (const must of ['RevenueCat', 'Delete all my data', 'children', 'Notifications', 'contact']) assert.match(privacy, new RegExp(must, 'i'), must);
+  const terms = all(TERMS_OF_USE);
+  for (const must of ['5.99', 'cancel', 'not medical advice']) assert.match(terms, new RegExp(must, 'i'), must);
 });

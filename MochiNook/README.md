@@ -29,7 +29,7 @@ npx expo start --dev-client
 ```bash
 npm run typecheck   # TypeScript, strict
 npm run lint        # Expo ESLint config (incl. React Compiler rules)
-npm test            # 22 tests: quest library, share codes, Smart Match, and every SQLite query
+npm test            # 29 tests: quest library, share codes, Smart Match, and every SQLite query
 npx expo-doctor     # dependency + config checks
 ```
 
@@ -60,7 +60,8 @@ tests/                Node tests (run the real SQL against Node's built-in SQLit
 | Onboarding routine, 47 quests, reminders, pet growth | ✅ | ✅ |
 | Breaking tasks down (Smart Match, offline) | ✅ | ✅ |
 | Wardrobe & rooms | 2 colors, 1 hat, 1 room | Everything |
-| Calm Sponsor card | Shown (static, local, never a video or pop-up) | Hidden |
+| Calm pick card (static, local text; labelled SPONSORED only for real paid placements) | Shown | Hidden |
+| Pebbles (1 per step, +3 per quest) and the Pebble shop | ✅ | ✅ |
 
 Tips ($2.99 / $4.99 / $9.99) are one-time, unlock nothing, and are always optional.
 
@@ -78,6 +79,7 @@ Until you add keys, the app runs in **store testing mode**: buying Pro or tippin
 > App Store and Google Play developer accounts must be owned by an adult (18+). A parent or guardian can own the account and the payouts.
 
 **Hidden developer toggle:** Settings → tap the version number 5 times → "Force Free / Force Pro / Real status".
+It (and free test purchases) only exist in development builds or builds without store keys. Once the RevenueCat keys are in `app.json`, they are switched off completely.
 
 ## On-device AI
 
@@ -93,3 +95,24 @@ Not in this version. The earlier `react-native-executorch` setup is in git histo
 
 - Fonts: [Nunito](https://fonts.google.com/specimen/Nunito) and [Atkinson Hyperlegible](https://fonts.google.com/specimen/Atkinson+Hyperlegible), both SIL Open Font License 1.1 (free for commercial apps).
 - The pet, rooms, icons, app icon and chime sounds are original and were made for this project.
+
+## Launching on Google Play
+
+The code side is ready. These steps need you (and a parent or guardian as the account owner):
+
+1. **Google Play developer account** (owner must be 18+), then create the app with package `com.mochinook.app`.
+2. **RevenueCat keys:** follow "Setting up real payments" above. Until the keys are in, the app shows a **TEST BUILD** banner in Settings and purchases are free test unlocks.
+3. **Release build (AAB + your own key):** Play needs an Android App Bundle signed with your upload key. The easiest way is Expo's cloud build, which creates and safely stores the key for you:
+   ```bash
+   npx eas-cli@latest login
+   npx eas-cli@latest build --platform android --profile production   # makes the .aab
+   ```
+   Turn on **Play App Signing** when you upload. Never lose the upload key: updates must be signed with the same one.
+4. **Privacy policy URL:** run `npm run legal`, then host `docs/privacy-policy.html` publicly (for example with GitHub Pages) and paste its URL into Play Console. The same text is in the app under Settings → Privacy policy & terms.
+5. **Data safety form** (matches what the app really does):
+   - Data collected: **Purchase history** and **Device or other IDs** (RevenueCat's anonymous app user ID), used for app functionality (verifying purchases). Not shared with third parties for their own use. Encrypted in transit: yes.
+   - Everything else (routines, onboarding answers, pet): **not collected**, because it never leaves the phone.
+   - Users can delete their data in the app (Settings → Delete all my data).
+6. **Ads declaration:** "No ads". The Calm pick cards are unpaid text built into the app.
+7. **Target audience:** 13+ age groups. MochiNook has no chat or contact between users.
+8. **Content rating questionnaire, store listing, screenshots, feature graphic** in Play Console.

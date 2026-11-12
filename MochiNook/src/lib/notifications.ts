@@ -113,3 +113,7 @@ export async function cancelNotification(id: string | null): Promise<void> {
   if (!id) return;
   await Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined);
 }
+
+export async function cancelAllReminders(): Promise<void> {
+  await Notifications.cancelAllScheduledNotificationsAsync().catch(() => undefined);
+}

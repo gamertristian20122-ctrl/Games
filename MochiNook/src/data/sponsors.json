@@ -3,30 +3,35 @@
     "id": "soft-earplugs",
     "title": "Noise-softening earplugs",
     "body": "Turn the world's volume down a notch. Great for busy stores and loud classrooms.",
-    "tag": "Calm pick"
+    "tag": "Calm pick",
+    "sponsored": false
   },
   {
     "id": "visual-timer",
     "title": "A visual countdown timer",
     "body": "See time melt away instead of guessing. Lovely for focus sprints and transitions.",
-    "tag": "Calm pick"
+    "tag": "Calm pick",
+    "sponsored": false
   },
   {
     "id": "weighted-lap-pad",
     "title": "Weighted lap pad",
     "body": "A gentle, steady hug for your lap while you study, work, or wind down.",
-    "tag": "Calm pick"
+    "tag": "Calm pick",
+    "sponsored": false
   },
   {
     "id": "fidget-ring",
     "title": "Quiet spinner ring",
     "body": "A silent fidget you can wear. Keeps busy fingers happy in meetings and class.",
-    "tag": "Calm pick"
+    "tag": "Calm pick",
+    "sponsored": false
   },
   {
     "id": "blue-light-glasses",
     "title": "Soft-tint glasses",
     "body": "Take the harsh edge off bright screens and fluorescent lights.",
-    "tag": "Calm pick"
+    "tag": "Calm pick",
+    "sponsored": false
   }
 ]

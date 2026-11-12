@@ -60,6 +60,13 @@ function apiKey(): string {
 
 export const isMockStore = apiKey().trim().length === 0;
 
+/**
+ * Test tools (the 5-tap Free/Pro switch and free test purchases) exist ONLY in
+ * development or in builds without store keys. A production build with real
+ * RevenueCat keys can never unlock Pro without a real purchase.
+ */
+export const TEST_TOOLS_ALLOWED = __DEV__ || isMockStore;
+
 let configured = false;
 
 export async function initPurchases(onChange: (isPro: boolean) => void): Promise<() => void> {

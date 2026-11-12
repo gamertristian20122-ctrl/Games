@@ -159,7 +159,7 @@ export default function Nook() {
 
       {!isPro ? (
         <View style={{ marginTop: space.lg }}>
-          <ProUpsell title="Unlock the whole wardrobe" body="Every hat, scarf, color and room, and no sponsor card. $5.99/month, cancel any time." />
+          <ProUpsell title="Unlock the whole wardrobe" body="Every hat, scarf, color and room, and no Calm pick card. $5.99/month, cancel any time." />
         </View>
       ) : null}
 

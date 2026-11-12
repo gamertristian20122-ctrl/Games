@@ -487,3 +487,14 @@ export async function importShared(db: SQLiteDatabase, payload: SharePayload): P
   }
   return added;
 }
+
+// ---------- delete all data ----------
+
+/** Erases everything MochiNook stored. Run migrateDatabase afterwards to re-seed the library. */
+export async function deleteAllData(db: SQLiteDatabase): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    for (const table of ['step_completions', 'quest_completions', 'routine', 'quest_steps', 'quests', 'owned_items', 'pet', 'settings']) {
+      await db.runAsync(`DELETE FROM ${table}`);
+    }
+  });
+}

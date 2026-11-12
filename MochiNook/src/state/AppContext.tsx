@@ -3,7 +3,9 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import * as repo from '../db/repo';
 import { happyLine, levelUpLine, questDoneLine, welcomeBack } from '../lib/copy';
 import { celebrateFeedback, stepFeedback, tapFeedback, type FeedbackPrefs } from '../lib/feedback';
+import { migrateDatabase } from '../db/schema';
 import {
+  cancelAllReminders,
   cancelAnchorReminders,
   cancelNotification,
   requestPermission,
@@ -13,7 +15,7 @@ import {
 } from '../lib/notifications';
 import { PEBBLES_PER_STEP, PEBBLES_QUEST_BONUS, findShopItem } from '../data/shop';
 import { XP_PER_STEP, XP_QUEST_BONUS, levelFromXp } from '../lib/progression';
-import { initPurchases, isMockStore } from '../lib/purchases';
+import { TEST_TOOLS_ALLOWED, initPurchases, isMockStore } from '../lib/purchases';
 import { buildStarterRoutine } from '../lib/routineBuilder';
 import { dayKey, daysBetween } from '../lib/time';
 import type { Anchors, BrainProfile, Energy, Pet, QuestRow, Settings, StepRow } from '../lib/types';
@@ -56,6 +58,8 @@ interface AppState {
   checkStep: (quest: Pick<QuestRow, 'id' | 'cadence' | 'title'>, step: StepRow) => Promise<void>;
   uncheckStep: (quest: Pick<QuestRow, 'id' | 'cadence'>, step: StepRow) => Promise<void>;
   touchData: () => void;
+  /** Erases every bit of local data and starts fresh at onboarding. */
+  deleteAllData: () => Promise<void>;
   dismissWelcome: () => void;
   tap: () => void;
 }
@@ -257,6 +261,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [db],
   );
 
+  const deleteAllData = useCallback(async () => {
+    await cancelAllReminders();
+    await repo.deleteAllData(db);
+    await migrateDatabase(db);
+    const [s, p, items] = await Promise.all([repo.getSettings(db), repo.getPet(db), repo.getOwnedItems(db)]);
+    setSettings(s);
+    setPet(p);
+    setOwned(items);
+    setWelcomeBackLine(null);
+    setPetEvent(null);
+    setDataVersion((v) => v + 1);
+  }, [db]);
+
   const uncheckStep = useCallback(
     async (quest: Pick<QuestRow, 'id' | 'cadence'>, step: StepRow) => {
       const notificationId = await repo.uncompleteStep(db, quest, step.id, dayKey());
@@ -268,7 +285,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AppState | null>(() => {
     if (!settings || !pet) return null;
-    const override = settings.devUnlocked ? settings.devOverride : 'auto';
+    const override = TEST_TOOLS_ALLOWED && settings.devUnlocked ? settings.devOverride : 'auto';
     let isPro: boolean;
     let proSource: AppState['proSource'];
     if (override === 'pro') {
@@ -308,12 +325,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       checkStep,
       uncheckStep,
       touchData,
+      deleteAllData,
       dismissWelcome: () => setWelcomeBackLine(null),
       tap: () => tapFeedback(feedbackPrefs),
     };
   }, [
     settings, pet, storePro, dataVersion, welcomeBackLine, petEvent, feedbackPrefs, updateSettings, updatePet, owned, buyItem, setDecorPlaced,
-    finishOnboarding, toggleCalm, enableReminders, checkStep, uncheckStep, touchData,
+    finishOnboarding, toggleCalm, enableReminders, checkStep, uncheckStep, touchData, deleteAllData,
   ]);
 
   // Render nothing until settings and pet are loaded from SQLite (a few milliseconds).

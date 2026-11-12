@@ -117,16 +117,17 @@ export function StepItem({
 
 export function SponsorCard() {
   const { c } = useTheme();
-  const list = sponsors as { id: string; title: string; body: string; tag: string }[];
+  // Set "sponsored": true in sponsors.json only for real, paid placements; everything else is labelled a Calm pick.
+  const list = sponsors as { id: string; title: string; body: string; tag: string; sponsored: boolean }[];
   const day = Number(dayKey().replace(/-/g, ''));
   const s = list[day % list.length]!;
   return (
-    <View style={[styles.sponsor, { backgroundColor: c.lavenderSoft, borderColor: c.border }]} accessibilityLabel={`Sponsored calm pick: ${s.title}. ${s.body}`}>
+    <View style={[styles.sponsor, { backgroundColor: c.lavenderSoft, borderColor: c.border }]} accessibilityLabel={`${s.sponsored ? 'Sponsored' : 'Calm pick'}: ${s.title}. ${s.body}`}>
       <Row style={{ justifyContent: 'space-between' }}>
         <T variant="label" color={c.inkSoft}>
-          CALM SPONSOR · {s.tag.toUpperCase()}
+          {s.sponsored ? `SPONSORED · ${s.tag.toUpperCase()}` : 'CALM PICK'}
         </T>
-        <Pressable accessibilityRole="button" accessibilityLabel="Hide sponsor cards with Pro" onPress={() => router.push('/pro')} hitSlop={10}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Hide this card with Pro" onPress={() => router.push('/pro')} hitSlop={10}>
           <T variant="small" color={c.accentInk}>
             Hide
           </T>

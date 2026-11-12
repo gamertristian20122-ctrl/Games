@@ -204,3 +204,20 @@ test('upgrading a v1.0.0 database keeps progress and adds pebbles + micro-steps'
   assert.equal(walk.tiny, null, 'single actions stay single');
   assert.equal((await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM quests'))?.n, LIBRARY.length, 'new quests added');
 });
+
+test('delete all my data erases everything and starts fresh', async () => {
+  const db = await freshDb();
+  await repo.updatePet(db, { name: 'Pip' });
+  await repo.addProgress(db, 50, 5, 20);
+  await repo.buyShopItem(db, 'fern');
+  await repo.saveSettings(db, { onboarded: true, brainProfiles: ['adhd'] });
+  await repo.createQuest(db, { title: 'Secret', emoji: '✨', anchor: 'anytime', cadence: 'once', invite: 'x', steps: ['a'], source: 'custom' });
+  await repo.deleteAllData(db);
+  await migrateDatabase(db);
+  const pet = await repo.getPet(db);
+  assert.deepEqual([pet.name, pet.xp, pet.pebbles], ['Mochi', 0, 0]);
+  assert.equal((await repo.getSettings(db)).onboarded, false);
+  assert.equal((await repo.getOwnedItems(db)).length, 0);
+  assert.equal((await db.getFirstAsync<{ n: number }>("SELECT COUNT(*) AS n FROM quests WHERE source != 'library'"))?.n, 0);
+  assert.equal((await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM quests'))?.n, LIBRARY.length, 'library re-seeded');
+});

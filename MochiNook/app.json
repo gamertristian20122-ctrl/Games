@@ -3,14 +3,14 @@
     "name": "MochiNook",
     "slug": "mochinook",
     "scheme": "mochinook",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#FBF5EC",
     "ios": {
       "bundleIdentifier": "com.mochinook.app",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "supportsTablet": true,
       "deploymentTarget": "17.0",
       "config": {
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.mochinook.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#CFE0C8",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -34,10 +34,12 @@
       ],
       "blockedPermissions": [
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO",
         "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.USE_EXACT_ALARM"
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -74,7 +76,8 @@
         "expo-notifications",
         {
           "color": "#8DAA86",
-          "enableRemoteNotifications": false
+          "enableRemoteNotifications": false,
+          "icon": "./assets/notification-icon.png"
         }
       ],
       [
