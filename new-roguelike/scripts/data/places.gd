@@ -177,9 +177,22 @@ static func _base_place(id: String) -> Dictionary:
 				"props": [["hub_tree_teal_1", 320, 196, 8, 8], ["hub_rune_0", 214, 250, 9, 3], ["hub_rune_2", 250, 270, 5, 2], ["hub_bloom_0", 196, 160, 0, 2],
 					["hub_bloom_5", 430, 290, 0, 2], ["hub_bloom_6", 470, 170, 0, 2], ["hub_shroom_0", 150, 292, 0, 1], ["hub_shroom_1", 520, 250, 0, 1],
 					["hub_stump_0", 420, 232, 12, 4], ["hub_rock_moss_2", 110, 300, 14, 3], ["hub_bush_deep_1", 360, 300, 10, 4],
-					["hub_bush_green_1", 150, 150, 12, 5], ["hub_vine_0", 560, 300, 0, 2], ["hub_tree_pink_4", 500, 140, 4, 5]],
+					["hub_bush_green_1", 150, 150, 12, 5], ["hub_vine_0", 560, 300, 0, 2], ["hub_tree_pink_4", 500, 140, 4, 5],
+					# v0.24.0: the road's edges: ferns, toadstools, mossy stones, flowers in the light under the trees
+					["hub_plant_3", 182, 178, 0, 1], ["hub_plant_4", 120, 232, 0, 1], ["hub_plant_1", 352, 168, 0, 1], ["hub_plant_5", 548, 222, 0, 1],
+					["hub_plant_0", 236, 236, 0, 1], ["hub_plant_6", 470, 214, 0, 1], ["hub_shroom_3", 330, 250, 0, 1], ["hub_shroom_4", 344, 258, 0, 1],
+					["hub_shroom_2", 584, 280, 0, 1], ["hub_shroom_0", 92, 160, 0, 1], ["hub_rock_moss_0", 62, 254, 12, 3], ["hub_stone_1", 384, 150, 10, 3],
+					["hub_rock_1", 476, 318, 12, 3], ["hub_bush_orange_1", 560, 150, 9, 4], ["hub_bush_green_0", 96, 136, 10, 4], ["hub_bloom_2", 300, 290, 0, 2],
+					["hub_bloom_1", 556, 330, 0, 2], ["hub_bloom_7", 80, 320, 0, 2],
+					# two rune stones mark the way on to the glade
+					["hub_rune_0", 592, 172, 9, 3], ["hub_rune_2", 592, 236, 5, 2],
+					# flowers in clumps beside the road
+					["hub_gflower_0", 160, 226, 0, 0], ["hub_gflower_4", 168, 230, 0, 0], ["hub_gflower_1", 154, 233, 0, 0], ["hub_gflower_24", 362, 222, 0, 0],
+					["hub_gflower_28", 370, 226, 0, 0], ["hub_gflower_25", 356, 229, 0, 0], ["hub_gflower_12", 300, 176, 0, 0], ["hub_gflower_13", 309, 172, 0, 0],
+					["hub_gflower_8", 294, 170, 0, 0], ["hub_gflower_17", 520, 176, 0, 0], ["hub_gflower_18", 528, 181, 0, 0], ["hub_gflower_20", 514, 183, 0, 0],
+					["hub_gflower_6", 430, 228, 0, 0], ["hub_gflower_9", 438, 232, 0, 0], ["hub_gflower_29", 204, 288, 0, 0], ["hub_gflower_23", 212, 292, 0, 0]],
 				"paths": [[Vector2(-10, 204), Vector2(250, 210), Vector2(400, 190), Vector2(650, 196)]],
-				"scatter": {"hub_tuft": [24, 90], "hub_flower": [26, 60], "hub_pebble": [20, 10], "hub_twig": [10, 14]},
+				"scatter": {"hub_tuft": [24, 90], "hub_flower": [26, 60], "hub_pebble": [20, 10], "hub_twig": [10, 14], "hub_gtuft": [4, 50], "hub_gflower": [32, 30]},
 				"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 150, 70, 120), Rect2(600, 140, 80, 120)]},
 				"exits": [{"rect": Rect2(26, 176, 10, 60), "to": "village", "at": Vector2(660, 204)},
 					{"rect": Rect2(604, 168, 10, 60), "to": "glade", "at": Vector2(50, 196)}],
@@ -192,7 +205,7 @@ static func _base_place(id: String) -> Dictionary:
 						"text": "The mushrooms walk at night. I counted nine. Mother says do not count them, they count back."},
 				],
 				"lights": [[Vector2(214, 236), Color(0.45, 0.85, 1.0), 1.2, 0.5], [Vector2(320, 150), Color(0.6, 1.0, 0.7), 1.6, 0.35],
-					[Vector2(520, 236), Color(0.5, 1.0, 0.85), 0.9, 0.5]],
+					[Vector2(520, 236), Color(0.5, 1.0, 0.85), 0.9, 0.5], [Vector2(592, 200), Color(0.45, 0.85, 1.0), 1.0, 0.45]],
 			}
 		"glade":
 			return {
@@ -266,7 +279,7 @@ static func _world() -> Dictionary:
 			[Vector2(1150, 640), Vector2(1340, 580), Vector2(1570, 540)], [Vector2(1590, 480), Vector2(1650, 370), Vector2(1780, 300)],
 			[Vector2(1150, 670), Vector2(1400, 770), Vector2(1650, 890)],
 		],
-		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 90], "hub_pebble": [20, 26], "hub_twig": [10, 20]},
+		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 90], "hub_pebble": [20, 26], "hub_twig": [10, 20], "hub_gflower": [32, 140], "hub_gtuft": [4, 120]},
 		"scatter_rect": Rect2(20, 60, 800, 1040),
 		"groves": [
 			{"rect": Rect2(40, 70, 760, 420), "ids": trees, "n": 46, "solid": 7.0},
@@ -277,12 +290,18 @@ static func _world() -> Dictionary:
 			{"rect": Rect2(1300, 480, 640, 220), "ids": dry, "n": 22, "solid": 6.0},
 			{"rect": Rect2(940, 70, 1000, 1000), "ids": ["hub_dgrass_0", "hub_dgrass_1", "hub_dgrass_2", "hub_dgrass_3", "hub_dblock_2", "hub_dblock_3"], "n": 150, "solid": 0.0, "poly": 0},
 			{"rect": Rect2(1420, 70, 520, 300), "ids": crag, "n": 34, "solid": 7.0},
+			# v0.24.0: meadows of ferns, blooms and toadstools between the woods of the west
+			{"rect": Rect2(40, 480, 800, 300), "ids": ["hub_plant_3", "hub_bloom_1", "hub_plant_4", "hub_shroom_0", "hub_bloom_2", "hub_plant_1", "hub_bush_orange_1", "hub_shroom_3"], "n": 40, "solid": 0.0},
 		],
 		"props": [
 			# Hollow Hill: the crypt gate in its rocks, the tavern below it
 			["hub_rock_2", 258, 548, 0, 2], ["hub_rock_moss_2", 344, 549, 0, 2], ["hub_gate_0", 300, 552, 0, 0],
 			["hub_wall_plaster", 196, 620, 0, 0], ["hub_roof_wood", 196, 621, 0, -50], ["hub_doorway", 196, 622, 0, 0],
 			["hub_rune_1", 400, 612, 10, 3], ["hub_rune_0", 428, 632, 8, 3],
+			# v0.24.0: the tavern's yard: a clipped hedge, lamps along the road east, busts of the old kings by the gate
+			["hub_ghedge", 150, 640, 0, 0], ["hub_ghedge", 240, 640, 0, 0], ["hub_post", 330, 670, 3, 0], ["hub_post", 540, 690, 3, 0],
+			["hub_cbust_0", 248, 584, 5, 1], ["hub_cbust_4", 352, 584, 5, 1],
+			["hub_gflower_0", 172, 648, 0, 0], ["hub_gflower_12", 182, 650, 0, 0], ["hub_gflower_24", 218, 648, 0, 0], ["hub_gflower_17", 226, 652, 0, 0],
 			# the Robber Road: a barricade of stumps and a scarecrow in stolen mail
 			["hub_farm_2", 700, 640, 5, 1], ["hub_stump_0", 742, 650, 10, 4], ["hub_stump_1", 690, 690, 7, 3], ["hub_bench_long", 752, 694, 10, 2],
 			# Dustwatch: two obelisks either side of the dig
@@ -330,7 +349,9 @@ static func _world() -> Dictionary:
 			{"id": "site_elfwood", "name": "The Elfwood", "title": "", "ghost": true, "pos": Vector2(600, 470), "top": 30, "role": "chat",
 				"text": "The Elfwood. The road into it leaves the village by its east side."},
 		],
-		"lights": [[Vector2(300, 600), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1120, 640), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1780, 280), Color(1.0, 0.55, 0.3), 2.6, 0.7],
+		"torches": [Vector2(330, 670), Vector2(540, 690)],
+		"lights": [[Vector2(330, 630), Color(1.0, 0.78, 0.46), 1.4, 0.55], [Vector2(540, 650), Color(1.0, 0.78, 0.46), 1.4, 0.55],
+			[Vector2(300, 600), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1120, 640), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1780, 280), Color(1.0, 0.55, 0.3), 2.6, 0.7],
 			[Vector2(1690, 330), Color(1.0, 0.5, 0.2), 1.6, 0.8], [Vector2(1870, 330), Color(1.0, 0.5, 0.2), 1.6, 0.8], [Vector2(414, 610), Color(0.45, 0.85, 1.0), 1.4, 0.5]],
 	}
 
