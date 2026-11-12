@@ -15,7 +15,7 @@ import {
 } from '../lib/notifications';
 import { cosmeticKey, isCosmeticFree, isSeasonal, type CosmeticKind } from '../data/cosmetics';
 import { PEBBLES_PER_STEP, PEBBLES_QUEST_BONUS, findShopItem } from '../data/shop';
-import { SEASON_INFO, seasonFor, sprintTiers, weekStart } from '../lib/season';
+import { seasonFor, sprintTiers, weekStart } from '../lib/season';
 import { XP_PER_STEP, XP_QUEST_BONUS, levelFromXp } from '../lib/progression';
 import { TEST_TOOLS_ALLOWED, initPurchases, isMockStore } from '../lib/purchases';
 import { buildStarterRoutine } from '../lib/routineBuilder';
@@ -26,7 +26,7 @@ export type PetEvent =
   | { id: number; kind: 'step'; line: string; pebbles: number }
   | { id: number; kind: 'quest'; line: string; pebbles: number }
   | { id: number; kind: 'level'; line: string; level: number; pebbles: number }
-  | { id: number; kind: 'treat'; line: string; pebbles: 0 }
+  | { id: number; kind: 'treat'; line: string; pebbles: 0; itemId: string }
   | { id: number; kind: 'care'; line: string; pebbles: 0 }
   | { id: number; kind: 'reward'; line: string; pebbles: number };
 
@@ -266,7 +266,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         celebrateFeedback(feedbackPrefs);
         if (result.kind === 'treat') {
           const name = findShopItem(itemId)?.name.toLowerCase() ?? 'treat';
-          emit({ kind: 'treat', line: `Yum! Thank you for the ${name}! 💕`, pebbles: 0 });
+          emit({ kind: 'treat', line: `Yum! Thank you for the ${name}!`, pebbles: 0, itemId });
         }
       }
       return result;
@@ -296,7 +296,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setOwnedCosmetics(await repo.getOwnedCosmetics(db));
       const last = earned[earned.length - 1]!;
       celebrateFeedback(feedbackPrefs);
-      emit({ kind: 'reward', line: `Sprint reward unlocked: ${last.name}! ${SEASON_INFO[seasonFor()].emoji} It’s yours to keep.`, pebbles: 0 });
+      emit({ kind: 'reward', line: `Sprint reward unlocked: ${last.name}! It’s yours to keep.`, pebbles: 0 });
     }
   }, [db, emit, feedbackPrefs]);
 
@@ -318,7 +318,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const completeFocus = useCallback(
     async (sessionId: number, completed: boolean) => {
       await repo.finishFocus(db, sessionId, completed);
-      await award(completed ? 3 : 1, completed ? 10 : 3, completed ? 'Focus sprint done! We did that side by side. 📚' : 'Stopping early still counts. Nice work showing up. 💛');
+      await award(completed ? 3 : 1, completed ? 10 : 3, completed ? 'Focus sprint done! We did that side by side.' : 'Stopping early still counts. Nice work showing up.');
     },
     [db, award],
   );
@@ -326,7 +326,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const completeRace = useCallback(
     async (raceId: number) => {
       const steps = await repo.finishRace(db, raceId);
-      await award(2, 5, steps > 0 ? `Race finished with ${steps} tiny ${steps === 1 ? 'step' : 'steps'}! 🏁` : 'Race finished! Showing up is the whole point. 🏁');
+      await award(2, 5, steps > 0 ? `Race finished with ${steps} tiny ${steps === 1 ? 'step' : 'steps'}!` : 'Race finished! Showing up is the whole point.');
       return steps;
     },
     [db, award],

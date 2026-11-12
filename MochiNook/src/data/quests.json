@@ -2,7 +2,7 @@
   {
     "id": "morning-water",
     "title": "Morning Sip",
-    "emoji": "💧",
+    "emoji": "drop",
     "category": "morning",
     "anchor": "morning",
     "cadence": "daily",
@@ -38,7 +38,7 @@
   {
     "id": "morning-meds",
     "title": "Meds & Vitamins",
-    "emoji": "💊",
+    "emoji": "pill",
     "category": "morning",
     "anchor": "morning",
     "cadence": "daily",
@@ -80,7 +80,7 @@
   {
     "id": "morning-teeth",
     "title": "Brush Teeth (Morning)",
-    "emoji": "🪥",
+    "emoji": "toothbrush",
     "category": "morning",
     "anchor": "morning",
     "cadence": "daily",
@@ -134,7 +134,7 @@
   {
     "id": "morning-face",
     "title": "Face Splash Reset",
-    "emoji": "🫧",
+    "emoji": "bubbles",
     "category": "body",
     "anchor": "morning",
     "cadence": "daily",
@@ -175,7 +175,7 @@
   {
     "id": "morning-dress",
     "title": "Get Dressed",
-    "emoji": "👕",
+    "emoji": "shirt",
     "category": "morning",
     "anchor": "morning",
     "cadence": "daily",
@@ -221,7 +221,7 @@
   {
     "id": "morning-breakfast",
     "title": "Easy Breakfast",
-    "emoji": "🍞",
+    "emoji": "toast",
     "category": "kitchen",
     "anchor": "morning",
     "cadence": "daily",
@@ -261,7 +261,7 @@
   {
     "id": "morning-pack-bag",
     "title": "Pack Your Bag",
-    "emoji": "🎒",
+    "emoji": "backpack",
     "category": "morning",
     "anchor": "morning",
     "cadence": "daily",
@@ -305,7 +305,7 @@
   {
     "id": "morning-launch",
     "title": "Launch Pad Check",
-    "emoji": "🚀",
+    "emoji": "rocket",
     "category": "morning",
     "anchor": "morning",
     "cadence": "daily",
@@ -340,7 +340,7 @@
   {
     "id": "bedtime-teeth",
     "title": "Brush Teeth (Night)",
-    "emoji": "🌙",
+    "emoji": "moon",
     "category": "evening",
     "anchor": "evening",
     "cadence": "daily",
@@ -385,7 +385,7 @@
   {
     "id": "bedtime-pajamas",
     "title": "Cozy Clothes Swap",
-    "emoji": "🧦",
+    "emoji": "socks",
     "category": "evening",
     "anchor": "evening",
     "cadence": "daily",
@@ -425,7 +425,7 @@
   {
     "id": "bedtime-charge",
     "title": "Plug In Your Phone",
-    "emoji": "🔌",
+    "emoji": "plug",
     "category": "evening",
     "anchor": "evening",
     "cadence": "daily",
@@ -456,7 +456,7 @@
   {
     "id": "bedtime-tomorrow",
     "title": "Tomorrow-Me Setup",
-    "emoji": "📋",
+    "emoji": "clipboard",
     "category": "evening",
     "anchor": "evening",
     "cadence": "daily",
@@ -497,7 +497,7 @@
   {
     "id": "bedtime-wind-down",
     "title": "Wind-Down Ritual",
-    "emoji": "🕯️",
+    "emoji": "candle",
     "category": "evening",
     "anchor": "evening",
     "cadence": "daily",
@@ -537,7 +537,7 @@
   {
     "id": "evening-meds",
     "title": "Evening Meds",
-    "emoji": "🌛",
+    "emoji": "moon",
     "category": "evening",
     "anchor": "evening",
     "cadence": "daily",
@@ -570,7 +570,7 @@
   {
     "id": "shower",
     "title": "Shower Quest",
-    "emoji": "🚿",
+    "emoji": "shower",
     "category": "body",
     "anchor": "anytime",
     "cadence": "daily",
@@ -637,7 +637,7 @@
   {
     "id": "dishes-reset",
     "title": "Dishes & Kitchen Reset",
-    "emoji": "🍽️",
+    "emoji": "plate",
     "category": "kitchen",
     "anchor": "daytime",
     "cadence": "daily",
@@ -689,7 +689,7 @@
   {
     "id": "dishwasher-unload",
     "title": "Unload the Dishwasher",
-    "emoji": "🥣",
+    "emoji": "bowl",
     "category": "kitchen",
     "anchor": "anytime",
     "cadence": "daily",
@@ -738,7 +738,7 @@
   {
     "id": "fridge-check",
     "title": "Fridge Check-In",
-    "emoji": "🧊",
+    "emoji": "fridge",
     "category": "kitchen",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -784,7 +784,7 @@
   {
     "id": "trash-out",
     "title": "Take Out the Trash",
-    "emoji": "🗑️",
+    "emoji": "trash",
     "category": "home",
     "anchor": "evening",
     "cadence": "weekly",
@@ -820,7 +820,7 @@
   {
     "id": "simple-meal",
     "title": "Make a Simple Meal",
-    "emoji": "🍜",
+    "emoji": "bowl",
     "category": "kitchen",
     "anchor": "daytime",
     "cadence": "daily",
@@ -870,7 +870,7 @@
   {
     "id": "grocery-run",
     "title": "Grocery Run",
-    "emoji": "🛒",
+    "emoji": "cart",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "weekly",
@@ -935,7 +935,7 @@
   {
     "id": "laundry",
     "title": "Laundry Quest",
-    "emoji": "🧺",
+    "emoji": "basket",
     "category": "laundry",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -1002,7 +1002,7 @@
   {
     "id": "laundry-putaway",
     "title": "Put Clean Clothes Away",
-    "emoji": "👚",
+    "emoji": "shirt",
     "category": "laundry",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -1047,7 +1047,7 @@
   {
     "id": "fresh-sheets",
     "title": "Fresh Sheets",
-    "emoji": "🛏️",
+    "emoji": "bed",
     "category": "laundry",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -1095,7 +1095,7 @@
   {
     "id": "bedroom-clean",
     "title": "Clean Bedroom",
-    "emoji": "🧹",
+    "emoji": "broom",
     "category": "home",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -1149,7 +1149,7 @@
   {
     "id": "desk-tidy",
     "title": "5-Minute Desk Tidy",
-    "emoji": "🗂️",
+    "emoji": "tray",
     "category": "home",
     "anchor": "daytime",
     "cadence": "daily",
@@ -1189,7 +1189,7 @@
   {
     "id": "bathroom-wipe",
     "title": "Quick Bathroom Wipe",
-    "emoji": "🧼",
+    "emoji": "soap",
     "category": "home",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -1228,7 +1228,7 @@
   {
     "id": "floor-rescue",
     "title": "Floor Rescue",
-    "emoji": "🧸",
+    "emoji": "teddy",
     "category": "home",
     "anchor": "anytime",
     "cadence": "daily",
@@ -1266,7 +1266,7 @@
   {
     "id": "water-plants",
     "title": "Water the Plants",
-    "emoji": "🪴",
+    "emoji": "plant",
     "category": "home",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -1298,7 +1298,7 @@
   {
     "id": "feed-pet",
     "title": "Feed Your Pet",
-    "emoji": "🐾",
+    "emoji": "paw",
     "category": "care",
     "anchor": "morning",
     "cadence": "daily",
@@ -1330,7 +1330,7 @@
   {
     "id": "water-break",
     "title": "Water Break",
-    "emoji": "🥤",
+    "emoji": "cup",
     "category": "body",
     "anchor": "anytime",
     "cadence": "daily",
@@ -1354,7 +1354,7 @@
   {
     "id": "wiggle-stretch",
     "title": "Wiggle & Stretch",
-    "emoji": "🙆",
+    "emoji": "stretch",
     "category": "body",
     "anchor": "daytime",
     "cadence": "daily",
@@ -1386,7 +1386,7 @@
   {
     "id": "sensory-reset",
     "title": "Sensory Reset Break",
-    "emoji": "🎧",
+    "emoji": "headphones",
     "category": "body",
     "anchor": "anytime",
     "cadence": "daily",
@@ -1422,7 +1422,7 @@
   {
     "id": "hard-day-kit",
     "title": "Hard Day Kit",
-    "emoji": "🫶",
+    "emoji": "heart",
     "category": "care",
     "anchor": "anytime",
     "cadence": "daily",
@@ -1458,7 +1458,7 @@
   {
     "id": "step-outside",
     "title": "Step Outside",
-    "emoji": "🌤️",
+    "emoji": "sunCloud",
     "category": "body",
     "anchor": "daytime",
     "cadence": "daily",
@@ -1489,7 +1489,7 @@
   {
     "id": "pay-bills",
     "title": "Pay Monthly Bills",
-    "emoji": "🧾",
+    "emoji": "receipt",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "monthly",
@@ -1540,7 +1540,7 @@
   {
     "id": "tax-docs",
     "title": "Gather Tax Documents",
-    "emoji": "📁",
+    "emoji": "folder",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "once",
@@ -1590,7 +1590,7 @@
   {
     "id": "doctor-call",
     "title": "Doctor Appointment Call",
-    "emoji": "📞",
+    "emoji": "phone",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "once",
@@ -1643,7 +1643,7 @@
   {
     "id": "reply-messages",
     "title": "Reply to Messages",
-    "emoji": "💬",
+    "emoji": "chat",
     "category": "social",
     "anchor": "anytime",
     "cadence": "daily",
@@ -1679,7 +1679,7 @@
   {
     "id": "inbox-peek",
     "title": "Inbox Peek",
-    "emoji": "📬",
+    "emoji": "mail",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "daily",
@@ -1718,7 +1718,7 @@
   {
     "id": "money-peek",
     "title": "Money Peek",
-    "emoji": "🪙",
+    "emoji": "coin",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "weekly",
@@ -1754,7 +1754,7 @@
   {
     "id": "calendar-check",
     "title": "Check the Week Ahead",
-    "emoji": "🗓️",
+    "emoji": "calendar",
     "category": "adulting",
     "anchor": "evening",
     "cadence": "weekly",
@@ -1793,7 +1793,7 @@
   {
     "id": "refill-meds",
     "title": "Refill Prescriptions",
-    "emoji": "🏥",
+    "emoji": "medkit",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "monthly",
@@ -1836,7 +1836,7 @@
   {
     "id": "homework-start",
     "title": "Homework Start",
-    "emoji": "📚",
+    "emoji": "books",
     "category": "school",
     "anchor": "daytime",
     "cadence": "daily",
@@ -1885,7 +1885,7 @@
   {
     "id": "focus-sprint",
     "title": "One Focus Sprint",
-    "emoji": "⏳",
+    "emoji": "hourglass",
     "category": "school",
     "anchor": "daytime",
     "cadence": "daily",
@@ -1928,7 +1928,7 @@
   {
     "id": "work-start",
     "title": "Start the Work Block",
-    "emoji": "💻",
+    "emoji": "laptop",
     "category": "school",
     "anchor": "daytime",
     "cadence": "daily",
@@ -1965,7 +1965,7 @@
   {
     "id": "cozy-reset",
     "title": "Cozy Corner Reset",
-    "emoji": "🧶",
+    "emoji": "yarn",
     "category": "home",
     "anchor": "evening",
     "cadence": "daily",
@@ -1998,7 +1998,7 @@
   {
     "id": "study-test",
     "title": "Study for a Test",
-    "emoji": "📝",
+    "emoji": "notepad",
     "category": "school",
     "anchor": "daytime",
     "cadence": "once",
@@ -2043,7 +2043,7 @@
   {
     "id": "school-bag-reset",
     "title": "School Bag Reset",
-    "emoji": "🎒",
+    "emoji": "backpack",
     "category": "school",
     "anchor": "evening",
     "cadence": "weekly",
@@ -2083,7 +2083,7 @@
   {
     "id": "ask-teacher",
     "title": "Ask a Teacher for Help",
-    "emoji": "🙋",
+    "emoji": "hand",
     "category": "school",
     "anchor": "daytime",
     "cadence": "once",
@@ -2114,7 +2114,7 @@
   {
     "id": "read-pages",
     "title": "Read 5 Pages",
-    "emoji": "📖",
+    "emoji": "bookOpen",
     "category": "school",
     "anchor": "evening",
     "cadence": "daily",
@@ -2145,7 +2145,7 @@
   {
     "id": "skincare",
     "title": "Simple Skincare",
-    "emoji": "🧴",
+    "emoji": "lotion",
     "category": "body",
     "anchor": "evening",
     "cadence": "daily",
@@ -2182,7 +2182,7 @@
   {
     "id": "nails",
     "title": "Trim Your Nails",
-    "emoji": "💅",
+    "emoji": "polish",
     "category": "body",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -2217,7 +2217,7 @@
   {
     "id": "hair-wash-day",
     "title": "Hair Wash Day",
-    "emoji": "🫧",
+    "emoji": "bubbles",
     "category": "body",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -2257,7 +2257,7 @@
   {
     "id": "comfort-break",
     "title": "Comfort Break",
-    "emoji": "🛋️",
+    "emoji": "couch",
     "category": "care",
     "anchor": "anytime",
     "cadence": "daily",
@@ -2288,7 +2288,7 @@
   {
     "id": "vacuum-room",
     "title": "Vacuum One Room",
-    "emoji": "🧹",
+    "emoji": "broom",
     "category": "home",
     "anchor": "anytime",
     "cadence": "weekly",
@@ -2324,7 +2324,7 @@
   {
     "id": "bathroom-deep",
     "title": "Bathroom Deep Clean",
-    "emoji": "🛁",
+    "emoji": "bath",
     "category": "home",
     "anchor": "anytime",
     "cadence": "monthly",
@@ -2374,7 +2374,7 @@
   {
     "id": "fridge-deep",
     "title": "Fridge Deep Clean",
-    "emoji": "🧽",
+    "emoji": "sponge",
     "category": "kitchen",
     "anchor": "anytime",
     "cadence": "monthly",
@@ -2412,7 +2412,7 @@
   {
     "id": "closet-clear",
     "title": "Closet Clear-Out",
-    "emoji": "👗",
+    "emoji": "hanger",
     "category": "home",
     "anchor": "anytime",
     "cadence": "monthly",
@@ -2448,7 +2448,7 @@
   {
     "id": "scrambled-eggs",
     "title": "Make Scrambled Eggs",
-    "emoji": "🍳",
+    "emoji": "pan",
     "category": "kitchen",
     "anchor": "morning",
     "cadence": "once",
@@ -2490,7 +2490,7 @@
   {
     "id": "pasta-night",
     "title": "Easy Pasta Night",
-    "emoji": "🍝",
+    "emoji": "bowl",
     "category": "kitchen",
     "anchor": "evening",
     "cadence": "once",
@@ -2533,7 +2533,7 @@
   {
     "id": "meal-prep",
     "title": "Mini Meal Prep",
-    "emoji": "🥗",
+    "emoji": "lunchbox",
     "category": "kitchen",
     "anchor": "daytime",
     "cadence": "weekly",
@@ -2563,7 +2563,7 @@
   {
     "id": "snack-plate",
     "title": "Make a Snack Plate",
-    "emoji": "🧀",
+    "emoji": "cheese",
     "category": "kitchen",
     "anchor": "anytime",
     "cadence": "daily",
@@ -2593,7 +2593,7 @@
   {
     "id": "dentist",
     "title": "Book a Dentist Visit",
-    "emoji": "🦷",
+    "emoji": "tooth",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "once",
@@ -2623,7 +2623,7 @@
   {
     "id": "haircut",
     "title": "Book a Haircut",
-    "emoji": "💇",
+    "emoji": "scissors",
     "category": "adulting",
     "anchor": "daytime",
     "cadence": "once",
@@ -2654,7 +2654,7 @@
   {
     "id": "appointment-prep",
     "title": "Get Ready for an Appointment",
-    "emoji": "📋",
+    "emoji": "clipboard",
     "category": "adulting",
     "anchor": "anytime",
     "cadence": "once",
@@ -2689,7 +2689,7 @@
   {
     "id": "therapy-notes",
     "title": "Therapy Session Notes",
-    "emoji": "💬",
+    "emoji": "chat",
     "category": "care",
     "anchor": "anytime",
     "cadence": "weekly",

@@ -1,206 +1,325 @@
 import { router } from 'expo-router';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { PebbleCount, PebbleIcon } from '../../components/Pebble';
-import { SHOP_ITEMS, type ShopItem } from '../../data/shop';
-import { confirmAction, notice } from '../../lib/dialogs';
-import { SEASON_INFO, seasonFor } from '../../lib/season';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { DecorThumb, TreatArt } from '../../components/art/DecorArt';
+import { Glyph } from '../../components/art/Glyph';
 import { Icon } from '../../components/Icon';
-import { Pet } from '../../components/Pet';
+import { PebbleCount, PebbleIcon } from '../../components/Pebble';
+import { Pet, PetSvg } from '../../components/Pet';
 import { ProUpsell } from '../../components/QuestBits';
 import { Room } from '../../components/Room';
-import { Row, Screen, SectionTitle, T } from '../../components/ui';
+import { Button, Row, Screen, Segmented, SectionTitle, T } from '../../components/ui';
 import { HATS, PET_COLORS, ROOMS, SCARVES, type Cosmetic, type CosmeticKind } from '../../data/cosmetics';
+import { SHOP_ITEMS, findShopItem, type ShopItem } from '../../data/shop';
+import { notice } from '../../lib/dialogs';
 import { levelFromXp } from '../../lib/progression';
+import { SEASON_GLYPH, SEASON_INFO, seasonFor } from '../../lib/season';
 import { useApp } from '../../state/AppContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, space } from '../../theme/tokens';
 
+type Tab = 'decor' | 'wardrobe';
+type Preview = { type: 'shop'; id: string } | { type: 'wear'; kind: CosmeticKind; id: string };
+
+const TABS = [
+  { value: 'decor', label: 'Room decor' },
+  { value: 'wardrobe', label: 'Wardrobe & colors' },
+] as const;
+
+const KIND_TITLE: Record<CosmeticKind, string> = { color: 'Colors', hat: 'Hats', scarf: 'Scarves', room: 'Rooms' };
+
 export default function Nook() {
   const { pet, isPro, updatePet, tap, owned, buyItem, setDecorPlaced, canWear } = useApp();
+  const { c, motion, calm, scheme } = useTheme();
+  const [tab, setTab] = useState<Tab>('decor');
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [buying, setBuying] = useState(false);
   const season = seasonFor();
-  const decor = owned.filter((o) => o.placed === 1).map((o) => o.item_id);
+  const level = levelFromXp(pet.xp).level;
 
-  const shopTap = async (item: ShopItem) => {
+  // ----- what the room viewport shows (live preview overrides) -----
+  const placed = owned.filter((o) => o.placed === 1).map((o) => o.item_id);
+  const previewItem = preview?.type === 'shop' ? findShopItem(preview.id) : undefined;
+  const decor = previewItem?.kind === 'decor' && !placed.includes(previewItem.id) ? [...placed, previewItem.id] : placed;
+  const wearPreview = preview?.type === 'wear' ? preview : null;
+  const look = {
+    color: wearPreview?.kind === 'color' ? wearPreview.id : pet.color,
+    hat: wearPreview?.kind === 'hat' ? wearPreview.id : pet.hat,
+    scarf: wearPreview?.kind === 'scarf' ? wearPreview.id : pet.scarf,
+    room: wearPreview?.kind === 'room' ? wearPreview.id : pet.room,
+  };
+
+  // ----- shop -----
+  const shopTap = (item: ShopItem) => {
     tap();
     const have = owned.find((o) => o.item_id === item.id);
     if (have) {
-      await setDecorPlaced(item.id, have.placed !== 1);
+      setPreview(null);
+      setDecorPlaced(item.id, have.placed !== 1).catch(() => undefined);
       return;
     }
-    if (pet.pebbles < item.price) {
-      notice(
-        `${item.price - pet.pebbles} more pebbles`,
-        `Every tiny step you check off earns a pebble (and a finished quest earns 3 extra). ${item.name} will be right here waiting.`,
-      );
-      return;
-    }
-    const verb = item.kind === 'treat' ? 'Give' : 'Get';
-    confirmAction(`${verb} ${item.name}?`, `This uses ${item.price} of your ${pet.pebbles} pebbles.`, `${verb} it`, () => {
-      buyItem(item.id)
-        .then((r) => {
-          if (!r.ok && r.reason === 'pebbles') notice('Almost!', 'You need a few more pebbles for this one.');
-        })
-        .catch(() => undefined);
-    });
+    setPreview({ type: 'shop', id: item.id });
   };
-  const { c, motion, calm, scheme } = useTheme();
-  const level = levelFromXp(pet.xp).level;
 
-  const choose = (kind: CosmeticKind, item: Cosmetic) => {
+  const buyPreviewed = async () => {
+    if (!previewItem || buying) return;
+    setBuying(true);
+    const r = await buyItem(previewItem.id);
+    setBuying(false);
+    if (r.ok) setPreview(null);
+    else if (r.reason === 'pebbles') notice('Almost!', 'You need a few more pebbles for this one.');
+  };
+
+  // ----- wardrobe -----
+  const lists: Record<CosmeticKind, Cosmetic[]> = { color: PET_COLORS, hat: HATS, scarf: SCARVES, room: ROOMS };
+  const current = (kind: CosmeticKind) => (kind === 'color' ? pet.color : kind === 'hat' ? pet.hat : kind === 'scarf' ? pet.scarf : pet.room);
+
+  const wearTap = (kind: CosmeticKind, item: Cosmetic) => {
     tap();
-    if (!canWear(kind, item.id)) {
-      if (item.season) {
-        notice(`${SEASON_INFO[item.season].emoji} Sprint reward`, `${item.name} is earned in ${SEASON_INFO[item.season].name} Mochi Sprints. Check the Week tab to see how close you are!`);
-        router.push('/week');
-      } else {
-        router.push('/pro');
-      }
+    if (canWear(kind, item.id)) {
+      setPreview(null);
+      updatePet({ [kind]: item.id }).catch(() => undefined);
       return;
     }
-    const key = kind === 'color' ? 'color' : kind;
-    updatePet({ [key]: item.id }).catch(() => undefined);
+    setPreview({ type: 'wear', kind, id: item.id });
   };
 
-  const selectedId = (kind: CosmeticKind) => (kind === 'color' ? pet.color : kind === 'hat' ? pet.hat : kind === 'scarf' ? pet.scarf : pet.room);
-
-  const section = (kind: CosmeticKind, title: string, items: Cosmetic[], swatch?: (id: string) => string) => (
-    <>
-      <SectionTitle>{title}</SectionTitle>
-      <View style={styles.grid}>
-        {items
-          // Seasonal items appear during their season, or once earned.
-          .filter((item) => !item.season || item.season === season || canWear(kind, item.id))
-          .map((item) => {
-          const selected = selectedId(kind) === item.id;
-          const locked = !canWear(kind, item.id);
-          return (
-            <Pressable
-              key={item.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={`${item.name}${locked ? (item.season ? ', Sprint reward' : ', Pro') : ''}${selected ? ', wearing' : ''}`}
-              onPress={() => choose(kind, item)}
-              style={({ pressed }) => [
-                styles.tile,
-                {
-                  backgroundColor: selected ? c.accentSoft : c.surface,
-                  borderColor: selected ? c.accent : c.border,
-                  opacity: pressed ? 0.85 : 1,
-                },
-              ]}
-            >
-              {swatch ? <View style={[styles.swatch, { backgroundColor: swatch(item.id), borderColor: c.border }]} /> : null}
-              <T variant="small" color={c.ink} numberOfLines={2} style={{ textAlign: 'center' }}>
-                {item.name}
-              </T>
-              {locked && item.season ? (
-                <View style={[styles.lock, { backgroundColor: c.butter }]}>
-                  <Text style={{ fontSize: 11 }}>{SEASON_INFO[item.season].emoji}</Text>
-                </View>
-              ) : locked ? (
-                <View style={[styles.lock, { backgroundColor: c.lavender }]}>
-                  <Icon name="lock" size={12} color={c.ink} strokeWidth={2.4} />
-                </View>
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
-    </>
-  );
+  const previewWear = wearPreview ? lists[wearPreview.kind].find((i) => i.id === wearPreview.id) : undefined;
 
   return (
-    <Screen>
-      <View style={{ paddingTop: space.lg }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T variant="title" style={{ flex: 1 }}>
-            {pet.name}’s Nook
-          </T>
-          <PebbleCount value={pet.pebbles} />
-        </Row>
-        <T variant="small">Level {level} · dress-up, cozy rooms, and the Pebble shop</T>
-      </View>
+    <Screen scroll={false} contentStyle={{ paddingBottom: 0 }}>
+      <Row style={{ justifyContent: 'space-between', paddingTop: space.lg }}>
+        <View style={{ flex: 1 }}>
+          <T variant="title">{pet.name}’s Nook</T>
+          <T variant="small">Level {level} · try anything on before you choose</T>
+        </View>
+        <PebbleCount value={pet.pebbles} />
+      </Row>
+
+      {/* Live viewport: stays put while the lists below scroll. */}
       <View style={[styles.stage, { borderColor: c.border }]}>
-        <Room room={pet.room} muted={calm} dark={scheme === 'dark'} decor={decor} />
-        <Pet color={pet.color} hat={pet.hat} scarf={pet.scarf} mood="idle" size={170} animate={motion} />
+        <Room room={look.room} muted={calm} dark={scheme === 'dark'} decor={decor} />
+        <View style={styles.petSpot}>
+          <Pet color={look.color} hat={look.hat} scarf={look.scarf} mood={preview ? 'happy' : 'idle'} size={150} animate={motion} />
+        </View>
+        {previewItem?.kind === 'treat' ? (
+          <View style={styles.treatSpot}>
+            <TreatArt id={previewItem.id} size={50} />
+          </View>
+        ) : null}
+        {preview ? (
+          <View style={[styles.previewTag, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <T variant="label" color={c.ink}>
+              PREVIEW
+            </T>
+          </View>
+        ) : null}
       </View>
 
-      <SectionTitle right={<PebbleCount value={pet.pebbles} />}>Pebble shop</SectionTitle>
-      <T variant="small" style={{ marginBottom: space.md }}>
-        Earn 1 pebble for every tiny step and 3 extra for a finished quest. Free for everyone, forever. Tap a room item you own to show or hide it.
-      </T>
-      <View style={styles.grid}>
-        {SHOP_ITEMS.map((item) => {
-          const have = owned.find((o) => o.item_id === item.id);
-          const affordable = pet.pebbles >= item.price;
-          const status = have ? (have.placed === 1 ? 'In your room' : 'Stored away') : null;
-          return (
-            <Pressable
-              key={item.id}
-              accessibilityRole="button"
-              accessibilityLabel={`${item.name}. ${status ?? `${item.price} pebbles`}. ${item.blurb}`}
-              onPress={() => shopTap(item)}
-              style={({ pressed }) => [
-                styles.tile,
-                {
-                  backgroundColor: have?.placed === 1 ? c.accentSoft : c.surface,
-                  borderColor: have?.placed === 1 ? c.accent : c.border,
-                  opacity: pressed ? 0.85 : 1,
-                },
-              ]}
-            >
-              <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
-              <T variant="small" color={c.ink} numberOfLines={2} style={{ textAlign: 'center' }}>
-                {item.name}
-              </T>
-              {status ? (
-                <T variant="label" color={c.accentInk}>
-                  {status.toUpperCase()}
-                </T>
-              ) : (
-                <Row gap={4} style={{ opacity: affordable ? 1 : 0.55 }}>
-                  <PebbleIcon size={14} />
-                  <T variant="small" color={c.ink} style={{ fontFamily: 'AtkinsonHyperlegible_700Bold' }}>
-                    {item.price}
-                  </T>
-                </Row>
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {!isPro ? (
-        <View style={{ marginTop: space.lg }}>
-          <ProUpsell title="Unlock the whole wardrobe" body="Every hat, scarf, color and room, and no Calm pick card. $5.99/month, cancel any time." />
+      {preview ? (
+        <View style={[styles.actionBar, { backgroundColor: c.surface, borderColor: c.border }]} accessibilityLiveRegion="polite">
+          <View style={{ flex: 1 }}>
+            <T variant="bodyBold">{previewItem?.name ?? previewWear?.name}</T>
+            <T variant="small">
+              {previewItem
+                ? pet.pebbles >= previewItem.price
+                  ? `${previewItem.price} pebbles · you have ${pet.pebbles}`
+                  : `${previewItem.price - pet.pebbles} more pebbles to go`
+                : previewWear?.season
+                  ? `Earned in ${SEASON_INFO[previewWear.season].name} Sprints`
+                  : 'Part of MochiNook Pro'}
+            </T>
+          </View>
+          {previewItem ? (
+            <Button
+              label={previewItem.kind === 'treat' ? 'Give it' : 'Get it'}
+              small
+              disabled={buying || pet.pebbles < previewItem.price}
+              onPress={buyPreviewed}
+            />
+          ) : previewWear?.season ? (
+            <Button label="See Sprint" small onPress={() => router.push('/week')} />
+          ) : (
+            <Button label="Unlock" kind="lavender" small onPress={() => router.push('/pro')} />
+          )}
+          <Pressable accessibilityRole="button" accessibilityLabel="Stop previewing" onPress={() => setPreview(null)} hitSlop={10} style={{ padding: 4 }}>
+            <Icon name="close" size={20} color={c.inkSoft} />
+          </Pressable>
         </View>
       ) : null}
 
-      {section('color', 'Colors', PET_COLORS, (id) => PET_COLORS.find((p) => p.id === id)?.body ?? '#FFF')}
-      {section('hat', 'Hats', HATS)}
-      {section('scarf', 'Scarves', SCARVES)}
-      {section('room', 'Rooms', ROOMS)}
-      <Row style={{ marginTop: space.xl }}>
-        <T variant="small">Everything you unlock stays yours to mix and match. Nothing ever runs out.</T>
-      </Row>
+      <View style={{ marginTop: space.md }}>
+        <Segmented
+          options={TABS}
+          value={tab}
+          onChange={(t) => {
+            setTab(t);
+            setPreview(null);
+          }}
+        />
+      </View>
+
+      {/* key={tab}: each tab gets its own list, so switching always starts at the top. */}
+      <ScrollView key={tab} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: space.xxxl }} showsVerticalScrollIndicator={false}>
+        {tab === 'decor' ? (
+          <>
+            <T variant="small" style={{ marginTop: space.lg }}>
+              Earn 1 pebble per tiny step (+3 for a whole quest). Tap anything to see it in the room first. Tap items you own to show or hide them.
+            </T>
+            <View style={[styles.grid, { marginTop: space.md }]}>
+              {SHOP_ITEMS.map((item) => {
+                const have = owned.find((o) => o.item_id === item.id);
+                const shown = have?.placed === 1;
+                const active = preview?.type === 'shop' && preview.id === item.id;
+                return (
+                  <Pressable
+                    key={item.id}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: shown || active }}
+                    accessibilityLabel={`${item.name}. ${have ? (shown ? 'In your room' : 'Stored away') : `${item.price} pebbles`}. ${item.blurb}`}
+                    onPress={() => shopTap(item)}
+                    style={({ pressed }) => [
+                      styles.tile,
+                      {
+                        backgroundColor: shown ? c.accentSoft : c.surface,
+                        borderColor: active ? c.lavender : shown ? c.accent : c.border,
+                        borderWidth: active ? 2.5 : 1.5,
+                        opacity: pressed ? 0.85 : 1,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.thumb, { backgroundColor: c.surfaceAlt }]}>
+                      {item.kind === 'decor' ? <DecorThumb id={item.id} size={54} /> : <TreatArt id={item.id} size={50} />}
+                    </View>
+                    <T variant="small" color={c.ink} numberOfLines={2} style={{ textAlign: 'center' }}>
+                      {item.name}
+                    </T>
+                    {have ? (
+                      <T variant="label" color={shown ? c.accentInk : c.inkSoft}>
+                        {shown ? 'IN ROOM' : 'STORED'}
+                      </T>
+                    ) : (
+                      <Row gap={4} style={{ opacity: pet.pebbles >= item.price ? 1 : 0.55 }}>
+                        <PebbleIcon size={14} />
+                        <T variant="small" color={c.ink} style={{ fontFamily: 'AtkinsonHyperlegible_700Bold' }}>
+                          {item.price}
+                        </T>
+                      </Row>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : (
+          <>
+            {(['color', 'hat', 'scarf', 'room'] as CosmeticKind[]).map((kind) => (
+              <View key={kind}>
+                <SectionTitle>{KIND_TITLE[kind]}</SectionTitle>
+                <View style={styles.grid}>
+                  {lists[kind]
+                    // Seasonal items appear during their season, or once earned.
+                    .filter((item) => !item.season || item.season === season || canWear(kind, item.id))
+                    .map((item) => {
+                      const wearing = current(kind) === item.id;
+                      const locked = !canWear(kind, item.id);
+                      const active = wearPreview?.kind === kind && wearPreview.id === item.id;
+                      return (
+                        <Pressable
+                          key={item.id}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: wearing }}
+                          accessibilityLabel={`${item.name}${locked ? (item.season ? ', Sprint reward' : ', Pro') : ''}${wearing ? ', wearing' : ''}`}
+                          onPress={() => wearTap(kind, item)}
+                          style={({ pressed }) => [
+                            styles.tile,
+                            {
+                              backgroundColor: wearing ? c.accentSoft : c.surface,
+                              borderColor: active ? c.lavender : wearing ? c.accent : c.border,
+                              borderWidth: active ? 2.5 : 1.5,
+                              opacity: pressed ? 0.85 : 1,
+                            },
+                          ]}
+                        >
+                          <View style={[styles.thumb, { backgroundColor: c.surfaceAlt, opacity: locked ? 0.75 : 1 }]}>
+                            {kind === 'room' ? (
+                              <View style={styles.roomThumb}>
+                                <Room room={item.id} muted={false} dark={false} />
+                              </View>
+                            ) : (
+                              <PetSvg
+                                color={kind === 'color' ? item.id : 'cream'}
+                                hat={kind === 'hat' ? item.id : 'none'}
+                                scarf={kind === 'scarf' ? item.id : 'none'}
+                                mood="idle"
+                                size={58}
+                              />
+                            )}
+                          </View>
+                          <T variant="small" color={c.ink} numberOfLines={2} style={{ textAlign: 'center' }}>
+                            {item.name}
+                          </T>
+                          {locked ? (
+                            <View style={[styles.badge, { backgroundColor: item.season ? c.butter : c.lavender }]}>
+                              {item.season ? (
+                                <Glyph name={SEASON_GLYPH[item.season]} size={14} />
+                              ) : (
+                                <Icon name="lock" size={12} color={c.ink} strokeWidth={2.4} />
+                              )}
+                            </View>
+                          ) : null}
+                        </Pressable>
+                      );
+                    })}
+                </View>
+              </View>
+            ))}
+            {!isPro ? (
+              <View style={{ marginTop: space.xl }}>
+                <ProUpsell title="Unlock the whole wardrobe" body="Every hat, scarf, color and room, and no Calm pick card. $5.99/month, cancel any time." />
+              </View>
+            ) : null}
+          </>
+        )}
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  stage: { height: 250, borderRadius: radius.xl, borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', marginTop: space.lg, paddingBottom: 8 },
+  stage: {
+    height: 210,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: space.md,
+  },
+  petSpot: { marginBottom: 4 },
+  treatSpot: { position: 'absolute', bottom: 12, right: '22%' },
+  previewTag: { position: 'absolute', top: space.sm, left: space.sm, borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 3 },
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: space.sm,
+    paddingLeft: space.md,
+    marginTop: space.sm,
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tile: {
     width: '31.6%',
-    minHeight: 84,
+    minHeight: 120,
     borderRadius: radius.md,
-    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     padding: space.sm,
-    gap: 6,
+    gap: 4,
   },
-  swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 1 },
-  lock: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  thumb: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  roomThumb: { width: 64, height: 64 },
+  badge: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
 });

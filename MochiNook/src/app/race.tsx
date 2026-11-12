@@ -2,7 +2,8 @@ import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Share, Text, TextInput, View } from 'react-native';
+import { Share, TextInput, View } from 'react-native';
+import { Glyph } from '../components/art/Glyph';
 import { Button, Card, IconButton, ProgressBar, Row, Screen, SectionTitle, T } from '../components/ui';
 import * as repo from '../db/repo';
 import { scheduleTimerEnd } from '../lib/notifications';
@@ -88,10 +89,10 @@ export default function Race() {
   };
 
   const verdict = (a: number, b: number, friendPet: string) => {
-    if (a === b) return `A tie! You and ${friendPet}’s human both did ${a}. Perfect teamwork. 🤝`;
+    if (a === b) return `A tie! You and ${friendPet}’s human both did ${a}. Perfect teamwork.`;
     return a > b
-      ? `You did ${a - b} more! Both of you showed up, and that's the real win. 🏁`
-      : `${friendPet}’s human did ${b - a} more. You both still won a Sprint Star. 🌟`;
+      ? `You did ${a - b} more! Both of you showed up, and that's the real win.`
+      : `${friendPet}’s human did ${b - a} more. You both still won a Sprint Star.`;
   };
 
   return (
@@ -100,7 +101,7 @@ export default function Race() {
         <IconButton icon="chevronLeft" label="Back" onPress={() => router.back()} />
       </Row>
       <View style={{ alignItems: 'center', gap: space.sm, marginTop: space.md }}>
-        <Text style={{ fontSize: 52 }}>🏁</Text>
+        <Glyph name="flag" size={64} />
         <T variant="title" style={{ textAlign: 'center' }}>
           15-minute friend race
         </T>
@@ -137,7 +138,7 @@ export default function Race() {
         <>
           <Card tone="accent" style={{ marginTop: space.xl, gap: space.sm }}>
             <T variant="heading">
-              You did {mine.steps} tiny {mine.steps === 1 ? 'step' : 'steps'}! 🎉
+              You did {mine.steps} tiny {mine.steps === 1 ? 'step' : 'steps'}!
             </T>
             <T variant="small" color={c.ink}>
               Send this result code to your friend. It only contains your pet’s name and your step count.

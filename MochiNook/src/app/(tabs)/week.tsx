@@ -1,13 +1,15 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useState } from 'react';
-import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { Glyph } from '../../components/art/Glyph';
+import { MoodFace } from '../../components/art/MoodFace';
 import { Icon } from '../../components/Icon';
 import { Button, Card, ProgressBar, Row, Screen, SectionTitle, T } from '../../components/ui';
 import { cosmeticKey, seasonalRewards } from '../../data/cosmetics';
 import * as repo from '../../db/repo';
 import { CHEERS, MOODS, cheerMessage } from '../../lib/copy';
-import { SEASON_INFO, seasonFor, sprintTiers, weekDays, weekStart } from '../../lib/season';
+import { SEASON_GLYPH, SEASON_INFO, seasonFor, sprintTiers, weekDays, weekStart } from '../../lib/season';
 import { dayKey } from '../../lib/time';
 import { useApp } from '../../state/AppContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -61,9 +63,10 @@ export default function Week() {
   return (
     <Screen>
       <View style={{ paddingTop: space.lg }}>
-        <T variant="label">
-          {info.emoji} {info.name.toUpperCase()} SEASON
-        </T>
+        <Row gap={6}>
+          <Glyph name={SEASON_GLYPH[season]} size={18} />
+          <T variant="label">{info.name.toUpperCase()} SEASON</T>
+        </Row>
         <T variant="title">This week</T>
       </View>
 
@@ -71,7 +74,7 @@ export default function Week() {
         <Row style={{ justifyContent: 'space-between' }}>
           <T variant="heading">Mochi Sprint</T>
           <Row gap={6}>
-            <Text style={{ fontSize: 20 }}>⭐</Text>
+            <Glyph name="star" size={24} />
             <T variant="heading">{stars}</T>
           </Row>
         </Row>
@@ -105,7 +108,7 @@ export default function Week() {
 
       <SectionTitle>Your week</SectionTitle>
       <Card>
-        <Row style={{ justifyContent: 'space-between' }}>
+        <Row gap={0} style={{ justifyContent: 'space-between' }}>
           {days.map((d, i) => {
             const n = stats?.perDay[i] ?? 0;
             const mood = MOODS.find((m) => m.value === checkins.find((x) => x.day === d)?.mood);
@@ -120,10 +123,17 @@ export default function Week() {
                 <T variant="label" color={isToday ? c.accentInk : c.inkSoft}>
                   {DAY_LETTERS[i]}
                 </T>
-                <Text style={{ fontSize: 18, opacity: mood ? 1 : 0.25 }}>{mood ? mood.face : '·'}</Text>
-                <T variant="small" color={c.ink}>
-                  {n > 0 ? `⭐${n}` : ' '}
-                </T>
+                {mood ? <MoodFace mood={mood.value} size={26} /> : <View style={[styles.emptyFace, { borderColor: c.border }]} />}
+                {n > 0 ? (
+                  <Row gap={2}>
+                    <Glyph name="star" size={13} />
+                    <T variant="small" color={c.ink}>
+                      {n}
+                    </T>
+                  </Row>
+                ) : (
+                  <T variant="small"> </T>
+                )}
               </View>
             );
           })}
@@ -140,7 +150,7 @@ export default function Week() {
           onPress={() => router.push('/focus')}
           style={({ pressed }) => [styles.action, { backgroundColor: c.lavenderSoft, borderColor: c.border, opacity: pressed ? 0.85 : 1 }]}
         >
-          <Text style={{ fontSize: 30 }}>📚</Text>
+          <Glyph name="books" size={38} />
           <View style={{ flex: 1 }}>
             <T variant="bodyBold">Body-double focus</T>
             <T variant="small">{pet.name} works right beside you for 5, 15 or 25 minutes. +1 star.</T>
@@ -152,7 +162,7 @@ export default function Week() {
           onPress={() => router.push('/race')}
           style={({ pressed }) => [styles.action, { backgroundColor: c.peachSoft, borderColor: c.border, opacity: pressed ? 0.85 : 1 }]}
         >
-          <Text style={{ fontSize: 30 }}>🏁</Text>
+          <Glyph name="flag" size={38} />
           <View style={{ flex: 1 }}>
             <T variant="bodyBold">15-minute friend race</T>
             <T variant="small">Both race when it suits you, then swap result codes. No accounts, no strangers. +1 star.</T>
@@ -175,7 +185,8 @@ export default function Week() {
             style={({ pressed }) => [styles.cheer, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed ? 0.8 : 1 }]}
           >
             <T variant="small" color={c.ink}>
-              {cheer}
+              {/* The sent message keeps its emoji; the in-app button stays plain and calm. */}
+              {cheer.replace(/\s*[\u{1F300}-\u{1FAFF}\u2600-\u27BF]\uFE0F?/gu, '')}
             </T>
           </Pressable>
         ))}
@@ -188,8 +199,9 @@ export default function Week() {
 const styles = StyleSheet.create({
   reward: { borderWidth: 1, borderRadius: radius.md, padding: space.md },
   tierBadge: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  day: { alignItems: 'center', gap: 4, paddingVertical: space.sm, borderRadius: radius.sm, width: 40 },
+  day: { alignItems: 'center', gap: 4, paddingVertical: space.sm, borderRadius: radius.sm, width: 38 },
   action: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderRadius: radius.lg, padding: space.lg, minHeight: 84 },
+  emptyFace: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderStyle: 'dashed', marginVertical: 2 },
   cheers: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   cheer: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.sm + 2, minHeight: 44, justifyContent: 'center' },
 });

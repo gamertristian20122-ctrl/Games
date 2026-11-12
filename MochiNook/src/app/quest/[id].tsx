@@ -1,7 +1,8 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, View } from 'react-native';
+import { Glyph } from '../../components/art/Glyph';
 import { ANCHOR_LABEL, CADENCE_LABEL, StepDots, StepItem } from '../../components/QuestBits';
 import { Button, Card, IconButton, Row, Screen, Spacer, T } from '../../components/ui';
 import * as repo from '../../db/repo';
@@ -121,9 +122,9 @@ export default function QuestScreen() {
       </Row>
 
       <View style={{ alignItems: 'flex-start', gap: space.sm, marginTop: space.lg }}>
-        <Text style={{ fontSize: 44 }} accessibilityElementsHidden>
-          {quest.emoji}
-        </Text>
+        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+          <Glyph name={quest.emoji} size={46} />
+        </View>
         <T variant="title" accessibilityRole="header">
           {quest.title}
         </T>
@@ -133,7 +134,7 @@ export default function QuestScreen() {
 
       {finished ? (
         <Card tone="accent" style={{ marginTop: space.lg }}>
-          <T variant="heading">All done today 🌱</T>
+          <T variant="heading">All done today</T>
           <T variant="small">You finished every step. That’s a whole quest! Rest is part of the routine too.</T>
         </Card>
       ) : null}

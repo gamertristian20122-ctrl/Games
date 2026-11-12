@@ -69,7 +69,7 @@ export default function ShareScreen() {
     const added = await repo.importShared(db, preview);
     if (useTimes && preview.anchors) await app.updateSettings({ anchors: preview.anchors });
     app.touchData();
-    Alert.alert('Routine added 🌱', added > 0 ? `${added} ${added === 1 ? 'quest was' : 'quests were'} added to your routine.` : 'You already had all of these. Nothing changed.', [
+    Alert.alert('Routine added', added > 0 ? `${added} ${added === 1 ? 'quest was' : 'quests were'} added to your routine.` : 'You already had all of these. Nothing changed.', [
       { text: 'Lovely', onPress: () => router.back() },
     ]);
   };

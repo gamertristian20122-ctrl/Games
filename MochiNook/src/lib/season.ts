@@ -3,12 +3,15 @@ import type { Energy } from './types';
 /** Seasons follow the Northern-Hemisphere calendar months. Rewards earned in any season are kept forever. */
 export type Season = 'autumn' | 'winter' | 'spring' | 'summer';
 
-export const SEASON_INFO: Record<Season, { name: string; emoji: string; months: string }> = {
-  autumn: { name: 'Cozy Autumn', emoji: '🍂', months: 'September–November' },
-  winter: { name: 'Snowy Winter', emoji: '❄️', months: 'December–February' },
-  spring: { name: 'Blossom Spring', emoji: '🌸', months: 'March–May' },
-  summer: { name: 'Sunny Summer', emoji: '☀️', months: 'June–August' },
+export const SEASON_INFO: Record<Season, { name: string; months: string }> = {
+  autumn: { name: 'Cozy Autumn', months: 'September–November' },
+  winter: { name: 'Snowy Winter', months: 'December–February' },
+  spring: { name: 'Blossom Spring', months: 'March–May' },
+  summer: { name: 'Sunny Summer', months: 'June–August' },
 };
+
+/** Which custom icon represents each season. */
+export const SEASON_GLYPH = { autumn: 'leaf', winter: 'snowflake', spring: 'blossom', summer: 'sun' } as const;
 
 export function seasonFor(date: Date = new Date()): Season {
   const m = date.getMonth() + 1;

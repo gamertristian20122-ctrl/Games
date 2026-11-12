@@ -1,8 +1,10 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { Glyph } from '../../components/art/Glyph';
+import { MoodFace } from '../../components/art/MoodFace';
 import { Icon } from '../../components/Icon';
 import { PetCard } from '../../components/PetCard';
 import { ANCHOR_LABEL, QuestListItem, SponsorCard } from '../../components/QuestBits';
@@ -112,7 +114,10 @@ export default function Home() {
           onPress={() => router.push('/race')}
           style={[styles.note, { backgroundColor: c.peachSoft, borderColor: c.border }]}
         >
-          <T variant="bodyBold">🏁 Friend race in progress</T>
+          <Row gap={space.sm}>
+            <Glyph name="flag" size={22} />
+            <T variant="bodyBold">Friend race in progress</T>
+          </Row>
           <T variant="small" color={c.ink}>
             {raceMinutesLeft > 0 ? `About ${raceMinutesLeft} min left. Every step you check off counts!` : 'Time’s up! Tap to see your result.'}
           </T>
@@ -132,7 +137,7 @@ export default function Home() {
                 onPress={() => setMood(m.value)}
                 style={[styles.mood, { backgroundColor: mood === m.value ? c.surface : 'transparent', borderColor: mood === m.value ? c.lavender : 'transparent' }]}
               >
-                <Text style={{ fontSize: 26 }}>{m.face}</Text>
+                <MoodFace mood={m.value} size={34} />
                 <T variant="small" color={c.ink}>
                   {m.word}
                 </T>
@@ -143,7 +148,7 @@ export default function Home() {
             Spoons today
           </T>
           <Row gap={space.sm}>
-            <Pill label="🥄 Low" selected={settings.energy === 'low'} onPress={() => setEnergy('low')} />
+            <Pill label="Low" icon="spoon" selected={settings.energy === 'low'} onPress={() => setEnergy('low')} />
             <Pill label="Steady" selected={settings.energy === 'medium'} onPress={() => setEnergy('medium')} />
             <Pill label="High" selected={settings.energy === 'high'} onPress={() => setEnergy('high')} />
           </Row>
@@ -176,7 +181,7 @@ export default function Home() {
               onPress={() => router.push({ pathname: '/quest/[id]', params: { id: next.quest.id } })}
             >
               <Row gap={space.sm}>
-                <Text style={{ fontSize: 18 }}>{next.quest.emoji}</Text>
+                <Glyph name={next.quest.emoji} size={24} />
                 <T variant="small" color={c.accentInk} style={{ flex: 1 }}>
                   {next.quest.title} · step {next.quest.steps.indexOf(next.step) + 1} of {next.quest.steps.length}
                 </T>
@@ -194,14 +199,14 @@ export default function Home() {
             </Row>
             {!assistant.canMakeSmaller(next.step.text, next.step.tiny) ? (
               <T variant="small" color={c.accentInk}>
-                This one is already a single tiny action. ✨
+                This one is already a single tiny action.
               </T>
             ) : null}
           </Card>
         </Animated.View>
       ) : (
         <Card tone="accent">
-          <T variant="heading">{visible.length === 0 ? 'Nothing on the list yet' : 'All clear for now ✨'}</T>
+          <T variant="heading">{visible.length === 0 ? 'Nothing on the list yet' : 'All clear for now'}</T>
           <T variant="small" style={{ marginTop: 4 }}>
             {visible.length === 0 ? 'Want to pick a quest or two from the library? No pressure.' : allClearLine}
           </T>
@@ -213,7 +218,7 @@ export default function Home() {
 
       <SectionTitle>Spoons today</SectionTitle>
       <Row gap={space.sm}>
-        <Pill label="🥄 Low" selected={settings.energy === 'low'} onPress={() => setEnergy('low')} />
+        <Pill label="Low" icon="spoon" selected={settings.energy === 'low'} onPress={() => setEnergy('low')} />
         <Pill label="Steady" selected={settings.energy === 'medium'} onPress={() => setEnergy('medium')} />
         <Pill label="High" selected={settings.energy === 'high'} onPress={() => setEnergy('high')} />
       </Row>

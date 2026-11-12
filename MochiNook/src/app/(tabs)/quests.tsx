@@ -1,7 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Glyph } from '../../components/art/Glyph';
 import { Icon } from '../../components/Icon';
 import { ANCHOR_LABEL, CADENCE_LABEL } from '../../components/QuestBits';
 import { Button, Pill, Row, Screen, SectionTitle, T } from '../../components/ui';
@@ -135,7 +136,7 @@ function QuestRowItem({ item, onToggle }: { item: Item; onToggle: () => void }) 
         }}
         style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md, opacity: pressed ? 0.8 : 1 })}
       >
-        <Text style={{ fontSize: 24 }}>{item.emoji}</Text>
+        <Glyph name={item.emoji} size={30} />
         <View style={{ flex: 1 }}>
           <T variant="bodyBold" numberOfLines={2}>
             {item.title}

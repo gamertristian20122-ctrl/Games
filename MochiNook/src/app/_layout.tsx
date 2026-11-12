@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Glyph } from '../components/art/Glyph';
 import { PebblePop } from '../components/Pebble';
 import { DATABASE_NAME, migrateDatabase } from '../db/schema';
 import { configureNotificationHandler, ensureChannels } from '../lib/notifications';
@@ -84,7 +85,7 @@ export default function RootLayout() {
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
   return (
     <View style={{ flex: 1, backgroundColor: '#FBF5EC', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
-      <Text style={{ fontSize: 48 }}>🫧</Text>
+      <Glyph name="bubbles" size={64} />
       <Text style={{ fontSize: 22, fontWeight: '800', color: '#3E3833', textAlign: 'center' }}>Oops, something got tangled.</Text>
       <Text style={{ fontSize: 17, color: '#6B625A', textAlign: 'center' }}>
         Your data is safe on your phone. Want to try again?

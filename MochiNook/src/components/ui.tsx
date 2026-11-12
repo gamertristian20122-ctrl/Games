@@ -16,6 +16,7 @@ import { formatClock, wrapMinutes } from '../lib/time';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space, type as typeScale } from '../theme/tokens';
+import { Glyph, type GlyphName } from './art/Glyph';
 import { Icon, type IconName } from './Icon';
 
 // ---------- text ----------
@@ -212,7 +213,7 @@ export function Chip<T extends string>({
   selected,
   onSelect,
   sublabel,
-  emoji,
+  art,
   multi = false,
 }: {
   label: string;
@@ -220,7 +221,8 @@ export function Chip<T extends string>({
   selected: boolean;
   onSelect: (v: T) => void;
   sublabel?: string;
-  emoji?: string;
+  /** Small illustration shown on the left (a Glyph, spoons, …). */
+  art?: React.ReactNode;
   /** Checkbox look and behaviour (pick several) instead of a radio button. */
   multi?: boolean;
 }) {
@@ -245,7 +247,7 @@ export function Chip<T extends string>({
       ]}
     >
       <Row gap={space.md}>
-        {emoji ? <Text style={{ fontSize: 26 }}>{emoji}</Text> : null}
+        {art ? <View style={{ width: 50, alignItems: 'center' }}>{art}</View> : null}
         <View style={{ flex: 1 }}>
           <T variant="bodyBold">{label}</T>
           {sublabel ? <T variant="small">{sublabel}</T> : null}
@@ -258,7 +260,45 @@ export function Chip<T extends string>({
   );
 }
 
-export function Pill({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+/** Two-or-more option segmented control (like a soft pill switch). */
+export function Segmented<V extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly { value: V; label: string }[];
+  value: V;
+  onChange: (v: V) => void;
+}) {
+  const { c } = useTheme();
+  const { tap } = useApp();
+  return (
+    <View accessibilityRole="tablist" style={[styles.segTrack, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+      {options.map((o) => {
+        const selected = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            accessibilityLabel={o.label}
+            onPress={() => {
+              tap();
+              onChange(o.value);
+            }}
+            style={[styles.segItem, selected && { backgroundColor: c.surface, shadowColor: c.shadow, shadowOpacity: 1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }]}
+          >
+            <T variant="small" color={selected ? c.ink : c.inkSoft} style={{ fontFamily: typeScale.bodyBold.fontFamily, textAlign: 'center' }}>
+              {o.label}
+            </T>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+export function Pill({ label, selected, onPress, icon }: { label: string; selected: boolean; onPress: () => void; icon?: GlyphName }) {
   const { c } = useTheme();
   const { tap } = useApp();
   return (
@@ -270,8 +310,9 @@ export function Pill({ label, selected, onPress }: { label: string; selected: bo
         tap();
         onPress();
       }}
-      style={[styles.pill, { backgroundColor: selected ? c.accent : c.surfaceAlt, borderColor: selected ? c.accent : c.border }]}
+      style={[styles.pill, { backgroundColor: selected ? c.accent : c.surfaceAlt, borderColor: selected ? c.accent : c.border }, icon ? { flexDirection: 'row', alignItems: 'center', gap: 6 } : null]}
     >
+      {icon ? <Glyph name={icon} size={20} /> : null}
       <T variant="small" color={selected ? c.onAccent : c.ink} style={{ fontFamily: typeScale.bodyBold.fontFamily }}>
         {label}
       </T>
@@ -400,6 +441,8 @@ export const styles = StyleSheet.create({
   buttonSmall: { minHeight: 44, paddingHorizontal: space.lg },
   chip: { borderWidth: 1.5, borderRadius: radius.md, padding: space.lg },
   radio: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  segTrack: { flexDirection: 'row', borderRadius: radius.pill, borderWidth: 1, padding: 4, gap: 4 },
+  segItem: { flex: 1, minHeight: 42, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.sm },
   pill: { borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: space.lg, paddingVertical: space.sm + 2, minHeight: 44, justifyContent: 'center' },
   linkIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   timeBox: { minWidth: 104, paddingVertical: space.sm, borderRadius: radius.sm, alignItems: 'center' },

@@ -110,7 +110,7 @@ export function decodeShareCode(raw: string): SharePayload {
       quests.push({
         id: null,
         title: r.title.slice(0, 80),
-        emoji: typeof r.emoji === 'string' ? r.emoji.slice(0, 8) : '✨',
+        emoji: typeof r.emoji === 'string' ? r.emoji.slice(0, 24) : 'sparkle',
         anchor,
         cadence: cadence ?? 'daily',
         steps,

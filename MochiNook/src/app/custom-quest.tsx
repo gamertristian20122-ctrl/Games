@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
+import { Glyph, type GlyphName } from '../components/art/Glyph';
 import { ANCHOR_LABEL, CADENCE_LABEL } from '../components/QuestBits';
 import { Button, Card, IconButton, Pill, Row, Screen, SectionTitle, T } from '../components/ui';
 import * as repo from '../db/repo';
@@ -11,7 +12,7 @@ import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space, type as typeScale } from '../theme/tokens';
 
-const EMOJIS = ['✨', '🧹', '📦', '📝', '🛁', '🧺', '🍳', '📞', '💌', '🪴', '🎒', '🧠'];
+const ICONS: GlyphName[] = ['sparkle', 'broom', 'box', 'notepad', 'bath', 'basket', 'pan', 'phone', 'mail', 'plant', 'backpack', 'books', 'calendar', 'heart', 'laptop', 'paw'];
 const MAX_STEPS = 10;
 
 export default function CustomQuest() {
@@ -22,7 +23,7 @@ export default function CustomQuest() {
   const [task, setTask] = useState('');
   const [title, setTitle] = useState('');
   const [invite, setInvite] = useState('');
-  const [emoji, setEmoji] = useState('✨');
+  const [emoji, setEmoji] = useState<GlyphName>('sparkle');
   const [anchor, setAnchor] = useState<Anchor>('anytime');
   const [cadence, setCadence] = useState<Cadence>('once');
   const [steps, setSteps] = useState<string[]>([]);
@@ -138,11 +139,29 @@ export default function CustomQuest() {
             <Button label="Add a step" icon="plus" kind="soft" small style={{ marginTop: space.md, alignSelf: 'flex-start' }} onPress={() => setSteps((all) => [...all, ''])} />
           ) : null}
 
-          <SectionTitle>Name it</SectionTitle>
+          <SectionTitle>Name it and pick an icon</SectionTitle>
           <TextInput value={title} onChangeText={setTitle} maxLength={80} accessibilityLabel="Quest name" placeholder="Room glow-up" placeholderTextColor={c.inkSoft} style={inputStyle} />
           <Row gap={space.sm} style={{ flexWrap: 'wrap', marginTop: space.md }}>
-            {EMOJIS.map((e) => (
-              <Pill key={e} label={e} selected={emoji === e} onPress={() => setEmoji(e)} />
+            {ICONS.map((g) => (
+              <Pressable
+                key={g}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: emoji === g }}
+                accessibilityLabel={`Icon: ${g}`}
+                onPress={() => setEmoji(g)}
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: emoji === g ? c.accentSoft : c.surface,
+                  borderWidth: 2,
+                  borderColor: emoji === g ? c.accent : c.border,
+                }}
+              >
+                <Glyph name={g} size={30} />
+              </Pressable>
             ))}
           </Row>
 

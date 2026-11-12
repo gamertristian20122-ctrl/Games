@@ -432,7 +432,7 @@ export async function createQuest(db: SQLiteDatabase, q: NewQuest, addToRoutineT
     await db.runAsync(
       `INSERT INTO quests (id, title, emoji, category, anchor, cadence, essential, invite, source, created_at)
        VALUES (?, ?, ?, 'home', ?, ?, 0, ?, ?, ?)`,
-      id, q.title.trim().slice(0, 80) || 'My quest', q.emoji || '✨', q.anchor, q.cadence, q.invite, q.source, Date.now(),
+      id, q.title.trim().slice(0, 80) || 'My quest', q.emoji || 'sparkle', q.anchor, q.cadence, q.invite, q.source, Date.now(),
     );
     for (const [position, text] of steps.entries()) {
       await db.runAsync('INSERT INTO quest_steps (quest_id, position, text) VALUES (?, ?, ?)', id, position, text.slice(0, 200));
@@ -480,7 +480,7 @@ export async function importShared(db: SQLiteDatabase, payload: SharePayload): P
     } else if (q.title && q.steps && q.steps.length > 0) {
       await createQuest(db, {
         title: q.title,
-        emoji: q.emoji ?? '✨',
+        emoji: q.emoji ?? 'sparkle',
         anchor: q.anchor,
         cadence: q.cadence ?? 'daily',
         invite: 'A quest someone who cares about you shared. Want to try it together?',

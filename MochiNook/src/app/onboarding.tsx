@@ -2,6 +2,8 @@ import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInRight } from 'react-native-reanimated';
+import { Glyph, type GlyphName } from '../components/art/Glyph';
+import { Spoons } from '../components/art/Spoons';
 import { Pet } from '../components/Pet';
 import { Button, Chip, Pill, ProgressBar, Row, Screen, Spacer, T, TimeStepper } from '../components/ui';
 import { PET_NAMES } from '../data/cosmetics';
@@ -11,19 +13,19 @@ import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { space } from '../theme/tokens';
 
-const PROFILES: { value: BrainProfile; label: string; sub: string; emoji: string }[] = [
-  { value: 'adhd', label: 'ADHD', sub: 'Starting is the hard part. Timers and tiny wins help.', emoji: '⚡' },
-  { value: 'add', label: 'ADD', sub: 'My focus drifts off quietly.', emoji: '☁️' },
-  { value: 'autism', label: 'Autism', sub: 'I like things clear, literal, and predictable.', emoji: '🧩' },
-  { value: 'audhd', label: 'Both (AuDHD)', sub: 'A little of each, depending on the day.', emoji: '🌈' },
-  { value: 'anxiety', label: 'Anxiety / Overwhelmed', sub: 'Life feels like a lot right now.', emoji: '🫧' },
-  { value: 'other', label: 'Other', sub: 'Something else, or I would rather not say.', emoji: '💛' },
+const PROFILES: { value: BrainProfile; label: string; sub: string; icon: GlyphName }[] = [
+  { value: 'adhd', label: 'ADHD', sub: 'Starting is the hard part. Timers and tiny wins help.', icon: 'lightning' },
+  { value: 'add', label: 'ADD', sub: 'My focus drifts off quietly.', icon: 'cloud' },
+  { value: 'autism', label: 'Autism', sub: 'I like things clear, literal, and predictable.', icon: 'puzzle' },
+  { value: 'audhd', label: 'Both (AuDHD)', sub: 'A little of each, depending on the day.', icon: 'rainbow' },
+  { value: 'anxiety', label: 'Anxiety / Overwhelmed', sub: 'Life feels like a lot right now.', icon: 'bubbles' },
+  { value: 'other', label: 'Other', sub: 'Something else, or I would rather not say.', icon: 'heart' },
 ];
 
-const ENERGY: { value: Energy; label: string; sub: string; emoji: string }[] = [
-  { value: 'low', label: 'Low', sub: 'Spoon-Saving Mode: only the essentials.', emoji: '🥄' },
-  { value: 'medium', label: 'Steady', sub: 'A gentle, steady routine.', emoji: '🥄🥄' },
-  { value: 'high', label: 'High', sub: 'Ready for a few bonus quests.', emoji: '🥄🥄🥄' },
+const ENERGY: { value: Energy; label: string; sub: string; spoons: number }[] = [
+  { value: 'low', label: 'Low', sub: 'Spoon-Saving Mode: only the essentials.', spoons: 1 },
+  { value: 'medium', label: 'Steady', sub: 'A gentle, steady routine.', spoons: 2 },
+  { value: 'high', label: 'High', sub: 'Ready for a few bonus quests.', spoons: 3 },
 ];
 
 const TOTAL_STEPS = 5;
@@ -117,7 +119,7 @@ export default function Onboarding() {
                 value={p.value}
                 label={p.label}
                 sublabel={p.sub}
-                emoji={p.emoji}
+                art={<Glyph name={p.icon} size={30} />}
                 selected={profiles.includes(p.value)}
                 onSelect={toggleProfile}
               />
@@ -131,7 +133,7 @@ export default function Onboarding() {
             <T variant="title">Daily energy: how many spoons do you usually have?</T>
             <T variant="small">Spoons = energy. Low is completely okay. You can switch any day from the home screen.</T>
             {ENERGY.map((e) => (
-              <Chip key={e.value} value={e.value} label={e.label} sublabel={e.sub} emoji={e.emoji} selected={energy === e.value} onSelect={setEnergy} />
+              <Chip key={e.value} value={e.value} label={e.label} sublabel={e.sub} art={<Spoons count={e.spoons} />} selected={energy === e.value} onSelect={setEnergy} />
             ))}
             <Button label="Next" disabled={!energy} onPress={() => setStep(3)} />
           </>

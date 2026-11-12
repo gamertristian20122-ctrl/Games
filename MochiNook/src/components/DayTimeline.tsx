@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { currentAnchor, formatClock, minutesNow, wrapMinutes } from '../lib/time';
 import type { Anchor, Anchors, QuestWithProgress } from '../lib/types';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space } from '../theme/tokens';
+import { Glyph, type GlyphName } from './art/Glyph';
 import { T } from './ui';
 
 interface Props {
@@ -16,7 +17,7 @@ interface Block {
   anchor: Anchor;
   title: string;
   time: string;
-  emoji: string;
+  glyph: GlyphName;
 }
 
 /**
@@ -28,15 +29,15 @@ export function DayTimeline({ anchors, quests }: Props) {
   const part = currentAnchor(anchors, minutesNow());
   const school = anchors.blockKind !== 'none';
   const blocks: Block[] = [
-    { anchor: 'morning', title: 'Morning', time: `Wake up ${formatClock(anchors.wake)}`, emoji: '🌅' },
+    { anchor: 'morning', title: 'Morning', time: `Wake up ${formatClock(anchors.wake)}`, glyph: 'sunrise' },
     {
       anchor: 'daytime',
       title: school ? (anchors.blockKind === 'school' ? 'School & after' : 'Work & after') : 'Daytime',
       time: school ? `${formatClock(anchors.blockStart)} – ${formatClock(anchors.blockEnd)}` : `From ${formatClock(wrapMinutes(anchors.wake + 180))}`,
-      emoji: school ? (anchors.blockKind === 'school' ? '🎒' : '💼') : '☀️',
+      glyph: school ? (anchors.blockKind === 'school' ? 'backpack' : 'briefcase') : 'sun',
     },
-    { anchor: 'evening', title: 'Evening', time: `Wind down ${formatClock(anchors.bed)}`, emoji: '🌙' },
-    { anchor: 'anytime', title: 'Whenever it fits', time: 'No set time', emoji: '🫧' },
+    { anchor: 'evening', title: 'Evening', time: `Wind down ${formatClock(anchors.bed)}`, glyph: 'moon' },
+    { anchor: 'anytime', title: 'Whenever it fits', time: 'No set time', glyph: 'bubbles' },
   ];
 
   return (
@@ -49,7 +50,7 @@ export function DayTimeline({ anchors, quests }: Props) {
             <View style={styles.row}>
               <View style={styles.rail}>
                 <View style={[styles.bigDot, { backgroundColor: isNow ? c.accent : c.surfaceAlt, borderColor: isNow ? c.accentInk : c.border }]}>
-                  <Text style={{ fontSize: 20 }}>{b.emoji}</Text>
+                  <Glyph name={b.glyph} size={30} />
                 </View>
                 {bi < blocks.length - 1 || items.length > 0 ? <View style={[styles.line, { backgroundColor: c.border }]} /> : null}
               </View>
@@ -74,7 +75,7 @@ export function DayTimeline({ anchors, quests }: Props) {
                 >
                   <View style={styles.rail}>
                     <View style={[styles.stop, { backgroundColor: done ? c.accent : c.surface, borderColor: done ? c.accent : c.border }]}>
-                      <Text style={{ fontSize: 22 }}>{done ? '✅' : q.emoji}</Text>
+                      <Glyph name={done ? 'check' : q.emoji} size={28} />
                     </View>
                     {!lastInBlock ? <View style={[styles.line, { backgroundColor: c.border }]} /> : null}
                   </View>

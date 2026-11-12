@@ -206,7 +206,6 @@ function Eyes({ mood, blink }: { mood: PetMood; blink: boolean }) {
 }
 
 export function Pet({ color, hat, scarf, mood, size = 200, animate, hopKey = 0 }: Props) {
-  const col = findColor(color);
   const [blink, setBlink] = useState(false);
   const float = useSharedValue(0);
   const hop = useSharedValue(0);
@@ -260,7 +259,32 @@ export function Pet({ color, hat, scarf, mood, size = 200, animate, hopKey = 0 }
       accessibilityRole="image"
       accessibilityLabel={mood === 'sleepy' ? 'Your pet, cozy and sleepy' : mood === 'idle' ? 'Your pet, smiling' : 'Your pet, very happy'}
     >
-      <Svg width={size} height={h} viewBox="0 0 200 190">
+      <PetSvg color={color} hat={hat} scarf={scarf} mood={mood} blink={showBlink} size={size} />
+    </Animated.View>
+  );
+}
+
+
+/** The pet as a still drawing (no animation): used by <Pet> and by wardrobe thumbnails. */
+export function PetSvg({
+  color,
+  hat,
+  scarf,
+  mood,
+  blink = false,
+  size,
+}: {
+  color: string;
+  hat: string;
+  scarf: string;
+  mood: PetMood;
+  blink?: boolean;
+  size: number;
+}) {
+  const col = findColor(color);
+  const h = size * 0.95;
+  return (
+    <Svg width={size} height={h} viewBox="0 0 200 190">
         <Ellipse cx={100} cy={176} rx={60} ry={7} fill="#5C4632" opacity={0.12} />
         <Circle cx={58} cy={60} r={17} fill={col.ear} stroke={col.outline} strokeWidth={3} />
         <Circle cx={142} cy={60} r={17} fill={col.ear} stroke={col.outline} strokeWidth={3} />
@@ -273,7 +297,7 @@ export function Pet({ color, hat, scarf, mood, size = 200, animate, hopKey = 0 }
         <Ellipse cx={74} cy={74} rx={16} ry={8} fill="#FFFFFF" opacity={col.id === 'sesame' ? 0.12 : 0.5} transform="rotate(-18 74 74)" />
         <Ellipse cx={58} cy={128} rx={12} ry={6.5} fill={col.blush} opacity={mood === 'idle' ? 0.6 : 0.85} />
         <Ellipse cx={142} cy={128} rx={12} ry={6.5} fill={col.blush} opacity={mood === 'idle' ? 0.6 : 0.85} />
-        <G>{col.id === 'sesame' ? <EyesLight mood={mood} blink={showBlink} /> : <Eyes mood={mood} blink={showBlink} />}</G>
+        <G>{col.id === 'sesame' ? <EyesLight mood={mood} blink={blink} /> : <Eyes mood={mood} blink={blink} />}</G>
         {mood === 'happy' || mood === 'proud' ? (
           <Path d="M90 124 Q100 140 110 124 Z" fill="#C9706B" stroke={col.id === 'sesame' ? '#F4EDE4' : INK} strokeWidth={2.5} strokeLinejoin="round" />
         ) : (
@@ -294,7 +318,6 @@ export function Pet({ color, hat, scarf, mood, size = 200, animate, hopKey = 0 }
           </G>
         ) : null}
       </Svg>
-    </Animated.View>
   );
 }
 

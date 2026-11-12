@@ -134,7 +134,7 @@ export default function Focus() {
         <>
           {done ? (
             <T variant="heading" style={{ textAlign: 'center', marginTop: space.lg }}>
-              {done === 'finished' ? 'We did it! +3 pebbles and a Sprint Star. ⭐' : 'Showing up counts. +1 pebble. 💛'}
+              {done === 'finished' ? 'We did it! +3 pebbles and a Sprint Star.' : 'Showing up counts. +1 pebble.'}
             </T>
           ) : (
             <T style={{ textAlign: 'center', marginTop: space.lg }} color={c.inkSoft}>

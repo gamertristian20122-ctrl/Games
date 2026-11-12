@@ -26,7 +26,7 @@ export default function Pro() {
   }, []);
 
   const afterUnlock = () => {
-    Alert.alert('Pro is on! 🎉', 'Thank you so much. Your pet has a whole new wardrobe to try.', [{ text: 'Yay', onPress: () => router.back() }]);
+    Alert.alert('Pro is on!', 'Thank you so much. Your pet has a whole new wardrobe to try.', [{ text: 'Yay', onPress: () => router.back() }]);
   };
 
   const buy = async () => {
@@ -97,7 +97,7 @@ export default function Pro() {
       </Card>
 
       {isPro ? (
-        <Button label="You're Pro. Thank you! 💜" kind="soft" style={{ marginTop: space.lg }} onPress={() => router.back()} />
+        <Button label="You're Pro. Thank you!" kind="soft" style={{ marginTop: space.lg }} onPress={() => router.back()} />
       ) : (
         <Button label={busy ? 'Talking to the store...' : `Start Pro · ${price}/month`} icon="sparkle" disabled={busy} style={{ marginTop: space.lg }} onPress={buy} />
       )}

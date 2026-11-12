@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { levelFromXp } from '../lib/progression';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space } from '../theme/tokens';
+import { TreatArt } from './art/DecorArt';
+import { Glyph, type GlyphName } from './art/Glyph';
 import { Icon } from './Icon';
 import { PebbleCount } from './Pebble';
 import { Pet, type PetMood } from './Pet';
@@ -52,6 +54,11 @@ export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boole
             {speech}
           </T>
         </Animated.View>
+        {active?.kind === 'treat' ? (
+          <View style={styles.treatSpot}>
+            <TreatArt id={active.itemId} size={48} />
+          </View>
+        ) : null}
         <View style={styles.petSpot}>
           <Pet color={pet.color} hat={pet.hat} scarf={pet.scarf} mood={mood} size={150} animate={motion} hopKey={petEvent?.id ?? 0} />
         </View>
@@ -72,16 +79,16 @@ export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boole
           {lvl.needed - lvl.into} cozy points until level {lvl.level + 1}
         </T>
         <Row gap={space.sm} style={{ marginTop: space.xs }}>
-          <CareButton emoji="🫳" label="Pat" onPress={() => petCare('pat')} />
-          <CareButton emoji="🍪" label="Snack" onPress={() => petCare('snack')} />
-          <CareButton emoji="🌙" label="Tuck in" onPress={() => petCare('tuck')} />
+          <CareButton glyph="hand" label="Pat" onPress={() => petCare('pat')} />
+          <CareButton glyph="cookie" label="Snack" onPress={() => petCare('snack')} />
+          <CareButton glyph="moon" label="Tuck in" onPress={() => petCare('tuck')} />
         </Row>
       </View>
     </View>
   );
 }
 
-function CareButton({ emoji, label, onPress }: { emoji: string; label: string; onPress: () => void }) {
+function CareButton({ glyph, label, onPress }: { glyph: GlyphName; label: string; onPress: () => void }) {
   const { c } = useTheme();
   return (
     <Pressable
@@ -90,7 +97,7 @@ function CareButton({ emoji, label, onPress }: { emoji: string; label: string; o
       onPress={onPress}
       style={({ pressed }) => [styles.care, { backgroundColor: c.surfaceAlt, opacity: pressed ? 0.75 : 1 }]}
     >
-      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <Glyph name={glyph} size={22} />
       <T variant="small" color={c.ink}>
         {label}
       </T>
@@ -102,6 +109,7 @@ const styles = StyleSheet.create({
   care: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: radius.pill, minHeight: 44 },
   card: { borderRadius: radius.xl, borderWidth: 1, overflow: 'hidden' },
   stage: { height: 232, justifyContent: 'flex-end', alignItems: 'center' },
+  treatSpot: { position: 'absolute', bottom: 10, right: '20%' },
   petSpot: { marginBottom: 6 },
   bubble: {
     position: 'absolute',

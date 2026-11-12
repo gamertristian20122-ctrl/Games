@@ -21,7 +21,7 @@ export const idleLines = [
 
 export const happyLines = [
   'Ooh, that made me so happy!',
-  'Look at us go! ✨',
+  'Look at us go!',
   'That was a real win. I felt it!',
   'Yay! I just did a little wiggle.',
   'Nice! My battery is filling up.',
@@ -113,17 +113,17 @@ export function cheerMessage(cheer: string, petName: string): string {
 }
 
 export const petCareLines = {
-  pat: ['That tickles! 💕', 'Ahh, pats are the best.', 'Hehe, thank you!', 'I feel so loved right now.'],
-  snack: ['Yum! A tiny snack, just what I needed.', 'Crunch crunch… delicious! 🍪', 'Thank you for sharing!'],
-  tuck: ['Goodnight… thanks for tucking me in 🌙', 'So cozy. Sweet dreams to you too.', 'Zzz… see you tomorrow 💤'],
-  rested: 'I’m all cozy right now. Thank you for checking on me! 💛',
+  pat: ['That tickles!', 'Ahh, pats are the best.', 'Hehe, thank you!', 'I feel so loved right now.'],
+  snack: ['Yum! A tiny snack, just what I needed.', 'Crunch crunch… delicious!', 'Thank you for sharing!'],
+  tuck: ['Goodnight… thanks for tucking me in', 'So cozy. Sweet dreams to you too.', 'Zzz… see you tomorrow'],
+  rested: 'I’m all cozy right now. Thank you for checking on me!',
 };
 
 /** Daily check-in moods: gentle words, no "bad" option. */
 export const MOODS = [
-  { value: 1, face: '😣', word: 'Rough' },
-  { value: 2, face: '😕', word: 'Low' },
-  { value: 3, face: '😐', word: 'Okay' },
-  { value: 4, face: '🙂', word: 'Good' },
-  { value: 5, face: '😄', word: 'Great' },
+  { value: 1, word: 'Rough' },
+  { value: 2, word: 'Low' },
+  { value: 3, word: 'Okay' },
+  { value: 4, word: 'Good' },
+  { value: 5, word: 'Great' },
 ] as const;

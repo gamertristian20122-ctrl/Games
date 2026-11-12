@@ -7,7 +7,8 @@ import { PRIVACY_POLICY, TERMS_OF_USE } from '../src/data/legal';
 import { levelFromXp, xpForNextLevel } from '../src/lib/progression';
 import { buildStarterRoutine } from '../src/lib/routineBuilder';
 import { decodeRaceResult, decodeShareCode, encodeRaceResult, encodeShareCode } from '../src/lib/shareCode';
-import { seasonFor, sprintTiers, weekDays, weekStart } from '../src/lib/season';
+import { SEASON_GLYPH, seasonFor, sprintTiers, weekDays, weekStart } from '../src/lib/season';
+import { glyphFor, isGlyphName } from '../src/components/art/glyphNames';
 import { CHEERS } from '../src/lib/copy';
 import { bestLibraryMatch, canMakeSmaller, genericSteps, smallerSteps, smartBreakdown, softenText } from '../src/lib/smartMatch';
 import { currentAnchor, daysBetween, formatClock } from '../src/lib/time';
@@ -229,4 +230,22 @@ test('cheers are preset, short and kind', () => {
     assert.ok(c.length <= 60, c);
     assert.doesNotMatch(c, /https?:|www\.|@/i);
   }
+});
+
+test('every quest uses a custom vector icon, and every legacy emoji maps to one', () => {
+  for (const q of LIB) assert.ok(isGlyphName(q.emoji), `${q.id} icon "${q.emoji}" is not a glyph`);
+  for (const legacy of ['💧', '🧺', '🍽️', '🛋️', '🗓️', '🧠', '📦', '✨']) assert.notEqual(glyphFor(legacy), undefined);
+  assert.equal(glyphFor('🛋️'), 'couch');
+  assert.equal(glyphFor('🛋'), 'couch', 'works without the emoji variation selector');
+  assert.equal(glyphFor('laundry'), 'sparkle', 'unknown values fall back gently');
+  assert.equal(glyphFor(null), 'sparkle');
+  for (const g of ['flag', 'books', 'spoon', 'star', 'leaf', 'snowflake', 'blossom', 'sun', 'hand', 'cookie', 'moon', 'tea', 'dango', 'gift']) {
+    assert.ok(isGlyphName(g), g);
+  }
+});
+
+test('every season and shop item has art', () => {
+  for (const s of ['autumn', 'winter', 'spring', 'summer'] as const) assert.ok(isGlyphName(SEASON_GLYPH[s]));
+  const decorIds = ['rug', 'lights', 'poster', 'books', 'fern', 'plush', 'beanbag', 'lamp'];
+  assert.deepEqual(SHOP_ITEMS.filter((i) => i.kind === 'decor').map((i) => i.id).sort(), decorIds.sort());
 });

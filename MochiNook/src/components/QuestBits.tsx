@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import sponsors from '../data/sponsors.json';
 import { dayKey } from '../lib/time';
 import type { QuestWithProgress, StepWithState } from '../lib/types';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space } from '../theme/tokens';
+import { Glyph } from './art/Glyph';
 import { Icon } from './Icon';
 import { Button, Card, IconButton, Row, T } from './ui';
 
@@ -54,8 +55,8 @@ export function QuestListItem({ quest }: { quest: QuestWithProgress }) {
         { backgroundColor: finished ? c.accentSoft : c.surface, borderColor: c.border, opacity: pressed ? 0.85 : 1 },
       ]}
     >
-      <View style={[styles.emojiBubble, { backgroundColor: finished ? c.surface : c.surfaceAlt }]}>
-        <Text style={{ fontSize: 24 }}>{quest.emoji}</Text>
+      <View style={[styles.iconBubble, { backgroundColor: finished ? c.surface : c.surfaceAlt }]}>
+        <Glyph name={quest.emoji} size={30} />
       </View>
       <View style={{ flex: 1, gap: 6 }}>
         <T variant="bodyBold" numberOfLines={2}>
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
     padding: space.md,
     minHeight: 72,
   },
-  emojiBubble: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  iconBubble: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   step: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, borderWidth: 1, paddingLeft: space.md, paddingRight: space.xs, minHeight: 64 },
   box: { width: 30, height: 30, borderRadius: 10, borderWidth: 2.2, alignItems: 'center', justifyContent: 'center' },
   sponsor: { borderRadius: radius.md, borderWidth: 1, padding: space.lg, marginTop: space.xl },

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Glyph, type GlyphName } from '../components/art/Glyph';
 import { Pet } from '../components/Pet';
 import { Card, IconButton, Row, Screen, T } from '../components/ui';
 import { DISPLAY_PRICES, getTipPrices, purchaseTip, type TipSize } from '../lib/purchases';
@@ -8,10 +9,10 @@ import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space } from '../theme/tokens';
 
-const TIPS: { size: TipSize; emoji: string; name: string; note: string }[] = [
-  { size: 'small', emoji: '🍵', name: 'A cup of tea', note: 'Keeps the late-night coding cozy.' },
-  { size: 'medium', emoji: '🍡', name: 'A plate of mochi', note: 'Fuels a whole new quest pack.' },
-  { size: 'large', emoji: '🎁', name: 'A care package', note: 'Helps pay for app store fees and test phones.' },
+const TIPS: { size: TipSize; glyph: GlyphName; name: string; note: string }[] = [
+  { size: 'small', glyph: 'tea' as const, name: 'A cup of tea', note: 'Keeps the late-night coding cozy.' },
+  { size: 'medium', glyph: 'dango' as const, name: 'A plate of mochi', note: 'Fuels a whole new quest pack.' },
+  { size: 'large', glyph: 'gift' as const, name: 'A care package', note: 'Helps pay for app store fees and test phones.' },
 ];
 
 export default function TipJar() {
@@ -28,7 +29,7 @@ export default function TipJar() {
   const thank = async () => {
     await updateSettings({ tipsGiven: settings.tipsGiven + 1 });
     setHop((h) => h + 1);
-    Alert.alert('Thank you so much 💛', 'You just made a solo dev\'s whole week. Your pet is doing a happy dance.');
+    Alert.alert('Thank you so much', 'You just made a solo dev\'s whole week. Your pet is doing a happy dance.');
   };
 
   const tip = async (size: TipSize) => {
@@ -65,7 +66,7 @@ export default function TipJar() {
         </T>
         {settings.tipsGiven > 0 ? (
           <T variant="small" color={c.ink} style={{ marginTop: space.sm }}>
-            You’ve tipped {settings.tipsGiven} {settings.tipsGiven === 1 ? 'time' : 'times'}. Thank you, truly. 💛
+            You’ve tipped {settings.tipsGiven} {settings.tipsGiven === 1 ? 'time' : 'times'}. Thank you, truly.
           </T>
         ) : null}
       </Card>
@@ -79,7 +80,7 @@ export default function TipJar() {
             onPress={() => tip(t.size)}
             style={({ pressed }) => [styles.tip, { backgroundColor: c.surface, borderColor: c.border, opacity: pressed || busy === t.size ? 0.7 : 1 }]}
           >
-            <Text style={{ fontSize: 32 }}>{t.emoji}</Text>
+            <Glyph name={t.glyph} size={40} />
             <View style={{ flex: 1 }}>
               <T variant="bodyBold">{t.name}</T>
               <T variant="small">{t.note}</T>
