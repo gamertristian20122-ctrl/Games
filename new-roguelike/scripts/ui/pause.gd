@@ -40,6 +40,7 @@ func build() -> void:
 	left.add_child(stage)
 	var sprite := Art.sprite(String(hero["sprite"]))
 	sprite.scale = Vector2(2, 2)
+	sprite.modulate = hero.get("tint", Color.WHITE)
 	stage.add_child(sprite)
 	stage.resized.connect(func() -> void:
 		sprite.position = Vector2(roundf(stage.size.x / 2.0), roundf(stage.size.y / 2.0 + Art.size(String(hero["sprite"])).y) - 2.0))

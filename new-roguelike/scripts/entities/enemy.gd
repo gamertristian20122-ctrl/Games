@@ -249,7 +249,7 @@ func _row(enemy_id: String) -> Dictionary:
 
 
 func _hp_scale() -> float:
-	return 1.0 + Enemies.HP_PER_FLOOR * run.floor_index
+	return (1.0 + Enemies.HP_PER_FLOOR * run.floor_index) * G.diff("enemy_hp")
 
 
 func _load_ai() -> RefCounted:

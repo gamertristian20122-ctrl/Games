@@ -534,6 +534,9 @@ func boss_killed(b: Node) -> void:
 	G.stat.emit("boss_killed", 1)
 	G.stat.emit("boss_killed:" + id, 1)
 	G.boss_defeated.emit(id)
+	var says: Dictionary = Story.BOSS_SAYS.get(id, {})
+	if says.has("end"):
+		G.toast.emit(String(Bosses.info(id).get("name", "")), "\"%s\"" % String(says["end"]))
 	Sfx.music(String(theme.get("music", "")))
 	# the run is won when the final boss falls (the row's "final"), or whatever boss guards the last floor
 	if not level.is_empty():

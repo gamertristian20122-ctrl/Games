@@ -19,6 +19,8 @@ extends RefCounted
 ## The hero ids ("knight", "witch", "robber") are used by saves, unlocks and test flags: do not rename
 ## them. Names, titles and descriptions are placeholders and can be rewritten freely.
 
+const Looks = preload("res://scripts/data/looks.gd")
+
 const LIST := [
 	{
 		"id": "knight", "name": "Aldous", "title": "The Last Knight", "sprite": "pc_knight", "weapon": "pc_weapon_castle_13", "grip": 3, "hand": "pc_hand_castle_16",
@@ -55,5 +57,6 @@ const LIST := [
 static func by_id(id: String) -> Dictionary:
 	for h in LIST:
 		if h["id"] == id:
-			return h
+			# the knight is the player's own: name, armour colour, sword (scripts/data/looks.gd)
+			return Looks.apply(h) if id == "knight" else h
 	return LIST[0]

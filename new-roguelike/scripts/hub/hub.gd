@@ -328,6 +328,7 @@ func refresh_heroes() -> void:
 	_hero.add_child(_weapon)
 	_body = Art.sprite(String(mine["sprite"]))
 	_body.position = Vector2(0, 2)
+	_body.modulate = mine.get("tint", Color.WHITE)
 	_hero.add_child(_body)
 	HeroLook.rest(_weapon, _face)
 	HeroLook.layer(_weapon, _body, true)

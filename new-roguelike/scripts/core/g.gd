@@ -67,6 +67,23 @@ var run: Node = null
 var next_run := {}
 
 
+## The Easy / Normal / Hard switch in Settings (the owner asked for it on 11 Nov 2026).
+##   enemy_hp   every monster's and boss's health x this      budget   monsters more or fewer per room
+##   hearts     half hearts the hero starts with on top       block    blows his guard stops before it breaks
+const DIFFICULTY := {
+	"easy": {"enemy_hp": 0.8, "budget": -1.0, "hearts": 2, "block": 3},
+	"normal": {"enemy_hp": 1.0, "budget": 0.0, "hearts": 0, "block": 2},
+	"hard": {"enemy_hp": 1.25, "budget": 1.0, "hearts": 0, "block": 2},
+}
+const DIFFICULTY_NAMES := ["Easy", "Normal", "Hard"]
+const DIFFICULTY_IDS := ["easy", "normal", "hard"]
+
+
+func diff(key: String) -> float:
+	var id := "normal" if flag("autotest") else String(Save.setting("difficulty"))
+	return float((DIFFICULTY.get(id, DIFFICULTY["normal"]) as Dictionary).get(key, 0.0))
+
+
 ## The Hungry Curse (the black disc) was taken out of the game on 11 Nov 2026 at the owner's request.
 ## Its code and tests are kept but switched off; --withcurse turns it back on for the old tests.
 func curse_on() -> bool:

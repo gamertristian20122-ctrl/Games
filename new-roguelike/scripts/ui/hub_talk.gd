@@ -9,6 +9,7 @@ extends "res://scripts/ui/screen.gd"
 ## A button sends its "what" and "arg" to main.gd; "off": true shows it greyed out.
 
 const Story = preload("res://scripts/data/story.gd")
+const Looks = preload("res://scripts/data/looks.gd")
 const LETTERS_PER_SECOND := 48.0
 const BOX_H := 46.0
 
@@ -82,7 +83,7 @@ func build() -> void:
 
 
 func _start_page() -> void:
-	_text.text = String(_pages[_page])
+	_text.text = Looks.say(String(_pages[_page]))
 	_text.visible_characters = 0
 	_shown = 0.0
 
@@ -161,7 +162,7 @@ func _show_choices() -> void:
 	head.add_child(title)
 	for line: Variant in info.get("lines", []):
 		var words := String(line[0]) if line is Array else String(line)
-		var lab := UI.label(words, "Small", 220.0)
+		var lab := UI.label(Looks.say(words), "Small", 220.0)
 		if line is Array and line.size() > 1:
 			lab.add_theme_color_override("font_color", line[1])
 		col.add_child(lab)

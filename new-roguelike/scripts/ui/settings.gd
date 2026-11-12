@@ -16,7 +16,7 @@ func build() -> void:
 	var centre := CenterContainer.new()
 	centre.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(centre)
-	var list := UI.vbox(3)
+	var list := UI.vbox(2)
 	list.custom_minimum_size.x = 236
 	centre.add_child(list)
 
@@ -30,13 +30,27 @@ func build() -> void:
 		if v:
 			Input.vibrate_handheld(40))
 	list.add_child(_row("toggle", "Left-handed sticks", "swap_sticks"))
-	list.add_child(UI.spacer(0, 2))
+	# Easy / Normal / Hard (the numbers are G.DIFFICULTY); it counts from the next level you enter
+	var hard := SettingRow.new()
+	hard.options = G.DIFFICULTY_NAMES
+	hard.setup("choice", "Difficulty", maxi(G.DIFFICULTY_IDS.find(String(Save.setting("difficulty"))), 0))
+	hard.changed.connect(func(v: Variant) -> void:
+		Save.set_setting("difficulty", String(G.DIFFICULTY_IDS[int(v)]))
+		Sfx.play("ui_click"))
+	list.add_child(hard)
+	var pair := UI.hbox(3)
+	list.add_child(pair)
+	var knight := UI.button("Your knight", func() -> void: send("customize"))
+	knight.custom_minimum_size.y = 19
+	knight.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pair.add_child(knight)
 	var reset := UI.button("Reset progress", _ask_reset)
-	reset.custom_minimum_size.y = 22
+	reset.custom_minimum_size.y = 19
+	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reset.add_theme_color_override("font_color", UI.C_RED)
 	reset.add_theme_color_override("font_focus_color", UI.C_RED)
 	reset.add_theme_color_override("font_hover_color", UI.C_RED)
-	list.add_child(reset)
+	pair.add_child(reset)
 	default_focus = sound
 	UI.pop_in(list)
 

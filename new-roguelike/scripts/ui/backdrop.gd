@@ -196,7 +196,7 @@ func set_hero(hero: Dictionary, locked: bool = false) -> void:
 		_hero.sprite_frames = Art.frames(sprite_id)
 		_hero.offset = Art.feet_offset(sprite_id)      # feet on the same spot whatever the hero
 		_hero.play("idle")
-	_hero.modulate = Color(0.02, 0.02, 0.04) if locked else Color.WHITE
+	_hero.modulate = Color(0.02, 0.02, 0.04) if locked else hero.get("tint", Color.WHITE)
 	var weapon_id := String(hero.get("weapon", ""))
 	_weapon.visible = weapon_id != "" and not locked and Art.has(weapon_id)
 	if _weapon.visible:

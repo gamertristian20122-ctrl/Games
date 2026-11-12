@@ -103,6 +103,7 @@ func setup(the_run: Node, hero_id: String) -> void:
 	add_child(weapon)
 	body = Art.sprite(_sprite_id)
 	body.position = Vector2(0, 2)
+	body.modulate = hero.get("tint", Color.WHITE)        # the armour colour chosen at the mirror (looks.gd)
 	add_child(body)
 	HeroLook.rest(weapon, 1.0)
 	HeroLook.layer(weapon, body, true)
@@ -122,8 +123,10 @@ func setup(the_run: Node, hero_id: String) -> void:
 		var camp := Upgrades.mods()
 		if not camp.is_empty():
 			stats.set_layer("camp", camp)
-		max_hp = mini(max_hp + Upgrades.bonus_hp(), MAX_HP)
+		max_hp = mini(max_hp + Upgrades.bonus_hp() + int(G.diff("hearts")), MAX_HP)
 		hp = max_hp
+		block_max = maxi(int(G.diff("block")), 1)
+		block_left = block_max
 		_block_cool = maxf(BLOCK_COOLDOWN + Upgrades.block_cooldown(), 1.5)
 	stats.changed.connect(_stats_changed)
 	_stats_changed()
@@ -202,6 +205,7 @@ const BLOCK_COOLDOWN := 5.0      ## seconds until the guard is whole again (camp
 const BLOCK_TAP := 0.8           ## a tap keeps the guard up this long; holding keeps it up as long as you hold
 const BLOCK_WALK := 0.6          ## walking speed while the guard is up
 var blocking := false
+var block_max := BLOCK_HITS      ## blows a whole guard stops (3 on Easy)
 var block_left := BLOCK_HITS     ## blows the guard can still take (touch.gd shows it)
 var block_fill := 1.0            ## 0..1: how far the guard has mended (touch.gd draws the ring)
 var _block_cool := BLOCK_COOLDOWN
@@ -217,12 +221,12 @@ func _on_block_tap() -> void:
 func _update_block(delta: float) -> void:
 	if not hero.has("melee"):
 		return
-	if block_left < BLOCK_HITS:
+	if block_left < block_max:
 		_block_cd -= delta
 		if _block_cd <= 0.0:
-			block_left = BLOCK_HITS
+			block_left = block_max
 			Sfx.play("door_open", -14.0, 0.0, 1.8)
-	block_fill = 1.0 if block_left >= BLOCK_HITS else 1.0 - clampf(_block_cd / maxf(_block_cool, 0.1), 0.0, 1.0)
+	block_fill = 1.0 if block_left >= block_max else 1.0 - clampf(_block_cd / maxf(_block_cool, 0.1), 0.0, 1.0)
 	_guard_t = maxf(0.0, _guard_t - delta)
 	blocking = not dead and block_left > 0 and (Controls.action_held or _guard_t > 0.0)
 	if _guard == null:
@@ -237,10 +241,11 @@ func _update_block(delta: float) -> void:
 
 ## The guard: one pale half-ring for every blow it can still take (a flat code-drawn shape).
 func _draw_guard() -> void:
+	var part := TAU / float(block_max)
 	for i in block_left:
-		var a0 := PI * float(i) + 0.3 - PI * 0.5
-		_guard.draw_arc(Vector2(0, -9), 15.0, a0, a0 + PI - 0.6, 14, Color(0.75, 0.9, 1.0, 0.9), 2.0)
-		_guard.draw_arc(Vector2(0, -9), 12.5, a0 + 0.1, a0 + PI - 0.7, 12, Color(0.75, 0.9, 1.0, 0.3), 2.0)
+		var a0 := part * float(i) + 0.3 - PI * 0.5
+		_guard.draw_arc(Vector2(0, -9), 15.0, a0, a0 + part - 0.6, 14, Color(0.75, 0.9, 1.0, 0.9), 2.0)
+		_guard.draw_arc(Vector2(0, -9), 12.5, a0 + 0.1, a0 + part - 0.7, 12, Color(0.75, 0.9, 1.0, 0.3), 2.0)
 
 
 ## A blow lands on the raised guard: it is stopped and the guard is one blow weaker.

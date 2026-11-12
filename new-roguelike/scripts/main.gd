@@ -28,6 +28,7 @@ const SCREENS := {
 	"settings": "res://scripts/ui/settings.gd",
 	"credits": "res://scripts/ui/credits.gd",
 	"hub_talk": "res://scripts/ui/hub_talk.gd",
+	"customize": "res://scripts/ui/customize.gd",
 }
 ## Screens that keep the dungeon picture bright behind them; behind the others it is dimmed.
 const BRIGHT := ["title", "hero_select"]
@@ -235,6 +236,8 @@ func _on_action(what: String, arg: Variant) -> void:
 				resume()
 			elif _stack.size() > 1 or is_instance_valid(hub):
 				close_top()             # in the camp a talk window is the only screen open: Leave must close it
+				if is_instance_valid(hub) and _stack.is_empty():
+					hub.call("refresh_heroes")      # the mirror may have changed his looks
 		"play":
 			_transition(show_hub)
 		"talk":
@@ -259,7 +262,7 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("retalk")
-		"collection", "settings", "credits":
+		"collection", "settings", "credits", "customize":
 			open(what)
 		"start":
 			_transition(start_run.bind(String(arg), _fresh_seed()))

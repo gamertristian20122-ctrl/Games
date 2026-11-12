@@ -57,6 +57,7 @@ extends "res://scripts/entities/enemy.gd"
 ## Rules: every blow gets a mark of at least 0.5 s on floor 1 and never under 0.35 s; marks are RED
 ## (pale gold on the floor belongs to the Hungry Curse); always leave somewhere safe to stand.
 
+const BossStory = preload("res://scripts/data/story.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
 
 const DEATH_TIME := 1.7          ## seconds of game time a boss takes to die (it starts in slow motion)
@@ -195,6 +196,9 @@ func _appear() -> void:
 	Sfx.play("boss_roar")
 	Sfx.music(String(run.theme.get("boss_music", "boss")))
 	G.boss_started.emit(self)
+	var says: Dictionary = BossStory.BOSS_SAYS.get(boss_id, {})        # the guardian speaks (scripts/data/story.gd)
+	if says.has("start"):
+		G.toast.emit(display_name, "\"%s\"" % String(says["start"]))
 	G.toast.emit(display_name, "")
 	face_player()
 	facing = _face

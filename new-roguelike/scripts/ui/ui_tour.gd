@@ -147,6 +147,13 @@ func _run_tour() -> void:
 	main.call("top_screen").call("close_dialog")
 	main.call("open", "settings")
 	await _shot("settings")
+	Save.set_setting("armour", "crimson")
+	Save.set_setting("sword_look", "elven")
+	main.call("open", "customize")
+	await _shot("customize")
+	Save.set_setting("armour", "steel")
+	Save.set_setting("sword_look", "knight")
+	main.call("close_top")
 	main.call("close_top")
 	main.call("resume")
 

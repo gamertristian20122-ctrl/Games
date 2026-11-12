@@ -36,6 +36,17 @@ const LEVELS := [
 	{"id": "pit_1", "area": "The Pit", "name": "The Hungry Hall", "floor": 4, "boss": "starved_king", "rooms": 10, "final": true},
 ]
 
+## What each guardian says when the fight begins and as it falls (shown as a banner over the fight).
+const BOSS_SAYS := {
+	"pyre_saint": {"start": "Come closer, child. Be warm.", "end": "At last... the cold."},
+	"red_sexton": {"start": "One more for the rows. I dig deep.", "end": "Who... will bury me?"},
+	"stonejaw": {"start": "MEAT. THE KING SAID GUARD THE MEAT.", "end": "Still... hungry..."},
+	"gutter_king": {"start": "Bow! This is MY court. MY flies.", "end": "A king... should not... sink."},
+	"forge_warden": {"start": "NO SEAL LEAVES THE FORGE.", "end": "FIRES... OUT."},
+	"cinder_tyrant": {"start": "I made the seals. I can unmake a knight.", "end": "Tell the Druid... the last one holds."},
+	"starved_king": {"start": "I only wished never to want. Feed me.", "end": "Enough... at last... enough."},
+}
+
 ## Spoken once, the first time the camp opens.
 const INTRO := {"name": "Ysolde", "title": "Druid of the Stones", "sprite": "pc_elf_druid", "pages": [
 	"So the order did send someone. One knight. I had hoped for forty.",

@@ -16,6 +16,8 @@ var kind := "steps"
 var title := ""
 var steps := 0           ## 0..STEPS for "steps"
 var on := false          ## for "toggle"
+var options: Array = []  ## for "choice": the words to cycle through (set before setup)
+var index := 0           ## for "choice"
 var _pips: Control
 var _state: Label
 
@@ -25,13 +27,15 @@ func setup(row_kind: String, row_title: String, start: Variant) -> void:
 	title = row_title
 	if kind == "steps":
 		steps = clampi(int(roundf(float(start) * STEPS)), 0, STEPS)
+	elif kind == "choice":
+		index = clampi(int(start), 0, maxi(options.size() - 1, 0))
 	else:
 		on = bool(start)
 
 
 func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
-	custom_minimum_size = Vector2(0, 26)
+	custom_minimum_size = Vector2(0, 21)
 	add_theme_stylebox_override("panel", UI.box("slot"))
 	focus_entered.connect(func() -> void: add_theme_stylebox_override("panel", UI.box("slot_focus")))
 	focus_exited.connect(func() -> void: add_theme_stylebox_override("panel", UI.box("slot")))
@@ -58,7 +62,7 @@ func _ready() -> void:
 	else:
 		_state = UI.label("")
 		_state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_state.custom_minimum_size = Vector2(46, 0)
+		_state.custom_minimum_size = Vector2(92 if kind == "choice" else 46, 0)
 		row.add_child(_state)
 	_show()
 
@@ -66,6 +70,9 @@ func _ready() -> void:
 func _show() -> void:
 	if kind == "steps":
 		_pips.call("setup", steps, STEPS, UI.C_GOLD)
+	elif kind == "choice":
+		_state.text = String(options[index]) if index < options.size() else ""
+		_state.add_theme_color_override("font_color", UI.C_GOLD)
 	else:
 		_state.text = "On" if on else "Off"
 		_state.add_theme_color_override("font_color", UI.C_GOLD if on else UI.C_FAINT)
@@ -80,7 +87,14 @@ func _nudge(by: int) -> void:
 	changed.emit(steps / float(STEPS))
 
 
-func _flip() -> void:
+func _flip(by: int = 1) -> void:
+	if kind == "choice":
+		if options.is_empty():
+			return
+		index = posmod(index + by, options.size())
+		_show()
+		changed.emit(index)
+		return
 	on = not on
 	_show()
 	changed.emit(on)
@@ -95,7 +109,10 @@ func _gui_input(event: InputEvent) -> void:
 			_nudge(1)
 			accept_event()
 	else:
-		if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_left") or event.is_action_pressed("ui_right"):
+		if event.is_action_pressed("ui_left") and kind == "choice":
+			_flip(-1)
+			accept_event()
+		elif event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_left") or event.is_action_pressed("ui_right"):
 			_flip()
 			accept_event()
 		elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
