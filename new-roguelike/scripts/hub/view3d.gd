@@ -74,13 +74,27 @@ void light() {
 	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);
 }
 "
+## The ground: the place's ground tile laid cell by cell, each turned at random so that no rows
+## show, and OVER it whatever hub.gd painted flat (paths, paving, sand, decals).
 const FLOOR_PART := "
 uniform sampler2D ground_tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 ground_rect = vec4(0.0, 0.0, 1.0, 1.0);
+uniform sampler2D base_tex : source_color, filter_nearest, repeat_disable;
+uniform vec2 base_cell = vec2(3.0, 3.0);
+uniform vec4 base_region = vec4(0.0, 0.0, 1.0, 1.0);
+uniform vec2 base_texel = vec2(0.01, 0.01);
 uniform float grey = 0.22;
 varying vec2 at;
 vec3 ground_colour(vec2 where) {
-	vec3 c = texture(ground_tex, (where - ground_rect.xy) / ground_rect.zw).rgb;
+	vec2 g = where / base_cell;
+	vec2 id = floor(g);
+	vec2 f = fract(g);
+	float h = fract(sin(dot(id, vec2(127.1, 311.7))) * 43758.5453);
+	if (h > 0.5) { f.x = 1.0 - f.x; }
+	if (fract(h * 7.0) > 0.5) { f.y = 1.0 - f.y; }
+	vec3 c = texture(base_tex, base_region.xy + clamp(f, base_texel, 1.0 - base_texel) * base_region.zw).rgb;
+	vec4 over = texture(ground_tex, (where - ground_rect.xy) / ground_rect.zw);
+	c = mix(c, over.rgb, over.a);
 	float l = dot(c, vec3(0.299, 0.587, 0.114));
 	return mix(c, vec3(l) * 1.15, grey);
 }
@@ -367,7 +381,7 @@ func _paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 	var margin := MARGIN if _outdoor else Vector2.ZERO
 	_port = SubViewport.new()
 	_port.size = Vector2i(size + margin * 2.0)
-	_port.transparent_bg = not _outdoor
+	_port.transparent_bg = true
 	_port.disable_3d = true
 	_port.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	_port.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -377,7 +391,18 @@ func _paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 		if c == ysort or c is Label or c is CanvasModulate or c is PointLight2D or c is CPUParticles2D:
 			continue
 		c.reparent(_port, false)
+	# the ground tile under the painted picture (out of doors; a room is all picture)
+	var base_id := String(place.get("ground", "hub_grass"))
+	var base_img := Art.tex(base_id).get_image()
+	if base_img.is_compressed():
+		base_img.decompress()
+	var whole := Vector2(base_img.get_width(), base_img.get_height())
+	var tile := Rect2(0, 0, 48, 48) if base_id == "hub_grass" else Rect2(Vector2.ZERO, whole)      # (the grass sheet holds more than one tile)
 	_ground_params = {
+		"base_tex": ImageTexture.create_from_image(base_img),
+		"base_cell": tile.size * PX,
+		"base_region": Vector4(tile.position.x / whole.x, tile.position.y / whole.y, tile.size.x / whole.x, tile.size.y / whole.y),
+		"base_texel": Vector2(0.5 / tile.size.x, 0.5 / tile.size.y),
 		"ground_tex": _port.get_texture(),
 		"ground_rect": Vector4(-margin.x * PX, -margin.y * PX, (size.x + margin.x * 2.0) * PX, (size.y + margin.y * 2.0) * PX),
 		"grey": 0.12 if _outdoor else 0.0,
@@ -407,8 +432,9 @@ func _paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 		if img.is_compressed():
 			img.decompress()
 		far_mat.set_shader_parameter("ground_tex", ImageTexture.create_from_image(img))
-		far_mat.set_shader_parameter("cell", Vector2(img.get_width() * PX, img.get_height() * PX))
-		far_mat.set_shader_parameter("texel", Vector2(0.5 / img.get_width(), 0.5 / img.get_height()))
+		far_mat.set_shader_parameter("cell", tile.size * PX)
+		far_mat.set_shader_parameter("region", _ground_params["base_region"])
+		far_mat.set_shader_parameter("texel", _ground_params["base_texel"])
 		far_mat.set_shader_parameter("grey", 0.12)
 		var far := MeshInstance3D.new()
 		if _rise.is_empty():
@@ -723,6 +749,16 @@ func _build_water(place: Dictionary) -> void:
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_world.add_child(node)
 		_water_mats.append(mat)
+		for lily: Array in pond.get("lilies", []):         # flat pieces floating on it: [id, x, y]
+			var tex := Art.tex(String(lily[0]))
+			var leaf := PlaneMesh.new()
+			leaf.size = tex.get_size() * PX
+			var pad := MeshInstance3D.new()
+			pad.mesh = leaf
+			pad.material_override = _material(tex, Vector4(0, 0, 1, 1), Color.WHITE)
+			pad.position = Vector3(float(lily[1]) * PX, 0.05 + _height(c), float(lily[2]) * PX)
+			pad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			_world.add_child(pad)
 
 
 func _has_animation(node: Node) -> bool:
@@ -1105,7 +1141,7 @@ func _sync_light() -> void:
 	if _outdoor:
 		# By day (the owner's reference picture): a low golden sun that falls in patches, deep warm
 		# shade between them, a pool of light where the knight stands. By night: even, cool, dark.
-		_sun.light_color = (sky * Color(1.0, 0.84, 0.58)).lerp(sky, 1.0 - bright)
+		_sun.light_color = (sky * Color(1.0, 0.90, 0.72)).lerp(sky, 1.0 - bright)
 		_sun.light_energy = lerpf(0.30, 1.15, bright)
 		_env.ambient_light_color = (sky * Color(0.78, 0.72, 0.80)).lerp(sky.lerp(Color(0.55, 0.65, 1.0), 0.35), 1.0 - bright)
 		_env.ambient_light_energy = lerpf(0.36, 0.42, bright)
@@ -1183,13 +1219,13 @@ func _sync(_delta: float) -> void:
 	mat.set_shader_parameter("focus", _dist)
 	mat.set_shader_parameter("sharp", _dist * lerpf(0.24, 0.17, _day))
 	mat.set_shader_parameter("falloff", _dist * lerpf(0.9, 0.62, _day))
-	mat.set_shader_parameter("blur_px", lerpf(5.0, 8.5, _day))
-	mat.set_shader_parameter("rim", lerpf(0.38, 0.62, _day))
+	mat.set_shader_parameter("blur_px", lerpf(5.0, 7.0, _day))
+	mat.set_shader_parameter("rim", lerpf(0.38, 0.48, _day))
 	# the colours of the picture: amber light and brown shade by day, the old cool night otherwise
-	mat.set_shader_parameter("warm", Vector3(1.07, 1.0, 0.90).lerp(Vector3(1.11, 1.02, 0.84), _day))
-	mat.set_shader_parameter("shade", Vector3(0.88, 0.96, 1.12).lerp(Vector3(1.04, 0.90, 0.76), _day))
-	mat.set_shader_parameter("punch", lerpf(1.0, 1.14, _day))
-	mat.set_shader_parameter("rich", lerpf(1.0, 1.08, _day))
+	mat.set_shader_parameter("warm", Vector3(1.07, 1.0, 0.90).lerp(Vector3(1.06, 1.01, 0.91), _day))
+	mat.set_shader_parameter("shade", Vector3(0.88, 0.96, 1.12).lerp(Vector3(1.0, 0.94, 0.88), _day))
+	mat.set_shader_parameter("punch", lerpf(1.0, 1.07, _day))
+	mat.set_shader_parameter("rich", lerpf(1.0, 0.96, _day))
 	_drift += _delta * 0.004
 	Sprite3.set_sun(_day, 7.0, Vector2(_drift, _drift * 0.6), pool_at, _dist * 0.8, 0.95)
 	mat.set_shader_parameter("lift", _lift)

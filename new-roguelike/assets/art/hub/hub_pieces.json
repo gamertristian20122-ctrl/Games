@@ -428,6 +428,32 @@
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
+ "hub_cbanner_0": {
+  "box": [
+   278,
+   172,
+   314,
+   218
+  ],
+  "size": [
+   36,
+   46
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+ },
+ "hub_cbanner_1": {
+  "box": [
+   320,
+   172,
+   336,
+   202
+  ],
+  "size": [
+   16,
+   30
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+ },
  "hub_chimney": {
   "box": [
    4,
@@ -440,6 +466,45 @@
    55
   ],
   "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_cpot_0": {
+  "box": [
+   341,
+   208,
+   364,
+   272
+  ],
+  "size": [
+   23,
+   64
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+ },
+ "hub_cpot_1": {
+  "box": [
+   272,
+   225,
+   288,
+   272
+  ],
+  "size": [
+   16,
+   47
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+ },
+ "hub_cpot_2": {
+  "box": [
+   288,
+   225,
+   303,
+   272
+  ],
+  "size": [
+   15,
+   47
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
  },
  "hub_cross_0": {
   "box": [
@@ -1871,6 +1936,240 @@
   ],
   "source": "Pixel Crawler - Cemetery/Environment/Props/Props.png"
  },
+ "hub_gbasin": {
+  "box": [
+   336,
+   32,
+   384,
+   72
+  ],
+  "size": [
+   48,
+   40
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_0": {
+  "box": [
+   144,
+   379,
+   160,
+   401
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_1": {
+  "box": [
+   160,
+   375,
+   176,
+   398
+  ],
+  "size": [
+   16,
+   23
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_2": {
+  "box": [
+   176,
+   379,
+   192,
+   401
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_3": {
+  "box": [
+   192,
+   375,
+   208,
+   398
+  ],
+  "size": [
+   16,
+   23
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_4": {
+  "box": [
+   144,
+   427,
+   160,
+   449
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_5": {
+  "box": [
+   160,
+   423,
+   176,
+   446
+  ],
+  "size": [
+   16,
+   23
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_6": {
+  "box": [
+   176,
+   427,
+   192,
+   449
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbed_7": {
+  "box": [
+   192,
+   423,
+   208,
+   446
+  ],
+  "size": [
+   16,
+   23
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gbench": {
+  "box": [
+   67,
+   368,
+   141,
+   400
+  ],
+  "size": [
+   74,
+   32
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gcobble": {
+  "box": [
+   136,
+   12,
+   168,
+   36
+  ],
+  "size": [
+   32,
+   24
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gcypress_0": {
+  "box": [
+   152,
+   269,
+   183,
+   367
+  ],
+  "size": [
+   31,
+   98
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gcypress_1": {
+  "box": [
+   194,
+   270,
+   222,
+   367
+  ],
+  "size": [
+   28,
+   97
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gfountain": {
+  "box": [
+   400,
+   2,
+   480,
+   96
+  ],
+  "size": [
+   80,
+   94
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_glily_0": {
+  "box": [
+   304,
+   244,
+   335,
+   267
+  ],
+  "size": [
+   31,
+   23
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_glily_1": {
+  "box": [
+   320,
+   274,
+   354,
+   302
+  ],
+  "size": [
+   34,
+   28
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_glily_2": {
+  "box": [
+   336,
+   240,
+   352,
+   272
+  ],
+  "size": [
+   16,
+   32
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gpool": {
+  "box": [
+   320,
+   80,
+   400,
+   158
+  ],
+  "size": [
+   80,
+   78
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
  "hub_grass": {
   "box": [
    0,
@@ -1883,6 +2182,110 @@
    48
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
+ },
+ "hub_gspout_f0": {
+  "box": [
+   432,
+   100,
+   480,
+   168
+  ],
+  "size": [
+   48,
+   68
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gspout_f1": {
+  "box": [
+   432,
+   180,
+   480,
+   248
+  ],
+  "size": [
+   48,
+   68
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gspout_f2": {
+  "box": [
+   432,
+   260,
+   480,
+   328
+  ],
+  "size": [
+   48,
+   68
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gspout_f3": {
+  "box": [
+   432,
+   340,
+   480,
+   408
+  ],
+  "size": [
+   48,
+   68
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gstatue_0": {
+  "box": [
+   418,
+   420,
+   446,
+   474
+  ],
+  "size": [
+   28,
+   54
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gstatue_1": {
+  "box": [
+   453,
+   432,
+   478,
+   474
+  ],
+  "size": [
+   25,
+   42
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gurn_0": {
+  "box": [
+   400,
+   331,
+   416,
+   352
+  ],
+  "size": [
+   16,
+   21
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
+ },
+ "hub_gurn_1": {
+  "box": [
+   417,
+   328,
+   431,
+   352
+  ],
+  "size": [
+   14,
+   24
+  ],
+  "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
  },
  "hub_in_hall": {
   "box": [

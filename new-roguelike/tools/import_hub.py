@@ -23,6 +23,8 @@ BUILD = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "Environment/Structures/B
 MOCK = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "MockUps/")
 DESERT = ("Pixel_Crawler_-_Desert.zip", "Assets/")        # the desert camp and the sands of the world map
 FORGE = ("Pixel_Crawler_-_Forge_1.2.zip", "Assets/")     # the mountain camp
+GARDEN = ("Pixel_Crawler_-_Garden_Environment.zip", "Assets/")           # the town: cobbles, fountain, statues, cypresses, flowers
+CASTLE = ("Pixel_Crawler_-_Castle_Environment_0.3.zip", "Assets/")       # the town: potted trees, banners, busts
 
 # (name, pack, file ending, region x0 y0 x1 y1, gap px that still joins two islands, smallest piece px)
 ISLANDS = [
@@ -78,6 +80,23 @@ RECTS = [
     ("wall_white", BUILD, "Walls.png", 384, 189, 96, 51),
     ("wall_brick", BUILD, "Walls.png", 480, 189, 96, 51),
     ("roof_teal", BUILD, "Roofs.png", 128, 6, 128, 89),
+    # the town's dressing from the Garden and Castle packs (v0.22.0)
+    ("gcobble", GARDEN, "Tiles.png", 136, 12, 32, 24),             # cobblestones (laid tile by tile, each turned at random)
+    ("gfountain", GARDEN, "Tiles.png", 400, 2, 80, 94),
+    ("gbasin", GARDEN, "Tiles.png", 336, 32, 48, 40),
+    ("gpool", GARDEN, "Tiles.png", 320, 80, 80, 78),
+    ("gspout_f0", GARDEN, "Tiles.png", 432, 100, 48, 68), ("gspout_f1", GARDEN, "Tiles.png", 432, 180, 48, 68),
+    ("gspout_f2", GARDEN, "Tiles.png", 432, 260, 48, 68), ("gspout_f3", GARDEN, "Tiles.png", 432, 340, 48, 68),
+    ("gcypress_0", GARDEN, "Tiles.png", 152, 269, 31, 98), ("gcypress_1", GARDEN, "Tiles.png", 194, 270, 28, 97),
+    ("gbench", GARDEN, "Tiles.png", 67, 368, 74, 32),
+    ("glily_0", GARDEN, "Tiles.png", 304, 244, 31, 23), ("glily_1", GARDEN, "Tiles.png", 320, 274, 34, 28), ("glily_2", GARDEN, "Tiles.png", 336, 240, 16, 32),
+    ("gbed_0", GARDEN, "Tiles.png", 144, 379, 16, 22), ("gbed_1", GARDEN, "Tiles.png", 160, 375, 16, 23), ("gbed_2", GARDEN, "Tiles.png", 176, 379, 16, 22),
+    ("gbed_3", GARDEN, "Tiles.png", 192, 375, 16, 23), ("gbed_4", GARDEN, "Tiles.png", 144, 427, 16, 22), ("gbed_5", GARDEN, "Tiles.png", 160, 423, 16, 23),
+    ("gbed_6", GARDEN, "Tiles.png", 176, 427, 16, 22), ("gbed_7", GARDEN, "Tiles.png", 192, 423, 16, 23),
+    ("gurn_0", GARDEN, "Tiles.png", 400, 331, 16, 21), ("gurn_1", GARDEN, "Tiles.png", 417, 328, 14, 24),
+    ("gstatue_0", GARDEN, "Tiles.png", 418, 420, 28, 54), ("gstatue_1", GARDEN, "Tiles.png", 453, 432, 25, 42),
+    ("cpot_0", CASTLE, "Tiles.png", 341, 208, 23, 64), ("cpot_1", CASTLE, "Tiles.png", 272, 225, 16, 47), ("cpot_2", CASTLE, "Tiles.png", 288, 225, 15, 47),
+    ("cbanner_0", CASTLE, "Tiles.png", 278, 172, 36, 46), ("cbanner_1", CASTLE, "Tiles.png", 320, 172, 16, 30),
     # flat stretches of roof, for the real 3D houses (v0.20.0): they repeat sideways, plank by plank
     ("roof_planks", BUILD, "Roofs.png", 36, 166, 56, 38),
     ("roof_tiles", BUILD, "Roofs.png", 164, 166, 56, 38),

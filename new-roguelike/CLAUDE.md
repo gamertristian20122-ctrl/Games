@@ -1101,6 +1101,37 @@ cleaner for the entire game".
   them with houses and height when chapters two and three are written), the tavern's two rooms
   (one painted picture each), the intro's seven pictures, rain.
 
+## v0.22.0 (12 Nov 2026): "it look weird in my opinion": cleaner look, more art, more story
+The owner: "you go in more [graphics] and [increase] the story and assets it look [weird] in my
+opinion". They did not say WHAT looked weird, and did not answer the AI-art question (so the
+no-AI rule stands). Looking at my own pictures against theirs, I fixed what I judged weird:
+- **A grid in the grass.** `hub_grass.png` is two tiles side by side; repeated whole it showed
+  rows. The 3D floor now lays ONE tile cell by cell, each turned at random (`FLOOR_PART`), and
+  hub.gd's painted picture (paths, paving, sand, decals) goes OVER it by its alpha: in the 3D
+  look hub.gd no longer paints the base ground, and the SubViewport is see-through.
+- **Orange desert paving in a forest town.** Wickmere's square and streets are cobbles
+  (`hub_gcobble`, Garden pack). A paved rectangle is laid with every other tile mirrored
+  (`hub.gd _mirrored`), so a tile cut from the middle of a pack's paving never shows a seam.
+- **Colours too strong.** By day: less amber, less contrast, a lighter dark rim, gentler patches
+  of sun (0.62 to 1.14 of the light instead of 0.44 to 1.22), a little less blur.
+**More of the owner's purchased art in use** (`tools/import_hub.py`, ids `hub_g*` Garden,
+`hub_c*` Castle): cobbles, a tiered fountain, cypresses, flower beds, garden benches, urns, a
+statue that pours water (4 frames; a place's `"anims"` rows: [id, x, y, fps, solid, turned
+round]), lily pads (a pond's `"lilies"`: flat on the water), potted trees. Cut but not placed
+yet: a basin, a pool, two statues, two banners. NOT yet imported and worth it for later towns:
+the Garden pack's hedges, hedge arch and pergola; the Castle pack's walls, stairs, busts, stained
+glass, wall candles; the Cave, Sewer, Library and Hideout environment tiles.
+**More story:** `Tale.SCENES`: eleven short scenes that play by themselves on arriving
+somewhere at a step (Oswin waking you, the town at dusk, the dark road, Thessaly hailing you,
+after each battle, the hilltop, the dawn, the open gate, the sisters). Each once (`tale:seen:<id>`).
+`hub.gd _story_moment` plays them; with the tale on it no longer plays the OLD story's moments
+(it did until now: a real bug nobody had seen because tests skip story moments).
+- **Checked:** `--uitour=tale` 16/16, `--uitour=flow --oldstory` 82/82, `check.sh`.
+- **Honest limits to tell the owner:** standing things are still flat cards (a fountain or a
+  statue drawn from above stands upright like a signboard); the packs hold no town buildings
+  beyond the one house kit, no bridges, ships or market stalls. Matching the reference further
+  needs either more hand-made packs (the owner would choose or buy them) or lifting the no-AI rule.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

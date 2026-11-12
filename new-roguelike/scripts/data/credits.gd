@@ -20,7 +20,7 @@ const LIST := [
 	# ---- bought by the owner (Nov 2026). The licence allows commercial games; the art itself may not
 	#      be resold or shared. Each pack's Terms.txt is kept in assets_raw/paid_pixel_crawler/.
 	{
-		"what": "Pixel Crawler - Complete Collection (heroes, monsters, bosses, weapons, the shopkeeper, dungeon rooms)",
+		"what": "Pixel Crawler - Complete Collection (heroes, monsters, bosses, weapons, the shopkeeper, dungeon rooms, the town, its gardens and the wild lands)",
 		"author": "Anokolisa",
 		"licence": "Purchased licence (commercial use allowed)",
 		"url": "https://anokolisa.itch.io/",

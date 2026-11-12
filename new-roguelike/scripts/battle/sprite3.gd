@@ -27,7 +27,7 @@ float sun_at(vec2 where) {
 	float n = texture(hh_dapple, where * hh_dapple_set.x + hh_dapple_set.zw).r;
 	float patch = smoothstep(0.32, 0.56, n);
 	float pool = (1.0 - smoothstep(hh_pool.z * 0.35, hh_pool.z, distance(where, hh_pool.xy))) * hh_pool.w;
-	return mix(1.0, mix(0.44, 1.22, clamp(max(patch * 0.9, pool), 0.0, 1.0)), hh_dapple_set.y);
+	return mix(1.0, mix(0.62, 1.14, clamp(max(patch * 0.9, pool), 0.0, 1.0)), hh_dapple_set.y);
 }
 "
 

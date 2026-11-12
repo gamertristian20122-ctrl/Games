@@ -205,14 +205,16 @@ func _ready() -> void:
 ## first words (once, in the village), and a scene in the village after each seal.
 func _story_moment() -> void:
 	var say := {}
-	if place_id == "village" and Save.hub_get("seen:intro") == 0:
+	if Tale.on():
+		say = Tale.take_scene(place_id)          # the story's own scenes (scripts/data/tale.gd SCENES)
+	elif place_id == "village" and Save.hub_get("seen:intro") == 0:
 		Save.hub_set("seen:intro", 1)
 		say = Story.INTRO.duplicate(true)
 	elif place_id == "village":
 		var scene := Story.take_scene()
 		if not scene.is_empty():
 			say = {"name": "Ysolde", "title": "Druid of the Stones", "sprite": "pc_elf_druid", "pages": scene}
-	if say.is_empty():
+	if say.is_empty() and not Tale.on():
 		say = Story.take_arrival(place_id)          # the first time in a new place
 	if not say.is_empty():
 		if G.flag("story"):
@@ -277,6 +279,15 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		_build_fire()
 	if place.has("beacon"):
 		_build_beacon()
+	for row: Array in place.get("anims", []):          # things that move by themselves: [id, x, y, fps, solid, turned round]
+		var moving := _anim(String(row[0]), float(row[3]))
+		var frame := moving.sprite_frames.get_frame_texture("default", 0).get_size()
+		moving.position = Vector2(row[1], row[2])
+		moving.offset = Vector2(0, -frame.y * 0.5)
+		moving.flip_h = row.size() > 5 and bool(row[5])
+		_ysort.add_child(moving)
+		if float(row[4]) > 0.0:
+			_solids.append([Vector2(row[1], row[2]) + Vector2(-8.0 if moving.flip_h else 8.0, -4.0), float(row[4])])
 	for spot: Vector2 in place.get("torches", []):     # the lit glass on top of a lamp post (the post is a prop)
 		var glass := Sprite2D.new()
 		glass.texture = _lamp_glass()
@@ -433,10 +444,23 @@ func _build_ground() -> void:
 	var ground := Node2D.new()
 	ground.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	var grass := Art.tex(String(place.get("ground", "hub_grass")))
+	var lit := _view != null
 	ground.draw.connect(func() -> void:
-		ground.draw_texture_rect(grass, Rect2(Vector2(-420, -240), (place["size"] as Vector2) + Vector2(840, 480)), true)
-		for f: Array in place.get("floor", []):          # a paved rectangle
-			ground.draw_texture_rect(Art.tex(String(f[0])), f[1], true))
+		# (the 3D look lays the grass itself, tile by tile turned at random: no rows show.
+		# Here, in the old flat look, it is one repeated picture.)
+		if not lit:
+			ground.draw_texture_rect(grass, Rect2(Vector2(-420, -240), (place["size"] as Vector2) + Vector2(840, 480)), true)
+		for f: Array in place.get("floor", []):          # a paved rectangle: every other tile mirrored, so no seam shows
+			var four := _mirrored(String(f[0]))
+			var ts: Vector2 = (four[0] as Texture2D).get_size()
+			var area: Rect2 = f[1]
+			var ty := 0
+			while ty * ts.y < area.size.y:
+				var tx := 0
+				while tx * ts.x < area.size.x:
+					ground.draw_texture(four[(tx % 2) + 2 * (ty % 2)], area.position + Vector2(tx * ts.x, ty * ts.y))
+					tx += 1
+				ty += 1)
 	_stage.add_child(ground)
 	# small flat things on the grass and the trodden paths: the same every time
 	var rng := RandomNumberGenerator.new()
@@ -514,6 +538,26 @@ func _ragged(points: Array, rng: RandomNumberGenerator) -> PackedVector2Array:
 
 ## Pieces scattered over big areas of the world map (woods, cacti, crags): the same every time, never
 ## on a road, never on top of a place, and far enough apart to walk between.
+## A paving tile four ways: as it is, mirrored left-right, upside down, and both. Laid in turn
+## they always meet themselves at every edge, so a tile cut from the middle of a pack's paving
+## can cover any area without a seam.
+static var _four := {}
+func _mirrored(id: String) -> Array:
+	if not _four.has(id):
+		var out: Array = []
+		for k in 4:
+			var img := Art.tex(id).get_image()
+			if img.is_compressed():
+				img.decompress()
+			if k % 2 == 1:
+				img.flip_x()
+			if k >= 2:
+				img.flip_y()
+			out.append(ImageTexture.create_from_image(img))
+		_four[id] = out
+	return _four[id]
+
+
 ## Is this spot in (or within `margin` px of) one of the place's ponds?
 func _in_water(at: Vector2, margin: float = 0.0) -> bool:
 	for pond: Dictionary in place.get("water", []):

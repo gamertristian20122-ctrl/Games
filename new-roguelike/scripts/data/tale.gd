@@ -24,6 +24,7 @@ extends RefCounted
 ##   BATTLES       the story's own turn-based battles (scripts/battle/): who is in them, where,
 ##                 and the "do" of winning.
 ##   ENTER         walking into a place at a step: {place: {step: do}}.
+##   SCENES        words that come by themselves on arriving somewhere at a step (each once).
 ##   places        town(), deepwood(), beacon() are the story's places (the format is that of
 ##                 scripts/data/places.gd, which hands them out). An exit may have "tale": the
 ##                 step it opens at, and "why": what the banner says before. A person may have
@@ -146,6 +147,57 @@ const TALK := {
 	],
 }
 
+## SCENES: words that come by themselves when the knight arrives somewhere at a step of the story
+## (a narrator, or somebody calling out). Each plays ONCE, in the order written here, one per
+## arrival. "sprite" is the speaker's picture ("" = none). Keep them short: two or three pages.
+const SCENES := [
+	{"id": "wake", "place": "room", "from": 0, "to": 0, "name": "Oswin", "title": "Barkeep of the Hollow Flagon", "sprite": "", "pages": [
+		"Knight! You are awake. Good. You slept a night and a day, and the night was the longer of the two.",
+		"Captain Hale wants a word with you. He is in the square, by the watch-fire. The looking glass by your bed is yours to use.",
+	]},
+	{"id": "town", "place": "village", "from": 0, "to": 0, "name": "Wickmere", "title": "The lantern town under Hollow Hill", "sprite": "", "pages": [
+		"Forty lamps burn round the square, though the sun is not yet down. Nobody in Wickmere waits for the dark any more.",
+		"Behind the roofs the hill stands black against the sky, and in its side the old gate, shut since before anybody here was born.",
+	]},
+	{"id": "road", "place": "elfwood", "from": 2, "to": 2, "name": "The Elfwood Road", "title": "", "sprite": "", "pages": [
+		"The lamps of Wickmere end at the gate. Ten steps on, the wood is darker than any evening has a right to be.",
+		"Something has been at the trees. Black thorn, thick as a wrist, grown clean through the bark.",
+	]},
+	{"id": "hail", "place": "glade", "from": 2, "to": 2, "name": "Thessaly", "title": "Warden of the Wood", "sprite": "pc_elf_ranger", "pages": [
+		"Hold there! Hands where the stones can see them.",
+		"...A knight. A real one, with the king's mark on his shield. Then come up to the ring, and quickly. They are close.",
+	]},
+	{"id": "after_glade", "place": "glade", "from": 3, "to": 3, "name": "Thessaly", "title": "Warden of the Wood", "sprite": "pc_elf_ranger", "pages": [
+		"They will sleep until moonrise. That one is Orrin. He taught me to string a bow, and I have just put an arrow through his shoulder.",
+		"My sister is alive? In your town? ...Then there is one thing in this wood I have not failed at.",
+		"Enough. The beacon stands past the Deepwood. Keep to the path, knight. The wood listens now.",
+	]},
+	{"id": "deep", "place": "deepwood", "from": 3, "to": 3, "name": "Thessaly", "title": "Warden of the Wood", "sprite": "pc_elf_ranger", "pages": [
+		"This was the heart of the wood. We sang here at midsummer, every one of us. Listen to it now.",
+		"Nothing. Not a bird. The thorn drinks sound as well as light.",
+	]},
+	{"id": "after_deep", "place": "deepwood", "from": 4, "to": 4, "name": "Thessaly", "title": "Warden of the Wood", "sprite": "pc_elf_ranger", "pages": [
+		"Little Pell is breathing. They all are. When the beacon burns the thorn will let them go. I have to believe that.",
+	]},
+	{"id": "hilltop", "place": "beacon", "from": 4, "to": 4, "name": "The Beacon of the Wood", "title": "", "sprite": "", "pages": [
+		"The path climbs out of the trees. On the bare hilltop stands the beacon, cold for a year, in its ring of stones.",
+		"Something vast is asleep against it.",
+	]},
+	{"id": "dawn", "place": "beacon", "from": 6, "to": 6, "name": "Thessaly", "title": "Warden of the Wood", "sprite": "pc_elf_ranger", "pages": [
+		"Look at it, Aldous. Look at the wood.",
+		"The light is running down the hill like water, and where it goes the thorn is letting go of the trees.",
+		"Caerwyn was wrong to keep the fire and right to carry it here. I will take his circlet to my sister. And then I am coming with you. Three beacons are still dark.",
+	]},
+	{"id": "gate_open", "place": "village", "from": 6, "to": 6, "name": "Wickmere", "title": "", "sprite": "", "pages": [
+		"The east gate stands open. For the first time in a year there are people on the wall looking out, and not in.",
+	]},
+	{"id": "sisters", "place": "village", "from": 7, "to": 7, "name": "The sisters", "title": "", "sprite": "pc_elf_druid", "pages": [
+		"Ysolde is waiting at the edge of the square. She does not run. Elves do not run. She walks very fast.",
+		"Ysolde: \"You look terrible.\"   Thessaly: \"You look alive.\"",
+		"They stand a long while with their foreheads together, the way elves do, and the whole square finds something else to look at.",
+	]},
+]
+
 ## The story's own battles. "foes": ids of scripts/data/enemies.gd, or "boss": a row of BOSSES.
 ## "look": a stage of scripts/battle/stage.gd.  "tier": how hard the monsters hit (see battles.gd).
 ## "xp_bonus": XP on top of the monsters' own (the two battles before the giant are set so that a
@@ -204,6 +256,20 @@ static func beacons() -> int:
 		if lit(land):
 			n += 1
 	return n
+
+
+## The scene that should play on arriving in this place now (see SCENES), as the talk window
+## takes it: {"name", "title", "sprite", "pages"}. It is marked as seen. {} = none.
+static func take_scene(place_id: String) -> Dictionary:
+	var at := step()
+	for row: Dictionary in SCENES:
+		if String(row["place"]) != place_id or at < int(row.get("from", 0)) or at > int(row.get("to", 999)):
+			continue
+		if Save.hub_get("tale:seen:" + String(row["id"])) > 0:
+			continue
+		Save.hub_set("tale:seen:" + String(row["id"]), 1)
+		return {"name": row["name"], "title": row.get("title", ""), "sprite": row.get("sprite", ""), "pages": (row["pages"] as Array).duplicate()}
+	return {}
 
 
 ## The row of TALK that fits this person now, or {}.
@@ -278,9 +344,18 @@ static func town() -> Dictionary:
 		["hub_rock_2", 438, 104, 0, 2], ["hub_rock_moss_2", 524, 105, 0, 2], ["hub_rock_moss_1", 408, 108, 0, 2], ["hub_rock_1", 554, 108, 0, 2],
 		["hub_gate_0", 480, 108, 0, 0], ["hub_statue_1", 436, 134, 9, 2], ["hub_statue_0", 526, 134, 7, 2],
 		["hub_bench_long", 206, 168, 10, 2],
-		# the watch-fire square in the middle: benches, the lamp trimmer's planters
-		["hub_stonebench", 420, 330, 8, 1], ["hub_stonebench", 540, 330, 8, 1], ["hub_stonebench", 480, 372, 8, 1],
-		["hub_planter", 392, 262, 6, 1], ["hub_planter", 568, 262, 6, 1], ["hub_flowerbox", 400, 372, 0, 0], ["hub_flowerbox", 560, 372, 0, 0],
+		# the square: cobbles (see "floor"), the fountain in the middle, benches, the watch-fire in its
+		# north-east corner (see "fire"). Pieces from the Garden and Castle packs (ids hub_g*, hub_c*).
+		["hub_gfountain", 480, 338, 36, 0], ["hub_gbench", 400, 372, 12, 1], ["hub_gbench", 560, 372, 12, 1],
+		["hub_stonebench", 404, 252, 8, 1], ["hub_planter", 384, 300, 6, 1], ["hub_planter", 576, 326, 6, 1],
+		["hub_gurn_0", 372, 372, 5, 1], ["hub_gurn_1", 590, 372, 5, 1],
+		# cypresses by the gate and between the houses, potted trees at the doors, flower beds under the windows
+		["hub_gcypress_0", 436, 152, 6, 0], ["hub_gcypress_0", 524, 152, 6, 0], ["hub_gcypress_1", 228, 178, 6, 0], ["hub_gcypress_1", 734, 180, 6, 0],
+		["hub_gcypress_0", 566, 168, 6, 0], ["hub_gcypress_1", 394, 170, 6, 0], ["hub_gcypress_0", 124, 512, 6, 0], ["hub_gcypress_1", 690, 520, 6, 0],
+		["hub_cpot_1", 98, 162, 4, 0], ["hub_cpot_2", 150, 162, 4, 0], ["hub_cpot_1", 636, 170, 4, 0], ["hub_cpot_2", 684, 170, 4, 0],
+		["hub_gbed_0", 270, 174, 0, 0], ["hub_gbed_5", 330, 174, 0, 0], ["hub_gbed_2", 806, 186, 0, 0], ["hub_gbed_7", 866, 186, 0, 0],
+		["hub_gbed_4", 74, 414, 0, 0], ["hub_gbed_1", 134, 414, 0, 0], ["hub_gbed_6", 826, 494, 0, 0], ["hub_gbed_3", 886, 494, 0, 0],
+		["hub_gbed_1", 444, 392, 0, 0], ["hub_gbed_4", 516, 392, 0, 0],
 		# the smithy's yard, east of the square
 		["hub_anvil_0", 716, 258, 16, 4], ["hub_bench_1", 752, 236, 12, 3], ["hub_stone_0", 684, 240, 8, 2],
 		# garden fences and green
@@ -288,7 +363,7 @@ static func town() -> Dictionary:
 		["hub_fence_a", 740, 500, 6, 0], ["hub_fence_a", 780, 500, 6, 0], ["hub_fence_b", 860, 208, 6, 0], ["hub_fence_b", 820, 208, 6, 0],
 		["hub_bush_green_1", 232, 236, 10, 4], ["hub_bush_orange_2", 618, 220, 9, 4], ["hub_bush_deep_1", 150, 470, 10, 4],
 		["hub_bush_rust_2", 646, 372, 9, 4], ["hub_tree_green_3", 64, 300, 6, 6], ["hub_tree_teal_3", 900, 392, 6, 6],
-		["hub_tree_pink_4", 392, 478, 4, 5], ["hub_tree_teal_4", 596, 502, 4, 5], ["hub_bloom_1", 250, 300, 0, 2], ["hub_bloom_5", 720, 330, 0, 2],
+		["hub_tree_pink_4", 430, 452, 4, 5], ["hub_tree_teal_4", 596, 502, 4, 5], ["hub_bloom_1", 250, 300, 0, 2], ["hub_bloom_5", 720, 330, 0, 2],
 		# lamp posts: the town keeps them lit from dusk to dawn (each has a light, see "lights")
 		["hub_post", 360, 250, 3, 0], ["hub_post", 600, 250, 3, 0], ["hub_post", 360, 400, 3, 0], ["hub_post", 600, 400, 3, 0],
 		["hub_post", 210, 300, 3, 0], ["hub_post", 760, 310, 3, 0], ["hub_post", 480, 470, 3, 0], ["hub_post", 880, 250, 3, 0],
@@ -314,29 +389,33 @@ static func town() -> Dictionary:
 			"door": "hub_door_arch", "windows": "hub_win_closed"},
 	]
 	var lamp := Color(1.0, 0.78, 0.46)
-	var lights: Array = [[Vector2(480, 290), Color(1.0, 0.72, 0.42), 2.3, 0.8]]
+	var lights: Array = [[Vector2(552, 258), Color(1.0, 0.72, 0.42), 2.3, 0.8]]
 	for at: Vector2 in [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)]:
 		lights.append([at - Vector2(0, 40), lamp, 1.0, 0.55])
 	for at: Vector2 in [Vector2(124, 150), Vector2(300, 158), Vector2(660, 158), Vector2(836, 170), Vector2(104, 398), Vector2(856, 478)]:
 		lights.append([at + Vector2(0, 8), lamp, 0.8, 0.4])           # the glow of a house's windows on its doorstep
 	lights.append([Vector2(480, 96), Color(0.6, 0.55, 1.0), 1.2, 0.4])    # the cold of the sealed gate
 	return {
-		"name": "Wickmere", "camp": 0, "size": size, "outdoor": true, "walk": Rect2(40, 150, 880, 380), "spawn": Vector2(480, 340),
+		"name": "Wickmere", "camp": 0, "size": size, "outdoor": true, "walk": Rect2(40, 150, 880, 380), "spawn": Vector2(480, 404),
 		"props": props, "houses": houses,
-		"tour": [Vector2(480, 190), Vector2(300, 436), Vector2(480, 320), Vector2(720, 270), Vector2(170, 210)],     # test pictures (--hub=village --shots)
+		"tour": [Vector2(480, 200), Vector2(300, 436), Vector2(480, 404), Vector2(720, 270), Vector2(170, 210)],     # test pictures (--hub=village --shots)
 		# Hollow Hill: behind the north row the ground climbs, and the hill itself swells out of
 		# the slope behind the sealed gate (only in the 3D look; nobody walks up there)
 		"rise": {"from": 100.0, "over": 96.0, "height": 52.0, "mound": {"at": Vector2(480, 6), "radius": 210.0, "height": 70.0}},
 		# the mere the town is named for, in the south-west corner (nobody walks into it)
-		"water": [{"at": Vector2(262, 484), "radius": Vector2(116, 36)}],
-		"floor": [["hub_paving", Rect2(384, 240, 192, 128)]],
-		"paths": [[Vector2(480, 130), Vector2(480, 236)], [Vector2(480, 372), Vector2(480, 570)],
-			[Vector2(384, 300), Vector2(210, 250), Vector2(130, 176)], [Vector2(576, 300), Vector2(760, 280), Vector2(970, 280)],
-			[Vector2(300, 176), Vector2(330, 250)], [Vector2(660, 176), Vector2(640, 250)], [Vector2(120, 416), Vector2(360, 412)],
+		"water": [{"at": Vector2(262, 484), "radius": Vector2(116, 36),
+			"lilies": [["hub_glily_0", 222, 478], ["hub_glily_1", 306, 494], ["hub_glily_2", 190, 496], ["hub_glily_2", 336, 474]]}],
+		# cobbles: the square, and a street to the gate, the south road, the east gate and the west side
+		"floor": [["hub_gcobble", Rect2(368, 232, 224, 144)], ["hub_gcobble", Rect2(464, 136, 32, 96)], ["hub_gcobble", Rect2(464, 376, 32, 168)],
+			["hub_gcobble", Rect2(592, 268, 352, 48)], ["hub_gcobble", Rect2(144, 268, 224, 48)]],
+		"paths": [[Vector2(160, 268), Vector2(130, 176)],
+			[Vector2(300, 176), Vector2(330, 262)], [Vector2(660, 176), Vector2(640, 262)], [Vector2(120, 416), Vector2(360, 412)],
 			[Vector2(840, 496), Vector2(610, 420)], [Vector2(836, 186), Vector2(850, 270)]],
 		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 70], "hub_pebble": [20, 26], "hub_twig": [10, 10]},
 		"scatter_rect": Rect2(8, 180, 944, 372),
-		"fire": Vector2(480, 304),
+		"fire": Vector2(552, 270),
+		# things that move: [id, x, y, frames a second, solid radius, turned round]: the statues that pour into the mere
+		"anims": [["hub_gspout", 398, 478, 6.0, 7.0, false], ["hub_gspout", 126, 478, 6.0, 7.0, true]],
 		# a small flame on top of every lamp post (the posts are in "props", their glow in "lights")
 		"torches": [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)],
 		"forest": {"top_gaps": [[416.0, 544.0], [40.0, 250.0], [236.0, 364.0], [596.0, 724.0], [772.0, 900.0]],
@@ -349,7 +428,7 @@ static func town() -> Dictionary:
 			{"rect": Rect2(440, 522, 80, 10), "to": "world", "at": Vector2(300, 650), "tale": 1, "why": "Speak with Captain Hale first. He is by the fire."}],
 		"people": [
 			{"id": "hale", "name": "Captain Hale", "title": "Captain of the Lantern Watch", "sprite": "pc_royal_knight", "hands": "pc_hand_castle_17",
-				"pos": Vector2(520, 290), "face": -1, "role": "chat", "text": ""},
+				"pos": Vector2(592, 292), "face": -1, "role": "chat", "text": ""},
 			{"id": "tam", "name": "Tam", "title": "Smith and Lampwright", "sprite": "pc_npc_peasant_a", "hands": "pc_hand_base_2",
 				"pos": Vector2(690, 262), "face": 1, "role": "chat", "as": "smith", "text": ""},
 			{"id": "odo", "name": "Brother Odo", "title": "Chronicler", "sprite": "pc_scholar_researcher", "hands": "pc_hand_library_6",
