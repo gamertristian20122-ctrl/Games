@@ -27,7 +27,7 @@ export const PRIVACY_POLICY: LegalDoc = {
     {
       heading: 'What stays on your phone',
       paragraphs: [
-        'Your routine, quests, checkmarks, onboarding answers (like your brain profile, energy level, and daily times), your pet, Pebbles, shop items, and settings are saved only in MochiNook’s private storage on your device.',
+        'Your routine, quests, checkmarks, onboarding answers (like your brain profile, energy level, and daily times), daily mood check-ins, focus sessions, races, your pet, Pebbles, shop items, and settings are saved only in MochiNook’s private storage on your device.',
         'We never receive this information. It is removed when you use “Delete all my data” in Settings or uninstall the app.',
       ],
     },
@@ -45,9 +45,10 @@ export const PRIVACY_POLICY: LegalDoc = {
       ],
     },
     {
-      heading: 'Caregiver share codes',
+      heading: 'Share codes, race codes, and cheers',
       paragraphs: [
         'A share code contains your routine and, if you choose, your daily times. It is created on your phone and only goes wherever you decide to send it. We never see it.',
+        'Friend race result codes contain only your pet’s name, your step count, the race length, and the date. Cheers are preset messages sent through your phone’s own share menu. Neither goes through any MochiNook server.',
       ],
     },
     {
@@ -59,7 +60,7 @@ export const PRIVACY_POLICY: LegalDoc = {
     {
       heading: 'Children and teens',
       paragraphs: [
-        'MochiNook is designed to be safe for teens. It does not collect personal information from anyone, including children under 13, and it has no chat or contact with other users.',
+        'MochiNook is designed to be safe for teens. It does not collect personal information from anyone, including children under 13. It has no chat, no accounts, and no way for strangers to contact you; anything shared with friends goes through apps you already use.',
       ],
     },
     {

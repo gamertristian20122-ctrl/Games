@@ -42,3 +42,4 @@ yarn-error.*
 
 # built apps
 *.apk
+*.aab
