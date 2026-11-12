@@ -84,6 +84,9 @@ var _sky_node: CanvasModulate
 var _lamps: Array = []           ## [PointLight2D, energy by day]
 var _flies: CPUParticles2D
 var _rain: CPUParticles2D
+var _zoom := 1.0                 ## the place's camera zoom (0.5 on the world map: twice as much is seen)
+var _k := 1.0                    ## how big the knight is drawn there (2 on the world map)
+var _shut_t := 0.0               ## a moment before a shut road says so again
 
 
 func _ready() -> void:
@@ -148,11 +151,20 @@ func _ready() -> void:
 	layer.add_child(_fade)
 	if G.arg("hub") != "":
 		start_place = G.arg("hub")       # test: --hub=<place id>
-	enter(start_place if start_place != "" else Places.START, start_at)
+	Story.migrate()
+	var begin: Array = [start_place, start_at] if start_place != "" else Places.start()      # Play: the camp you last walked into
+	enter(String(begin[0]), begin[1])
 	if G.arg("hublevel") != "":          # test: go down into that level after a second
 		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_level", G.arg("hublevel")))
 	elif (G.arg("shots") == "" and not G.flag("uitour")) or G.flag("story"):
 		_story_moment()                  # (--story: also while taking test pictures)
+	if G.arg("hubgo") != "":             # test: --hubgo=<place> walks through to that place, takes two pictures, quits
+		get_tree().create_timer(1.0).timeout.connect(func() -> void:
+			await _go(G.arg("hubgo"), Vector2.INF)
+			await G.save_shot("hubgo_0.png")
+			await get_tree().create_timer(1.6).timeout
+			await G.save_shot("hubgo_1.png")
+			G.quit(0))
 	if G.arg("clock") != "":
 		G.world_clock = float(G.arg("clock")) * DAY_LENGTH      # test: --clock=0.7 is deep night
 	if G.arg("shots") != "" and G.flag("story"):
@@ -161,9 +173,13 @@ func _ready() -> void:
 			await G.save_shot("hub_story_%s.png" % place_id)
 			await get_tree().create_timer(0.3).timeout
 			G.quit(0))
-	elif G.arg("shots") != "" and G.flag("hub"):
+	elif G.arg("shots") != "" and G.flag("hub") and G.arg("hubgo") == "":
 		if place_id == "village":
 			_tour = [Vector2(376, 170), Vector2(180, 276), Vector2(360, 300), Vector2(540, 276), Vector2(150, 176)]
+		elif place_id == "world":
+			_tour = [Vector2(330, 690), Vector2(730, 700), Vector2(1130, 700), Vector2(1250, 960), Vector2(1580, 570), Vector2(1780, 330), Vector2(1650, 910)]
+		elif place.has("fire"):
+			_tour = [(place["fire"] as Vector2) + Vector2(0, 40), (place["fire"] as Vector2) + Vector2(60, -60)]
 		else:
 			_tour = [_hero.position + Vector2(0, 14)]
 
@@ -179,6 +195,8 @@ func _story_moment() -> void:
 		var scene := Story.take_scene()
 		if not scene.is_empty():
 			say = {"name": "Ysolde", "title": "Druid of the Stones", "sprite": "pc_elf_druid", "pages": scene}
+	if say.is_empty():
+		say = Story.take_arrival(place_id)          # the first time in a new place
 	if not say.is_empty():
 		if G.flag("story"):
 			print("[hub] story moment in %s: %s" % [place_id, String(say["pages"][0])])
@@ -210,8 +228,11 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_ysort = Node2D.new()
 	_ysort.y_sort_enabled = true
 	_stage.add_child(_ysort)
+	_zoom = float(place.get("zoom", 1.0))
+	_k = float(place.get("hero_scale", 1.0))
 	for p: Array in place.get("props", []):
 		_prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
+	_build_groves()
 	if place.has("forest"):
 		_build_forest()
 	if place.has("fire"):
@@ -221,11 +242,18 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 			_add_person(row)
 	_build_hero()
 	_hero.position = at if at != Vector2.INF else place["spawn"]
+	_hero.scale = Vector2(_k, _k)
 	refresh_heroes()
+	if int(place.get("camp", -1)) >= 0 and Save.hub_get("camp") != int(place["camp"]):
+		Save.hub_set("camp", int(place["camp"]))      # the next Play opens here
+	_build_signs()
+	_quests.goal_only = place.has("signs")
+	_prompt.scale = Vector2.ONE / _zoom
 	if bool(place.get("outdoor", false)):
 		_build_light()
 	# a place smaller than the screen stands still in the middle; a bigger one scrolls with the hero
-	var view := UI.screen_size(self)
+	var view := UI.screen_size(self) / _zoom
+	_cam.zoom = Vector2(_zoom, _zoom)
 	_small = size.x <= view.x and size.y <= view.y
 	if _small:
 		_cam.limit_left = -100000
@@ -256,10 +284,27 @@ func _go(to: String, at: Vector2) -> void:
 	await tw.finished
 	enter(to, at)
 	_story_moment()
+	if _zoom < 1.0:
+		# out into the wide world: the camera pulls back and the knight grows with it
+		_set_zoom(1.0)
+		var pull := create_tween()
+		pull.tween_method(_set_zoom, 1.0, _zoom, 1.0).set_delay(0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	var back := create_tween()
 	back.tween_property(_fade, "color:a", 0.0, 0.16)
 	await back.finished
 	_changing = false
+
+
+func _set_zoom(z: float) -> void:
+	_cam.zoom = Vector2(z, z)
+	var t := 1.0 if _zoom >= 1.0 else clampf((1.0 - z) / (1.0 - _zoom), 0.0, 1.0)
+	if is_instance_valid(_hero):
+		_hero.scale = Vector2.ONE * lerpf(1.0, _k, t)
+
+
+## Where the knight stands (main.gd remembers it when he goes into a level, to put him back there).
+func hero_pos() -> Vector2:
+	return _hero.position if is_instance_valid(_hero) else Vector2.INF
 
 
 func _exit_tree() -> void:
@@ -324,13 +369,47 @@ func sleep() -> void:
 func _build_ground() -> void:
 	var ground := Node2D.new()
 	ground.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	var grass := Art.tex("hub_grass")
+	var grass := Art.tex(String(place.get("ground", "hub_grass")))
 	ground.draw.connect(func() -> void:
-		ground.draw_texture_rect(grass, Rect2(Vector2(-64, -64), (place["size"] as Vector2) + Vector2(128, 128)), true))
+		ground.draw_texture_rect(grass, Rect2(Vector2(-420, -240), (place["size"] as Vector2) + Vector2(840, 480)), true)
+		for f: Array in place.get("floor", []):          # a paved rectangle
+			ground.draw_texture_rect(Art.tex(String(f[0])), f[1], true))
 	_stage.add_child(ground)
 	# small flat things on the grass and the trodden paths: the same every time
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261111
+	# other ground in big ragged patches (the sands, the bare rock of the mountains)
+	for reg: Array in place.get("regions", []):
+		var poly := Polygon2D.new()
+		poly.texture = Art.tex(String(reg[0]))
+		poly.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		poly.polygon = _ragged(reg[1], rng)
+		_stage.add_child(poly)
+	for sh: Rect2 in place.get("shades", []):           # a dark doorway (a flat shape)
+		var dark := ColorRect.new()
+		dark.color = Color("140c10")
+		dark.position = sh.position
+		dark.size = sh.size
+		dark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_stage.add_child(dark)
+	for d: Array in place.get("decals", []):            # flat pieces lying on the ground
+		var flat := Sprite2D.new()
+		flat.texture = Art.tex(String(d[0]))
+		flat.position = Vector2(d[1], d[2])
+		_stage.add_child(flat)
+	var stones := ["hub_dblock_2", "hub_dblock_3", "hub_pebble_3", "hub_dblock_2", "hub_pebble_7"]
+	var m := 0
+	for trail: Array in place.get("trails", []):        # a road over sand or rock: a line of small stones
+		for i in trail.size() - 1:
+			var a: Vector2 = trail[i]
+			var b: Vector2 = trail[i + 1]
+			var count := maxi(1, int(a.distance_to(b) / 22.0))
+			for k in count + 1:
+				var st := Sprite2D.new()
+				st.texture = Art.tex(String(stones[m % stones.size()]))
+				st.position = (a.lerp(b, float(k) / float(count)) + Vector2(rng.randf_range(-3, 3), rng.randf_range(-3, 3))).round()
+				_stage.add_child(st)
+				m += 1
 	var n := 0
 	for path: Array in place.get("paths", []):
 		for i in path.size() - 1:
@@ -350,9 +429,110 @@ func _build_ground() -> void:
 		for i in int(spec[1]):
 			var s := Sprite2D.new()
 			s.texture = Art.tex("%s_%d" % [id, rng.randi() % int(spec[0])])
-			s.position = Vector2(roundf(rng.randf_range(8.0, (place["size"] as Vector2).x - 8.0)), roundf(rng.randf_range(70.0, (place["size"] as Vector2).y - 8.0)))
+			var area: Rect2 = place.get("scatter_rect", Rect2(8, 70, (place["size"] as Vector2).x - 16.0, (place["size"] as Vector2).y - 78.0))
+			s.position = Vector2(roundf(rng.randf_range(area.position.x, area.end.x)), roundf(rng.randf_range(area.position.y, area.end.y)))
 			s.flip_h = rng.randf() < 0.5
 			_stage.add_child(s)
+
+
+## A straight-sided outline made ragged: every side is cut into short steps that wander a little.
+func _ragged(points: Array, rng: RandomNumberGenerator) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for i in points.size():
+		var a: Vector2 = points[i]
+		var b: Vector2 = points[(i + 1) % points.size()]
+		var steps := maxi(1, int(a.distance_to(b) / 34.0))
+		var side := (b - a).orthogonal().normalized()
+		for k in steps:
+			var wobble := 0.0 if k == 0 else rng.randf_range(-13.0, 13.0)
+			out.append(a.lerp(b, float(k) / float(steps)) + side * wobble)
+	return out
+
+
+## Pieces scattered over big areas of the world map (woods, cacti, crags): the same every time, never
+## on a road, never on top of a place, and far enough apart to walk between.
+func _build_groves() -> void:
+	if not place.has("groves"):
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 4242 + hash(place_id) % 1000
+	var keep: Array = []              # spots to stay well away from
+	for row: Dictionary in place.get("people", []):
+		keep.append(row["pos"])
+	for e: Dictionary in place.get("exits", []):
+		keep.append((e["rect"] as Rect2).get_center())
+	for pr: Array in place.get("props", []):
+		keep.append(Vector2(pr[1], pr[2]))
+	for d: Array in place.get("decals", []):
+		keep.append(Vector2(d[1], d[2]))
+	var roads: Array = (place.get("paths", []) as Array) + (place.get("trails", []) as Array)
+	var placed: Array = []
+	for grove: Dictionary in place["groves"]:
+		var rect: Rect2 = grove["rect"]
+		var ids: Array = grove["ids"]
+		var solid := float(grove.get("solid", 0.0))
+		var apart := 40.0 if solid > 0.0 else 14.0
+		var made := 0
+		var tries := 0
+		while made < int(grove["n"]) and tries < int(grove["n"]) * 12:
+			tries += 1
+			var at := Vector2(rng.randf_range(rect.position.x, rect.end.x), rng.randf_range(rect.position.y, rect.end.y)).round()
+			var ok := true
+			for spot: Vector2 in keep:
+				if spot.distance_to(at) < 84.0:
+					ok = false
+					break
+			if ok:
+				for road: Array in roads:
+					for i in road.size() - 1:
+						if Geometry2D.get_closest_point_to_segment(at, road[i], road[i + 1]).distance_to(at) < 40.0:
+							ok = false
+			if ok and solid > 0.0:
+				for other: Vector2 in placed:
+					if other.distance_to(at) < apart:
+						ok = false
+						break
+			if not ok:
+				continue
+			var id := String(ids[rng.randi() % ids.size()])
+			var s := _prop(id, at, minf(solid, 4.0), 8.0 if id.begins_with("hub_tree_") else 2.0)
+			s.flip_h = rng.randf() < 0.5
+			if solid > 0.0:
+				placed.append(at)
+			made += 1
+
+
+## Names floating over the places of the world map: gold = open with work to do, grey = still shut,
+## green = done, pale = only a name.
+func _build_signs() -> void:
+	for row: Dictionary in place.get("signs", []):
+		var colour: Color = UI.C_BONE
+		var text := String(row["text"])
+		if String(row.get("need", "")) != "" and not Story.cleared(String(row["need"])):
+			colour = UI.C_FAINT
+		elif row.has("sites"):
+			var left := 0
+			var can := false
+			for site: String in row["sites"]:
+				var ahead := Story.next_in_site(site)
+				if not ahead.is_empty():
+					left += 1
+					can = can or Story.is_open(String(ahead["id"]))
+			colour = UI.C_GREEN if left == 0 else (UI.C_GOLD if can else UI.C_FAINT)
+		var l := UI.label(text, "Small")
+		l.theme = UI.theme()
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.custom_minimum_size = Vector2(160, 0)
+		l.add_theme_color_override("font_color", colour)
+		l.add_theme_color_override("font_outline_color", UI.C_INK)
+		l.add_theme_constant_override("outline_size", 3)
+		l.scale = Vector2.ONE / _zoom
+		l.position = (row["pos"] as Vector2) - Vector2(80.0 / _zoom, 0)
+		l.z_index = 160
+		var unlit := CanvasItemMaterial.new()
+		unlit.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+		l.material = unlit
+		_stage.add_child(l)
 
 
 ## A standing piece: its base on `at`, `below` px of the picture hanging under the base line.
@@ -406,6 +586,11 @@ func _build_forest() -> void:
 	var spec: Dictionary = place["forest"]
 	var size: Vector2 = place["size"]
 	var open: Array = spec.get("open", [])          # Rect2 areas kept free of trees (ways out)
+	var f_big: Array = spec.get("big", Hub.FOREST_BIG)            # a place may plant its own edge (a desert camp has no trees)
+	var f_side: Array = spec.get("side", Hub.FOREST_SIDE)
+	var f_low: Array = spec.get("low", Hub.FOREST_LOW)
+	var f_young: Array = spec.get("young", Hub.FOREST_YOUNG)
+	var sink := 8.0 if not spec.has("big") else 2.0
 	for p: Array in spec.get("behind", []):
 		_prop(String(p[0]), Vector2(p[1], p[2]), 0.0, 8.0)
 	var i := 0
@@ -416,27 +601,27 @@ func _build_forest() -> void:
 			if x >= float(gap[0]) and x <= float(gap[1]):
 				free = false
 		if free and not _in_any(open, Vector2(x, 94.0)):
-			_prop(String(Hub.FOREST_BIG[i % Hub.FOREST_BIG.size()]), Vector2(x, 94.0 + rng.randf_range(-6, 6)).round(), 0.0, 8.0)
+			_prop(String(f_big[i % f_big.size()]), Vector2(x, 94.0 + rng.randf_range(-6, 6)).round(), 0.0, sink)
 			i += 1
 		x += 78.0
 	var y := 176.0
 	while y < size.y - 10.0:
 		if not _in_any(open, Vector2(4.0, y)):
-			_prop(String(Hub.FOREST_SIDE[i % Hub.FOREST_SIDE.size()]), Vector2(4.0 + rng.randf_range(-4, 4), y).round(), 0.0, 8.0)
+			_prop(String(f_side[i % f_side.size()]), Vector2(4.0 + rng.randf_range(-4, 4), y).round(), 0.0, sink)
 		if not _in_any(open, Vector2(size.x - 4.0, y + 30.0)):
-			_prop(String(Hub.FOREST_SIDE[(i + 1) % Hub.FOREST_SIDE.size()]), Vector2(size.x - 4.0 + rng.randf_range(-4, 4), y + 30.0).round(), 0.0, 8.0)
+			_prop(String(f_side[(i + 1) % f_side.size()]), Vector2(size.x - 4.0 + rng.randf_range(-4, 4), y + 30.0).round(), 0.0, sink)
 		i += 1
 		y += 84.0
 	x = 22.0
 	while x < size.x:
 		if not _in_any(open, Vector2(x, size.y - 6.0)):
-			_prop(String(Hub.FOREST_LOW[i % Hub.FOREST_LOW.size()]), Vector2(x, size.y - 6.0 + rng.randf_range(-5, 3)).round(), 0.0, 5.0)
+			_prop(String(f_low[i % f_low.size()]), Vector2(x, size.y - 6.0 + rng.randf_range(-5, 3)).round(), 0.0, minf(sink, 5.0))
 		i += 1
 		x += 58.0
 	x = 70.0
 	while x < size.x:
 		if not _in_any(open, Vector2(x, size.y - 6.0)):
-			_prop(String(Hub.FOREST_YOUNG[i % Hub.FOREST_YOUNG.size()]), Vector2(x, size.y + 34.0).round(), 0.0, 8.0)
+			_prop(String(f_young[i % f_young.size()]), Vector2(x, size.y + 34.0).round(), 0.0, sink)
 		i += 1
 		x += 104.0
 
@@ -518,6 +703,7 @@ func _add_person(row: Dictionary) -> Dictionary:
 		# someone (or something) already painted into the place's picture: only a spot to talk to
 		var top := float(row.get("top", 20.0))
 		mark.position = Vector2(-2, -top - 16)
+		mark.scale = Vector2.ONE / _zoom
 		if float(row.get("solid", 0.0)) > 0.0:
 			_solids.append([row["pos"], float(row["solid"])])
 		var ghost := {"row": row, "node": node, "hands": null, "mark": mark, "face": 1.0, "top": top, "solid": -1,
@@ -583,16 +769,18 @@ func _physics_process(delta: float) -> void:
 			move = _tour_step(delta)
 	var moving := move.length() > 0.12
 	if moving:
-		var to := _hero.position + move.limit_length(1.0) * SPEED * delta
+		var was := _hero.position
+		var to := _hero.position + move.limit_length(1.0) * SPEED * float(place.get("speed", 1.0)) * delta
 		var walk: Rect2 = place["walk"]
+		var body_r := HERO_RADIUS * _k
 		to = to.clamp(walk.position, walk.end)
 		for s: Array in _solids:
 			var d: Vector2 = to - (s[0] as Vector2)
-			var reach: float = float(s[1]) + HERO_RADIUS
+			var reach: float = float(s[1]) + body_r
 			if d.length_squared() < reach * reach and d.length_squared() > 0.0001:
 				to = (s[0] as Vector2) + d.normalized() * reach
 		for b: Rect2 in _blocks:
-			var g := b.grow(HERO_RADIUS)
+			var g := b.grow(body_r)
 			if not g.has_point(to):
 				continue
 			# out through the nearest side
@@ -609,7 +797,17 @@ func _physics_process(delta: float) -> void:
 		_hero.position = to.clamp(walk.position, walk.end)
 		for e: Dictionary in place.get("exits", []):
 			if (e["rect"] as Rect2).has_point(_hero.position) and _tour.is_empty():
-				_go(String(e["to"]), e["at"])
+				var need := String(e.get("need", ""))
+				if need != "" and not Story.cleared(need):
+					# the road is still shut: he is turned back and told why
+					_hero.position = was
+					if _shut_t <= 0.0:
+						_shut_t = 3.0
+						_banner_text = String(e.get("why", "The way is shut."))
+						_arrive_t = 3.0
+						Sfx.play("ui_back")
+				else:
+					_go(String(e["to"]), e["at"])
 				break
 		if absf(move.x) > 0.1:
 			_face = signf(move.x)
@@ -619,8 +817,10 @@ func _physics_process(delta: float) -> void:
 	_body.flip_h = _face < 0.0
 	HeroLook.rest(_weapon, _face, delta)
 	_off_hand.update(delta, moving, _face)
+	_shut_t = maxf(0.0, _shut_t - delta)
 	if not _small:
-		_cam.position = _hero.position.round()
+		# (zoomed out, the camera moves in steps of two map pixels so the small trees do not shimmer)
+		_cam.position = _hero.position.round() if _zoom >= 1.0 else (_hero.position * _zoom).round() / _zoom
 	if _arrive_t > 0.0:
 		_arrive_t -= delta
 		_banner.text = _banner_text if _banner_text != "" else String(place.get("name", ""))
@@ -635,7 +835,7 @@ func _physics_process(delta: float) -> void:
 
 func _update_people(delta: float) -> void:
 	var best := -1
-	var best_d := Hub.TALK_REACH
+	var best_d := Hub.TALK_REACH * _k
 	var news := _news
 	if int(_time * 2.0) != int((_time - delta) * 2.0) or _time < 0.1:
 		news = Quests.any_complete()
@@ -656,14 +856,14 @@ func _update_people(delta: float) -> void:
 		mark.visible = (news and String(p["row"].get("role", "")) == "quests") or bool(p.get("news", false))
 		mark.position.y = -float(p["top"]) - 16.0 + roundf(sin(_time * 5.0) * 1.5)
 	_near = best
-	_quests.visible = not frozen and place_id == "village"
+	_quests.visible = not frozen and bool(place.get("outdoor", false))
 	G.hub_near = best >= 0 and not frozen
 	if best >= 0 and not frozen:
 		var p: Dictionary = _people[best]
 		_prompt.text = String(p["row"]["name"])
 		_prompt.reset_size()
-		_prompt.position = ((p["node"] as Node2D).position + Vector2(-_prompt.size.x * 0.5, -float(p["top"]) - 12.0)).round()
-		_prompt.visible = true
+		_prompt.position = ((p["node"] as Node2D).position + Vector2(-_prompt.size.x * 0.5, -float(p["top"]) - 12.0) / _zoom).round()
+		_prompt.visible = not place.has("signs")        # on the world map the name already floats over the place
 	else:
 		_prompt.visible = false
 
@@ -740,33 +940,32 @@ func _talk(index: int) -> void:
 		"lines": [], "options": []}
 	match String(row.get("role", "chat")):
 		"gate":
-			if String(row.get("area", "")) != "":
-				# the gate of a side area (the Elfwood): its own short descent
-				var area := String(row["area"])
-				var rows := Story.side_levels(area)
-				var ahead := Story.next_side(area)
+			# every site this gate opens (scripts/data/story.gd): go in at the first level not cleared,
+			# or again from the start; a site that is still shut says what must be done first
+			var cleared_here := 0
+			var total_here := 0
+			for site: String in row.get("sites", ["hill"]):
+				var rows := Story.site_levels(site)
+				total_here += rows.size()
 				var done := 0
 				for lv: Dictionary in rows:
 					if Story.cleared(String(lv["id"])):
 						done += 1
+				cleared_here += done
+				var ahead := Story.next_in_site(site)
 				if not ahead.is_empty():
-					info["options"].append({"text": "Go in: %s" % String(ahead["name"]), "what": "hub_level", "arg": ahead["id"]})
-				if done > 0:
-					info["options"].append({"text": "Go in from the start", "what": "hub_level", "arg": rows[0]["id"]})
-				info["lines"].append(["Groves freed: %d of %d. Walk out from the pause menu when no fight is on." % [done, rows.size()], UI.C_DIM])
-				info["lines"].append([_pack_line(), UI.C_GOLD])
-				action.emit("talk", info)
-				_talked[id] = true
-				return
-			var next := Story.next_level()
-			if next.is_empty():
+					if Story.is_open(String(ahead["id"])):
+						info["options"].append({"text": "Go in: %s" % String(ahead["name"]), "what": "hub_level", "arg": ahead["id"]})
+					else:
+						var first := Story.next_level()
+						info["lines"].append(["%s is still shut. First: %s, at %s." % [String(ahead["name"]), String(first.get("name", "")),
+							String((Story.SITES.get(String(first.get("site", "hill")), {}) as Dictionary).get("name", ""))], UI.C_RED])
+				if done > 0 and (rows.size() > 1 or ahead.is_empty()):
+					info["options"].append({"text": "Again from the start: %s" % String(rows[0]["name"]), "what": "hub_level", "arg": rows[0]["id"]})
+			if Story.next_level().is_empty():
 				info["lines"].append(["Every seal is mended.", UI.C_GOLD])
-			else:
-				info["options"].append({"text": "Go down: %s" % String(next["name"]), "what": "hub_level", "arg": next["id"]})
-			var c := Story.chapter()
-			if c > 0:
-				info["options"].append({"text": "Go down from the top", "what": "hub_level", "arg": Story.LEVELS[0]["id"]})
-			info["lines"].append(["Levels cleared: %d of %d. One descent runs through them all; walk out from the pause menu when no fight is on." % [c, Story.LEVELS.size()], UI.C_DIM])
+			info["lines"].append(["Cleared here: %d of %d. In all: %d of %d. Walk out from the pause menu when no fight is on." % [cleared_here, total_here,
+				Story.chapter(), Story.LEVELS.size()], UI.C_DIM])
 			info["lines"].append([_pack_line(), UI.C_GOLD])
 		"quests":
 			var offered := Quests.offered()
@@ -799,7 +998,10 @@ func _talk(index: int) -> void:
 			info["options"].append({"text": "Train in the yard", "what": "hub_train"})
 		"bed":
 			var carried := Story.kit()
-			info["lines"].append(["Your room at the Hollow Flagon. The looking glass by the bed changes your name, armour and sword.", UI.C_DIM])
+			if place_id == "room":
+				info["lines"].append(["Your room at the Hollow Flagon. The looking glass by the bed changes your name, armour and sword.", UI.C_DIM])
+			else:
+				info["lines"].append(["A place to rest. The game opens here next time, at the camp you last walked into.", UI.C_DIM])
 			info["lines"].append(["You carry %d item%s. Camp chest: %d coins." % [carried.size(), "" if carried.size() == 1 else "s", Upgrades.coins()], UI.C_GOLD])
 			info["options"].append({"text": "Sleep until morning" if _is_night() else "Sleep until nightfall", "what": "hub_sleep"})
 			info["options"].append({"text": "Remember how it began (the intro)", "what": "hub_intro"})
@@ -824,9 +1026,10 @@ func _talk(index: int) -> void:
 			info["lines"].append([String(h.get("passive", "")), UI.C_DIM])
 			info["options"].append({"text": "Play as %s" % String(h["name"]), "what": "hub_hero", "arg": h["id"]})
 	# what this person sells for coins from the camp chest (scripts/data/upgrades.gd)
+	var sell := String(row.get("as", id))          # "as": "smith" = sells what the village smith sells
 	var sells := false
 	for up: Dictionary in Upgrades.LIST:
-		if String(up["at"]) != id:
+		if String(up["at"]) != sell:
 			continue
 		sells = true
 		var t := Upgrades.tier(String(up["id"]))
@@ -834,7 +1037,7 @@ func _talk(index: int) -> void:
 		info["lines"].append(["%s %d/%d: %s" % [up["name"], t, Upgrades.steps(up), up["text"]], UI.C_DIM if price >= 0 else UI.C_FAINT])
 		if price >= 0:
 			info["options"].append({"text": "%s: %d coins" % [up["name"], price], "what": "hub_buy", "arg": up["id"], "off": Upgrades.coins() < price, "why": _poor(price)})
-	if id == "smith":
+	if sell == "smith":
 		# the weapons he can fit: carried, owned, forged here, or still out in the world
 		var carried := Weapons.current()
 		info["lines"].append(["You carry the %s: %s" % [String(carried["name"]).to_lower(), carried["text"]], UI.C_BONE])

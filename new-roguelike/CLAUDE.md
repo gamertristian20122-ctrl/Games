@@ -9,7 +9,8 @@ Android-first pixel-art game made in **Godot 4.7.2** (GL Compatibility, landscap
 The game is now a **story adventure in the spirit of old 2D adventure games**, not an endless roguelike:
 1. Open the game, press Play, you are in **the camp** (a small map to walk around, people to talk to).
 2. Talking is a **dialogue box** along the bottom: picture, name, words letter by letter, tap for the next page.
-3. The story moves on by **one descent through 7 levels** (`scripts/data/story.gd`), 4 areas, each level a
+3. (v0.10.0: now 12 levels across a world map and three camps; see the v0.10.0 section.)
+   The story moves on by **one descent through 7 levels** (`scripts/data/story.gd`), 4 areas, each level a
    small dungeon that ends at a boss and is harder than the last. Beat a boss, take the stair, the next
    level begins (owner, 11 Nov 2026: going back to the gate after every level was "redundant").
    **From the pause menu the hero can walk back to the camp whenever no fight is on**: he keeps his items,
@@ -569,6 +570,62 @@ The owner, after seeing v0.9.1's words on a black screen: "No, an animation for 
   `--intro --shots=<dir>` (one picture per shot). The flow test skips the intro (`--uitour`).
 - The text-only `Story.OPENING` of v0.9.1 is gone. When the owner says "intro" they mean something to
   WATCH. Prefer showing over telling for story beats.
+
+## v0.10.0 (12 Nov 2026): the wide world, three camps, a far longer and harder story
+The owner finished ALL of v0.9 in about five minutes and asked: "make the game a lot longer ... harder ...
+story development ... go to a different camp ... it zooms outside of the giant map. But you're bigger so
+you can travel faster." What was built:
+- **The world map** (`Places` id `world`, 2000 x 1120): leave the village by its new SOUTH road and the
+  camera pulls back to half size while the knight grows to double (`"zoom": 0.5`, `"hero_scale": 2`,
+  `"speed": 2.5`; `hub.gd _go()` + `_set_zoom()`). Grass and woods in the west, sands in the middle and
+  south-east, bare rock in the north-east (`"regions"`: ragged textured polygons). Places on it carry a
+  floating name (`"signs"`: gold = work to do, grey = shut, green = done). A fight area is a "ghost"
+  person with `"role": "gate"`; a camp is an exit with `"need"` (the level that opens the road) and
+  `"why"` (the banner shown while it is shut; the knight is turned back).
+- **Two more camps**: `dustwatch` (Desert pack: sand, obelisks, the cistern stair) and `emberfall`
+  (Forge pack: rock, flagstones, lava pools, the forge arch). Each has a gate keeper, a smith
+  (`"as": "smith"` sells the village smith's upgrades and weapons), a trader (`role` shop), a quest
+  giver, and a fire to rest at (`role` bed). Walking into a camp saves `hub:camp`; Play opens there
+  next time (`Places.start()`).
+- **The story is 12 levels in a fixed order** (`Story.LEVELS`, was 7): Crypt x2 (village gate) -> the
+  Robber Road (world map) -> the Bone Dunes (world map) -> Warrens x2 (Dustwatch) -> the Cinder Pass
+  (world map) -> Ashen Halls x2 (Emberfall) -> the Sunken Archive (world map) -> the Pit x2 (village
+  gate again; the last is the Starved King). Plus the two Elfwood side levels. Every row has a `"site"`;
+  rows of one site are one descent (`Story.after`). A site opens when every row above it is cleared
+  (`Story.is_open`). One generic gate in `hub.gd _talk()` serves every gate keeper and map spot
+  (`"sites": [...]`). `Story.SITES` names each site for the quest list ("Next: X, at Y") and says where
+  a run puts the hero back (`main.gd` remembers the exact place and spot he went in by).
+- **Road areas end with a CHAMPION**, not a boss: Red Marrow the Road King (bandits, new monsters from
+  the Hideout pack's bandit sprites), the Dune Gorgon (`pc_medusa`), the Keeper of the Pass
+  (`pc_stone_golem`), the Head Archivist, the King's Butcher. Rows are at the end of `enemies.gd`;
+  their opening lines are `Story.CHAMPION_SAYS`. `Floors.EXTRA` has `road` (forest look) and `desert`
+  (`"dress": "desert"`: `forest_look.gd` builds the room from Desert pieces; add a dress = a row in its
+  `DRESS` table).
+- **Longer**: 10 to 13 rooms a level (were 6 to 10) and the boss room is at least half the rooms away
+  from the start (`FloorGen.generate(rng, rooms, boss_far)`). The bot needs about 3.5 minutes a level,
+  so roughly an hour for the story without the camps and the walking.
+- **Harder** (`G.DIFFICULTY`): every row went up (Easy is about the old Normal), plus `boss_hp` and
+  `speed` (monsters move 12% faster on Normal). Bosses 2 to 6 got more base health (`bosses.gd`).
+  Champions have 8x health (was 5x). The knight's sword does 5 (was 6). Up to 12 monsters a room.
+  Monsters and bosses gain 4% health per item the hero carries, up to 15 items (`G.ITEM_HP`).
+  Bot, bare kit, Normal: the two Crypt levels cost 8 to 11 half hearts (was 1 to 2); it dies about once
+  in the Warrens and the Ashen Halls. Nobody has played it by hand.
+- **Story**: the seals are now anchors spread over the land (top of `story.gd`). New: `Story.ARRIVALS`
+  (spoken once on first entering the world map, Dustwatch, Emberfall), scenes after the 2nd, 6th, 9th,
+  10th and 12th level, lines for nine new people, four more notes (12 in all), `TALK` re-keyed to the
+  new chapter numbers (0 to 12; the table is above `TALK`).
+- **Old saves** (`Story.migrate()`, once): the Crypt stays cleared, every later level is to play again
+  in the new order; items, coins, weapons and upgrades are kept; everyone has new lines.
+- **Art**: `tools/import_hub.py` `TRIMMED` cuts 57 Desert and Forge pieces, plus four ground tiles
+  (`hub_sand`, `hub_paving`, `hub_fflag`, `hub_drock`). Pieces with sand painted round them
+  (`hub_dcave`, `hub_dboulder_*`, `hub_dspire_*`, `hub_dpebble_*`) only sit right on sand.
+- **Test flags**: `--hub=world|dustwatch|emberfall` (with `--shots=<dir>` a tour of pictures),
+  `--hubgo=<place>` (walk through to that place: two pictures, the zoom-out), `--level=road|dunes|pass|
+  archive|pit_1|pit_2`, `--hubtalk=site_road` (a map spot's window).
+- **Rough edges**: the edge between grass, sand and rock is a plain ragged line; roads on sand are a
+  line of small stones; the world map has no wandering monsters (fights are only inside areas); the
+  Cinder Pass, the Archive and the Long Stair reuse the hill's indoor looks; champions use ordinary
+  monster behaviour with more health; there is no music change between camps.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

@@ -16,9 +16,10 @@ const MAX_X := 4
 const MAX_Y := 3
 
 
-static func generate(rng: RandomNumberGenerator, room_count: int) -> Dictionary:
-	for attempt in 400:
-		var result := _try(rng, room_count)
+## `boss_far`: the boss room is at least this many rooms from the start.
+static func generate(rng: RandomNumberGenerator, room_count: int, boss_far: int = 3) -> Dictionary:
+	for attempt in 1500:
+		var result := _try(rng, room_count, boss_far)
 		if not result.is_empty():
 			return result
 	push_warning("FloorGen: could not build a good floor, using a plain corridor")
@@ -33,7 +34,7 @@ static func _neighbours(cells: Dictionary, c: Vector2i) -> int:
 	return n
 
 
-static func _try(rng: RandomNumberGenerator, room_count: int) -> Dictionary:
+static func _try(rng: RandomNumberGenerator, room_count: int, boss_far: int = 3) -> Dictionary:
 	var cells := {Vector2i.ZERO: true}
 	var order: Array[Vector2i] = [Vector2i.ZERO]
 	var guard := 0
@@ -71,7 +72,7 @@ static func _try(rng: RandomNumberGenerator, room_count: int) -> Dictionary:
 	for c in dead_ends:
 		if int(dist[c]) > int(dist[boss]):
 			boss = c
-	if int(dist[boss]) < 3:
+	if int(dist[boss]) < boss_far:
 		return {}
 	dead_ends.erase(boss)
 	# shuffle the rest with our own rng so the result depends only on the seed

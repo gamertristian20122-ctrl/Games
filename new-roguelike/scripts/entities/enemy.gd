@@ -31,7 +31,7 @@ const Enemies = preload("res://scripts/data/enemies.gd")
 const Shots = preload("res://scripts/run/shots.gd")
 
 const Hands = preload("res://scripts/entities/hands.gd")
-const CHAMPION_HP := 5.0          ## a side level's champion has this many times its kind's health
+const CHAMPION_HP := 8.0          ## a side level's champion has this many times its kind's health
 const CORPSE_FADE := 0.45       ## seconds a fallen body takes to fade after its death animation
 const SHOT_PLANE := 7.0         ## shots are drawn this far above the floor (see shot_look.gd)
 
@@ -192,7 +192,7 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	if not opts.has("elite") and not minion and not opts.get("boss", false):
 		elite = run.scale_floor + 1 >= Enemies.ELITE_FROM_FLOOR and randf() < run.elite_chance
 	max_hp = float(data["hp"]) * _hp_scale()
-	speed = float(data["speed"])
+	speed = float(data["speed"]) * (1.0 if opts.get("boss", false) else maxf(G.diff("speed"), 0.5))
 	touch = int(data.get("touch", 1))
 	flying = data.get("flying", false)
 	shot_type = String(data.get("shot", "enemy"))
@@ -253,7 +253,15 @@ func _row(enemy_id: String) -> Dictionary:
 
 
 func _hp_scale() -> float:
-	return (1.0 + Enemies.HP_PER_FLOOR * run.scale_floor) * G.diff("enemy_hp")
+	return (1.0 + Enemies.HP_PER_FLOOR * run.scale_floor) * G.diff("enemy_hp") * _kit_scale()
+
+
+## Monsters toughen with what the hero carries, so a full pack of relics does not turn the late game soft.
+func _kit_scale() -> float:
+	var p: Variant = run.get("player")
+	if not is_instance_valid(p) or run.get("training") == true:
+		return 1.0
+	return 1.0 + G.ITEM_HP * float(mini((p.get("items") as Array).size(), G.ITEM_HP_CAP))
 
 
 func _load_ai() -> RefCounted:

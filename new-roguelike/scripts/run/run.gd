@@ -35,7 +35,7 @@ const LIGHTING := true
 const SPAWN_BUDGET_BASE := 6.0      ## 6.5 while the Hungry Curse ate a third of the monsters
 const SPAWN_BUDGET_PER_FLOOR := 3.0
 const SPAWN_BUDGET_PER_ROOM := 0.5
-const MAX_ENEMIES_PER_ROOM := 10
+const MAX_ENEMIES_PER_ROOM := 12
 ## Chance for each enemy to be an elite (from floor 2). Other systems may raise run.elite_chance.
 const ELITE_CHANCE := 0.08
 ## Bombs (px): blast that hurts enemies / hurts the player / breaks rocks and crates / reveals secret doors.
@@ -297,7 +297,9 @@ func _generate_floor() -> void:
 	scale_floor = int(level.get("tier", floor_index))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed_value, floor_index, "floor"])
-	rooms = FloorGen.generate(rng, int(level.get("rooms", theme["rooms"])))
+	# a story level's boss lies deep: at least half its rooms away, so the way to it is a real fight
+	var room_count := int(level.get("rooms", theme["rooms"]))
+	rooms = FloorGen.generate(rng, room_count, 3 if level.is_empty() else maxi(3, room_count / 2))
 	if training:
 		rooms = {Vector2i.ZERO: FloorGen._record(G.RoomType.START, rng, 0)}
 		FloorGen._link(rooms)
@@ -369,7 +371,8 @@ func _enter_floor() -> void:
 	elif level.is_empty():
 		G.toast.emit(floor_name, "Floor %d" % (floor_index + 1))
 	else:
-		G.toast.emit(floor_name, "%s · level %d of %d" % [String(level.get("area", "")), Story.LEVELS.find(level) + 1, Story.LEVELS.size()])
+		var nth := Story.LEVELS.find(level)
+		G.toast.emit(floor_name, "%s · level %d of %d" % [String(level.get("area", "")), nth + 1, Story.LEVELS.size()] if nth >= 0 else String(level.get("area", "")))
 
 
 ## Walk onto the exit: fade out, then build the next floor.
@@ -603,7 +606,7 @@ func _level_done() -> void:
 	else:
 		player.hp = mini(player.max_hp, player.hp + LEVEL_HEAL)
 		G.hud_changed.emit()
-		G.toast.emit("Seal shard taken" if not level.has("side") else "The way is clear", "The stair leads deeper" if not level.has("side") else "The path leads on")
+		G.toast.emit("Seal shard taken" if level.has("boss") else "The way is clear", "The stair leads deeper" if level.has("boss") else "The path leads on")
 
 
 func player_died(cause: String) -> void:
@@ -636,7 +639,7 @@ func summary() -> Dictionary:
 		"items": player.items.duplicate() if player != null else [],
 		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
-		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")), "side": String(level.get("side", "")),
+		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")), "side": String(level.get("side", "")), "final": bool(level.get("final", false)), "champion": String(level.get("champion", "")),
 		"coins_held": player.coins if player != null else 0,
 	}
 

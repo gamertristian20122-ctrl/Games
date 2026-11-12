@@ -118,6 +118,23 @@ const EXTRA := {
 		"motes": {"count": 18, "color": Color(0.8, 1.0, 0.6, 0.7), "size": 1.0, "rise": -3.0, "drift": 5.0, "twinkle": 0.8},
 		"vignette": 0.38, "music": "floor2", "boss_music": "boss",
 	},
+	# the East Road (v0.10.0): the same woodland look, held by robbers
+	"road": {
+		"id": "road", "name": "The Robber Road", "rooms": 10, "outdoor": true,
+		"enemies": ["bandit_cutter", "bandit_tracker", "bandit_sorcerer", "bandit_bruiser", "sporeling", "thorn_elf"],
+		"tiles": "crypt", "ambient": Color("d0d2bc"), "light": Color(1.0, 0.94, 0.8), "torch_power": 1.0,
+		"motes": {"count": 12, "color": Color(1.0, 0.95, 0.7, 0.6), "size": 1.0, "rise": -2.0, "drift": 6.0, "twinkle": 0.6},
+		"vignette": 0.34, "music": "floor1", "boss_music": "boss",
+	},
+	# the Bone Dunes: "dress": "desert" makes forest_look.gd build the room from the Desert pack
+	# (sand, ruined stones, cacti, dead bushes) instead of the Fairy Forest
+	"desert": {
+		"id": "desert", "name": "The Bone Dunes", "rooms": 11, "outdoor": true, "dress": "desert",
+		"enemies": ["dust_mummy", "tomb_seer", "wrap_leaper", "tomb_blade", "bandit_cutter", "bandit_tracker"],
+		"tiles": "crypt", "ambient": Color("e6d8b8"), "light": Color(1.0, 0.9, 0.7), "torch_power": 1.0,
+		"motes": {"count": 16, "color": Color(1.0, 0.86, 0.55, 0.6), "size": 1.0, "rise": -1.0, "drift": 12.0, "twinkle": 0.3},
+		"vignette": 0.30, "music": "floor3", "boss_music": "boss",
+	},
 }
 
 

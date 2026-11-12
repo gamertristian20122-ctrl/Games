@@ -12,6 +12,7 @@ const Upgrades = preload("res://scripts/data/upgrades.gd")
 const WIDTH := 126.0
 
 var in_camp := false
+var goal_only := false           ## the world map: only where to go next, so the list hides little of the map
 var _box: VBoxContainer
 var _shown := ""
 var _t := 0.0
@@ -60,16 +61,21 @@ func refresh() -> void:
 			lines.append(["Beat " + boss, UI.C_GOLD])
 	elif in_camp:
 		var next := Story.next_level()
-		lines.append(["Go down: " + String(next["name"]) if not next.is_empty() else "The hill is quiet", UI.C_GOLD])
+		# the goal names the place to go to: the next level and where its gate is
+		if next.is_empty():
+			lines.append(["The land is quiet", UI.C_GOLD])
+		else:
+			lines.append(["Next: " + String(next["name"]), UI.C_GOLD])
+			lines.append(["at " + String((Story.SITES.get(String(next.get("site", "hill")), {}) as Dictionary).get("name", "")), UI.C_DIM])
 	# in the middle of a fight only the goal is shown, so the list never hides a monster
 	var room: Variant = run.get("room") if is_instance_valid(run) else null
 	var fighting: bool = is_instance_valid(room) and room.get("fighting") == true
-	for q: Dictionary in ([] if fighting else Quests.offered() + Quests.side_active()):
+	for q: Dictionary in ([] if fighting or goal_only else Quests.offered() + Quests.side_active()):
 		if Quests.complete(q):
 			lines.append([String(q["name"]) + ": done!", UI.C_GREEN])
 		else:
 			lines.append(["%s %d/%d" % [q["name"], Quests.progress(q), int(q["need"])], UI.C_BONE])
-	if in_camp:
+	if in_camp and not goal_only:
 		lines.append(["Camp chest: %d coins" % Upgrades.coins(), UI.C_DIM])
 	var key := str(lines)
 	if key == _shown:

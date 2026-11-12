@@ -27,7 +27,7 @@ const LIST := [
 		"desc": "A knight with a sword and nothing else. He cuts down what stands close and bats shots out of the air.",
 		"passive": "Oath Ward: the first hit in every room is blocked.",
 		"locked": false, "unlock_hint": "",
-		"hp": 8, "armor": 0, "speed": 94.0, "damage": 6.0, "rate": 2.3, "range": 100.0, "shot_speed": 150.0,      # range and shot_speed are only the BASE that items scale (reach, swing speed)
+		"hp": 8, "armor": 0, "speed": 94.0, "damage": 5.0, "rate": 2.3, "range": 100.0, "shot_speed": 150.0,      # range and shot_speed are only the BASE that items scale (reach, swing speed)
 		"shot": "blade", "shoot_sfx": "player_shoot_blade", "ward": true,
 		# a SWORD SWING instead of shots (player.gd _swing): everything inside the arc in front of him is hit
 		# at once and enemy shots inside it are cut down. reach px from his middle, arc in radians.

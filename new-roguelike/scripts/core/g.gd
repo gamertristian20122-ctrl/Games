@@ -70,11 +70,17 @@ var next_run := {}
 ## The Easy / Normal / Hard switch in Settings (the owner asked for it on 11 Nov 2026).
 ##   enemy_hp   every monster's and boss's health x this      budget   monsters more or fewer per room
 ##   hearts     half hearts the hero starts with on top       block    blows his guard stops before it breaks
+##   boss_hp    a boss's health x this, on top               speed    how fast monsters move (not bosses)
 const DIFFICULTY := {
-	"easy": {"enemy_hp": 0.8, "budget": -1.0, "hearts": 2, "block": 3},
-	"normal": {"enemy_hp": 1.0, "budget": 0.0, "hearts": 0, "block": 2},
-	"hard": {"enemy_hp": 1.25, "budget": 1.0, "hearts": 0, "block": 2},
+	"easy": {"enemy_hp": 0.9, "budget": 1.0, "hearts": 2, "block": 3, "boss_hp": 1.0, "speed": 1.0},
+	"normal": {"enemy_hp": 1.25, "budget": 3.0, "hearts": 0, "block": 2, "boss_hp": 1.3, "speed": 1.12},
+	"hard": {"enemy_hp": 1.6, "budget": 5.0, "hearts": 0, "block": 2, "boss_hp": 1.7, "speed": 1.22},
 }
+## (v0.10.0: the owner finished the whole of v0.9 in five minutes, so every row went up: Easy is now
+## about what Normal was. "boss_hp" multiplies a boss's health ON TOP of enemy_hp.)
+## Monsters also toughen with what the hero carries: +ITEM_HP for each item, up to ITEM_HP_CAP items.
+const ITEM_HP := 0.04
+const ITEM_HP_CAP := 15
 const DIFFICULTY_NAMES := ["Easy", "Normal", "Hard"]
 const DIFFICULTY_IDS := ["easy", "normal", "hard"]
 

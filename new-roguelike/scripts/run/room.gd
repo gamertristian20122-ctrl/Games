@@ -22,6 +22,7 @@ const Layouts = preload("res://scripts/data/room_layouts.gd")
 const RoomLook = preload("res://scripts/run/room_look.gd")
 const ForestLook = preload("res://scripts/run/forest_look.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
+const Story = preload("res://scripts/data/story.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
@@ -939,10 +940,13 @@ func _start_fight() -> void:
 	if type == G.RoomType.BOSS and run.level.has("champion"):
 		# a side level ends with a champion and its guard, not with a boss
 		spawn_enemy(String(run.level["champion"]), G.ROOM_CENTER + Vector2(0, -8), {"elite": true, "champion": true, "delay": 1.1})
-		for k in 3:
+		for k in 4:
 			var who: String = run.enemy_pool[rng.randi() % run.enemy_pool.size()]
 			spawn_enemy(who, random_spawn_spot(player_pos, false), {"delay": 1.3 + 0.1 * k, "elite": false})
-		G.toast.emit(String(Enemies.info(String(run.level["champion"])).get("name", "Champion")), "The champion of %s" % String(run.level.get("name", "")))
+		var champ := String(run.level["champion"])
+		var line := String(Story.CHAMPION_SAYS.get(champ, ""))
+		var title := String(Enemies.info(champ).get("name", "Champion"))
+		G.toast.emit(title.substr(0, 1).to_upper() + title.substr(1), "\"%s\"" % line if line != "" else "The champion of %s" % String(run.level.get("name", "")))
 		return
 	if type == G.RoomType.BOSS:
 		spawn_enemy(run.boss_id, G.ROOM_CENTER + Vector2(0, -8), {"boss": true, "delay": 1.1})

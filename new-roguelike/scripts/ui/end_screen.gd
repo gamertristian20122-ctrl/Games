@@ -27,7 +27,8 @@ func build() -> void:
 	left.custom_minimum_size.x = 112
 	cols.add_child(left)
 	var in_level := String(summary.get("level", "")) != ""
-	var title := UI.label("Victory" if victory else "Fallen", "Title")
+	var whole := not in_level or bool(summary.get("final", false))       # only the last level is the Victory
+	var title := UI.label(("Victory" if whole else "Cleared") if victory else "Fallen", "Title")
 	UI.style_title(title, UI.C_GOLD if victory else UI.C_RED, Color("7a4a12") if victory else Color("5a1626"))
 	UI.fit_title(title, 112.0)
 	left.add_child(title)
@@ -150,7 +151,11 @@ func _story() -> String:
 	if victory and String(summary.get("level", "")) != "":
 		if String(summary.get("side", "")) != "":
 			return "%s walks out of %s. The wood is quiet behind him." % [hero, String(summary.get("level_name", where))]
-		return "%s climbs out of the Hollow Hill. The last seal holds." % hero
+		if bool(summary.get("final", false)):
+			return "%s climbs out of the Hollow Hill. The last seal holds." % hero
+		if String(summary.get("champion", "")) != "":
+			return "%s walks out of %s. The way on is open." % [hero, String(summary.get("level_name", where))]
+		return "%s carries the seal shard out of %s. One more anchor holds." % [hero, String(summary.get("level_name", where))]
 	if victory:
 		return "%s climbs back into the light. The dungeon is quiet." % hero
 	var cause := String(summary.get("cause", ""))

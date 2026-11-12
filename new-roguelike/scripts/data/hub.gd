@@ -55,8 +55,9 @@ const TAVERN_GAP := [40.0, 250.0]           ## ... nor in front of the tavern
 ## Walls the hero cannot walk through (rectangles), and doors that lead somewhere else.
 const BLOCKS := [Rect2(60, 96, 128, 56)]
 const EXITS := [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)},
-	{"rect": Rect2(674, 176, 10, 56), "to": "elfwood", "at": Vector2(52, 204)}]       # the road east, into the Elfwood
-const OPEN := [Rect2(690, 140, 60, 130)]    ## no forest tree stands here: the road leaves the village
+	{"rect": Rect2(674, 176, 10, 56), "to": "elfwood", "at": Vector2(52, 204)},       # the road east, into the Elfwood
+	{"rect": Rect2(330, 416, 60, 10), "to": "world", "at": Vector2(300, 650)}]        # the south road, out into the wide world
+const OPEN := [Rect2(690, 140, 60, 130), Rect2(300, 430, 120, 90)]    ## no forest tree stands here: the roads leave the village
 const GATE_SPOT := Vector2(360, 150)        ## where he stands when he comes back out of the hill
 const BEHIND_GATE := [["hub_tree_pink_2", 360, 60], ["hub_tree_green_2", 296, 80], ["hub_tree_teal_2", 426, 80]]
 
@@ -66,6 +67,7 @@ const PATHS := [
 	[Vector2(338, 262), Vector2(196, 252)], [Vector2(384, 262), Vector2(548, 252)],
 	[Vector2(372, 322), Vector2(512, 380)], [Vector2(346, 322), Vector2(204, 392)],
 	[Vector2(572, 232), Vector2(640, 206), Vector2(716, 204)],
+	[Vector2(360, 350), Vector2(360, 470)],
 ]
 
 ## How many small flat things are scattered on the grass (seeded, the same every time).
@@ -80,7 +82,7 @@ const STROLL := 12.0                        ## how far a person wanders from the
 ## Names and lines are placeholders the owner may rewrite.
 const NPCS := [
 	{"id": "warden", "name": "Warden Hale", "title": "Keeper of the Gate", "sprite": "pc_royal_knight", "hands": "pc_hand_castle_17",
-		"pos": Vector2(398, 148), "face": -1, "role": "gate",
+		"pos": Vector2(398, 148), "face": -1, "role": "gate", "sites": ["hill", "deep"],
 		"text": "Pick your stair. A stage you have reached stays open, and I hand you gear for the floors you skip."},
 	{"id": "druid", "name": "Ysolde", "title": "Druid of the Stones", "sprite": "pc_elf_druid", "hands": "pc_hand_elf_23",
 		"pos": Vector2(160, 254), "face": 1, "role": "quests",

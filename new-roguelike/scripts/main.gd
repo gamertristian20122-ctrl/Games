@@ -59,6 +59,8 @@ var _busy := false               ## a fade is running: ignore buttons
 var _ending := false             ## the run is over and the end screen is on its way
 var _hero_id := "knight"
 var _level_id := ""              ## the story level being played ("" = none)
+var _from_place := ""            ## where the hero went into that level (a place of scripts/data/places.gd) ...
+var _from_at := Vector2.INF      ## ... and the spot he stood on, so a run puts him back there
 var _waiting_talk: Variant = null    ## words that could not be shown yet (see _on_action "talk")
 var _seed := 0
 var _clock := 0.0
@@ -312,6 +314,10 @@ func _on_action(what: String, arg: Variant) -> void:
 			open("hub_talk", {"info": arg})
 		"hub_level":
 			_level_id = String(arg)
+			_from_place = ""
+			if is_instance_valid(hub):
+				_from_place = String(hub.get("place_id"))
+				_from_at = hub.call("hero_pos")
 			_transition(_start_level)
 		"hub_hero":
 			Save.set_setting("last_hero", String(arg))
@@ -499,10 +505,12 @@ func _on_note_found(index: int) -> void:
 
 ## Where a run puts you back: the village's crypt gate, or the glade for the Elfwood's levels.
 func _back_to_world() -> void:
-	if String(Story.level(_level_id).get("side", "")) == "forest":
-		await show_hub("glade", Vector2(300, 236))
+	var home: Array = Story.home_of(_level_id)
+	# the gate he went in by, when the game knows it and the level belongs there; else the site's own spot
+	if _from_place == String(home[0]) and _from_at != Vector2.INF:
+		await show_hub(_from_place, _from_at)
 	else:
-		await show_hub("village", HubData.GATE_SPOT)
+		await show_hub(String(home[0]), home[1])
 
 
 ## "Back to camp" in the pause menu (only offered while no fight is on): the hero walks out alive.

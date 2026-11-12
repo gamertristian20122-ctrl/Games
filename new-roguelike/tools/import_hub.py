@@ -21,6 +21,8 @@ CEM = ("Pixel_Crawler_-_Cemetery_0.4.zip", "Environment/Props/")
 FREE = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "Environment/")
 BUILD = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "Environment/Structures/Buildings/")
 MOCK = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "MockUps/")
+DESERT = ("Pixel_Crawler_-_Desert.zip", "Assets/")        # the desert camp and the sands of the world map
+FORGE = ("Pixel_Crawler_-_Forge_1.2.zip", "Assets/")     # the mountain camp
 
 # (name, pack, file ending, region x0 y0 x1 y1, gap px that still joins two islands, smallest piece px)
 ISLANDS = [
@@ -59,6 +61,10 @@ RECTS = [
     ("dirt", FOREST, "Tiles.png", 16, 280, 32, 32),
     ("patch_0", FOREST, "Tiles.png", 0, 128, 48, 48),
     ("patch_1", FOREST, "Tiles.png", 0, 176, 48, 48),
+    ("sand", DESERT, "Ground.png", 32, 20, 32, 32),          # ground tiles: the sands, sandstone paving, forge flagstones
+    ("paving", DESERT, "Ground.png", 160, 144, 32, 32),
+    ("fflag", FORGE, "Tiles.png", 32, 112, 32, 32),
+    ("drock", DESERT, "Ground.png", 184, 24, 32, 32),         # bare mountain rock
     # the tavern from outside: a stretch of plastered wall, the wooden gable roof, an open doorway, a window
     ("wall_plaster", BUILD, "Walls.png", 288, 184, 128, 56),
     ("roof_wood", BUILD, "Roofs.png", 0, 6, 128, 89),
@@ -82,6 +88,35 @@ STRIPS = [
     ("flame", FREE, "Structures/Stations/Bonfire/Fire_01-Sheet.png", 32, 48),
 ]
 _cache = {}
+
+
+# Desert and Forge pieces (the world map, Dustwatch, Emberfall, desert fights). Same as RECTS, and the
+# empty border round each piece is cut off.
+TRIMMED = [
+    ("dcave", DESERT, "Ground.png", 96, 64, 64, 64), ("dspire_0", DESERT, "Ground.png", 96, 24, 16, 32), ("dspire_1", DESERT, "Ground.png", 136, 24, 24, 40),
+    ("dgrass_0", DESERT, "Ground.png", 160, 80, 16, 16), ("dgrass_1", DESERT, "Ground.png", 176, 80, 16, 16),
+    ("dgrass_2", DESERT, "Ground.png", 192, 80, 16, 16), ("dgrass_3", DESERT, "Ground.png", 208, 80, 16, 16),
+    ("dboulder_0", DESERT, "Ground.png", 162, 100, 46, 44), ("dboulder_1", DESERT, "Ground.png", 210, 112, 30, 32),
+    ("dstairs", DESERT, "Ground.png", 96, 128, 64, 50), ("ddoor", DESERT, "Ground.png", 96, 176, 64, 48),
+    ("dblock_0", DESERT, "Ground.png", 160, 178, 16, 12), ("dblock_1", DESERT, "Ground.png", 176, 176, 16, 16),
+    ("dblock_2", DESERT, "Ground.png", 162, 196, 12, 8), ("dblock_3", DESERT, "Ground.png", 180, 196, 10, 12),
+    ("dpillar_0", DESERT, "Ground.png", 0, 240, 16, 56), ("dpillar_1", DESERT, "Ground.png", 16, 240, 16, 56),
+    ("dpillar_2", DESERT, "Ground.png", 32, 250, 16, 46), ("dpillar_3", DESERT, "Ground.png", 48, 268, 14, 28),
+    ("dbush_0", DESERT, "Ground.png", 64, 240, 46, 64), ("dbush_1", DESERT, "Ground.png", 112, 256, 32, 48), ("dbush_2", DESERT, "Ground.png", 144, 272, 16, 32),
+    ("cactus_0", DESERT, "Ground.png", 112, 224, 14, 32), ("cactus_1", DESERT, "Ground.png", 128, 228, 16, 28), ("cactus_2", DESERT, "Ground.png", 146, 230, 12, 40),
+    ("cactus_3", DESERT, "Ground.png", 160, 218, 16, 42), ("cactus_4", DESERT, "Ground.png", 184, 218, 32, 42), ("cactus_5", DESERT, "Ground.png", 160, 272, 12, 16),
+    ("dshrub", DESERT, "Ground.png", 176, 274, 32, 30), ("drockbed", DESERT, "Ground.png", 160, 0, 80, 80),
+    ("dpebble_0", DESERT, "Ground.png", 112, 0, 16, 14), ("dpebble_1", DESERT, "Ground.png", 128, 2, 14, 12),
+    ("obelisk_0", DESERT, "Props.png", 0, 4, 32, 124), ("obelisk_1", DESERT, "Props.png", 32, 44, 32, 84), ("obelisk_2", DESERT, "Props.png", 64, 62, 32, 66),
+    ("dstone_0", DESERT, "Props.png", 2, 128, 28, 46), ("dstone_1", DESERT, "Props.png", 34, 138, 28, 36), ("dstone_2", DESERT, "Props.png", 66, 146, 28, 28),
+    ("tusk_0", DESERT, "Props.png", 2, 176, 56, 74), ("tusk_1", DESERT, "Props.png", 66, 176, 42, 48), ("tusk_2", DESERT, "Props.png", 112, 176, 30, 34),
+    ("dtree_0", DESERT, "Props.png", 0, 260, 64, 76), ("dtree_1", DESERT, "Props.png", 64, 254, 28, 32),
+    ("dchest", DESERT, "Props.png", 96, 8, 32, 24), ("dpot_0", DESERT, "Props.png", 96, 74, 16, 20), ("dpot_1", DESERT, "Props.png", 112, 72, 16, 22),
+    ("farch", FORGE, "Tiles.png", 224, 0, 48, 76), ("fbust", FORGE, "Tiles.png", 192, 146, 32, 60), ("fbroken", FORGE, "Tiles.png", 224, 160, 32, 48),
+    ("flava", FORGE, "Tiles.png", 304, 208, 48, 48), ("fbanner", FORGE, "Tiles.png", 280, 6, 32, 62),
+    ("fbarrel_0", FORGE, "Tiles.png", 112, 250, 16, 22), ("fbarrel_1", FORGE, "Tiles.png", 128, 250, 16, 22), ("fbarrel_2", FORGE, "Tiles.png", 112, 282, 16, 22),
+    ("fcrate_0", FORGE, "Tiles.png", 160, 248, 16, 24), ("fcrate_1", FORGE, "Tiles.png", 176, 248, 32, 24), ("fchest", FORGE, "Tiles.png", 240, 88, 32, 24),
+]
 
 
 def sheet(pack, ending):
@@ -150,6 +185,11 @@ def main():
                     if g > r + 12:
                         px[xx, yy] = (r, g, b, 0)
         save(name, piece, src, (x, y, x + w, y + h))
+    for name, pack, ending, x, y, w, h in TRIMMED:
+        im, src = sheet(pack, ending)
+        piece = im.crop((x, y, x + w, y + h))
+        box = piece.getbbox()
+        save(name, piece.crop(box), src, (x + box[0], y + box[1], x + box[2], y + box[3]))
     for name, pack, ending, x, y, w, h in HALVED:
         im, src = sheet(pack, ending)
         small = im.resize((im.width // 2, im.height // 2), Image.NEAREST)
