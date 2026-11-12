@@ -2,8 +2,7 @@ import type { LibraryQuest } from './types';
 
 /**
  * "Smart Match": the offline, no-AI way to break a messy task into steps.
- * Used by everyone on the free tier and on phones with too little RAM for the
- * on-device model. It matches the task against the bundled quest library and,
+ * It matches the task against the bundled quest library and,
  * failing that, builds a literal 5-step starter plan around the user's words.
  */
 

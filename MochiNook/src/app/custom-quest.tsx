@@ -5,7 +5,6 @@ import { TextInput, View } from 'react-native';
 import { ANCHOR_LABEL, CADENCE_LABEL } from '../components/QuestBits';
 import { Button, Card, IconButton, Pill, Row, Screen, SectionTitle, T } from '../components/ui';
 import * as repo from '../db/repo';
-import { hasEnoughRam } from '../lib/llm';
 import type { Anchor, Cadence } from '../lib/types';
 import { useAssistant } from '../lib/useAssistant';
 import { useApp } from '../state/AppContext';
@@ -18,7 +17,7 @@ const MAX_STEPS = 10;
 export default function CustomQuest() {
   const db = useSQLiteContext();
   const { c } = useTheme();
-  const { isPro, settings, touchData } = useApp();
+  const { touchData } = useApp();
   const assistant = useAssistant();
   const [task, setTask] = useState('');
   const [title, setTitle] = useState('');
@@ -41,8 +40,7 @@ export default function CustomQuest() {
     const result = await assistant.breakDownTask(text);
     setSteps(result.steps);
     if (!title) setTitle(text.length > 40 ? `${text.slice(0, 38)}…` : text.charAt(0).toUpperCase() + text.slice(1));
-    if (result.usedModel) setNote('Broken down privately on your phone. Edit anything that feels off.');
-    else if (result.matchedTitle) setNote(`Smart Match borrowed steps from "${result.matchedTitle}". Edit anything you like.`);
+    if (result.matchedTitle) setNote(`Smart Match borrowed steps from "${result.matchedTitle}". Edit anything you like.`);
     else setNote('Here is a gentle starter plan. Edit the steps so they fit you.');
   };
 
@@ -72,13 +70,6 @@ export default function CustomQuest() {
     }
   };
 
-  const helperHint =
-    assistant.mode === 'model'
-      ? 'Your private on-device helper will break this down.'
-      : isPro && hasEnoughRam() && !settings.llmPaths
-        ? 'Tip: download the on-device helper in Settings for custom breakdowns.'
-        : 'Smart Match will find tiny steps from the quest library.';
-
   return (
     <Screen edges={['top', 'bottom']}>
       <Row style={{ paddingTop: space.md, justifyContent: 'space-between' }}>
@@ -104,7 +95,7 @@ export default function CustomQuest() {
         style={[inputStyle, { minHeight: 96, textAlignVertical: 'top' }]}
       />
       <T variant="small" style={{ marginTop: space.sm }}>
-        {helperHint}
+        Smart Match will find tiny steps from the quest library.
       </T>
       <Button
         label={assistant.busy ? 'Teaching your pet to think...' : 'Break it into tiny steps'}
@@ -167,7 +158,7 @@ export default function CustomQuest() {
             style={inputStyle}
           />
           <Button
-            label={assistant.mode === 'model' ? 'Soften the wording (private AI)' : 'Soften the wording'}
+            label="Soften the wording"
             icon="heart"
             kind="soft"
             small

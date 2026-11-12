@@ -4,14 +4,12 @@ import { Alert, View } from 'react-native';
 import { Icon, type IconName } from '../components/Icon';
 import { Pet } from '../components/Pet';
 import { Button, Card, IconButton, Row, Screen, T } from '../components/ui';
-import { hasEnoughRam } from '../lib/llm';
 import { DISPLAY_PRICES, getProPrice, purchasePro, restorePurchases } from '../lib/purchases';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { space } from '../theme/tokens';
 
 const PERKS: { icon: IconName; title: string; body: string }[] = [
-  { icon: 'wand', title: 'Private on-device helper', body: 'Type any messy task and get 4–6 tiny, literal steps. Runs 100% on your phone; nothing is uploaded.' },
   { icon: 'shirt', title: 'The whole wardrobe', body: 'Every hat, scarf, and color for your pet.' },
   { icon: 'home', title: 'Cozy room themes', body: 'Rainy Window, Starry Loft, Forest Cabin, and Beach Hut.' },
   { icon: 'leaf', title: 'No sponsor card', body: 'An even quieter home screen.' },
@@ -28,14 +26,7 @@ export default function Pro() {
   }, []);
 
   const afterUnlock = () => {
-    if (hasEnoughRam()) {
-      Alert.alert('Pro is on! 🎉', 'Want to set up the private helper now? It downloads once over Wi-Fi.', [
-        { text: 'Later', style: 'cancel', onPress: () => router.back() },
-        { text: 'Set it up', onPress: () => router.replace('/helper') },
-      ]);
-    } else {
-      Alert.alert('Pro is on! 🎉', 'Thank you so much. Your pet has a whole new wardrobe to try.', [{ text: 'Yay', onPress: () => router.back() }]);
-    }
+    Alert.alert('Pro is on! 🎉', 'Thank you so much. Your pet has a whole new wardrobe to try.', [{ text: 'Yay', onPress: () => router.back() }]);
   };
 
   const buy = async () => {
@@ -112,7 +103,7 @@ export default function Pro() {
       )}
       <Button label="Restore purchases" kind="ghost" disabled={busy} style={{ marginTop: space.sm }} onPress={restore} />
       <T variant="small" style={{ textAlign: 'center', marginTop: space.md }}>
-        Auto-renews monthly until cancelled. Payment is charged to your store account. The on-device helper needs a phone with about 4 GB of memory or more; other phones use Smart Match.
+        Auto-renews monthly until cancelled. Payment is charged to your store account.
       </T>
     </Screen>
   );

@@ -40,7 +40,6 @@ export const DEFAULT_SETTINGS: Settings = {
   mockPro: false,
   lastOpenDay: null,
   tipsGiven: 0,
-  llmPaths: null,
 };
 
 type SettingKey = keyof Settings;

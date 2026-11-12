@@ -146,11 +146,9 @@ export default function SettingsScreen() {
         <LinkRow
           icon="sparkle"
           label={isPro ? 'Pro is on. Thank you!' : 'Get Pro · $5.99/month'}
-          hint={isPro ? 'Wardrobe, rooms, private helper, no sponsor card.' : 'Wardrobe, rooms, private on-device helper, no sponsor card.'}
+          hint="Full wardrobe, all rooms, no sponsor card."
           onPress={() => router.push('/pro')}
         />
-        <Divider />
-        <LinkRow icon="wand" label="On-device helper" hint="Private AI that breaks tasks into tiny steps." onPress={() => router.push('/helper')} />
         <Divider />
         <LinkRow icon="clock" label="Restore purchases" onPress={onRestore} />
       </Card>

@@ -85,7 +85,6 @@
           }
         }
       ],
-      "react-native-blob-util",
       "expo-asset"
     ],
     "experiments": {

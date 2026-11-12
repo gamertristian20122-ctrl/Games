@@ -45,7 +45,6 @@ function Navigator() {
         <Stack.Screen name="pro" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="tip-jar" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="share" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="helper" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </>
   );

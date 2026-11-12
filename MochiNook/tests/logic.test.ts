@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import library from '../src/data/quests.json';
 import { HATS, PET_COLORS, ROOMS, SCARVES } from '../src/data/cosmetics';
-import { parseSteps } from '../src/lib/parseSteps';
 import { levelFromXp, xpForNextLevel } from '../src/lib/progression';
 import { buildStarterRoutine } from '../src/lib/routineBuilder';
 import { decodeShareCode, encodeShareCode } from '../src/lib/shareCode';
@@ -130,11 +129,6 @@ test('softenText turns demands into invitations', () => {
   assert.doesNotMatch(out, DEMANDING);
   assert.match(out, /^Want to clean your room/);
   assert.equal(softenText('Want to go for a walk?'), 'Want to go for a walk?');
-});
-
-test('parseSteps cleans a model reply', () => {
-  const reply = 'Sure! Here are the steps:\n1. Pick up the trash\n2) **Put clothes** in the hamper\n- Wipe the desk\n• Wipe the desk\n3. Ok';
-  assert.deepEqual(parseSteps(reply), ['Pick up the trash', 'Put clothes in the hamper', 'Wipe the desk']);
 });
 
 test('time helpers', () => {

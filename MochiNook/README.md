@@ -9,7 +9,7 @@ Tiny literal steps, gentle invitations, and no streaks or guilt.
 
 ## Run it (development build)
 
-Expo Go can't run this app because it uses native modules (on-device AI, RevenueCat, SQLite). Use a development build instead:
+Expo Go can't run this app because it uses native modules (RevenueCat, SQLite, notifications). Use a development build instead:
 
 ```bash
 npm install
@@ -29,7 +29,7 @@ npx expo start --dev-client
 ```bash
 npm run typecheck   # TypeScript, strict
 npm run lint        # Expo ESLint config (incl. React Compiler rules)
-npm test            # 23 tests: quest library, share codes, Smart Match, and every SQLite query
+npm test            # 22 tests: quest library, share codes, Smart Match, and every SQLite query
 npx expo-doctor     # dependency + config checks
 ```
 
@@ -43,12 +43,12 @@ src/app/              screens (Expo Router)
   (tabs)/nook.tsx     wardrobe & rooms (Pro items locked on Free)
   (tabs)/settings.tsx Calm Mode, sounds, times, Pro, tip jar, share code, dev toggle
   quest/[id].tsx      check off steps, "Break into smaller steps"
-  custom-quest.tsx    messy task -> tiny steps (on-device AI or Smart Match)
-  pro.tsx, tip-jar.tsx, share.tsx, helper.tsx
+  custom-quest.tsx    messy task -> tiny steps (Smart Match)
+  pro.tsx, tip-jar.tsx, share.tsx
 src/components/       Pet (SVG + Reanimated), Room backdrops, UI kit, icons
 src/data/             quests.json (47 quests), sponsors.json, cosmetics
 src/db/               SQLite schema/migrations + every query (repo.ts)
-src/lib/              notifications, purchases, llm, smart match, share codes, copy
+src/lib/              notifications, purchases, smart match, share codes, copy
 src/theme/            color tokens (light, dark, calm light, calm dark), type scale
 tests/                Node tests (run the real SQL against Node's built-in SQLite)
 ```
@@ -58,7 +58,7 @@ tests/                Node tests (run the real SQL against Node's built-in SQLit
 | | Free | Pro ($5.99/month, the only plan) |
 |---|---|---|
 | Onboarding routine, 47 quests, reminders, pet growth | ✅ | ✅ |
-| Breaking tasks down | Smart Match (offline, keyword-based) | Private on-device AI (phones with ≥ 4 GB RAM) |
+| Breaking tasks down (Smart Match, offline) | ✅ | ✅ |
 | Wardrobe & rooms | 2 colors, 1 hat, 1 room | Everything |
 | Calm Sponsor card | Shown (static, local, never a video or pop-up) | Hidden |
 
@@ -79,13 +79,9 @@ Until you add keys, the app runs in **store testing mode**: buying Pro or tippin
 
 **Hidden developer toggle:** Settings → tap the version number 5 times → "Force Free / Force Pro / Real status".
 
-## On-device AI (Pro)
+## On-device AI
 
-- Uses `react-native-executorch` with the quantized **Qwen 2.5 0.5B** model from its built-in model list.
-- Only offered when Pro is on **and** the phone reports about 4 GB of RAM or more (threshold 3.5 GiB, because "4 GB" phones report a little less).
-  Other phones use Smart Match automatically.
-- Downloaded only when the user taps **Download** (Settings → On-device helper), with a warning when not on Wi-Fi. Progress shows as "Teaching your pet new tricks...".
-- The model is **loaded only while breaking down one task, then disposed right away** (`src/lib/llm.ts → withSession`). Anonymous download telemetry is turned off.
+Not in this version. The earlier `react-native-executorch` setup is in git history (commit `ac80948`) if you want to bring it back.
 
 ## Notifications (all local)
 

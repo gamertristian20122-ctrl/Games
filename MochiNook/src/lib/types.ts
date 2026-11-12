@@ -64,7 +64,6 @@ export interface Settings {
   mockPro: boolean;
   lastOpenDay: string | null;
   tipsGiven: number;
-  llmPaths: string | null;
 }
 
 export interface Pet {
