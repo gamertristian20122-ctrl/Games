@@ -103,7 +103,8 @@ func build(h: Dictionary, walk_top: float) -> void:
 	var dr := cx + ds.x * 0.5 + 2.0
 	blk(stone, Vector3(x0 - 2, 0, back), Vector3(dl, PLINTH, cz + 2))
 	blk(stone, Vector3(dr, 0, back), Vector3(x1 + 2, PLINTH, cz + 2))
-	blk(stone, Vector3(dl - 3, 0, cz), Vector3(dr + 3, 2.5, cz + 7))          # the doorstep
+	blk(stone, Vector3(x0 - 6, 0, cz), Vector3(x1 + 6, 2.0, cz + 13))          # a flagged pavement in front, a step up from the street
+	blk(stone, Vector3(dl - 3, 2.0, cz), Vector3(dr + 3, 4.5, cz + 7))        # the doorstep
 	# --- the upper storey: jutting out over a timber band
 	if floors > 1:
 		blk(beam, Vector3(x0 - 1, sh, back), Vector3(x1 + 1, sh + BAND, front + 1), 0)

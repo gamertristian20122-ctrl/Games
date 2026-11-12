@@ -41,7 +41,9 @@ void fragment() {
 ## and one turned away stays in deep shade. "glass" faces (window art) glow warm in their panes only
 ## (the blue pixels of the pack's glass) when `shine` is up: the town's windows at night.
 static func solid_code() -> String:
-	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled;\n" + ("#define HD\n" if Hd.on() else "") + SOLID_BODY
+	if Hd.on():
+		return "shader_type spatial;\nrender_mode cull_disabled;\n#define HD\n" + SOLID_BODY
+	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled;\n" + SOLID_BODY
 
 
 const SOLID_BODY := Sprite3.SUN_PART + """
@@ -52,6 +54,7 @@ uniform vec3 glow_col : source_color = vec3(1.0, 0.64, 0.30);
 varying vec3 wn;
 varying vec2 foot;
 varying float facing;
+varying float glassy;
 void vertex() {
 	wn = (MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz;
 	foot = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
@@ -67,19 +70,27 @@ void fragment() {
 	ALBEDO = mix(col, col * (1.0 - 0.75 * lit), pane);
 	EMISSION = c.rgb * shine * (1.0 - glass) + glass * mix(c.rgb * shine * 0.10, glow_col * (0.5 + 0.7 * c.g) * shine * 1.5, pane);
 	ROUGHNESS = 1.0;
+	SPECULAR = 0.5 * pane;
 	sun_share = sun_at(foot);
 	facing = 0.55 + 0.45 * f;
+	glassy = pane;
 }
 void light() {
 #ifdef HD
 	// the real light: the sun by the way a face turns to it (a little wrapped, so shade is never
 	// flat black), the lamps strongest on faces that look at them
+	// A face turned away from the sun still gets some of it back from the sunlit ground (`bounce`),
+	// so a street front in shade stays readable while the roofs above it blaze.
 	float ndl = dot(NORMAL, LIGHT);
 	if (LIGHT_IS_DIRECTIONAL) {
-		DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * sun_share * clamp(ndl * 0.75 + 0.25, 0.0, 1.0);
+		float bounce = 0.11 * (0.65 - 0.35 * ndl);
+		DIFFUSE_LIGHT += LIGHT_COLOR / PI * sun_share * (ATTENUATION * clamp(ndl * 0.75 + 0.25, 0.0, 1.0) + bounce);
 	} else {
 		DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * clamp(ndl * 0.85 + 0.2, 0.0, 1.05);
 	}
+	// glints of the lamps and the sun on window glass
+	vec3 hv = normalize(VIEW + LIGHT);
+	SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * pow(max(dot(NORMAL, hv), 0.0), 48.0) * glassy * 0.8;
 #else
 	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share * facing : 0.6);
 #endif

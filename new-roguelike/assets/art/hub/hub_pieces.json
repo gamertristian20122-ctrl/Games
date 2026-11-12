@@ -259,19 +259,6 @@
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
- "hub_bsteps": {
-  "box": [
-   48,
-   372,
-   96,
-   400
-  ],
-  "size": [
-   48,
-   28
-  ],
-  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
- },
  "hub_bstone": {
   "box": [
    80,

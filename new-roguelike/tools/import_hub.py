@@ -125,7 +125,6 @@ RECTS = [
     # their true pixel size, so each must repeat without a seam (checked by laying them 3 x 2)
     ("bstone", CASTLE, "Tiles.png", 80, 16, 48, 32),         # grey ashlar: plinths, garden walls, chimneys, kerbs, the bridge
     ("bplank", CASTLE, "Tiles.png", 96, 272, 48, 48),        # dark upright boards: gable ends, decks, the jetty
-    ("bsteps", CASTLE, "Tiles.png", 48, 372, 48, 28),        # stone steps seen from the front
     ("brail", CASTLE, "Tiles.png", 128, 54, 48, 18),         # a stone balustrade (see-through between the balusters)
     ("bbeam", BUILD, "Roofs.png", 1, 239, 46, 6),            # a timber beam lying along (storey bands, fascias, ridges)
     ("bpost", BUILD, "Roofs.png", 5, 103, 6, 52),            # a timber post standing up (corner posts, jetty posts)
