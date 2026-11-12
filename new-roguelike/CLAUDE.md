@@ -1073,9 +1073,13 @@ Asked "depth first or story first", the owner chose depth. Built in `scripts/hub
 The owner: "ok do that for the rest of the game also I'm letting you [increase] the game [file]
 amount to max 5gb and you can use tools and anything to make it more [graphically] better and
 cleaner for the entire game".
-- **Read as, and told to the owner:** the APK stays small anyway (their phone could not download
-  69 MB once); "use tools and anything" does NOT lift "no AI art or audio, ever" (the Credits
-  screen says so to players). They were asked to say plainly if they want that rule lifted.
+- **SIZE IS NOT A LIMIT ANY MORE.** The owner, same evening: "no i had no internet you can go up
+  to 5gb". The old 69 MB download failed because their internet was down, not because of size.
+  So the "small 64-bit APK, about 42 MB" rule in Toolchain is OFF: more art, bigger textures,
+  both architectures are all allowed, up to 5 GB. (Bigger is not better by itself: add size
+  only where it buys something the player sees or hears.)
+- **Read as, and told to the owner:** "use tools and anything" does NOT lift "no AI art or audio,
+  ever" (the Credits screen says so to players). They were asked to say plainly if they want that rule lifted.
   Until they do: only the purchased packs, free human-made art with a fit licence, and code.
 - **Hills you walk on** (`view3d.gd` `"hills"`, `_height`, `_slope`, `_shadow_ok`): people are
   drawn as high as the ground under them; walking itself is still flat 2D. A hill with a `"top"`
