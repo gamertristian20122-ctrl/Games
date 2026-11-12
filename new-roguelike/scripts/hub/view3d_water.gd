@@ -58,7 +58,7 @@ uniform vec3 deep : source_color = vec3(0.010, 0.040, 0.062);
 uniform vec3 shallow : source_color = vec3(0.030, 0.140, 0.175);
 uniform float chop = 0.022;              // how steep the ripples are
 uniform float glitter = 5.0;            // how bright the sparkles of the sun and the moon are
-uniform float streak = 1.6;             // how bright the lamps' streaks are
+uniform float streak = 2.2;             // how bright the lamps' streaks are
 varying vec2 at;
 varying float spark;                    // this art pixel is one that sparkles just now
 varying float foam;
@@ -81,7 +81,8 @@ void fragment() {
 	float e = 1.0 / 16.0;
 	float h0 = waves(w);
 	vec2 slope = vec2(waves(w + vec2(e, 0.0)) - h0, waves(w + vec2(0.0, e)) - h0) / e;
-	vec3 nw = normalize(vec3(-slope.x * chop, 1.0, -slope.y * chop));
+	// steeper towards and away from the camera than across: highlights draw out into long streaks
+	vec3 nw = normalize(vec3(-slope.x * chop * 0.55, 1.0, -slope.y * chop * 1.7));
 	NORMAL = normalize((VIEW_MATRIX * vec4(nw, 0.0)).xyz);
 	// deep in the middle, a little lighter near the bank, then foam, then the muddy bank itself
 	vec3 c = mix(deep, shallow, smoothstep(0.45, 0.95, edge));
