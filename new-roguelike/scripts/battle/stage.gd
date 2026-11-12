@@ -37,6 +37,7 @@ const LOOKS := {
 		"flat": ["hub_patch_0", "hub_patch_1"],
 		"features": [["hub_rune_0", Vector3(-7.0, 0.0, -4.3), false, 0.3], ["hub_statue_1", Vector3(4.6, 0.0, -4.4), true, 0.0], ["hub_stump_0", Vector3(0.4, 0.0, -3.6), false, 0.0]],
 		"spark": Color(1.0, 0.9, 0.6), "spark_power": 0.9,
+		"key": [Color("ffc870"), 0.85, 1.0],
 	},
 	# the woods at night: a fire in the old ring, glowing mushrooms, fireflies
 	"forest_night": {
@@ -57,6 +58,7 @@ const LOOKS := {
 		"features": [["hub_rune_0", Vector3(-7.0, 0.0, -4.3), false, 0.4, Color("58e8d0"), 2.2], ["hub_statue_1", Vector3(4.6, 0.0, -4.4), true, 0.0]],
 		"glowers": ["hub_shroom_0", "hub_shroom_1", "hub_shroom_2"],
 		"spark": Color(0.85, 1.0, 0.45), "spark_power": 1.6,
+		"key": [Color("ffa860"), 1.0, 1.0],
 	},
 	# the sands: a wide warm sky, old stones and thorn
 	"desert": {
@@ -78,6 +80,7 @@ const LOOKS := {
 		"flat": [],
 		"features": [["hub_tusk_0", Vector3(-6.6, 0.0, -4.2), false, 0.0], ["hub_tusk_1", Vector3(5.4, 0.0, -4.6), true, 0.0], ["hub_dpillar_0", Vector3(0.6, 0.0, -4.4), false, 0.0]],
 		"spark": Color(1.0, 0.9, 0.7), "spark_power": 0.6,
+		"key": [Color("fff0c8"), 0.7, 1.0],
 	},
 	# bare rock under the cinder mountains: dim, with pools of fire
 	"rock": {
@@ -97,6 +100,7 @@ const LOOKS := {
 		"flat": [],
 		"features": [["hub_fbust", Vector3(-6.4, 0.0, -4.4), false, 0.0], ["hub_fbroken", Vector3(5.2, 0.0, -4.6), true, 0.0]],
 		"spark": Color(1.0, 0.55, 0.25), "spark_power": 1.6,
+		"key": [Color("ff8a40"), 1.0, 1.0],
 	},
 }
 
@@ -458,6 +462,11 @@ func stand(id: String, at: Vector3, faces_left: bool = false, anim: String = "id
 	add_child(s)
 	if shadow:
 		s.add_shadow(shadow_material(null), shadow_basis())
+		soft_shadow(s, 0.9)
+		# the key light: a thin warm edge on every fighter, from the side of the fire / low sun
+		var key: Array = look.get("key", [Color(1.0, 0.85, 0.6), 0.5, 1.0])
+		# (the light stands between the two sides: each side is lit on the edge that faces the middle)
+		s.set_rim(float(key[1]), key[0], float(key[2]) * (1.0 if at.x < 0.0 else -1.0))
 	s.set_flip(faces_left)
 	return s
 
@@ -662,10 +671,139 @@ func _beams_of_light() -> void:
 		_beams.append(b)
 
 
+# ------------------------------------------------------------------ soft light on the ground
+static var _disc_tex: Texture2D
+static var _ring_tex: Texture2D
+
+## A soft round picture made by code (a dot of light or of shade; a ring for shock waves).
+static func _radial(ring: bool) -> Texture2D:
+	var g := Gradient.new()
+	if ring:
+		g.offsets = PackedFloat32Array([0.0, 0.55, 0.8, 0.9, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0.4), Color(1, 1, 1, 0)])
+	else:
+		g.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.7), Color(1, 1, 1, 0)])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill = GradientTexture2D.FILL_RADIAL
+	t.fill_from = Vector2(0.5, 0.5)
+	t.fill_to = Vector2(1.0, 0.5)
+	t.width = 64
+	t.height = 64
+	return t
+
+
+func _flat_quad(size: Vector2, mat: Material) -> MeshInstance3D:
+	var q := QuadMesh.new()
+	q.size = size
+	q.orientation = PlaneMesh.FACE_Y
+	var m := MeshInstance3D.new()
+	m.mesh = q
+	m.material_override = mat
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return m
+
+
+## SOFT SHADOW: a dark blurred disc right under the feet, so a fighter sits ON the ground
+## (the leaning shadow is the sun's; this is the shade the body itself makes). Drawn after the
+## blur pass (render_priority) because it is see-through.
+func soft_shadow(on: Node3D, radius: float) -> MeshInstance3D:
+	if _disc_tex == null:
+		_disc_tex = _radial(false)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_texture = _disc_tex
+	mat.albedo_color = Color(0.02, 0.01, 0.03, 0.55)
+	mat.disable_fog = true
+	mat.render_priority = 1
+	var m := _flat_quad(Vector2(radius * 2.2, radius * 1.1), mat)
+	m.position = Vector3(0.0, 0.025, 0.0)
+	on.add_child(m)
+	return m
+
+
+## A pool of coloured light lying on the ground (under a spell, under the one whose turn it is).
+## Adds light, so it never darkens; `life` 0 = it stays until freed.
+func ground_glow(at: Vector3, colour: Color, radius: float, life: float = 0.6, ring: bool = false) -> MeshInstance3D:
+	if _disc_tex == null:
+		_disc_tex = _radial(false)
+	if _ring_tex == null:
+		_ring_tex = _radial(true)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.albedo_texture = _ring_tex if ring else _disc_tex
+	mat.albedo_color = Color(colour.r, colour.g, colour.b, 0.0 if life > 0.0 else colour.a)
+	mat.disable_fog = true
+	mat.render_priority = 8
+	var m := _flat_quad(Vector2(radius * 2.0, radius * 2.0), mat)
+	m.position = Vector3(at.x, height_at(at.z) + 0.035, at.z)
+	add_child(m)
+	if life > 0.0:
+		var tw := create_tween()
+		if ring:
+			m.scale = Vector3(0.2, 1.0, 0.2)
+			tw.tween_property(mat, "albedo_color:a", colour.a, 0.04)
+			tw.parallel().tween_property(m, "scale", Vector3.ONE, life).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.parallel().tween_property(mat, "albedo_color:a", 0.0, life * 0.8).set_delay(life * 0.2)
+		else:
+			tw.tween_property(mat, "albedo_color:a", colour.a, 0.06)
+			tw.tween_property(mat, "albedo_color:a", 0.0, life).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_callback(m.queue_free)
+	return m
+
+
+## Plays one of the purchased effect animations (assets/art/fx, ids "fx_*") once, as a glowing
+## picture that faces the camera. `size` 1 = the art's own pixels (16 per world unit).
+func fx_anim(id: String, at: Vector3, colour: Color = Color.WHITE, size: float = 1.0, fps: float = 20.0, glow: float = 1.6) -> void:
+	var sf := Art.frames(id)
+	if sf == null or not sf.has_animation("default"):
+		return
+	var n := sf.get_frame_count("default")
+	if n <= 0:
+		return
+	var first := sf.get_frame_texture("default", 0)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	mat.albedo_texture = first
+	mat.albedo_color = Color(colour.r * glow, colour.g * glow, colour.b * glow, 1.0)
+	mat.disable_fog = true
+	mat.render_priority = 12
+	var q := QuadMesh.new()
+	q.size = first.get_size() * PX * size
+	var m := MeshInstance3D.new()
+	m.mesh = q
+	m.material_override = mat
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	m.position = at
+	add_child(m)
+	var tw := create_tween()
+	tw.tween_method(func(f: float) -> void:
+		mat.albedo_texture = sf.get_frame_texture("default", mini(int(f), n - 1)), 0.0, float(n) - 0.01, float(n) / fps)
+	tw.tween_callback(m.queue_free)
+
+
 # ------------------------------------------------------------------ blows and spells
 ## A burst of glowing sparks and a flash of coloured light on a spot (a blow landing, a spell).
 ## `power` 1 = a plain blow; a big spell is 2 to 3. All of it is light and particles, no art.
-func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0) -> void:
+func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, art: String = "") -> void:
+	# the pack's own effect art on top of the sparks, and the light it throws on the ground
+	var ground := Vector3(at.x, 0.0, at.z)
+	if art == "":
+		art = "fx_sparkle_magic" if rise > 0.0 else ("fx_explosion" if power >= 2.2 else "fx_hit")
+	var big := art == "fx_explosion"
+	fx_anim(art, at + Vector3(0.0, (0.35 if big else 0.0) + rise * 0.3, 0.3), colour.lerp(Color.WHITE, 0.35),
+		(1.1 if big else 1.25 + 0.2 * power) * (2.4 if rise > 0.0 else 1.0), 22.0 if big else 26.0, 1.3 + 0.2 * power)
+	ground_glow(ground, Color(colour.r, colour.g, colour.b, 0.55 + 0.1 * power), 1.0 + 0.55 * power, 0.35 + 0.12 * power)
+	if power >= 1.4:
+		ground_glow(ground, Color(colour.r, colour.g, colour.b, 0.8), 1.4 + 0.7 * power, 0.42 + 0.06 * power, true)
 	var p := CPUParticles3D.new()
 	p.one_shot = true
 	p.explosiveness = 0.9

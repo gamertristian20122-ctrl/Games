@@ -56,6 +56,13 @@ var _fx: Array = []                ## the look of the skill being shown now (bat
 var _trauma := 0.0                 ## how shaken the camera is, 0 to 1 (see _feel)
 var _shake_t := 0.0
 var _xp_bonus := 0                ## a battle of the story may give XP of its own on top
+var _marker: MeshInstance3D        ## the ring of light under the one whose turn it is
+var _arrow: Polygon2D              ## and the little arrow over his head
+var _turn_unit := {}
+var _boss_bar := {}                ## a boss's own bar at the top of the screen
+var _intro := 0.0                  ## the camera comes in from further back as the battle opens (1 -> 0)
+var _push := 0.0                   ## and moves in a little at the end of a won battle (0 -> 1)
+var _fade: ColorRect               ## black over the screen at the start, gold at a victory
 
 
 func _ready() -> void:
@@ -96,8 +103,25 @@ func _ready() -> void:
 		# a boss stands alone in the middle of its side
 		_place(foes[i], Vector3(3.9, 0.0, 0.2) if bool(foes[i].get("boss", false)) else FOES_AT[i], true)
 	_build_screen()
+	_marker = stage.call("ground_glow", Vector3.ZERO, Color(1.0, 0.82, 0.4, 0.75), 1.25, 0.0, true)
+	_marker.visible = false
 	_refresh()
+	_enter()
 	_run.call_deferred(title)
+
+
+## THE WAY IN: the screen opens from black while the camera glides in to its place.
+func _enter() -> void:
+	if _speed > 4.0:
+		return
+	_intro = 1.0
+	var tw := create_tween()
+	tw.tween_property(self, "_intro", 0.0, 1.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_fade.color = Color(0.0, 0.0, 0.0, 1.0)
+	_fade.visible = true
+	var tf := create_tween()
+	tf.tween_property(_fade, "color:a", 0.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tf.tween_callback(func() -> void: _fade.visible = false)
 
 
 # ------------------------------------------------------------------ the fighters on the stage
@@ -236,15 +260,33 @@ func _build_screen() -> void:
 		_root.add_child(button)
 		var back := ColorRect.new()
 		back.color = UI.C_INK
-		back.size = Vector2(30, 2)
-		back.position = Vector2((button.custom_minimum_size.x - 30.0) * 0.5, -5.0)
+		back.size = Vector2(34, 5)
+		back.position = Vector2((button.custom_minimum_size.x - 34.0) * 0.5, -7.0)
 		back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.add_child(back)
+		var well := ColorRect.new()
+		well.color = UI.C_PANEL_LOW
+		well.position = Vector2(1, 1)
+		well.size = Vector2(32, 3)
+		well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		back.add_child(well)
+		var lost := ColorRect.new()
+		lost.color = Color(1.0, 0.92, 0.75)
+		lost.position = Vector2(1, 1)
+		lost.size = Vector2(32, 3)
+		lost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		back.add_child(lost)
 		var fill := ColorRect.new()
 		fill.color = UI.C_RED
-		fill.size = Vector2(30, 2)
+		fill.position = Vector2(1, 1)
+		fill.size = Vector2(32, 3)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		back.add_child(fill)
+		var gleam := ColorRect.new()
+		gleam.color = Color(1.0, 1.0, 1.0, 0.28)
+		gleam.size = Vector2(32, 1)
+		gleam.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fill.add_child(gleam)
 		var l := UI.label(String(unit["name"]), "Small")
 		l.add_theme_color_override("font_color", UI.C_BONE)
 		l.add_theme_color_override("font_outline_color", UI.C_INK)
@@ -252,9 +294,74 @@ func _build_screen() -> void:
 		l.visible = false
 		button.add_child(l)
 		l.position = Vector2((button.custom_minimum_size.x - l.get_minimum_size().x) * 0.5, -17.0 - 9.0 * (i % 2))     # every other name a line higher, so two never share a line
-		_tags.append({"unit": unit, "button": button, "fill": fill, "name": l})
+		_tags.append({"unit": unit, "button": button, "fill": fill, "lost": lost, "back": back, "name": l})
+		if bool(unit.get("boss", false)):
+			back.visible = false           # a boss has its big bar at the top instead
+			_make_boss_bar(unit)
 		var who := unit
 		button.pressed.connect(func() -> void: _target_picked(who))
+
+	# the arrow over the one whose turn it is
+	_arrow = Polygon2D.new()
+	_arrow.polygon = PackedVector2Array([Vector2(-5, -4), Vector2(5, -4), Vector2(0, 2)])
+	_arrow.color = UI.C_GOLD
+	var rim_line := Line2D.new()
+	rim_line.points = PackedVector2Array([Vector2(-5, -4), Vector2(5, -4), Vector2(0, 2), Vector2(-5, -4)])
+	rim_line.width = 1.0
+	rim_line.default_color = UI.C_INK
+	_arrow.add_child(rim_line)
+	_arrow.visible = false
+	_root.add_child(_arrow)
+
+	# what covers the screen on the way in and at the end
+	_fade = ColorRect.new()
+	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade.color = Color(0, 0, 0, 0)
+	_fade.visible = false
+	_root.add_child(_fade)
+
+
+## A boss gets its name and a long bar at the top middle of the screen.
+func _make_boss_bar(unit: Dictionary) -> void:
+	var box := UI.vbox(1)
+	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	box.offset_top = 2
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_area.add_child(box)
+	var name_label := UI.label(String(unit["name"]), "Hud")
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.add_theme_color_override("font_color", UI.C_GOLD)
+	name_label.add_theme_color_override("font_outline_color", UI.C_INK)
+	name_label.add_theme_constant_override("outline_size", 3)
+	box.add_child(name_label)
+	var back := ColorRect.new()
+	back.color = UI.C_INK
+	back.custom_minimum_size = Vector2(162, 7)
+	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(back)
+	var well := ColorRect.new()
+	well.color = UI.C_PANEL_LOW
+	well.position = Vector2(1, 1)
+	well.size = Vector2(160, 5)
+	back.add_child(well)
+	var lost := ColorRect.new()
+	lost.color = Color(1.0, 0.92, 0.75)
+	lost.position = Vector2(1, 1)
+	lost.size = Vector2(160, 5)
+	back.add_child(lost)
+	var fill := ColorRect.new()
+	fill.color = UI.C_BLOOD.lerp(UI.C_RED, 0.5)
+	fill.position = Vector2(1, 1)
+	fill.size = Vector2(160, 5)
+	back.add_child(fill)
+	var gleam := ColorRect.new()
+	gleam.color = Color(1.0, 1.0, 1.0, 0.25)
+	gleam.size = Vector2(160, 1)
+	fill.add_child(gleam)
+	_boss_bar = {"unit": unit, "fill": fill, "lost": lost, "width": 160.0}
+	_message.offset_top = 32               # the words move down under the bar
 
 
 ## A bar with its numbers under it.
@@ -292,8 +399,20 @@ func _refresh(acting: Dictionary = {}) -> void:
 		label.add_theme_color_override("font_color", UI.C_GOLD if u == acting else (UI.C_FAINT if int(u["hp"]) <= 0 else UI.C_BONE))
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
-		(tag["fill"] as ColorRect).size.x = 30.0 * float(u["hp"]) / float(u["max_hp"])
+		_drain(tag["fill"], tag["lost"], 32.0 * float(u["hp"]) / float(u["max_hp"]))
 		(tag["button"] as Button).visible = int(u["hp"]) > 0
+	if not _boss_bar.is_empty():
+		var bu: Dictionary = _boss_bar["unit"]
+		_drain(_boss_bar["fill"], _boss_bar["lost"], float(_boss_bar["width"]) * maxf(float(bu["hp"]), 0.0) / float(bu["max_hp"]))
+	_turn_unit = acting
+	if _marker != null:
+		_marker.visible = not acting.is_empty() and not _over
+		if _marker.visible:
+			var at: Vector3 = acting["home"]
+			_marker.position = Vector3(at.x, 0.04, at.z)
+			var c := Color(1.0, 0.82, 0.4) if String(acting["side"]) == "party" else Color(1.0, 0.36, 0.28)
+			(_marker.material_override as StandardMaterial3D).albedo_color = Color(c.r, c.g, c.b, 0.75)
+			_marker.scale = Vector3.ONE * clampf(float(acting["wide"]) * 1.1, 0.8, 2.6)
 	for c in _order_row.get_children():
 		c.queue_free()
 	if acting.is_empty():
@@ -303,7 +422,16 @@ func _refresh(acting: Dictionary = {}) -> void:
 	for i in mini(line.size(), 7):
 		var u: Dictionary = line[i]
 		var slot := UI.panel("slot_focus" if i == 0 else "slot")
-		slot.custom_minimum_size = Vector2(17, 17)
+		slot.custom_minimum_size = Vector2(21, 21) if i == 0 else Vector2(17, 17)
+		slot.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		# a coloured line under each face: blue = your side, red = a monster
+		var side_line := ColorRect.new()
+		side_line.color = UI.C_BLUE if String(u["side"]) == "party" else UI.C_RED
+		side_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		side_line.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		side_line.offset_top = 1
+		side_line.offset_bottom = 3
+		slot.add_child(side_line)
 		var face := TextureRect.new()
 		face.texture = _face(String(u["sprite"]))
 		face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -314,6 +442,19 @@ func _refresh(acting: Dictionary = {}) -> void:
 		face.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(face)
 		_order_row.add_child(slot)
+
+
+## A bar falls to its new length at once; a pale piece behind it shows what was lost, then drains.
+func _drain(fill: ColorRect, lost: ColorRect, width: float) -> void:
+	width = maxf(width, 0.0)
+	var was := fill.size.x
+	fill.size.x = width
+	if width >= was or _speed > 4.0:
+		lost.size.x = width
+		return
+	var tw := create_tween()
+	tw.tween_interval(0.35)
+	tw.tween_property(lost, "size:x", width, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 
 
 ## The head of a fighter for the turn order: the top of the first frame of the pack art.
@@ -728,10 +869,17 @@ func _float(unit: Dictionary, text: String, colour: Color) -> void:
 	l.add_theme_constant_override("outline_size", 4)
 	_root.add_child(l)
 	var p: Vector2 = stage.cam.unproject_position((unit["home"] as Vector3) + Vector3(0.0, float(unit["top"]) + 0.4, 0.0))
-	l.position = p - Vector2(l.get_minimum_size().x * 0.5, 14.0)
+	var sz := l.get_minimum_size()
+	l.position = p - Vector2(sz.x * 0.5, 14.0)
+	l.pivot_offset = sz * 0.5
+	var big := text.ends_with("!")
+	var drift := randf_range(-6.0, 6.0)
+	l.scale = Vector2.ONE * (2.0 if big else 1.6)
 	var tw := create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 16.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.3).set_delay(0.45)
+	tw.tween_property(l, "scale", Vector2.ONE * (1.25 if big else 1.0), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(l, "position:y", l.position.y - 6.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(l, "position", l.position + Vector2(drift, -20.0), 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.3).set_delay(0.5)
 	tw.tween_callback(l.queue_free)
 
 
@@ -779,6 +927,7 @@ func _finish() -> void:
 		finished.emit(outcome, summary)
 		return
 	_say("")
+	await _closing(outcome == "win")
 	var panel := UI.panel("panel")
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -800,6 +949,36 @@ func _finish() -> void:
 	col.add_child(go)
 	UI.pop_in(panel)
 	go.grab_focus.call_deferred()
+
+
+## THE WAY OUT: a won battle flashes gold, the camera moves in on the winners and they hop for
+## joy; a lost one sinks into dark red. Then the panel with what was won.
+func _closing(won: bool) -> void:
+	_marker.visible = false
+	_turn_unit = {}
+	_fade.get_parent().move_child(_fade, 0)     # under the panel that comes next, over the stage
+	_fade.visible = true
+	if won:
+		for u: Dictionary in fight.call("alive", fight.party):
+			stage.call("ground_glow", u["home"], Color(1.0, 0.85, 0.45, 0.6), 1.6, 1.4)
+			var node: Node3D = u["node"]
+			if is_instance_valid(node):
+				var home: Vector3 = u["home"]
+				var hop := create_tween().set_loops(2)
+				hop.tween_property(node, "position", home + Vector3(0.0, 0.45, 0.0), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				hop.tween_property(node, "position", home, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		_fade.color = Color(1.0, 0.86, 0.5, 0.0)
+		var tf := create_tween()
+		tf.tween_property(_fade, "color:a", 0.45, 0.08)
+		tf.tween_property(_fade, "color:a", 0.0, 0.5)
+		tf.tween_property(_fade, "color", Color(0.05, 0.03, 0.02, 0.28), 0.6)
+		var tp := create_tween()
+		tp.tween_property(self, "_push", 1.0, 1.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	else:
+		_fade.color = Color(0.12, 0.0, 0.02, 0.0)
+		var tl := create_tween()
+		tl.tween_property(_fade, "color:a", 0.62, 1.0)
+	await _wait(0.75)
 
 
 ## The phone's Back button, Esc or B: one step back in the menu (never out of the fight).
@@ -832,8 +1011,16 @@ func _process(delta: float) -> void:
 	_shake_t += real * 30.0
 	var shake := _trauma * _trauma * (1.0 if bool(Save.setting("shake")) else 0.0)
 	var jolt := Vector3(0.42 * sin(_shake_t * 1.7), 0.26 * sin(_shake_t * 2.3), 0.0) * shake
-	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + jolt
-	stage.cam.look_at(Stage.AIM, Vector3.UP)
+	var glide := Vector3(-1.6, 2.2, 6.5) * _intro * _intro - Vector3(0.0, 1.4, 4.2) * _push
+	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + jolt + glide
+	stage.cam.look_at(Stage.AIM + Vector3(0.0, 0.5, 0.0) * _push, Vector3.UP)
+	if _marker != null and _marker.visible:
+		var m := _marker.material_override as StandardMaterial3D
+		m.albedo_color.a = 0.5 + 0.25 * sin(_t * 4.0)
+	_arrow.visible = not _turn_unit.is_empty() and not _over and String(_turn_unit.get("side", "")) == "party"
+	if _arrow.visible:
+		var head: Vector2 = stage.cam.unproject_position((_turn_unit["home"] as Vector3) + Vector3(0.0, float(_turn_unit["top"]), 0.0))
+		_arrow.position = (head + Vector2(0.0, -3.0 + 2.0 * sin(_t * 5.0))).round()
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
 		var b: Button = tag["button"]

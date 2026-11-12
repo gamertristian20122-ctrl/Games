@@ -42,6 +42,9 @@ uniform vec3 tint : source_color = vec3(1.0);
 uniform float flash = 0.0;
 uniform float shine = 0.0;
 uniform float sway = 0.0;
+uniform float rim = 0.0;                        // a thin edge of light on the side the key light comes from
+uniform vec3 rim_col : source_color = vec3(1.0, 0.85, 0.6);
+uniform float rim_side = -1.0;                  // -1 = the light is on the screen's left, 1 = right
 varying float top;
 void vertex() {
 	top = 1.0 - UV.y;
@@ -56,6 +59,20 @@ void fragment() {
 	if (c.a < 0.5) { discard; }
 	ALBEDO = mix(c.rgb * tint, vec3(1.0), flash);
 	EMISSION = c.rgb * shine;
+	if (rim > 0.0) {
+		// RIM LIGHT: the pack draws a dark one-pixel outline, so the lit edge is the first pixel
+		// INSIDE it: its neighbour towards the light (above, or the light's side) is outline and the
+		// one past that is empty air. Code light only: the art is not changed.
+		vec2 tx = 1.0 / vec2(textureSize(tex, 0));
+		float sx = flip > 0.5 ? -rim_side : rim_side;
+		vec2 dx = vec2(sx * tx.x, 0.0);
+		vec2 dy = vec2(0.0, -tx.y);
+		float side = step(0.5, texture(tex, uv + dx).a) * (1.0 - step(0.5, texture(tex, uv + dx * 2.0).a));
+		float up = step(0.5, texture(tex, uv + dy).a) * (1.0 - step(0.5, texture(tex, uv + dy * 2.0).a));
+		float edge = clamp(side + up * 0.6, 0.0, 1.0);
+		float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+		EMISSION += rim_col * rim * edge * smoothstep(0.08, 0.3, lum) * (0.6 + 0.6 * lum);
+	}
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(world_at.xz);
 }
@@ -185,6 +202,13 @@ func set_shine(v: float) -> void:
 
 func set_sway(v: float) -> void:
 	_mat.set_shader_parameter("sway", v)
+
+
+## A thin edge of coloured light on the side `side` (-1 left, 1 right of the screen).
+func set_rim(strength: float, colour: Color, side: float = -1.0) -> void:
+	_mat.set_shader_parameter("rim", strength)
+	_mat.set_shader_parameter("rim_col", Vector3(colour.r, colour.g, colour.b))
+	_mat.set_shader_parameter("rim_side", side)
 
 
 func set_flash(v: float) -> void:
