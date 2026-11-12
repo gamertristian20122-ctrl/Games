@@ -48,7 +48,7 @@ static func get_place(id: String) -> Dictionary:
 		return _base_place(id)
 	match id:
 		"village":
-			return Tale.town()
+			return _dress_town(Tale.town())
 		"deepwood":
 			return Tale.deepwood()
 		"beacon":
@@ -93,6 +93,57 @@ static func get_place(id: String) -> Dictionary:
 	return place
 
 
+## WICKMERE'S DRESSING (v0.24.0): more of the owner's Garden and Castle pieces laid over the town of
+## tale.gd town() (that file keeps the story's houses, people and roads; this only adds things that
+## stand or lie about). Every row is a prop as in "props": [id, x, y, solid radius, px below base].
+##   the south gate   a clipped hedge arch over the road out, a hedge each side of it
+##   the kings' walk  stone busts of the old kings either side of the street to the sealed gate
+##   the herb garden  a hedged plot in the open ground south-east of the square
+##   flowers          single garden flowers in clumps by doors, fences, benches and the mere
+static func _dress_town(t: Dictionary) -> Dictionary:
+	var props: Array = (t["props"] as Array).duplicate()
+	var blocks: Array = (t["blocks"] as Array).duplicate()
+	# the south gate: the road to the wide world goes under a hedge arch
+	props.append_array([["hub_ghedge_arch", 480, 530, 0, 0], ["hub_ghedge", 404, 530, 0, 0], ["hub_ghedge", 556, 530, 0, 0]])
+	blocks.append_array([Rect2(372, 520, 68, 12), Rect2(520, 520, 68, 12)])
+	# the kings' walk: busts of the old kings on the street up to the sealed gate
+	props.append_array([["hub_cbust_0", 448, 220, 5, 1], ["hub_cbust_2", 512, 220, 5, 1], ["hub_cbust_4", 448, 186, 5, 1], ["hub_cbust_5", 512, 186, 5, 1]])
+	# the herb garden south-east of the square: a hedge behind, beds in rows, a bench and an urn
+	props.append_array([["hub_ghedge", 682, 356, 0, 0], ["hub_ghedge", 746, 356, 0, 0],
+		["hub_gbed_0", 668, 392, 0, 0], ["hub_gbed_5", 692, 392, 0, 0], ["hub_gbed_2", 716, 392, 0, 0], ["hub_gbed_7", 740, 392, 0, 0], ["hub_gbed_3", 764, 392, 0, 0],
+		["hub_gbed_1", 680, 418, 0, 0], ["hub_gbed_6", 704, 418, 0, 0], ["hub_gbed_4", 728, 418, 0, 0], ["hub_gbed_0", 752, 418, 0, 0],
+		["hub_gurn_1", 780, 376, 5, 1], ["hub_planter", 656, 432, 6, 1]])
+	blocks.append(Rect2(650, 346, 128, 10))
+	# flowers: clumps of single garden flowers (cut one by one from the Garden pack)
+	var clumps: Array = [Vector2(186, 178), Vector2(356, 196), Vector2(612, 196), Vector2(780, 206), Vector2(160, 420), Vector2(96, 432),
+		Vector2(344, 452), Vector2(170, 452), Vector2(400, 394), Vector2(560, 394), Vector2(272, 260), Vector2(822, 512), Vector2(892, 512),
+		Vector2(620, 470), Vector2(232, 316), Vector2(780, 440), Vector2(640, 330), Vector2(56, 220), Vector2(420, 210), Vector2(540, 210)]
+	var tints: Array = [[0, 1, 2, 4, 5], [6, 8, 9, 12, 13], [16, 17, 18, 19, 20], [23, 24, 25, 28, 29]]
+	for i in clumps.size():
+		var at: Vector2 = clumps[i]
+		var set: Array = tints[i % tints.size()]
+		for k in 5:
+			var off := Vector2(float((i * 7 + k * 13) % 23) - 11.0, float((i * 5 + k * 11) % 13) - 6.0)
+			props.append(["hub_gflower_%d" % int(set[(i + k) % set.size()]), at.x + off.x, at.y + off.y, 0, 0])
+	t["props"] = props
+	t["blocks"] = blocks
+	# lamps at the south gate and by the herb garden (their glass and glow like the town's others)
+	var torches: Array = (t["torches"] as Array).duplicate()
+	var lights: Array = (t["lights"] as Array).duplicate()
+	for at: Vector2 in [Vector2(428, 506), Vector2(532, 506), Vector2(786, 424)]:
+		props.append(["hub_post", at.x, at.y, 3, 0])
+		torches.append(at)
+		lights.append([at - Vector2(0, 40), Color(1.0, 0.78, 0.46), 1.0, 0.55])
+	t["torches"] = torches
+	t["lights"] = lights
+	# more kinds of grass and flowers lying in the grass
+	var scatter: Dictionary = (t["scatter"] as Dictionary).duplicate()
+	scatter["hub_gflower"] = [32, 36]
+	scatter["hub_gtuft"] = [4, 60]
+	t["scatter"] = scatter
+	return t
+
+
 static func _base_place(id: String) -> Dictionary:
 	match id:
 		"room":
@@ -130,9 +181,22 @@ static func _base_place(id: String) -> Dictionary:
 				"props": [["hub_tree_teal_1", 320, 196, 8, 8], ["hub_rune_0", 214, 250, 9, 3], ["hub_rune_2", 250, 270, 5, 2], ["hub_bloom_0", 196, 160, 0, 2],
 					["hub_bloom_5", 430, 290, 0, 2], ["hub_bloom_6", 470, 170, 0, 2], ["hub_shroom_0", 150, 292, 0, 1], ["hub_shroom_1", 520, 250, 0, 1],
 					["hub_stump_0", 420, 232, 12, 4], ["hub_rock_moss_2", 110, 300, 14, 3], ["hub_bush_deep_1", 360, 300, 10, 4],
-					["hub_bush_green_1", 150, 150, 12, 5], ["hub_vine_0", 560, 300, 0, 2], ["hub_tree_pink_4", 500, 140, 4, 5]],
+					["hub_bush_green_1", 150, 150, 12, 5], ["hub_vine_0", 560, 300, 0, 2], ["hub_tree_pink_4", 500, 140, 4, 5],
+					# v0.24.0: the road's edges: ferns, toadstools, mossy stones, flowers in the light under the trees
+					["hub_plant_3", 182, 178, 0, 1], ["hub_plant_4", 120, 232, 0, 1], ["hub_plant_1", 352, 168, 0, 1], ["hub_plant_5", 548, 222, 0, 1],
+					["hub_plant_0", 236, 236, 0, 1], ["hub_plant_6", 470, 214, 0, 1], ["hub_shroom_3", 330, 250, 0, 1], ["hub_shroom_4", 344, 258, 0, 1],
+					["hub_shroom_2", 584, 280, 0, 1], ["hub_shroom_0", 92, 160, 0, 1], ["hub_rock_moss_0", 62, 254, 12, 3], ["hub_stone_1", 384, 150, 10, 3],
+					["hub_rock_1", 476, 318, 12, 3], ["hub_bush_orange_1", 560, 150, 9, 4], ["hub_bush_green_0", 96, 136, 10, 4], ["hub_bloom_2", 300, 290, 0, 2],
+					["hub_bloom_1", 556, 330, 0, 2], ["hub_bloom_7", 80, 320, 0, 2],
+					# two rune stones mark the way on to the glade
+					["hub_rune_0", 592, 172, 9, 3], ["hub_rune_2", 592, 236, 5, 2],
+					# flowers in clumps beside the road
+					["hub_gflower_0", 160, 226, 0, 0], ["hub_gflower_4", 168, 230, 0, 0], ["hub_gflower_1", 154, 233, 0, 0], ["hub_gflower_24", 362, 222, 0, 0],
+					["hub_gflower_28", 370, 226, 0, 0], ["hub_gflower_25", 356, 229, 0, 0], ["hub_gflower_12", 300, 176, 0, 0], ["hub_gflower_13", 309, 172, 0, 0],
+					["hub_gflower_8", 294, 170, 0, 0], ["hub_gflower_17", 520, 176, 0, 0], ["hub_gflower_18", 528, 181, 0, 0], ["hub_gflower_20", 514, 183, 0, 0],
+					["hub_gflower_6", 430, 228, 0, 0], ["hub_gflower_9", 438, 232, 0, 0], ["hub_gflower_29", 204, 288, 0, 0], ["hub_gflower_23", 212, 292, 0, 0]],
 				"paths": [[Vector2(-10, 204), Vector2(250, 210), Vector2(400, 190), Vector2(650, 196)]],
-				"scatter": {"hub_tuft": [24, 90], "hub_flower": [26, 60], "hub_pebble": [20, 10], "hub_twig": [10, 14]},
+				"scatter": {"hub_tuft": [24, 90], "hub_flower": [26, 60], "hub_pebble": [20, 10], "hub_twig": [10, 14], "hub_gtuft": [4, 50], "hub_gflower": [32, 30]},
 				"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 150, 70, 120), Rect2(600, 140, 80, 120)]},
 				"exits": [{"rect": Rect2(26, 176, 10, 60), "to": "village", "at": Vector2(660, 204)},
 					{"rect": Rect2(604, 168, 10, 60), "to": "glade", "at": Vector2(50, 196)}],
@@ -145,7 +209,7 @@ static func _base_place(id: String) -> Dictionary:
 						"text": "The mushrooms walk at night. I counted nine. Mother says do not count them, they count back."},
 				],
 				"lights": [[Vector2(214, 236), Color(0.45, 0.85, 1.0), 1.2, 0.5], [Vector2(320, 150), Color(0.6, 1.0, 0.7), 1.6, 0.35],
-					[Vector2(520, 236), Color(0.5, 1.0, 0.85), 0.9, 0.5]],
+					[Vector2(520, 236), Color(0.5, 1.0, 0.85), 0.9, 0.5], [Vector2(592, 200), Color(0.45, 0.85, 1.0), 1.0, 0.45]],
 			}
 		"glade":
 			return {
@@ -219,7 +283,7 @@ static func _world() -> Dictionary:
 			[Vector2(1150, 640), Vector2(1340, 580), Vector2(1570, 540)], [Vector2(1590, 480), Vector2(1650, 370), Vector2(1780, 300)],
 			[Vector2(1150, 670), Vector2(1400, 770), Vector2(1650, 890)],
 		],
-		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 90], "hub_pebble": [20, 26], "hub_twig": [10, 20]},
+		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 90], "hub_pebble": [20, 26], "hub_twig": [10, 20], "hub_gflower": [32, 140], "hub_gtuft": [4, 120]},
 		"scatter_rect": Rect2(20, 60, 800, 1040),
 		"groves": [
 			{"rect": Rect2(40, 70, 760, 420), "ids": trees, "n": 46, "solid": 7.0},
@@ -230,12 +294,18 @@ static func _world() -> Dictionary:
 			{"rect": Rect2(1300, 480, 640, 220), "ids": dry, "n": 22, "solid": 6.0},
 			{"rect": Rect2(940, 70, 1000, 1000), "ids": ["hub_dgrass_0", "hub_dgrass_1", "hub_dgrass_2", "hub_dgrass_3", "hub_dblock_2", "hub_dblock_3"], "n": 150, "solid": 0.0, "poly": 0},
 			{"rect": Rect2(1420, 70, 520, 300), "ids": crag, "n": 34, "solid": 7.0},
+			# v0.24.0: meadows of ferns, blooms and toadstools between the woods of the west
+			{"rect": Rect2(40, 480, 800, 300), "ids": ["hub_plant_3", "hub_bloom_1", "hub_plant_4", "hub_shroom_0", "hub_bloom_2", "hub_plant_1", "hub_bush_orange_1", "hub_shroom_3"], "n": 40, "solid": 0.0},
 		],
 		"props": [
 			# Hollow Hill: the crypt gate in its rocks, the tavern below it
 			["hub_rock_2", 258, 548, 0, 2], ["hub_rock_moss_2", 344, 549, 0, 2], ["hub_gate_0", 300, 552, 0, 0],
 			["hub_wall_plaster", 196, 620, 0, 0], ["hub_roof_wood", 196, 621, 0, -50], ["hub_doorway", 196, 622, 0, 0],
 			["hub_rune_1", 400, 612, 10, 3], ["hub_rune_0", 428, 632, 8, 3],
+			# v0.24.0: the tavern's yard: a clipped hedge, lamps along the road east, busts of the old kings by the gate
+			["hub_ghedge", 150, 640, 0, 0], ["hub_ghedge", 240, 640, 0, 0], ["hub_post", 330, 670, 3, 0], ["hub_post", 540, 690, 3, 0],
+			["hub_cbust_0", 248, 584, 5, 1], ["hub_cbust_4", 352, 584, 5, 1],
+			["hub_gflower_0", 172, 648, 0, 0], ["hub_gflower_12", 182, 650, 0, 0], ["hub_gflower_24", 218, 648, 0, 0], ["hub_gflower_17", 226, 652, 0, 0],
 			# the Robber Road: a barricade of stumps and a scarecrow in stolen mail
 			["hub_farm_2", 700, 640, 5, 1], ["hub_stump_0", 742, 650, 10, 4], ["hub_stump_1", 690, 690, 7, 3], ["hub_bench_long", 752, 694, 10, 2],
 			# Dustwatch: two obelisks either side of the dig
@@ -283,7 +353,9 @@ static func _world() -> Dictionary:
 			{"id": "site_elfwood", "name": "The Elfwood", "title": "", "ghost": true, "pos": Vector2(600, 470), "top": 30, "role": "chat",
 				"text": "The Elfwood. The road into it leaves the village by its east side."},
 		],
-		"lights": [[Vector2(300, 600), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1120, 640), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1780, 280), Color(1.0, 0.55, 0.3), 2.6, 0.7],
+		"torches": [Vector2(330, 670), Vector2(540, 690)],
+		"lights": [[Vector2(330, 630), Color(1.0, 0.78, 0.46), 1.4, 0.55], [Vector2(540, 650), Color(1.0, 0.78, 0.46), 1.4, 0.55],
+			[Vector2(300, 600), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1120, 640), Color(1.0, 0.8, 0.5), 2.2, 0.5], [Vector2(1780, 280), Color(1.0, 0.55, 0.3), 2.6, 0.7],
 			[Vector2(1690, 330), Color(1.0, 0.5, 0.2), 1.6, 0.8], [Vector2(1870, 330), Color(1.0, 0.5, 0.2), 1.6, 0.8], [Vector2(414, 610), Color(0.45, 0.85, 1.0), 1.4, 0.5]],
 	}
 
