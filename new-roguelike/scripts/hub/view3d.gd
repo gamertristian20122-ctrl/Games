@@ -1262,7 +1262,7 @@ func _sync_light() -> void:
 		(w[1] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2)
 	var beams := float(_grade.get("shafts", 0.0)) * _day
 	for mat: ShaderMaterial in _shaft_mats:
-		mat.set_shader_parameter("strength", 0.075 * beams)
+		mat.set_shader_parameter("strength", 0.17 * beams)
 		mat.set_shader_parameter("colour", _vec(_grade["haze"]))
 	if is_instance_valid(_sky_fx):
 		_sky_fx.visible = _day > 0.05
