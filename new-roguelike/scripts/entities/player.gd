@@ -21,10 +21,11 @@ const Curse = preload("res://scripts/entities/curse.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
-const MAX_HP := 24
+const MAX_HP := 32               ## 16 hearts: two rows of eight on the HUD
 const MAX_ARMOR := 12
 const SHOT_KNOCK := 1.0
 
@@ -137,11 +138,38 @@ func setup(the_run: Node, hero_id: String) -> void:
 		block_max = maxi(int(G.diff("block")), 1)
 		block_left = block_max
 		_block_cool = maxf(BLOCK_COOLDOWN + Upgrades.block_cooldown(), 1.5)
+		apply_rpg(true)
 	stats.changed.connect(_stats_changed)
 	_stats_changed()
 	_hook_bomb_button()
 	if hero.has("familiar"):
 		add_familiar(String(hero["familiar"]))
+
+
+## RPG: turns the knight's stat points (scripts/data/rpg.gd) into numbers. Called at the start of
+## a level, and again whenever a point is spent on the Knight screen in the middle of one.
+## Vitality gives health at once (the new half heart comes filled).
+var _rpg_hp := 0
+func apply_rpg(fresh: bool = false) -> void:
+	if not hero.has("melee"):
+		return
+	stats.set_layer("rpg", Rpg.mods())
+	var more := Rpg.bonus_hp() - _rpg_hp
+	if more != 0:
+		_rpg_hp += more
+		max_hp = clampi(max_hp + more, 2, MAX_HP)
+		hp = clampi(hp + maxi(more, 0), 1, max_hp)
+	_block_cool = maxf((BLOCK_COOLDOWN + Upgrades.block_cooldown()) * Rpg.guard_mult(), 1.5)
+	if not fresh:
+		G.hud_changed.emit()
+
+
+## A new level: every heart is filled again.
+func level_up_heal() -> void:
+	if dead:
+		return
+	hp = max_hp
+	G.hud_changed.emit()
 
 
 ## The hero is taken out of the tree and put back at every room change, so the bomb button is

@@ -13,6 +13,7 @@ extends CanvasLayer
 ## The whole layer hides while a keyboard or gamepad is in use and returns on the next touch.
 
 const UI = preload("res://scripts/ui/theme.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 const RADIUS := 22.0            ## stick size: full tilt is this far from where the thumb landed
 const DEADZONE := 0.16          ## tiny wobbles around the centre do nothing
@@ -20,6 +21,7 @@ const KNOB := 9.0
 const BUTTON_R := 14.0          ## visible button radius (28 px across)
 const HIT_PAD := 9.0            ## invisible extra reach around every button
 const PAUSE_SIZE := 20.0
+const LV_SIZE := Vector2(26.0, 13.0)    ## the "Lv" button under the pause button: opens the Knight screen
 const ALPHA := 0.35
 const BLOCK_LABEL := "BLOCK"                   ## the same button in a level when the hero carries a shield arm (melee)
 const TALK_LABEL := "TALK"                     ## the same button in the camp (hub_mode)
@@ -45,7 +47,10 @@ var _call_fill := 1.0           ## 0..1: how far the CALL cooldown has recovered
 var _call_ready := false        ## pressing CALL would work right now
 var _call_pulse := false        ## the first-run lesson points at the button
 var _pulse_t := 0.0
-var _pressed_flash := {"bomb": 0.0, "action": 0.0, "pause": 0.0}
+var _pressed_flash := {"bomb": 0.0, "action": 0.0, "pause": 0.0, "menu": 0.0}
+var _lv_text := ""              ## what the Lv button says, and whether points wait to be spent
+var _lv_points := false
+var _lv_t := 0.0
 
 
 func _ready() -> void:
@@ -110,6 +115,13 @@ func _read_bombs() -> void:
 func _process(delta: float) -> void:
 	if not active:
 		return
+	_lv_t += delta
+	var lv_text := "Lv %d" % Rpg.level()
+	var lv_points := Rpg.points() > 0
+	if lv_text != _lv_text or lv_points != _lv_points or lv_points:
+		_lv_text = lv_text
+		_lv_points = lv_points
+		_canvas.queue_redraw()
 	if Controls.action_enabled != _action_shown:
 		_action_shown = Controls.action_enabled
 		_canvas.queue_redraw()
@@ -173,7 +185,9 @@ func _button_centre(which: String) -> Vector2:
 	var s := _screen()
 	if which == "pause":
 		return Vector2(s.x - ins.z - 3.0 - PAUSE_SIZE / 2.0, ins.y + 3.0 + PAUSE_SIZE / 2.0)
-	var y := 100.0 if which == "bomb" else 66.0
+	if which == "menu":
+		return Vector2(s.x - ins.z - 3.0 - LV_SIZE.x / 2.0, ins.y + 3.0 + PAUSE_SIZE + 4.0 + LV_SIZE.y / 2.0)
+	var y := 106.0 if which == "bomb" else 72.0        # (6 px lower since v0.11: the Lv button sits above)
 	if _swapped:
 		return Vector2(ins.x + 6.0 + BUTTON_R, y)
 	return Vector2(s.x - ins.z - 6.0 - BUTTON_R, y)
@@ -181,6 +195,9 @@ func _button_centre(which: String) -> Vector2:
 
 func _button_at(pos: Vector2) -> String:
 	var p := _button_centre("pause")
+	var m := _button_centre("menu")
+	if absf(pos.x - m.x) <= LV_SIZE.x / 2.0 + 5.0 and pos.y > p.y + PAUSE_SIZE / 2.0 + 2.0 and pos.y <= m.y + LV_SIZE.y / 2.0 + 4.0:
+		return "menu"
 	if absf(pos.x - p.x) <= PAUSE_SIZE / 2.0 + HIT_PAD and absf(pos.y - p.y) <= PAUSE_SIZE / 2.0 + HIT_PAD:
 		return "pause"
 	if not hub_mode and pos.distance_to(_button_centre("bomb")) <= BUTTON_R + HIT_PAD:
@@ -217,6 +234,8 @@ func _press(finger: int, pos: Vector2) -> void:
 		match button:
 			"pause":
 				Controls.press_pause()
+			"menu":
+				Controls.press_menu()
 			"bomb":
 				if _bombs > 0:
 					_buzz(40)
@@ -356,6 +375,21 @@ func _draw_controls() -> void:
 	_canvas.draw_rect(Rect2(pc - Vector2(half, half) + Vector2(0.5, 0.5), Vector2(PAUSE_SIZE - 1, PAUSE_SIZE - 1)), Color(1, 1, 1, a * 0.7), false, 1.0)
 	_canvas.draw_rect(Rect2(pc.x - 4, pc.y - 5, 3, 10), Color(1, 1, 1, a))
 	_canvas.draw_rect(Rect2(pc.x + 1, pc.y - 5, 3, 10), Color(1, 1, 1, a))
+
+
+	# Lv: the knight's level in a small plate under the pause button; it glows while points wait
+	var mc := _button_centre("menu")
+	var plate := Rect2(mc - LV_SIZE / 2.0, LV_SIZE)
+	var glow := 0.5 + 0.5 * sin(_lv_t * 5.0) if _lv_points else 0.0
+	var ma := 0.5 + 0.4 * float(_pressed_flash["menu"])
+	_canvas.draw_rect(plate, Color(0, 0, 0, 0.3))
+	if _lv_points:
+		_canvas.draw_rect(plate, Color(CALL_GOLD, 0.12 + 0.2 * glow))
+	_canvas.draw_rect(Rect2(plate.position + Vector2(0.5, 0.5), plate.size - Vector2(1, 1)), Color(CALL_GOLD, 0.6 + 0.4 * glow) if _lv_points else Color(1, 1, 1, ma * 0.7), false, 1.0)
+	var lvw := font.get_string_size(_lv_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
+	var lvp := Vector2(roundf(mc.x - lvw / 2.0), roundf(mc.y + font.get_ascent(UI.size_body) / 2.0 - 1.0))
+	_canvas.draw_string_outline(font, lvp, _lv_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9))
+	_canvas.draw_string(font, lvp, _lv_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, CALL_GOLD if _lv_points else Color(UI.C_BONE, 0.95))
 
 
 func _round_button(c: Vector2, flash: float, dim: float) -> void:

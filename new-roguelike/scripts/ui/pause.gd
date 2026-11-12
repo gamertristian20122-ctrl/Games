@@ -6,10 +6,12 @@ extends "res://scripts/ui/screen.gd"
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Icon = preload("res://scripts/ui/icon.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 var run: Node                    ## set by main.gd
 var _detail: Label
 var _detail_name: Label
+var _knight: Button
 
 
 func build() -> void:
@@ -21,7 +23,7 @@ func build() -> void:
 	var hero := Heroes.by_id(String(run.get("hero_id"))) if is_instance_valid(run) else Heroes.LIST[0]
 
 	# left: the three buttons, with the hero waiting in between
-	var left := UI.vbox(4)
+	var left := UI.vbox(3)
 	left.custom_minimum_size.x = 88
 	cols.add_child(left)
 	var head := UI.label("Paused", "Head")
@@ -29,10 +31,13 @@ func build() -> void:
 	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	left.add_child(head)
 	var resume := UI.button("Resume", func() -> void: send("resume"), "Big")
-	resume.custom_minimum_size.y = 26
+	resume.custom_minimum_size.y = 22
 	left.add_child(resume)
+	_knight = UI.button(_knight_text(), func() -> void: send("knight"))
+	_knight.custom_minimum_size.y = 20
+	left.add_child(_knight)
 	var settings := UI.button("Settings", func() -> void: send("settings"))
-	settings.custom_minimum_size.y = 22
+	settings.custom_minimum_size.y = 20
 	left.add_child(settings)
 	var stage := Control.new()
 	stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -51,14 +56,14 @@ func build() -> void:
 		var room: Variant = run.get("room")
 		var fight: bool = is_instance_valid(room) and room.get("fighting") == true
 		var leave := UI.button("Back to camp", (func() -> void: send("leave_run")) if in_yard else _ask_leave)
-		leave.custom_minimum_size.y = 22
+		leave.custom_minimum_size.y = 20
 		leave.disabled = fight and not in_yard
 		if fight and not in_yard:
 			leave.text = "Camp (not in a fight)"
 		left.add_child(leave)
 	else:
 		var give_up := UI.button("Give up", _ask_give_up)
-		give_up.custom_minimum_size.y = 22
+		give_up.custom_minimum_size.y = 20
 		left.add_child(give_up)
 	default_focus = resume
 
@@ -118,6 +123,18 @@ func build() -> void:
 	else:
 		_show_item(String(ids[ids.size() - 1]))
 	UI.pop_in(cols)
+
+
+## The Knight button says his level, and how many points wait to be spent.
+func _knight_text() -> String:
+	if Rpg.points() > 0:
+		return "Knight  Lv %d  (+%d)" % [Rpg.level(), Rpg.points()]
+	return "Knight  Lv %d" % Rpg.level()
+
+
+func refresh() -> void:
+	if is_instance_valid(_knight):
+		_knight.text = _knight_text()
 
 
 ## One line of the list: picture, name, and as much of the description as fits.

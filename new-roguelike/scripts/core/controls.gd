@@ -8,6 +8,7 @@ extends Node
 signal bomb_pressed
 signal action_pressed        ## the second button (reserved for the game's twist)
 signal pause_pressed
+signal menu_pressed          ## open the Knight screen (level, stats): the "Lv" touch button, C or Tab, gamepad Y
 ## The player switched between the touch screen and a keyboard / gamepad.
 signal device_changed(touch: bool)
 
@@ -38,7 +39,7 @@ var bot_aim := Vector2.ZERO
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	using_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available()
+	using_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available() or G.flag("touch")     # --touch: show the phone buttons in test pictures
 	get_window().window_input.connect(_watch_device)
 
 
@@ -80,6 +81,10 @@ func press_pause() -> void:
 	pause_pressed.emit()
 
 
+func press_menu() -> void:
+	menu_pressed.emit()
+
+
 func _process(_delta: float) -> void:
 	if bot:
 		move = bot_move.limit_length(1.0)
@@ -117,8 +122,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_SPACE, KEY_E: press_bomb()
 			KEY_Q, KEY_SHIFT: press_action()
 			KEY_ESCAPE: press_pause()
+			KEY_C, KEY_TAB: press_menu()
 	elif event is InputEventJoypadButton and event.pressed:
 		match event.button_index:
 			JOY_BUTTON_RIGHT_SHOULDER: press_bomb()
 			JOY_BUTTON_LEFT_SHOULDER: press_action()
 			JOY_BUTTON_START: press_pause()
+			JOY_BUTTON_Y: press_menu()

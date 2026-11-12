@@ -29,6 +29,7 @@ const SCREENS := {
 	"credits": "res://scripts/ui/credits.gd",
 	"hub_talk": "res://scripts/ui/hub_talk.gd",
 	"customize": "res://scripts/ui/customize.gd",
+	"knight": "res://scripts/ui/knight.gd",
 }
 ## Screens that keep the dungeon picture bright behind them; behind the others it is dimmed.
 const BRIGHT := ["title", "hero_select"]
@@ -81,6 +82,7 @@ func _ready() -> void:
 	G.run_ended.connect(_on_run_ended)
 	G.note_found.connect(_on_note_found)
 	Controls.pause_pressed.connect(_back)
+	Controls.menu_pressed.connect(open_knight)
 	if G.flag("uitour"):
 		UI.instant = G.arg("uitour") != "flow"       # the flow test keeps the animations on
 		var tour: Node = load("res://scripts/ui/ui_tour.gd").new()
@@ -286,8 +288,8 @@ func _on_action(what: String, arg: Variant) -> void:
 		return
 	match what:
 		"back":
-			if top_name() == "pause" or (run != null and top_name() == "hub_talk"):
-				resume()                # (a note read in a level closes like the pause menu)
+			if top_name() == "pause" or (run != null and _stack.size() == 1 and top_name() in ["hub_talk", "knight"]):
+				resume()                # (a note read in a level, or the Knight screen, closes like the pause menu)
 			elif _stack.size() > 1 or is_instance_valid(hub):
 				close_top()             # in the camp a talk window is the only screen open: Leave must close it
 				if is_instance_valid(hub) and _stack.is_empty():
@@ -365,7 +367,7 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("retalk")
-		"collection", "settings", "credits", "customize":
+		"collection", "settings", "credits", "customize", "knight":
 			open(what)
 		"start":
 			_transition(start_run.bind(String(arg), _fresh_seed()))
@@ -486,6 +488,19 @@ func pause() -> void:
 	get_tree().paused = true
 	Sfx.play("ui_click")
 	open("pause", {"run": run})
+
+
+## The Knight screen (level, XP, stat points): the "Lv" touch button, C / Tab, gamepad Y.
+## In a level the game stops as for the pause menu; in a camp it opens over the camp.
+func open_knight() -> void:
+	if _busy or _ending or not _stack.is_empty() or is_instance_valid(intro):
+		return
+	if run != null:
+		get_tree().paused = true
+	elif not is_instance_valid(hub):
+		return
+	Sfx.play("ui_click")
+	open("knight")
 
 
 func resume() -> void:

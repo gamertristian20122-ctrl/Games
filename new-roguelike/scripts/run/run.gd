@@ -19,6 +19,7 @@ const Floors = preload("res://scripts/data/floors.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
 const Items = preload("res://scripts/data/items.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 const FloorGen = preload("res://scripts/run/floor_gen.gd")
 const RoomScript = preload("res://scripts/run/room.gd")
 const ShotsScript = preload("res://scripts/run/shots.gd")
@@ -553,7 +554,40 @@ func _needs_curse(info: Dictionary) -> bool:
 func enemy_killed(e: Node) -> void:
 	kills += 1
 	G.stat.emit("kills", 1)
+	gain_xp(Rpg.xp_for(e))
 	effects.fire("on_kill", [e])
+
+
+## RPG: the knight earns XP for a kill (scripts/data/rpg.gd). Nothing is earned in the training
+## yard. A new level fills his hearts and gives points to spend on the Knight screen.
+var xp_earned := 0
+func gain_xp(amount: int) -> void:
+	if amount <= 0 or training or over or not is_instance_valid(player) or not player.hero.has("melee"):
+		return
+	xp_earned += amount
+	var levels := Rpg.add_xp(amount)
+	G.xp_gained.emit(amount)
+	if levels <= 0:
+		return
+	if G.flag("autolevel"):
+		_auto_spend()               # tests: the bot spreads its points evenly
+	player.apply_rpg()
+	player.level_up_heal()
+	fx.flourish(player.position - Vector2(0, 8))
+	Sfx.play("victory_sting", -8.0)
+	shake(0.15)
+	G.level_up.emit(Rpg.level())
+	if G.flag("autotest"):
+		print("[rpg] level %d at %.0f s (kills %d, xp so far %d)" % [Rpg.level(), time_s, kills, xp_earned])
+	G.toast.emit("Level %d" % Rpg.level(), "%d points to spend: tap Lv" % Rpg.points() if Rpg.points() > 0 else "Hearts refilled")
+	Save.flush()
+
+
+func _auto_spend() -> void:
+	var k := 0
+	while Rpg.points() > 0 and k < 200:
+		Rpg.spend(String(Rpg.STATS[(Rpg.spent() + k) % Rpg.STATS.size()]["id"]))
+		k += 1
 
 
 ## The Hungry Curse swallowed an enemy whole. It counts as a kill, but nothing died the usual
@@ -577,6 +611,7 @@ func boss_killed(b: Node) -> void:
 	G.stat.emit("boss_killed", 1)
 	G.stat.emit("boss_killed:" + id, 1)
 	G.boss_defeated.emit(id)
+	gain_xp(Rpg.xp_for_boss(b))
 	var says: Dictionary = Story.BOSS_SAYS.get(id, {})
 	if says.has("end"):
 		G.toast.emit(String(Bosses.info(id).get("name", "")), "\"%s\"" % String(says["end"]))
@@ -635,7 +670,7 @@ func _finish() -> void:
 func summary() -> Dictionary:
 	return {
 		"victory": victory, "hero": hero_id, "floor": floor_index + 1, "floor_name": floor_name,
-		"time_s": time_s, "kills": kills, "coins": player.coins_collected if player != null else 0,
+		"time_s": time_s, "kills": kills, "xp": xp_earned, "rpg_level": Rpg.level(), "coins": player.coins_collected if player != null else 0,
 		"items": player.items.duplicate() if player != null else [],
 		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,

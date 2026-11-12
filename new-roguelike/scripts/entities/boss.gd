@@ -138,7 +138,7 @@ func _row(enemy_id: String) -> Dictionary:
 
 
 func _hp_scale() -> float:
-	return G.diff("boss_hp") * _kit_scale()
+	return G.diff("boss_hp") * _kit_scale() * _level_scale()
 
 
 func _load_ai() -> RefCounted:

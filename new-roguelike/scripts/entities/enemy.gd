@@ -28,6 +28,7 @@ extends Node2D
 ## Rule of thumb: every move that can hurt gets a tell() or warn_*() first.
 
 const Enemies = preload("res://scripts/data/enemies.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 const Shots = preload("res://scripts/run/shots.gd")
 
 const Hands = preload("res://scripts/entities/hands.gd")
@@ -253,7 +254,15 @@ func _row(enemy_id: String) -> Dictionary:
 
 
 func _hp_scale() -> float:
-	return (1.0 + Enemies.HP_PER_FLOOR * run.scale_floor) * G.diff("enemy_hp") * _kit_scale()
+	return (1.0 + Enemies.HP_PER_FLOOR * run.scale_floor) * G.diff("enemy_hp") * _kit_scale() * _level_scale()
+
+
+## ... and with the knight's level (scripts/data/rpg.gd). Not in the training yard.
+func _level_scale() -> float:
+	var p: Variant = run.get("player")
+	if run.get("training") == true or not is_instance_valid(p) or not (p.get("hero") as Dictionary).has("melee"):
+		return 1.0
+	return Rpg.foe_scale()
 
 
 ## Monsters toughen with what the hero carries, so a full pack of relics does not turn the late game soft.

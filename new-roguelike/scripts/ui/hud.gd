@@ -21,9 +21,10 @@ const ItemRack = preload("res://scripts/ui/item_rack.gd")
 const CurseMeter = preload("res://scripts/ui/curse_meter.gd")
 const QuestList = preload("res://scripts/ui/quest_list.gd")
 const Story = preload("res://scripts/data/story.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 const CARD_TIME := 2.5           ## seconds an item card stays up
-const PAUSE_GAP := 23.0          ## room kept free in the top right corner for the pause button
+const PAUSE_GAP := 29.0          ## room kept free in the top right corner for the pause button
 const RACK_ROWS := 2              ## the carried items wrap into at most this many rows
 const BOSS_MAX_W := 132.0        ## the boss bar is at most this wide
 const BOSS_BAR_H := 7.0
@@ -36,6 +37,9 @@ var _counters: HBoxContainer
 var _count_labels := {}
 var _count_icons := {}
 var _curse_meter: Control
+var _level_label: Label          ## "Lv 3" and the XP bar beside it (scripts/data/rpg.gd)
+var _xp_bar: Control
+var _xp_flash := 0.0
 var _quests: Control             ## the quest list under the hearts (scripts/ui/quest_list.gd)
 var _coins_shown := 0
 var _coins_target := 0
@@ -101,6 +105,23 @@ func _ready() -> void:
 	_curse_meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_counters.add_child(_curse_meter)
 	_curse_meter.visible = G.curse_on()
+	# the knight's level and how far the next one is
+	var lv := UI.hbox(2)
+	lv.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_level_label = UI.label("Lv 1", "Hud")
+	_level_label.add_theme_color_override("font_color", UI.C_GOLD)
+	lv.add_child(_level_label)
+	_xp_bar = Control.new()
+	_xp_bar.custom_minimum_size = Vector2(30, 5)
+	_xp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_xp_bar.draw.connect(_draw_xp)
+	lv.add_child(_xp_bar)
+	_counters.add_child(lv)
+	G.xp_gained.connect(func(_n: int) -> void:
+		_xp_flash = 1.0
+		_dirty = true)
+	G.level_up.connect(func(_l: int) -> void: _dirty = true)
 	_counters.resized.connect(func() -> void:
 		if _boss_box != null:
 			_place_boss_bar())
@@ -224,10 +245,24 @@ func _place_boss_bar() -> void:
 	_boss_bar.queue_redraw()
 
 
+## The XP bar: a dark groove, a blue fill, a bright flash each time XP comes in.
+func _draw_xp() -> void:
+	var w := _xp_bar.size.x
+	var h := _xp_bar.size.y
+	_xp_bar.draw_rect(Rect2(0, 0, w, h), Color(UI.C_INK, 0.85))
+	var fill := Rpg.fill()
+	if fill > 0.0:
+		_xp_bar.draw_rect(Rect2(1, 1, maxf(roundf((w - 2.0) * fill), 1.0), h - 2.0), Color("5aa7d9").lerp(Color.WHITE, 0.6 * _xp_flash))
+	_xp_bar.draw_rect(Rect2(0.5, 0.5, w - 1.0, h - 1.0), Color(UI.C_BONE, 0.55), false, 1.0)
+
+
 # ------------------------------------------------------------------ redraw when told
 func _process(delta: float) -> void:
 	if not is_instance_valid(run):
 		return
+	if _xp_flash > 0.0:
+		_xp_flash = maxf(_xp_flash - delta * 3.0, 0.0)
+		_xp_bar.queue_redraw()
 	if _dirty:
 		_dirty = false
 		_fresh = false
@@ -263,6 +298,8 @@ func _refresh() -> void:
 		(_count_labels["coin"] as Label).text = str(_coins_shown)
 	(_count_labels["key"] as Label).text = str(_num(p, "keys"))
 	(_count_labels["bomb"] as Label).text = str(_num(p, "bombs"))
+	_level_label.text = "Lv %d" % Rpg.level()
+	_xp_bar.queue_redraw()
 	_curse_meter.call("set_values", _num(run, "curse_level"), _num(run, "belly"), int(run.call("belly_cap")) if run.has_method("belly_cap") else 5)
 	var items: Variant = p.get("items")
 	if items is Array and items != _rack_ids:

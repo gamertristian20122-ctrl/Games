@@ -30,6 +30,28 @@ The game is now a **story adventure in the spirit of old 2D adventure games**, n
    (before and after bosses, when someone joins), **camp upgrades** bought with coins.
 Top-down, one screen per room, twin-stick. Four dungeon looks, seven bosses, three heroes.
 
+## Direction since 12 Nov 2026 (evening): Hollow Hill becomes a ZELDA-STYLE ACTION RPG
+The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It stays the same game
+(knight, world map, camps, story); RPG systems go on top. Interview answers (multiple choice):
+- **Fights stay REAL-TIME** (the owner was unsure about turn-based and took the recommendation).
+- **Open world = roaming monsters**: monsters walk the world map and outdoor areas and are fought
+  there; camps and dungeons are doors on the map; the main story keeps its order, side areas are free.
+- **Dungeons = a mix**: a fixed map per dungeon with locked doors, small keys, a boss key and one
+  treasure; the rooms themselves reuse the layouts already made.
+- **Level-up = stat points** (Strength, Vitality, Spirit, Agility).
+- **Skills = two skill buttons + a mana bar**, about 8 skills to learn, the player picks which to carry.
+- **Party = ONE companion at a time.** The owner does NOT want Ozric and Tobin back: they asked for a
+  new sidekick, an attractive, stylish adult woman fighter ("a baddie ... sexi"), from a free
+  human-made pack that matches the Pixel Crawler look (or from the purchased packs). Show the owner
+  pictures to choose from BEFORE wiring her in. Tasteful, adult, never AI-made.
+- **Gear = all three ways**: monster drops, chests and bosses, shops; Common / Rare / Epic.
+- **Size: medium.** Build in steps, an APK after each: 1 levels and XP (DONE, v0.11.0), 2 gear and an
+  inventory screen, 3 skills and mana, 4 the companion, 5 roaming monsters and the Zelda-style
+  dungeons (keys, boss key), then a balance pass.
+- The owner's standing rules: few agents, one light tester, no re-checking what already passed; small
+  64-bit APK sent in a message BY ITSELF, screenshots in a separate message; never a greyed-out
+  button without the reason on screen; nothing for publishers.
+
 ## About the owner
 - Limited coding experience and works from an Android phone: explain in plain, phone-friendly language,
   short numbered steps, no jargon.
@@ -626,6 +648,33 @@ you can travel faster." What was built:
   line of small stones; the world map has no wandering monsters (fights are only inside areas); the
   Cinder Pass, the Archive and the Long Stair reuse the hill's indoor looks; champions use ordinary
   monster behaviour with more health; there is no music change between camps.
+
+## v0.11.0 (12 Nov 2026): RPG step 1, levels, XP and stat points
+- **`scripts/data/rpg.gd`** holds every rule and number: `need(level)` (XP per level: 30, 53, 82 ...),
+  `POINTS_PER_LEVEL` (3), `MAX_LEVEL` (30), `STAT_CAP` (20), the four `STATS` and what one point does
+  (Strength +5% damage, Vitality +half a heart, Spirit guard back 4% sooner, Agility +2% walk and +3%
+  swing). Spirit is meant to give MANA too once step 3 (skills) is built: change its "each" text then.
+- **Saved for ever** in the save's hub section: `rpg:lvl`, `rpg:xp`, `rpg:pts`, `rpg:str|vit|spi|agi`.
+  Dying loses nothing. "Reset progress" in Settings wipes it with the rest of the hub section.
+- **Earning:** `run.gd gain_xp()` (called from `enemy_killed` and `boss_killed`). A monster gives its
+  health / 4, a boss its health / 8, a boss's or summoner's helpers nothing, the training yard nothing.
+  A new level refills the hearts, shows a banner and gives 3 points.
+- **Monsters keep up:** `Rpg.FOE_HP_PER_LEVEL` (3% more monster and boss health per knight level;
+  `enemy.gd _level_scale()`), next to the older `G.ITEM_HP`.
+- **Spending:** the Knight screen `scripts/ui/knight.gd` (main.gd screen "knight"). Opened by the new
+  **Lv button** under the pause button (`touch.gd`, role "menu"; it glows gold while points wait), by
+  C / Tab / gamepad Y (`Controls.menu_pressed` -> `main.open_knight()`), or by the Knight button of
+  the pause menu. A stat that cannot take a point says why in the box below. "Take points back" (free)
+  shows only in a camp. `player.gd apply_rpg()` turns points into a stats layer "rpg" at once.
+- **HUD:** "Lv n" and a blue XP bar after the coin / key / bomb counters. The action and bomb touch
+  buttons moved 6 px down to make room for the Lv button; `hud.gd PAUSE_GAP` is 29.
+- **Test flags:** `--autolevel` (the bot spends its points evenly), `--touch` (show the phone buttons
+  in test pictures). The bot prints `[rpg] level n at t s` on each level-up.
+- **Measured (bot, crypt_1 onward, autolevel):** level 2 after 8 kills, level 4 after the first
+  boss. Everything else is a guess; nobody has played it by hand.
+- The flow test (`--uitour=flow`) now has **57 checks** (9 new ones for the Knight screen).
+- Removed five stale `hub_fire_c_f5..9.png.import` files (their pictures were deleted long ago and
+  every camp visit printed load errors).
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
