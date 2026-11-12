@@ -50,6 +50,7 @@ const HubData = preload("res://scripts/data/hub.gd")
 var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
 var intro: Node                  ## the animated intro while it plays (scripts/hub/intro.gd), or null
+var preview: Node                ## the look test of the new battle screen (scripts/battle/preview.gd), or null
 var hud: CanvasLayer             ## scripts/ui/hud.gd
 var touch: CanvasLayer           ## scripts/ui/touch.gd
 var backdrop: Control            ## scripts/ui/backdrop.gd
@@ -100,6 +101,8 @@ func _ready() -> void:
 		if G.arg("encounter") != "":   # --encounter=<spot number>: the bot fights that roamer's pack
 			G.next_run = {"level": Roamers.fight(int(G.arg("encounter"))), "kit": []}
 		start_run(G.arg("hero", "knight"), int(G.arg("seed", "1")))
+	elif G.flag("look"):                 # --look: straight into the look test of the new battle screen
+		show_preview()
 	elif G.flag("intro"):
 		show_intro()                   # test: --intro plays the cutscene at once
 	elif G.flag("hub"):
@@ -216,7 +219,7 @@ func top_screen() -> Control:
 func _refresh_layers() -> void:
 	var in_run := run != null
 	var in_hub := is_instance_valid(hub)
-	backdrop.visible = not in_run and not in_hub and not is_instance_valid(intro)
+	backdrop.visible = not in_run and not in_hub and not is_instance_valid(intro) and not is_instance_valid(preview)
 	backdrop.call("set_dimmed", not _names.is_empty() and not (_names.back() in BRIGHT))
 	_shade.visible = (in_run or in_hub) and not _stack.is_empty()
 	hud.visible = in_run and _stack.is_empty()      # the pause menu shows its own numbers
@@ -230,10 +233,33 @@ func show_title() -> void:
 	await _drop_run()
 	_drop_hub()
 	_drop_intro()
+	_drop_preview()
 	get_tree().paused = false
 	close_all()
 	open("title")
 	Sfx.music("title")
+
+
+## The look test of the new battle screen (scripts/battle/preview.gd): one lit 3D scene to look at.
+func show_preview() -> void:
+	await _drop_run()
+	_drop_hub()
+	_drop_intro()
+	_drop_preview()
+	get_tree().paused = false
+	close_all()
+	preview = (load("res://scripts/battle/preview.gd") as Script).new()
+	preview.name = "Preview"
+	preview.connect("finished", func() -> void: _transition(show_title))
+	_world.add_child(preview)
+	_refresh_layers()
+
+
+func _drop_preview() -> void:
+	if is_instance_valid(preview):
+		preview.queue_free()
+	preview = null
+	_refresh_layers()
 
 
 ## The animated intro (scripts/hub/intro.gd). When it ends, or is skipped, you wake in your room.
@@ -300,6 +326,8 @@ func _on_action(what: String, arg: Variant) -> void:
 				close_top()             # in the camp a talk window is the only screen open: Leave must close it
 				if is_instance_valid(hub) and _stack.is_empty():
 					hub.call("refresh_heroes")      # the mirror may have changed his looks
+		"look":
+			_transition(show_preview)
 		"play":
 			if Save.hub_get("seen:cutscene") == 0 and not G.flag("uitour"):
 				_transition(show_intro)     # the first time: the animated intro, then your room
@@ -635,6 +663,8 @@ func _back() -> void:
 		_stack.back().call("on_back")
 	elif run != null:
 		pause()
+	elif is_instance_valid(preview):
+		_transition(show_title)        # Back in the look test: to the title
 	elif is_instance_valid(intro):
 		intro.call("skip")             # Back during the intro: skip it
 	elif is_instance_valid(hub):

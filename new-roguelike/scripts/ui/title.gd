@@ -53,7 +53,9 @@ func build() -> void:
 	var play := UI.button("Play", func() -> void: send("play"), "Big", "ui_start")
 	play.custom_minimum_size = Vector2(104, 26)
 	_column.add_child(play)
-	for row: Array in [["Collection", "collection"], ["Settings", "settings"], ["Credits", "credits"]]:
+	# "New look (test)" opens the look test of the turn-based battle screen (scripts/battle/preview.gd).
+	# It goes when the real battles are in.
+	for row: Array in [["Collection", "collection"], ["Settings", "settings"], ["Credits", "credits"], ["New look (test)", "look"]]:
 		var what: String = row[1]
 		var b := UI.button(row[0], func() -> void: send(what))
 		b.custom_minimum_size = Vector2(104, 19)

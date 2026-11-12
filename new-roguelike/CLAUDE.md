@@ -30,6 +30,24 @@ The game is now a **story adventure in the spirit of old 2D adventure games**, n
    (before and after bosses, when someone joins), **camp upgrades** bought with coins.
 Top-down, one screen per room, twin-stick. Four dungeon looks, seven bosses, three heroes.
 
+## Direction since 12 Nov 2026 (night): the LIT 3D LOOK, then TURN-BASED battles
+The owner sent six pictures of a famous "pixel people in a lit 3D world" turn-based RPG and wrote:
+"I'm hoping to ... get it to this level and then turn it into turn-based RPG game". This overrules
+"Fights stay REAL-TIME" in the section below. Told to the owner, and still true:
+- It is the same KIND of look and battle, never a copy: no names, characters, maps, menus or battle
+  rules taken from that game (the house rule "original game" stands). The art stays the purchased
+  Pixel Crawler packs; code adds only light and effects.
+- A big studio's hand-built scenery cannot be matched; the mood (light, blur, glow, depth) can.
+- Turn-based REPLACES the real-time fighting of RPG steps 1 to 5. Levels, stats, gear, skills, mana,
+  the companion, keys and roamers carry over as data.
+- Order of work: (1) a LOOK TEST of one battle scene (DONE, v0.16.1, see that section; the owner has
+  to say whether it runs smoothly on the phone and whether the look is right), (2) the real
+  turn-based battle on that stage, started by a roamer's touch (it replaces `Roamers.fight` rooms),
+  (3) dungeons: monsters stand in the rooms, a touch starts a battle; bosses as battles, (4) the
+  world map and camps in the same lit 3D look, (5) balance. An APK after each.
+- Not yet asked (ask with multiple choice before building step 2): how many fight at once (the
+  knight and ONE companion today), and how deep the battle rules should be.
+
 ## Direction since 12 Nov 2026 (evening): Hollow Hill becomes a ZELDA-STYLE ACTION RPG
 The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It stays the same game
 (knight, world map, camps, story); RPG systems go on top. Interview answers (multiple choice):
@@ -808,6 +826,44 @@ a meeting should work, the owner picked **"touch = quick battle"** (not fights o
 - **Rough edges:** roamers walk through trees and props (no collision); the rock region's fight
   is an indoor Ashen room; roamers do not scale with the knight beyond the usual level scaling;
   beaten roamers come back when the app restarts.
+
+## v0.16.1 (12 Nov 2026): the look test of the lit 3D battle stage
+One battle scene to LOOK at; nothing fights. Title > "New look (test)", or `--look` (with
+`--shots=<dir>` it writes `look.png` and quits). The button and `preview.gd` go when battles are real.
+- **`scripts/battle/stage.gd`**: the stage. `LOOKS` has one row per place (only "forest" so far:
+  colours, lights, which pack pieces). `build()` makes the camera (fixed, 30 degrees, looking a
+  little down), the sky light, the ground, the scenery, drifting sparks, light beams and the last
+  pass. `stand(id, at, faces_left)` puts a fighter on it, `prop()` a piece of scenery, `lamp()` a
+  small light. One world unit = 16 art pixels; x right, y up, z towards the camera.
+- **`scripts/battle/sprite3.gd`**: a pack sprite as a flat picture in 3D (animated from
+  `Art.frames`). Its shader lights it by every light near it without caring which way it faces.
+- **`scripts/battle/preview.gd`**: the look test: places the knight, Seraphine and three wood
+  monsters, and a MOCK battle menu (turn order, party bars, four orders, an fps counter).
+- **The ground** is ONE tile of the pack's ground sheet (`ground_tile`), laid by a shader that turns
+  each tile at random (`hub_grass.png` is two different tiles side by side, not a repeating one).
+- **Shadows are flat pictures, not shadow maps**: each standing thing gets its own picture laid
+  on the ground, leaning away from the sky light, painted as darker ground (`SHADOW_CODE`).
+- **The last pass** (`POST_CODE`, a quad in front of the camera): blur by distance from the
+  fighters (22 samples), warm lights and cool shade, dark corners. Glow, mist and tone are the
+  Environment's.
+- **Lessons paid for (do not repeat):**
+  1. Real shadow maps are OFF on purpose. In the Compatibility renderer a shadowed sky light is
+     drawn as a second pass over everything, and as the scene grew (about 118 separate things, or
+     the batched scenery) that pass came out with no shadows and washed-out light. It was never
+     explained; the flat shadows are cheaper on a phone anyway.
+  2. Scenery must be BATCHED: `prop()` only collects, `_flush()` makes one MultiMesh per kind.
+     Only things that animate or change (`stand()`) are their own node.
+  3. The last pass reads the picture BEFORE see-through things are drawn. Anything drawn with
+     blending (sparks, beams) needs `render_priority` above 0 or it disappears under the blur;
+     anything that must be blurred must be solid (cut-out, not see-through). That is why shadows
+     are solid darker ground instead of a see-through black.
+  4. Green grass barely shows warm light. The ground is drawn 30% greyer (`grey`) and the fire is
+     strong (`fire_energy`); lamps are turned down for sprites in `sprite3.gd` so they do not burn out.
+  5. Screenshots here use a software renderer (about 5 fps for this scene): that says NOTHING about
+     the phone. The fps counter on the look test is there so the owner can report the real number.
+     If it is slow: fewer blur samples (`TAPS`), then no blur on low settings.
+- **Not done:** weapons and hands on the fighters (the pack draws bodies without arms; the 2D game
+  adds them in `hero_look.gd` / `hands.gd`), other places than the forest, any battle rules.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
