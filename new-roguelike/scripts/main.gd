@@ -35,6 +35,7 @@ const BRIGHT := ["title", "hero_select"]
 const RUN_SCRIPT := "res://scripts/run/run.gd"
 const FAKE_RUN_SCRIPT := "res://scripts/ui/dev_fake_run.gd"
 const HUB_SCRIPT := "res://scripts/hub/hub.gd"
+const INTRO_SCRIPT := "res://scripts/hub/intro.gd"
 const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
@@ -44,6 +45,7 @@ const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
+var intro: Node                  ## the animated intro while it plays (scripts/hub/intro.gd), or null
 var hud: CanvasLayer             ## scripts/ui/hud.gd
 var touch: CanvasLayer           ## scripts/ui/touch.gd
 var backdrop: Control            ## scripts/ui/backdrop.gd
@@ -88,6 +90,8 @@ func _ready() -> void:
 		if G.arg("level") != "":       # --level=<story level id>: the bot plays that level
 			G.next_run = {"level": Story.level(G.arg("level")), "kit": []}
 		start_run(G.arg("hero", "knight"), int(G.arg("seed", "1")))
+	elif G.flag("intro"):
+		show_intro()                   # test: --intro plays the cutscene at once
 	elif G.flag("hub"):
 		show_hub("village" if G.arg("hub") == "" else G.arg("hub"))
 	else:
@@ -202,7 +206,7 @@ func top_screen() -> Control:
 func _refresh_layers() -> void:
 	var in_run := run != null
 	var in_hub := is_instance_valid(hub)
-	backdrop.visible = not in_run and not in_hub
+	backdrop.visible = not in_run and not in_hub and not is_instance_valid(intro)
 	backdrop.call("set_dimmed", not _names.is_empty() and not (_names.back() in BRIGHT))
 	_shade.visible = (in_run or in_hub) and not _stack.is_empty()
 	hud.visible = in_run and _stack.is_empty()      # the pause menu shows its own numbers
@@ -215,15 +219,41 @@ func _refresh_layers() -> void:
 func show_title() -> void:
 	await _drop_run()
 	_drop_hub()
+	_drop_intro()
 	get_tree().paused = false
 	close_all()
 	open("title")
 	Sfx.music("title")
 
 
+## The animated intro (scripts/hub/intro.gd). When it ends, or is skipped, you wake in your room.
+func show_intro() -> void:
+	await _drop_run()
+	_drop_hub()
+	get_tree().paused = false
+	close_all()
+	Save.hub_set("seen:cutscene", 1)
+	intro = (load(INTRO_SCRIPT) as Script).new()
+	intro.name = "Intro"
+	intro.connect("finished", func() -> void:
+		if G.flag("intro"):
+			print("[main] intro finished")
+		_busy = false
+		_transition(show_hub))
+	_world.add_child(intro)
+	_refresh_layers()
+
+
+func _drop_intro() -> void:
+	if is_instance_valid(intro):
+		intro.queue_free()
+	intro = null
+
+
 ## The camp between runs: walk around, talk, pick a stage at the gate.
 func show_hub(place: String = "", at: Vector2 = Vector2.INF) -> void:
 	await _drop_run()
+	_drop_intro()
 	_drop_hub()
 	get_tree().paused = false
 	close_all()
@@ -261,7 +291,10 @@ func _on_action(what: String, arg: Variant) -> void:
 				if is_instance_valid(hub) and _stack.is_empty():
 					hub.call("refresh_heroes")      # the mirror may have changed his looks
 		"play":
-			_transition(show_hub)           # you wake in your room at the tavern
+			if Save.hub_get("seen:cutscene") == 0 and not G.flag("uitour"):
+				_transition(show_intro)     # the first time: the animated intro, then your room
+			else:
+				_transition(show_hub)       # you wake in your room at the tavern
 		"hub_train":
 			G.next_run = {"training": true, "kit": Story.kit()}
 			_transition(start_run.bind("knight", _fresh_seed()))
@@ -292,8 +325,7 @@ func _on_action(what: String, arg: Variant) -> void:
 			if is_instance_valid(hub):
 				hub.call("retalk")
 		"hub_intro":
-			close_top()
-			open("hub_talk", {"info": Story.OPENING.duplicate(true)})
+			_transition(show_intro)         # the bed: watch the intro again
 		"hub_sleep":
 			close_top()
 			if is_instance_valid(hub):
@@ -521,6 +553,8 @@ func _back() -> void:
 		_stack.back().call("on_back")
 	elif run != null:
 		pause()
+	elif is_instance_valid(intro):
+		intro.call("skip")             # Back during the intro: skip it
 	elif is_instance_valid(hub):
 		_transition(show_title)        # Back in the camp: to the title
 

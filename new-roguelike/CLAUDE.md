@@ -554,6 +554,22 @@ played by a person yet: every number is a first guess.
 - Still NOT confirmed on the owner's phone: which buttons they meant. If it comes up again, ask which
   screen, which button, and what they see.
 
+## v0.9.2 (12 Nov 2026): the animated intro
+The owner, after seeing v0.9.1's words on a black screen: "No, an animation for the intro showing it."
+- **`scripts/hub/intro.gd`**: a cutscene of seven shots built from pack art and moved by code (people
+  walk, rune stones light and die, the hall turns red, rain, the Starved King rising out of the dark),
+  with one caption per shot in a black bar. Shots, words and seconds are `Story.INTRO_SHOTS`.
+  Tap = next shot; Skip button or Back = end. `main.gd show_intro()` plays it the first time Play is
+  pressed (save key `seen:cutscene`), then you wake in your room; the bed's "Remember how it began"
+  plays it again.
+- To add a shot: a row in `INTRO_SHOTS` and a function in intro.gd named in the `match` of `_build()`.
+  Helpers: `_grass()`, `_trees()`, `_prop()`, `_path()`, `_glow()`, `_actor()`, `_knight()`, `_walk()`;
+  a shot's own motion is a lambda put in `_tick`.
+- Test: `--intro` (plays at once; `--speed=8` to run it fast; prints "[main] intro finished"),
+  `--intro --shots=<dir>` (one picture per shot). The flow test skips the intro (`--uitour`).
+- The text-only `Story.OPENING` of v0.9.1 is gone. When the owner says "intro" they mean something to
+  WATCH. Prefer showing over telling for story beats.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

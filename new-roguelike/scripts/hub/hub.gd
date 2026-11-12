@@ -172,11 +172,7 @@ func _ready() -> void:
 ## first words (once, in the village), and a scene in the village after each seal.
 func _story_moment() -> void:
 	var say := {}
-	if place_id == "room" and Save.hub_get("seen:opening2") == 0:
-		# ("opening2": in v0.9.0 a slow phone could miss the opening and still mark it seen)
-		Save.hub_set("seen:opening2", 1)
-		say = Story.OPENING.duplicate(true)
-	elif place_id == "village" and Save.hub_get("seen:intro") == 0:
+	if place_id == "village" and Save.hub_get("seen:intro") == 0:
 		Save.hub_set("seen:intro", 1)
 		say = Story.INTRO.duplicate(true)
 	elif place_id == "village":
@@ -186,7 +182,7 @@ func _story_moment() -> void:
 	if not say.is_empty():
 		if G.flag("story"):
 			print("[hub] story moment in %s: %s" % [place_id, String(say["pages"][0])])
-		get_tree().create_timer(0.1 if say.get("black", false) else 0.7).timeout.connect(func() -> void: action.emit("talk", say))
+		get_tree().create_timer(0.7).timeout.connect(func() -> void: action.emit("talk", say))
 
 
 ## Shows a place (scripts/data/places.gd) with the hero at `at` (or at its own spawn point).

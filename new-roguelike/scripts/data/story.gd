@@ -63,16 +63,18 @@ const BOSS_SAYS := {
 	"starved_king": {"start": "I only wished never to want. Feed me.", "end": "Enough... at last... enough."},
 }
 
-## THE OPENING: shown once, before the player first gets control (in the room at the tavern).
-const OPENING := {"name": "", "title": "", "sprite": "", "black": true, "heading": "Hollow Hill", "pages": [
-	"Long ago a king asked for one thing: never to want again. He was given a hunger without end.",
-	"He ate his kingdom bare. Four orders buried him under the Hollow Hill, behind four seals, with keepers to watch them.",
-	"Forty knights swore to bring the keepers bread each spring. One spring nobody came.",
-	"Now the seals are cracking, and the dead walk in the forest.",
-	"Night. Rain on the forest road. One rider, one sword. Aldous, the last knight of the order.",
-	"The village under the hill gave him a room at the Hollow Flagon and asked no questions.",
-	"Morning. Somewhere below, something very old is hungry. Find the Druid by the rune stones.",
-]}
+## THE INTRO: an animated cutscene (scripts/hub/intro.gd) played the first time you press Play, and
+## again from the bed in your room. One row per shot: which scene the cutscene builds, the words in
+## the bar under it, and how many seconds it stays (a tap moves on sooner).
+const INTRO_SHOTS := [
+	{"scene": "feast", "time": 7.0, "text": "Long ago a king asked for one thing: never to want again. He was given a hunger without end."},
+	{"scene": "seals", "time": 7.5, "text": "He ate his kingdom bare. Four orders buried him under the Hollow Hill, behind four seals."},
+	{"scene": "forgotten", "time": 7.5, "text": "Forty knights swore to bring the keepers bread each spring. One spring nobody came."},
+	{"scene": "dead", "time": 6.5, "text": "Now the seals are cracking, and the dead walk in the forest."},
+	{"scene": "road", "time": 7.5, "text": "Night. Rain on the forest road. One knight, one sword: Aldous, the last of the order."},
+	{"scene": "flagon", "time": 7.0, "text": "The village under the hill gave him a room at the Hollow Flagon and asked no questions."},
+	{"scene": "below", "time": 8.0, "text": "And somewhere below, something very old is hungry."},
+]
 
 ## SCENES AT THE CAMP: spoken by the Druid the first time the hero is back in the village with
 ## that many levels cleared (2 = the Crypt's seal, 4 = the Warrens', 6 = the Ashen Halls', 7 = the end).
