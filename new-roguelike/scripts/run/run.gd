@@ -387,6 +387,16 @@ func champion_fell() -> void:
 	_level_done()
 
 
+## The next unfound note for a room to lay out (-1 = none). A note is handed to one room only.
+var _notes_out := {}
+func take_note() -> int:
+	for i in Story.NOTES.size():
+		if Save.hub_get("note:%d" % i) == 0 and not _notes_out.has(i):
+			_notes_out[i] = true
+			return i
+	return -1
+
+
 ## Story: is there a level below the one being played?
 func has_next_level() -> bool:
 	return not level.is_empty() and not bool(level.get("final", false)) and not Story.after(String(level["id"])).is_empty()

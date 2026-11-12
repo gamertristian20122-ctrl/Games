@@ -74,6 +74,7 @@ func _ready() -> void:
 	UI.font_dir_override = G.arg("fonts")
 	_build_layers()
 	G.run_ended.connect(_on_run_ended)
+	G.note_found.connect(_on_note_found)
 	Controls.pause_pressed.connect(_back)
 	if G.flag("uitour"):
 		UI.instant = G.arg("uitour") != "flow"       # the flow test keeps the animations on
@@ -239,8 +240,8 @@ func _on_action(what: String, arg: Variant) -> void:
 		return
 	match what:
 		"back":
-			if top_name() == "pause":
-				resume()
+			if top_name() == "pause" or (run != null and top_name() == "hub_talk"):
+				resume()                # (a note read in a level closes like the pause menu)
 			elif _stack.size() > 1 or is_instance_valid(hub):
 				close_top()             # in the camp a talk window is the only screen open: Leave must close it
 				if is_instance_valid(hub) and _stack.is_empty():
@@ -276,6 +277,16 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("retalk")
+		"hub_sleep":
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("sleep")
+		"hub_notes":
+			var pages: Array = []
+			for i: int in Story.notes_found():
+				pages.append(String(Story.NOTES[i]))
+			close_top()
+			open("hub_talk", {"info": {"name": "Notes from the hill", "title": "%d of %d" % [pages.size(), Story.NOTES.size()], "sprite": "hub_note", "pages": pages}})
 		"hub_weapon":
 			if Weapons.owned(String(arg)):
 				Save.set_setting("weapon", String(arg))
@@ -423,6 +434,15 @@ func resume() -> void:
 	close_all()
 	get_tree().paused = false
 	Save.flush()
+
+
+## A note was picked up in a level: the game stops and its words are shown in the talk box.
+func _on_note_found(index: int) -> void:
+	if run == null or _ending or G.flag("autotest"):
+		return
+	get_tree().paused = true
+	open("hub_talk", {"info": {"name": "A note", "title": "%d of %d" % [Story.notes_found().size(), Story.NOTES.size()], "sprite": "hub_note",
+		"pages": [String(Story.NOTES[index])]}})
 
 
 ## Where a run puts you back: the village's crypt gate, or the glade for the Elfwood's levels.

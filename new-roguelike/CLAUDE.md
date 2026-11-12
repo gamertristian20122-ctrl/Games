@@ -490,10 +490,50 @@ Twelve questions, asked with multiple choice. These are decisions; build toward 
 - **Story, all four:** bosses speak before the fight and as they fall; scenes at the camp after each seal;
   an opening scene (the knight arrives at the village at night); notes and carvings to find in the levels.
 - **Text and button size on the phone: good as it is.** Do not enlarge or shrink them.
-Suggested build order (each a build the owner can play): 1 difficulty switch + naming + armour colour +
+ALL SIX STEPS ARE BUILT (see "The roadmap, built" below). The order was: 1 difficulty switch + naming + armour colour +
 bosses speak (small, quick); 2 the village with the tavern home, shop and training yard; 3 screen-to-screen
 walking and the Fairy Forest; 4 the four weapons; 5 camp scenes, opening scene, notes, side stories;
 6 day and night, weather.
+
+## The roadmap, built — v0.8.0 and v0.9.0 (12 Nov 2026)
+The owner said "start from 1 to 6"; all six steps of the interview roadmap are in. Nothing here has been
+played by a person yet: every number is a first guess.
+- **1 Difficulty, your knight, bosses speak.** `G.DIFFICULTY` (enemy health, monsters per room, extra
+  hearts, block hits) and the Difficulty row in Settings. `scripts/data/looks.gd` + `scripts/ui/customize.gd`:
+  name (every "Aldous" in story text is replaced, `Looks.say`), armour colour (a tint), sword look.
+  `Heroes.by_id("knight")` hands out the row with all of that applied. `Story.BOSS_SAYS`: a line when a
+  boss fight starts and one when it ends (shown as banners).
+- **2 The village.** `scripts/data/places.gd`: every walkable place. `scripts/hub/hub.gd` shows one at a
+  time (`enter()`), with walls (`blocks`), doors and screen edges (`exits`, a short fade) and people.
+  "ghost" people are figures already painted into a picture. Play starts in `room` (your room at the
+  tavern: bed, looking glass = customize), then `hall` (barkeep = `scripts/data/shop.gd`, restocked each
+  descent), then `village`. Interiors are cut from the pack's own finished tavern picture
+  (`tools/import_hub.py` HALVED). The tavern outside is wall + roof + doorway pieces. The training yard
+  (Sergeant Brandt) is a run with `G.next_run = {"training": true}`: one room, a straw dummy, sparring
+  monsters that come back, no death, nothing counted or kept.
+- **3 Walking out, the Elfwood.** Village east edge -> `elfwood` -> `glade`. The glade's Warden opens the
+  side levels `Story.SIDE` (wood_1, wood_2). Side levels use `Floors.EXTRA["forest"]` and
+  `scripts/run/forest_look.gd` (grass, tree walls, bramble / boulder / rune-stone doors, sinkholes) and
+  end with a CHAMPION (`"champion"`: one monster with 5x health and a guard) instead of a boss.
+  `run.scale_floor` (a level's `"tier"`) sets monster strength. Seven forest monsters in `enemies.gd`
+  (thorn-sick elves, mushroom folk). The owner picked "walk screen to screen": places join at their edges,
+  but the change is a fade, not a slide.
+- **4 Weapons.** `scripts/data/weapons.gd`: sword, great axe (forge at the smith, 60 coins), spear (clear
+  the Singing Glade), war hammer (beat Stonejaw; stuns, smashes rocks), twin daggers (first secret room
+  found in a Warrens level). Switch at the smith. `--weapon=<id>` forces one for tests.
+- **5 Story.** `Story.OPENING` (once, in your room), `Story.SCENES` (the Druid, in the village, after the
+  2nd, 4th, 6th and 7th level), `Story.NOTES` (8 pages; `scripts/entities/note.gd` lies in treasure and
+  secret rooms of story levels; the Chronicler keeps them), side-quest people who arrive (`"from"` in
+  `hub.gd` NPCS, `Quests.SIDE`: Mira, Brother Halm, Captain Rusk).
+- **6 Day, night, rain.** `hub.gd` `_weather()`: `G.world_clock` runs out of doors (a day = `DAY_LENGTH`
+  360 s), `SKY` colours, lamps brighter and fireflies at night, rain about a quarter of the time. The bed
+  in your room sleeps to nightfall or to morning. `--clock=<0..1>` sets the time for tests.
+- **Test flags added:** `--hub=<place>`, `--story` (story moments also while taking pictures), `--yard`
+  (with `--autotest`: the bot spars), `--level=wood_1`, `--weapon=`, `--clock=`.
+- **Known rough edges:** the hero walks over tables' shadows and chandeliers in the hall (they are part of
+  one flat picture); forest rooms use the hill's room layouts; the champion is a tough normal monster,
+  not a written boss fight (a werewolf and nine other spare bosses are cut and unused); weapons other
+  than the sword have no "look" choice; rain has no sound; prices and rewards are untested.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

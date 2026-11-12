@@ -64,7 +64,7 @@ func refresh() -> void:
 	# in the middle of a fight only the goal is shown, so the list never hides a monster
 	var room: Variant = run.get("room") if is_instance_valid(run) else null
 	var fighting: bool = is_instance_valid(room) and room.get("fighting") == true
-	for q: Dictionary in ([] if fighting else Quests.offered()):
+	for q: Dictionary in ([] if fighting else Quests.offered() + Quests.side_active()):
 		if Quests.complete(q):
 			lines.append([String(q["name"]) + ": done!", UI.C_GREEN])
 		else:

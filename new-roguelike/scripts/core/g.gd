@@ -90,6 +90,9 @@ func curse_on() -> bool:
 	return flag("withcurse")
 ## True while the hero in the camp stands next to someone (the touch TALK button lights up).
 var hub_near := false
+## The time of day in the world outside the hill, in seconds (scripts/hub/hub.gd turns it into
+## morning, dusk and night; kept in the save between sessions).
+var world_clock := -1.0
 
 # ------------------------------------------------------------------ event bus (world -> shell)
 signal run_started(run: Node)
@@ -108,6 +111,8 @@ signal boss_started(boss: Node)
 signal boss_defeated(boss_id: String)
 ## A short banner in the middle of the screen (room names, "Secret found", warnings).
 signal toast(title: String, subtitle: String)
+## The hero picked up a note in a level (scripts/entities/note.gd): the shell shows its words.
+signal note_found(index: int)
 ## The run is over. The shell shows the death or victory screen and records unlocks.
 signal run_ended(victory: bool, summary: Dictionary)
 ## Free-form counters for unlocks and achievements, e.g. ("secret_found", 1), ("boss_killed:gravekeeper", 1).

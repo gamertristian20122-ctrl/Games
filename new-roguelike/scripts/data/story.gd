@@ -60,6 +60,38 @@ const BOSS_SAYS := {
 	"starved_king": {"start": "I only wished never to want. Feed me.", "end": "Enough... at last... enough."},
 }
 
+## THE OPENING: shown once, before the player first gets control (in the room at the tavern).
+const OPENING := {"name": "", "title": "", "sprite": "", "pages": [
+	"Night. Rain on the forest road. One rider, one sword.",
+	"Long ago the order of the Seal sent forty knights to the Hollow Hill. Aldous is the one it has left.",
+	"The village under the hill gave him a room at the Hollow Flagon and asked no questions.",
+	"Morning. Somewhere below, something very old is hungry. Find the Druid by the rune stones.",
+]}
+
+## SCENES AT THE CAMP: spoken by the Druid the first time the hero is back in the village with
+## that many levels cleared (2 = the Crypt's seal, 4 = the Warrens', 6 = the Ashen Halls', 7 = the end).
+const SCENES := {
+	2: ["Hold the shards up, Aldous. There. Do you see the stones answer?", "The first seal is whole. The dead in the Crypt lie down again. One of four.",
+		"A pedlar came in on the road this morning. People come back to quiet places."],
+	4: ["The second seal. The larders are shut and the Warrens are only tunnels again.", "Half the ward is mended. Sit by the fire tonight. You look like the hill."],
+	6: ["Three. The forge is cold and its smith is at rest.", "Now hear the hard part. The fourth seal had two keepers. He ate them both, long ago.",
+		"There is nothing left to mend the last seal with. Only someone to stand where it stood."],
+	7: ["It is over. I felt him go quiet, like a child who has finally eaten.", "The hill is a hill. The wood is a wood. And you, last knight, are done.",
+		"Stay as long as you like. There is stew."],
+}
+
+## NOTES found in treasure and secret rooms, in this order: the king's story, piece by piece.
+const NOTES := [
+	"...the king asked the well for one thing: never to want again. The well kept its word. It took away the having, not the wanting.",
+	"Third winter. He has eaten the granaries of four towns and weeps at table. We bring him more. What else can we do?",
+	"The orders met at the Hollow Hill. Fire, Earth, Iron and Root: four seals, two keepers for each. I am to keep the first. I am glad.",
+	"Do not pity the keepers, the abbess said. But we fed them from our own bowls, and when our bowls were empty they grew thin.",
+	"Stonejaw was a cook once. He sang while he salted the meat. Now he guards the larder and does not sing.",
+	"I forged the seals to last a thousand years. I did not think to ask who would feed the fire for a thousand years.",
+	"Forty knights swore to come back each spring with bread for the keepers. One spring nobody came.",
+	"If you read this, knight: he is not wicked. He is only hungry. End it gently.",
+]
+
 ## Spoken once, the first time the camp opens.
 const INTRO := {"name": "Ysolde", "title": "Druid of the Stones", "sprite": "pc_elf_druid", "pages": [
 	"So the order did send someone. One knight. I had hoped for forty.",
@@ -270,3 +302,38 @@ static func heard(npc_id: String) -> void:
 	var got := pages_for(npc_id)
 	if int(got[1]) >= 0:
 		Save.hub_set("heard:" + npc_id, int(got[1]) + 1)
+
+
+## The first note not found yet (an index into NOTES), or -1 when all are found.
+static func next_note() -> int:
+	for i in NOTES.size():
+		if Save.hub_get("note:%d" % i) == 0:
+			return i
+	return -1
+
+
+static func find_note(i: int) -> void:
+	Save.hub_set("note:%d" % i, 1)
+	Save.flush()
+
+
+static func notes_found() -> Array:
+	var out: Array = []
+	for i in NOTES.size():
+		if Save.hub_get("note:%d" % i) > 0:
+			out.append(i)
+	return out
+
+
+## The camp scene waiting to be shown ([] when there is none): the newest one at or below the chapter
+## that has not been seen. Marks it seen.
+static func take_scene() -> Array:
+	var c := chapter()
+	var best := -1
+	for k: int in SCENES:
+		if k <= c and k > best:
+			best = k
+	if best < 0 or Save.hub_get("seen:scene") >= best:
+		return []
+	Save.hub_set("seen:scene", best)
+	return SCENES[best]

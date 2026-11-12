@@ -32,6 +32,42 @@ const LIST := [
 ]
 
 
+## SIDE QUESTS: one each from people who come to the village as the story moves on ("giver" = their
+## id in scripts/data/hub.gd). Same rows as LIST; talking to the giver takes the quest on.
+const SIDE := [
+	{"id": "miras_ring", "giver": "mira", "name": "Mira's Lost Stock", "text": "Open 5 chests in the hill.", "stat": "chest_opened", "need": 5, "reward": {"coins": 12}},
+	{"id": "lost_pages", "giver": "halm", "name": "The Lost Pages", "text": "Find 4 notes in the hill.", "stat": "notes_found", "need": 4, "reward": {"coins": 10, "keys": 1}},
+	{"id": "old_debts", "giver": "rusk", "name": "Old Debts", "text": "Clear 3 more levels.", "stat": "levels_cleared", "need": 3, "reward": {"coins": 12, "bombs": 2}},
+]
+
+
+## The side quest a person gives (taking it on the first time they are asked), or {}.
+static func from_giver(giver: String) -> Dictionary:
+	for q: Dictionary in SIDE:
+		if String(q["giver"]) != giver:
+			continue
+		var id := String(q["id"])
+		if Save.hub_get("q:%s:on" % id) == 0:
+			Save.hub_set("q:%s:on" % id, 1)
+			Save.hub_set("q:%s:base" % id, Save.stat_get(String(q["stat"])))
+		return q
+	return {}
+
+
+## Side quests taken on and not handed in yet (the quest list shows them too).
+static func side_active() -> Array:
+	var out: Array = []
+	for q: Dictionary in SIDE:
+		var id := String(q["id"])
+		if Save.hub_get("q:%s:on" % id) > 0 and Save.hub_get("q:%s:done" % id) == 0:
+			out.append(q)
+	return out
+
+
+static func is_done(id: String) -> bool:
+	return Save.hub_get("q:%s:done" % id) > 0
+
+
 ## The quests on offer right now (rows of LIST). Offering one remembers where its counter stood.
 static func offered() -> Array:
 	var out: Array = []
@@ -76,7 +112,7 @@ static func done_count() -> int:
 
 ## Hands the reward over (into the pack for the next run) and closes the quest.
 static func claim(id: String) -> void:
-	for q: Dictionary in LIST:
+	for q: Dictionary in LIST + SIDE:
 		if String(q["id"]) != id or not complete(q) or Save.hub_get("q:%s:done" % id) > 0:
 			continue
 		Save.hub_set("q:%s:done" % id, 1)

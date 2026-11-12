@@ -65,6 +65,7 @@ RECTS = [
     ("doorway", BUILD, "Props.png", 1, 23, 30, 41),
     ("window", BUILD, "Props.png", 132, 99, 24, 25),
     ("bench_long", BUILD, "Props.png", 83, 160, 58, 32),
+    ("note", FREE, "Props/Static/Esoteric.png", 35, 130, 9, 11),      # a written page: the notes found in the levels
 ]
 # (name, pack, file ending, x, y, w, h) in NATIVE pixels of a picture the pack ships at twice its
 # size (every pixel doubled; halving it by taking every second pixel gives the artist's own pixels

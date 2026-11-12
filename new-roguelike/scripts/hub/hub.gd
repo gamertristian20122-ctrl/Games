@@ -36,6 +36,17 @@ signal action(what: String, arg: Variant)
 const SPEED := 74.0
 const HERO_RADIUS := 5.0
 const DUSK := Color(0.80, 0.86, 0.92)          ## the forest's evening tint (the fire lights through it)
+## DAY AND NIGHT, AND WEATHER (out of doors only). One day lasts DAY_LENGTH seconds of walking about.
+## SKY is the colour laid over everything at each part of the day (0 = morning, 1 = the next morning);
+## lamps and fires burn brighter and the fireflies come out as it gets dark. Now and then it rains.
+const DAY_LENGTH := 360.0
+const SKY := [[0.0, Color(1.0, 0.98, 0.93)], [0.42, Color(1.0, 0.98, 0.93)], [0.52, Color(0.96, 0.78, 0.68)], [0.60, Color(0.50, 0.58, 0.82)],
+	[0.90, Color(0.48, 0.56, 0.80)], [0.97, Color(0.86, 0.80, 0.88)], [1.0, Color(1.0, 0.98, 0.93)]]
+const NIGHT_FROM := 0.56         ## the part of the day when night has fallen (to NIGHT_TO)
+const NIGHT_TO := 0.93
+const WEATHER_SLOT := 75.0       ## seconds one spell of weather lasts
+const RAIN_CHANCE := 28          ## in a hundred
+const RAIN_SKY := Color(0.80, 0.85, 0.92)
 
 var frozen := false              ## a window is open: the hero stands still
 var start_place := ""            ## main.gd sets these before the scene is added: where to begin ...
@@ -68,6 +79,11 @@ var _small := false              ## the place fits on the screen: the camera sta
 var _entered := false
 var _arrive_t := 0.0
 var _banner: Label
+var _banner_text := ""
+var _sky_node: CanvasModulate
+var _lamps: Array = []           ## [PointLight2D, energy by day]
+var _flies: CPUParticles2D
+var _rain: CPUParticles2D
 
 
 func _ready() -> void:
@@ -104,6 +120,27 @@ func _ready() -> void:
 	_banner.add_theme_constant_override("outline_size", 4)
 	_banner.visible = false
 	layer.add_child(_banner)
+	# rain: thin pale strokes falling across the whole screen (only out of doors, only now and then)
+	if G.world_clock < 0.0:
+		G.world_clock = float(Save.hub_get("clock"))
+	var drop := Image.create(1, 5, false, Image.FORMAT_RGBA8)
+	drop.fill(Color(0.78, 0.88, 1.0, 0.55))
+	_rain = CPUParticles2D.new()
+	_rain.texture = ImageTexture.create_from_image(drop)
+	var view0 := UI.screen_size(self)
+	_rain.position = Vector2(view0.x * 0.5 + 40.0, -8.0)
+	_rain.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_rain.emission_rect_extents = Vector2(view0.x * 0.5 + 60.0, 2.0)
+	_rain.amount = 110
+	_rain.lifetime = 0.75
+	_rain.direction = Vector2(-0.25, 1.0)
+	_rain.spread = 2.0
+	_rain.gravity = Vector2.ZERO
+	_rain.initial_velocity_min = 250.0
+	_rain.initial_velocity_max = 300.0
+	_rain.emitting = false
+	layer.add_child(_rain)
+	layer.move_child(_rain, 0)
 	_fade = ColorRect.new()
 	_fade.color = Color(UI.C_VOID, 0.0)
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -114,15 +151,35 @@ func _ready() -> void:
 	enter(start_place if start_place != "" else Places.START, start_at)
 	if G.arg("hublevel") != "":          # test: go down into that level after a second
 		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_level", G.arg("hublevel")))
-	elif Save.hub_get("seen:intro") == 0 and G.arg("shots") == "" and not G.flag("uitour") and place_id == "village":
-		# the first time in the village: the Druid speaks first
-		Save.hub_set("seen:intro", 1)
-		get_tree().create_timer(0.7).timeout.connect(func() -> void: action.emit("talk", Story.INTRO.duplicate(true)))
+	elif (G.arg("shots") == "" and not G.flag("uitour")) or G.flag("story"):
+		_story_moment()                  # (--story: also while taking test pictures)
+	if G.arg("clock") != "":
+		G.world_clock = float(G.arg("clock")) * DAY_LENGTH      # test: --clock=0.7 is deep night
 	if G.arg("shots") != "" and G.flag("hub"):
 		if place_id == "village":
 			_tour = [Vector2(376, 170), Vector2(180, 276), Vector2(360, 300), Vector2(540, 276), Vector2(150, 176)]
 		else:
 			_tour = [_hero.position + Vector2(0, 14)]
+
+
+## Things the story shows by itself when you arrive: the opening (once, in your room), the Druid's
+## first words (once, in the village), and a scene in the village after each seal.
+func _story_moment() -> void:
+	var say := {}
+	if place_id == "room" and Save.hub_get("seen:opening") == 0:
+		Save.hub_set("seen:opening", 1)
+		say = Story.OPENING.duplicate(true)
+	elif place_id == "village" and Save.hub_get("seen:intro") == 0:
+		Save.hub_set("seen:intro", 1)
+		say = Story.INTRO.duplicate(true)
+	elif place_id == "village":
+		var scene := Story.take_scene()
+		if not scene.is_empty():
+			say = {"name": "Ysolde", "title": "Druid of the Stones", "sprite": "pc_elf_druid", "pages": scene}
+	if not say.is_empty():
+		if G.flag("story"):
+			print("[hub] story moment in %s: %s" % [place_id, String(say["pages"][0])])
+		get_tree().create_timer(0.7).timeout.connect(func() -> void: action.emit("talk", say))
 
 
 ## Shows a place (scripts/data/places.gd) with the hero at `at` (or at its own spawn point).
@@ -157,7 +214,8 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	if place.has("fire"):
 		_build_fire()
 	for row: Dictionary in place.get("people", []):
-		_add_person(row)
+		if Story.chapter() >= int(row.get("from", 0)):        # some people only come once the story has moved on
+			_add_person(row)
 	_build_hero()
 	_hero.position = at if at != Vector2.INF else place["spawn"]
 	refresh_heroes()
@@ -194,6 +252,7 @@ func _go(to: String, at: Vector2) -> void:
 	tw.tween_property(_fade, "color:a", 1.0, 0.12)
 	await tw.finished
 	enter(to, at)
+	_story_moment()
 	var back := create_tween()
 	back.tween_property(_fade, "color:a", 0.0, 0.16)
 	await back.finished
@@ -202,6 +261,60 @@ func _go(to: String, at: Vector2) -> void:
 
 func _exit_tree() -> void:
 	G.hub_near = false
+	Save.hub_set("clock", int(G.world_clock))
+
+
+## 0..1 through the day.
+func _day_part() -> float:
+	return fposmod(G.world_clock, DAY_LENGTH) / DAY_LENGTH
+
+
+func _is_night() -> bool:
+	var t := _day_part()
+	return t >= NIGHT_FROM and t < NIGHT_TO
+
+
+func _raining() -> bool:
+	return hash(["weather", int(G.world_clock / WEATHER_SLOT)]) % 100 < RAIN_CHANCE
+
+
+## Moves the day on and lays its light over the place (out of doors only).
+func _weather(delta: float) -> void:
+	G.world_clock += delta
+	if not bool(place.get("outdoor", false)) or not is_instance_valid(_sky_node):
+		_rain.emitting = false
+		return
+	var t := _day_part()
+	var sky: Color = SKY[0][1]
+	for i in SKY.size() - 1:
+		if t >= float(SKY[i][0]) and t <= float(SKY[i + 1][0]):
+			sky = (SKY[i][1] as Color).lerp(SKY[i + 1][1], (t - float(SKY[i][0])) / maxf(float(SKY[i + 1][0]) - float(SKY[i][0]), 0.001))
+			break
+	var dark := clampf((1.0 - sky.g) / 0.42, 0.0, 1.0)             # 0 by day, 1 in the middle of the night
+	var rain := _raining()
+	if rain:
+		sky *= RAIN_SKY
+	var own: Color = place.get("tint", DUSK)                       # a place's own shade (the deep wood is bluer)
+	_sky_node.color = sky * Color(own.r / DUSK.r, own.g / DUSK.g, own.b / DUSK.b)
+	for lamp: Array in _lamps:
+		if is_instance_valid(lamp[0]):
+			(lamp[0] as PointLight2D).energy = float(lamp[1]) * lerpf(0.45, 1.5, dark)
+	if is_instance_valid(_flies):
+		_flies.emitting = dark > 0.3
+	_rain.emitting = rain
+
+
+## The bed in your room: sleep until night falls, or until morning.
+func sleep() -> void:
+	var to_night := not _is_night()
+	var day := floorf(G.world_clock / DAY_LENGTH)
+	if to_night:
+		G.world_clock = (day + NIGHT_FROM + 0.06) * DAY_LENGTH
+	else:
+		G.world_clock = (day + 1.0 + 0.02) * DAY_LENGTH
+	_banner_text = "Night has fallen" if to_night else "Morning"
+	_arrive_t = 2.6
+	Sfx.play("door_close", -8.0)
 
 
 # ------------------------------------------------------------------ building
@@ -333,9 +446,10 @@ func _in_any(rects: Array, at: Vector2) -> bool:
 
 
 func _build_light() -> void:
-	var dusk := CanvasModulate.new()
-	dusk.color = place.get("tint", DUSK)
-	_stage.add_child(dusk)
+	_sky_node = CanvasModulate.new()
+	_sky_node.color = place.get("tint", DUSK)
+	_stage.add_child(_sky_node)
+	_lamps.clear()
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
 	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.35), Color(1, 1, 1, 0)])
@@ -355,6 +469,7 @@ func _build_light() -> void:
 		l.energy = spec[3]
 		l.name = "light%d" % get_child_count()
 		_stage.add_child(l)
+		_lamps.append([l, float(spec[3])])
 	# fireflies: single pale squares drifting over the clearing
 	var flies := CPUParticles2D.new()
 	flies.position = (place["size"] as Vector2) * 0.5
@@ -379,6 +494,8 @@ func _build_light() -> void:
 	unlit.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 	flies.material = unlit
 	_stage.add_child(flies)
+	_flies = flies
+	_weather(0.0)
 
 
 ## A person standing in the camp: body, both hands, a shadow, and a gold "!" when they have news.
@@ -503,11 +620,13 @@ func _physics_process(delta: float) -> void:
 		_cam.position = _hero.position.round()
 	if _arrive_t > 0.0:
 		_arrive_t -= delta
-		_banner.text = String(place.get("name", ""))
+		_banner.text = _banner_text if _banner_text != "" else String(place.get("name", ""))
 		_banner.visible = not frozen
 		_banner.modulate.a = clampf(_arrive_t / 0.6, 0.0, 1.0)
 	elif _banner.visible:
 		_banner.visible = false
+		_banner_text = ""
+	_weather(delta)
 	_update_people(delta)
 
 
@@ -659,12 +778,27 @@ func _talk(index: int) -> void:
 			info["lines"].append(["Quests done: %d of %d" % [Quests.done_count(), Quests.LIST.size()], UI.C_FAINT])
 		"collection":
 			info["options"].append({"text": "Open the Collection", "what": "collection"})
+			var found := Story.notes_found()
+			info["lines"].append(["Notes from the hill: %d of %d" % [found.size(), Story.NOTES.size()], UI.C_DIM])
+			if not found.is_empty():
+				info["options"].append({"text": "Read the notes", "what": "hub_notes"})
+		"side":
+			var sq := Quests.from_giver(id)
+			if not sq.is_empty():
+				var pay := Quests.reward_text(sq["reward"])
+				if Quests.is_done(String(sq["id"])):
+					info["lines"].append(["%s: done. Thank you, knight." % sq["name"], UI.C_GREEN])
+				elif Quests.complete(sq):
+					info["options"].append({"text": "%s: take %s" % [sq["name"], pay], "what": "hub_claim", "arg": sq["id"]})
+				else:
+					info["lines"].append("%s: %s  %d/%d  (pays %s)" % [sq["name"], sq["text"], Quests.progress(sq), int(sq["need"]), pay])
 		"train":
 			info["options"].append({"text": "Train in the yard", "what": "hub_train"})
 		"bed":
 			var carried := Story.kit()
 			info["lines"].append(["Your room at the Hollow Flagon. The looking glass by the bed changes your name, armour and sword.", UI.C_DIM])
 			info["lines"].append(["You carry %d item%s. Camp chest: %d coins." % [carried.size(), "" if carried.size() == 1 else "s", Upgrades.coins()], UI.C_GOLD])
+			info["options"].append({"text": "Sleep until morning" if _is_night() else "Sleep until nightfall", "what": "hub_sleep"})
 		"shop":
 			for entry: Array in Shop.stock():
 				var item: Dictionary = Items.ALL[String(entry[0])]

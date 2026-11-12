@@ -799,6 +799,16 @@ func _thing_near(p: Vector2, dist: float) -> bool:
 
 # =============================================================================== things
 ## Adds a pickup / chest / pedestal / ... from a description (see the file header).
+## A page of the king's story lies here, if this run is a story level and a note is still unfound
+## (one new note per room; scripts/data/story.gd NOTES, scripts/entities/note.gd).
+func _maybe_note(at: Vector2) -> void:
+	if run.level.is_empty():
+		return
+	var i: int = run.take_note()
+	if i >= 0:
+		add_thing("note", {"pos": _spot_or_near(at), "note": i})
+
+
 func add_thing(kind: String, desc: Dictionary) -> Node2D:
 	var script: GDScript = load("res://scripts/entities/%s.gd" % kind)
 	if script == null:
@@ -853,6 +863,7 @@ func _spot_or_near(at: Vector2) -> Vector2:
 func _first_visit_content() -> void:
 	match type:
 		G.RoomType.TREASURE:
+			_maybe_note(G.ROOM_CENTER + Vector2(0, 30))
 			var item: String = run.take_item("treasure", rng)
 			# every key is a temptation: a normal item and a cursed one stand side by side, and
 			# taking one makes the other crumble (only the normal one when no cursed item is left)
@@ -884,6 +895,7 @@ func _first_visit_content() -> void:
 			if cursed != "":
 				add_thing("pedestal", {"item": cursed, "price": Pickups.PRICE_CURSED, "pos": Vector2(W * 0.5 + 60, y)})
 		G.RoomType.SECRET:
+			_maybe_note(G.ROOM_CENTER + Vector2(30, 24))
 			if rng.randf() < 0.5:
 				add_thing("chest", {"pos": G.ROOM_CENTER + Vector2(-24, 0), "locked": false, "rich": true})
 			else:
