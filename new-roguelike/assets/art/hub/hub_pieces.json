@@ -428,6 +428,19 @@
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
+ "hub_chimney": {
+  "box": [
+   4,
+   73,
+   28,
+   128
+  ],
+  "size": [
+   24,
+   55
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
  "hub_cross_0": {
   "box": [
    0,
@@ -700,6 +713,45 @@
    32
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
+ },
+ "hub_door_arch": {
+  "box": [
+   166,
+   25,
+   186,
+   65
+  ],
+  "size": [
+   20,
+   40
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_door_iron": {
+  "box": [
+   134,
+   27,
+   154,
+   65
+  ],
+  "size": [
+   20,
+   38
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_door_wood": {
+  "box": [
+   102,
+   29,
+   122,
+   65
+  ],
+  "size": [
+   20,
+   36
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
  },
  "hub_doorway": {
   "box": [
@@ -1181,6 +1233,32 @@
    23
   ],
   "source": "Pixel Crawler - Forge/Assets/Tiles.png"
+ },
+ "hub_fence_a": {
+  "box": [
+   20,
+   176,
+   60,
+   194
+  ],
+  "size": [
+   40,
+   18
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_fence_b": {
+  "box": [
+   20,
+   236,
+   60,
+   256
+  ],
+  "size": [
+   40,
+   20
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
  },
  "hub_fflag": {
   "box": [
@@ -1767,6 +1845,19 @@
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
  },
+ "hub_flowerbox": {
+  "box": [
+   18,
+   160,
+   46,
+   171
+  ],
+  "size": [
+   28,
+   11
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
  "hub_gate_0": {
   "box": [
    0,
@@ -2261,6 +2352,32 @@
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
  },
+ "hub_planter": {
+  "box": [
+   50,
+   154,
+   78,
+   171
+  ],
+  "size": [
+   28,
+   17
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_post": {
+  "box": [
+   4,
+   128,
+   12,
+   176
+  ],
+  "size": [
+   8,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
  "hub_rock_0": {
   "box": [
    2,
@@ -2364,6 +2481,19 @@
    12
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_roof_teal": {
+  "box": [
+   128,
+   6,
+   256,
+   95
+  ],
+  "size": [
+   128,
+   89
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
  },
  "hub_roof_wood": {
   "box": [
@@ -2572,6 +2702,19 @@
    16
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_stonebench": {
+  "box": [
+   17,
+   132,
+   47,
+   144
+  ],
+  "size": [
+   30,
+   12
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
  },
  "hub_stump_0": {
   "box": [
@@ -3574,6 +3717,58 @@
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
  },
+ "hub_wall_brick": {
+  "box": [
+   480,
+   189,
+   576,
+   240
+  ],
+  "size": [
+   96,
+   51
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
+ "hub_wall_dark": {
+  "box": [
+   192,
+   189,
+   288,
+   240
+  ],
+  "size": [
+   96,
+   51
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
+ "hub_wall_log": {
+  "box": [
+   0,
+   184,
+   96,
+   240
+  ],
+  "size": [
+   96,
+   56
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
+ "hub_wall_plank": {
+  "box": [
+   96,
+   186,
+   192,
+   240
+  ],
+  "size": [
+   96,
+   54
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
  "hub_wall_plaster": {
   "box": [
    288,
@@ -3586,6 +3781,71 @@
    56
   ],
   "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
+ "hub_wall_white": {
+  "box": [
+   384,
+   189,
+   480,
+   240
+  ],
+  "size": [
+   96,
+   51
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
+ "hub_win_arch": {
+  "box": [
+   67,
+   62,
+   93,
+   97
+  ],
+  "size": [
+   26,
+   35
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_win_closed": {
+  "box": [
+   197,
+   64,
+   219,
+   96
+  ],
+  "size": [
+   22,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_win_shut": {
+  "box": [
+   128,
+   62,
+   160,
+   96
+  ],
+  "size": [
+   32,
+   34
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_win_tall": {
+  "box": [
+   35,
+   94,
+   61,
+   129
+  ],
+  "size": [
+   26,
+   35
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
  },
  "hub_window": {
   "box": [

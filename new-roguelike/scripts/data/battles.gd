@@ -18,6 +18,7 @@ const Allies = preload("res://scripts/data/allies.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 
 const CRIT_CHANCE := 0.08          ## a blow lands half as hard again this often
 const CRIT_MULT := 1.5
@@ -75,6 +76,12 @@ const ALLY := {
 			{"id": "sunmend", "name": "Sun's Mercy", "kind": "spell", "mana": 9, "aim": "friend", "heal": 0.38, "text": "Light that closes a friend's wounds."},
 			{"id": "sunflare", "name": "Sunflare", "kind": "spell", "mana": 12, "aim": "foes", "power": 1.1, "text": "A burst of light over every monster."},
 		]},
+	"thessaly": {"hp": 38, "hp_level": 5, "mp": 18, "mp_level": 2, "atk": 7.5, "atk_level": 1.7, "def": 1.5, "def_level": 0.35, "speed": 15.0,
+		"skills": [
+			{"id": "pierce", "name": "Piercing Shot", "kind": "sword", "mana": 4, "aim": "foe", "power": 1.8, "text": "One arrow, drawn to the ear."},
+			{"id": "volley", "name": "Volley", "kind": "sword", "mana": 8, "aim": "foes", "power": 0.9, "text": "Arrows over every monster."},
+			{"id": "roots", "name": "Binding Roots", "kind": "spell", "mana": 6, "aim": "foe", "power": 0.6, "stun": 0.8, "text": "Roots hold one monster: it may lose its next turn."},
+		]},
 }
 
 
@@ -100,18 +107,57 @@ static func knight() -> Dictionary:
 		"speed": KNIGHT_SPEED + KNIGHT_SPEED_AGI * Rpg.stat("agi"), "magic": Skills.spell_power(), "dodge": Gear.ward(), "skills": skills}
 
 
-## Everybody on the knight's side: he first, then whoever travels with him.
-static func party() -> Array:
+## Everybody on the knight's side: he first, then his companions. In the story
+## (scripts/data/tale.gd) every companion who has joined fights, up to four in all; `extra` adds
+## somebody who fights beside him before she has joined. In the old story: the one who travels
+## with him.
+static func party(extra: Array = []) -> Array:
 	var out: Array = [knight()]
-	var with: Dictionary = Allies.with()
-	if not with.is_empty() and ALLY.has(String(with["id"])):
-		var a: Dictionary = ALLY[String(with["id"])]
-		var lvl := Rpg.level()
-		out.append({"id": String(with["id"]), "name": String(with["name"]), "sprite": String(with["sprite"]), "side": "party",
+	var ids: Array = []
+	if Tale.on():
+		for row: Dictionary in Allies.LIST:
+			if Allies.joined(String(row["id"])) or extra.has(String(row["id"])):
+				ids.append(String(row["id"]))
+	elif not Allies.with().is_empty():
+		ids.append(String(Allies.with()["id"]))
+	var lvl := Rpg.level()
+	for id: String in ids:
+		if not ALLY.has(id) or out.size() >= 4:
+			continue
+		var who := Allies.row(id)
+		var a: Dictionary = ALLY[id]
+		out.append({"id": id, "name": String(who["name"]), "sprite": String(who["sprite"]), "side": "party",
 			"max_hp": int(a["hp"]) + int(a["hp_level"]) * (lvl - 1), "max_mp": int(a["mp"]) + int(a["mp_level"]) * (lvl - 1),
 			"atk": float(a["atk"]) + float(a["atk_level"]) * (lvl - 1), "def": float(a["def"]) + float(a["def_level"]) * (lvl - 1),
 			"speed": float(a["speed"]), "magic": 1.0, "dodge": 0.0, "skills": (a["skills"] as Array).duplicate(true)})
 	return out
+
+
+## A boss of the story (scripts/data/tale.gd BOSSES) ready for a battle. It grows a little with
+## the knight, so coming back stronger helps but never makes it nothing.
+static func boss(boss_id: String) -> Dictionary:
+	var row: Dictionary = Tale.BOSSES[boss_id]
+	var lvl := Rpg.level()
+	return {"id": boss_id, "name": String(row["name"]), "sprite": String(row["sprite"]), "side": "foes", "boss": true,
+		"tint": row.get("tint", Color.WHITE),
+		"max_hp": roundi(float(row["hp"]) * (1.0 + 0.09 * (lvl - 1))), "max_mp": 0,
+		"atk": float(row["atk"]) * (1.0 + FOE_ATK_LEVEL * (lvl - 1)), "def": float(row["def"]), "speed": float(row["speed"]),
+		"magic": 1.0, "dodge": 0.0, "skills": [],
+		"sweep": int(row.get("sweep", 0)), "sweep_power": float(row.get("sweep_power", 0.7)), "sweep_name": String(row.get("sweep_name", "Sweep")),
+		"xp": int(row.get("xp", 50)), "coins": int(row.get("coins", 20))}
+
+
+## A battle of the story (scripts/data/tale.gd BATTLES): {"party", "foes", "look", "tier", "title", "boss"}.
+static func scripted(battle_id: String) -> Dictionary:
+	var spec: Dictionary = Tale.BATTLES[battle_id]
+	var tier := int(spec.get("tier", 0))
+	var foes: Array = []
+	if spec.has("boss"):
+		foes.append(boss(String(spec["boss"])))
+	for id: String in spec.get("foes", []):
+		foes.append(foe(id, tier))
+	return {"id": battle_id, "party": party(spec.get("with", [])), "foes": foes, "look": String(spec.get("look", "forest")), "tier": tier,
+		"title": String(spec.get("title", "A fight")), "boss": spec.has("boss"), "xp_bonus": int(spec.get("xp_bonus", 0))}
 
 
 ## One monster ready for a battle. `tier` is how dangerous the land is (0 = the woods .. 3).

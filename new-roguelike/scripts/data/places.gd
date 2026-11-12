@@ -35,11 +35,42 @@ extends RefCounted
 ## numbers below are pixels of those pictures.
 
 const Hub = preload("res://scripts/data/hub.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 
 const START := "room"            ## where Play puts you
 
 
+## The place with this id. While the story of scripts/data/tale.gd is on, the village is the
+## town of Wickmere, the Deepwood and the beacon's hill exist, and the Elfwood's two old places
+## are fitted to the story (who stands there, where the roads lead, how light it is).
 static func get_place(id: String) -> Dictionary:
+	if not Tale.on():
+		return _base_place(id)
+	match id:
+		"village":
+			return Tale.town()
+		"deepwood":
+			return Tale.deepwood()
+		"beacon":
+			return Tale.beacon()
+	var place := _base_place(id)
+	if id == "elfwood" or id == "glade":
+		place["tint"] = Color(0.98, 0.93, 0.80) if Tale.lit("elfwood") else place["tint"]
+		if id == "elfwood":
+			(place["exits"] as Array)[0]["at"] = Vector2(896, 280)        # back to Wickmere's east gate
+		else:
+			(place["exits"] as Array).append({"rect": Rect2(444, 168, 10, 60), "to": "deepwood", "at": Vector2(50, 230), "tale": 3,
+				"why": "Thessaly holds the stones alone. Speak with her."})
+			(place["forest"] as Dictionary)["open"] = [Rect2(-30, 140, 70, 120), Rect2(440, 140, 80, 120)]
+			(place["paths"] as Array).append([Vector2(300, 206), Vector2(490, 198)])
+			for row: Dictionary in place["people"]:
+				if String(row["id"]) == "thessaly":
+					row["role"] = "chat"
+					row["tale_to"] = 2                                    # after that she walks with the knight
+	return place
+
+
+static func _base_place(id: String) -> Dictionary:
 	match id:
 		"room":
 			return {
@@ -131,6 +162,8 @@ static func get_place(id: String) -> Dictionary:
 
 ## Where Play puts you: your room at the Hollow Flagon, or by the fire of the camp you last walked into.
 static func start() -> Array:
+	if Tale.on():
+		return [START, Vector2.INF]            # the story: always your room at the Hollow Flagon
 	match Save.hub_get("camp"):
 		1:
 			return ["dustwatch", Vector2(320, 300)]

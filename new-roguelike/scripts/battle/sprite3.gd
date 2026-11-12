@@ -9,9 +9,33 @@ extends MeshInstance3D
 
 const PX := 1.0 / 16.0
 
+## PATCHES OF SUN (the owner's reference picture, 12 Nov 2026: golden light falling through
+## leaves, deep warm shade between). Every lit shader of the 3D look includes this: the sky
+## light is not even, it comes in soft patches that drift slowly, with one pool of light round
+## the spot the camera looks at. Lamps and fires are not touched by it. The settings are the
+## same for every shader (global shader uniforms, set with set_sun() below):
+##   hh_dapple      a soft cloud picture (made by code: light, not art)
+##   hh_dapple_set  x = how big the patches are (1 / world units), y = how strong (0 = even light),
+##                  z, w = how far the patches have drifted
+##   hh_pool        x, y = the middle of the pool of light (world x, z), z = its radius, w = strength
+const SUN_PART := "
+global uniform sampler2D hh_dapple : filter_linear, repeat_enable;
+global uniform vec4 hh_dapple_set;
+global uniform vec4 hh_pool;
+varying float sun_share;
+float sun_at(vec2 where) {
+	float n = texture(hh_dapple, where * hh_dapple_set.x + hh_dapple_set.zw).r;
+	float patch = smoothstep(0.32, 0.56, n);
+	float pool = (1.0 - smoothstep(hh_pool.z * 0.35, hh_pool.z, distance(where, hh_pool.xy))) * hh_pool.w;
+	return mix(1.0, mix(0.44, 1.22, clamp(max(patch * 0.9, pool), 0.0, 1.0)), hh_dapple_set.y);
+}
+"
+
 const CODE := "
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
+" + SUN_PART + "
+varying vec3 world_at;
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform float flip = 0.0;
 uniform vec3 tint : source_color = vec3(1.0);
@@ -23,6 +47,7 @@ void vertex() {
 	top = 1.0 - UV.y;
 	// leaves move a little in the wind: only the top of the picture, never the feet
 	VERTEX.x += sin(TIME * 0.9 + MODEL_MATRIX[3].x * 1.7) * sway * top * top;
+	world_at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 void fragment() {
 	vec2 uv = UV;
@@ -32,15 +57,18 @@ void fragment() {
 	ALBEDO = mix(c.rgb * tint, vec3(1.0), flash);
 	EMISSION = c.rgb * shine;
 	ROUGHNESS = 1.0;
+	sun_share = sun_at(world_at.xz);
 }
 void light() {
 	// a flat picture has no round sides: every light simply colours it by how near it is.
 	// Lamps are turned down for pictures: the ground only catches them at a slant.
-	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? 1.0 : 0.35);
+	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);
 }
 "
 
 static var _shader: Shader
+static var _sun_ready := false
+static var _dapple: ImageTexture
 
 var frames: SpriteFrames
 var anim := "idle"
@@ -54,7 +82,33 @@ var _offset := Vector2.ZERO
 var _size := Vector2.ZERO
 
 
+## Makes the global settings of SUN_PART exist (once, before any shader that uses them).
+static func ensure_sun() -> void:
+	if _sun_ready:
+		return
+	_sun_ready = true
+	var noise := FastNoiseLite.new()
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.frequency = 0.022
+	noise.fractal_octaves = 2
+	noise.seed = 20261112
+	_dapple = ImageTexture.create_from_image(noise.get_seamless_image(256, 256))
+	RenderingServer.global_shader_parameter_add(&"hh_dapple", RenderingServer.GLOBAL_VAR_TYPE_SAMPLER2D, _dapple)
+	RenderingServer.global_shader_parameter_add(&"hh_dapple_set", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(0.03, 0.0, 0.0, 0.0))
+	RenderingServer.global_shader_parameter_add(&"hh_pool", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(0.0, 0.0, 10.0, 0.0))
+
+
+## Sets the patches of sun for everything on screen. strength 0 = even light (night, indoors).
+##   patch   how big one patch is, in world units        drift   how far they have moved (grows slowly)
+##   pool_at the spot the camera looks at (world x, z)   pool_radius, pool_strength   the pool of light there
+static func set_sun(strength: float, patch: float, drift: Vector2, pool_at: Vector2, pool_radius: float, pool_strength: float) -> void:
+	ensure_sun()
+	RenderingServer.global_shader_parameter_set(&"hh_dapple_set", Vector4(1.0 / maxf(patch, 0.1) / 2.0, strength, drift.x, drift.y))
+	RenderingServer.global_shader_parameter_set(&"hh_pool", Vector4(pool_at.x, pool_at.y, pool_radius, pool_strength))
+
+
 static func shader() -> Shader:
+	ensure_sun()
 	if _shader == null:
 		_shader = Shader.new()
 		_shader.code = CODE

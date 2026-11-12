@@ -24,6 +24,7 @@ const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 
 signal finished
 
@@ -187,7 +188,10 @@ func _build(shot: Dictionary) -> void:
 	_tick = Callable()
 	_t = 0.0
 	_len = float(shot.get("time", 6.0))
-	_caption.text = Looks.say(String(shot.get("text", "")))
+	var words := String(shot.get("text", ""))
+	if Tale.on() and _shot >= 0 and _shot < Tale.INTRO.size():
+		words = String(Tale.INTRO[_shot])           # the new story's words under the same pictures
+	_caption.text = Looks.say(words)
 	_caption.visible_characters = 0
 	_rain.emitting = false
 	_title.modulate.a = 0.0

@@ -55,7 +55,7 @@ make sure to have that very soft light like this." Read as:
   the look, (6) balance. An APK after each.
 - The owner has still not said how any of it runs on the phone. Keep Settings > "3D look" working.
 
-## The story (PROPOSED 12 Nov 2026; the owner has NOT said yes yet: do not build it before they do)
+## The story (the owner said "yes" to this on 12 Nov 2026; chapter one is BUILT, see v0.19.0)
 Asked with three choices (The Stolen Dawn / The Thorn-Sickness / The Broken Crown), the owner
 answered: story "I cant decide 1 or 4" (there was no 4; read as torn between 1 and 3, to be
 confirmed), companions "3", mood "1 and 2" = hopeful adventure AND dark and serious.
@@ -74,7 +74,12 @@ So the proposal MERGES The Stolen Dawn with The Broken Crown:
   an NPC). One joins in each of the first three lands, each with a scene and a reason of their own.
 - **Mood:** a warm world worth saving, with real loss in it: not every lord can be saved, and
   relighting a beacon costs something each time. The ending is earned, and it is dawn.
-- Names and words are placeholders the owner may rewrite. Nothing here is built.
+- Added while building: each beacon SWALLOWS its shard when it is lit, so the crown can never be
+  remade ("a light does more than a king"). That is the cost the mood asked for.
+- Names and words are placeholders the owner may rewrite. All of it lives in `scripts/data/tale.gd`.
+- **Built:** chapter one (Wickmere, the Elfwood, Thessaly, the Bramble Giant, the first beacon).
+  **Not built:** the Sands and Seraphine, the Cinder Mountains and Grukk, the Sunken Archive,
+  the end under Hollow Hill.
 
 ## Direction since 12 Nov 2026 (night): the LIT 3D LOOK, then TURN-BASED battles
 The owner sent six pictures of a famous "pixel people in a lit 3D world" turn-based RPG and wrote:
@@ -983,6 +988,43 @@ one-room real-time fight). Three files, kept apart on purpose:
 - **Gone:** `scripts/battle/preview.gd`, the title's test button, `--look`.
 - **Not done:** bosses and story dungeons as battles; items; more than one companion in the data;
   attack effects (blows are a step, a flash and a number); battle music of its own.
+
+## v0.19.0 (12 Nov 2026): the story begins (chapter one), and the look of the reference picture
+**The story is `scripts/data/tale.gd`** and nothing else needs touching to write more of it:
+`STEPS` (the line in the corner), `TALK` (who says what at which step, and the one button that
+moves the story on), `BATTLES` and `BOSSES` (its turn-based battles), `ENTER` (walking into a
+place), and the places `town()`, `deepwood()`, `beacon()`. Its header explains every key.
+- **Chapter one, step by step:** 0 Captain Hale in Wickmere's square > 1 the east road > 2 the
+  Rune Glade, Thessaly, a battle beside her > 3 she joins; the Deepwood, the lost wardens (battle)
+  > 4 the beacon's hill, Old Bramblejaw (boss) > 5 set the shard in the beacon > 6 the Elfwood
+  turns golden; back to Hale > 7 done (60 coins; "the Sands open in the next chapter").
+- **Wickmere** takes the old village's place (same id "village"): the Hollow Flagon, four more
+  houses built from new pack pieces (`tools/import_hub.py`: walls, a teal roof, doors, windows,
+  chimney, fences, post), a paved square with the watch-fire, lamp posts with flames (`"torches"`),
+  the sealed gate of Hollow Hill. A house hides the ground behind it as high as its roof: houses
+  stand on the north row or at the edges, and that ground is in `"blocks"`.
+- **The old story is OFF** while the tale is on: gates, quests, the shop's run items, upgrades,
+  the yard only talk (`Tale.RETIRED`); roads with an old `"need"` are shut. The smith sells gear.
+  `--oldstory` brings it all back; the old flow test must be run with it.
+- **Battles of the story:** `Battles.scripted(id)`; a boss cannot be fled from and every third
+  turn strikes everybody (the menu warns: "Guard!"). Every companion who has joined fights
+  (`Battles.party()`); Thessaly's numbers are in `battles.gd ALLY`, her row in `allies.gd`.
+- **How hard (dev/battle_sim.tscn, bot play):** a knight who fights only the story's battles
+  reaches the giant at level 3 (the two battles before it carry `xp_bonus` for that): there he
+  wins nearly always with about half his health; at level 2 about 8 in 10.
+- **The intro** keeps its seven pictures; its words are `Tale.INTRO`. It plays again once for
+  everybody (save key `tale:intro`).
+- **Tests:** `--uitour=tale` plays the whole chapter (a bot fights) and prints 16 checks.
+  `--battle=story:<id>` opens one story battle. Old flow test: `--uitour=flow --oldstory` (82).
+**The look, after the owner sent the golden camp picture and wrote "this is the reference that
+is off"** (read as: my look was off from it):
+- `sprite3.gd SUN_PART`: the sky light falls in soft drifting PATCHES with a pool of light on
+  the spot the camera looks at; every lit shader includes it; the settings are global shader
+  uniforms set by `Sprite3.set_sun()` (never call `global_shader_parameter_get_list`: editor only).
+- The last pass got `warm`, `shade`, `punch`, `rich`: amber light, brown shade, more contrast.
+- Out of doors by day: camera pitch 35 (was 44), stronger blur, darker rim. Night and rooms keep
+  the cool even light. First try was too dark and too orange: shade share 0.44, ambient 0.42.
+- **Still not done:** the title picture and the intro's pictures are the old flat ones; rain is flat.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

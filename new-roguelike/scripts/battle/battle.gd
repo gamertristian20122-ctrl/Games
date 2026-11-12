@@ -32,6 +32,7 @@ const FOES_AT := [Vector3(2.2, 0.0, 0.9), Vector3(4.5, 0.0, -0.9), Vector3(6.4, 
 const PX := 1.0 / 16.0
 
 var spot := 0                      ## which roamer of scripts/data/roamers.gd started it
+var story := ""                    ## or: a battle of the story (scripts/data/tale.gd BATTLES)
 var night := false
 var fight: RefCounted
 var stage: Node3D
@@ -51,35 +52,49 @@ var _shot_done := false
 var _cam_home := Vector3.ZERO
 var _t := 0.0
 var _tier := 0
+var _xp_bonus := 0                ## a battle of the story may give XP of its own on top
 
 
 func _ready() -> void:
 	_auto = G.flag("autotest") or G.flag("autobattle")
 	_speed = maxf(float(G.arg("speed", "1")), 1.0) if _auto else 1.0
-	var kind := Roamers.kind_of(spot)
-	_tier = int(kind["tier"])
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	if G.args.has("seed"):
 		rng.seed = int(G.arg("seed"))
 	fight = Fight.new()
-	fight.call("setup", Battles.party(), Battles.pack_for(spot, rng), rng.randi())
+	var title := "A fight"
+	var look := "forest"
+	if story != "":
+		var spec := Battles.scripted(story)
+		_tier = int(spec["tier"])
+		title = String(spec["title"])
+		look = String(spec["look"])
+		fight.call("setup", spec["party"], spec["foes"], rng.randi())
+		fight.set("no_flee", bool(spec["boss"]))
+		_xp_bonus = int(spec["xp_bonus"])
+	else:
+		var kind := Roamers.kind_of(spot)
+		_tier = int(kind["tier"])
+		title = String(kind.get("title", "A fight"))
+		look = Battles.look_for(spot)
+		if night and Stage.LOOKS.has(look + "_night"):
+			look += "_night"
+		fight.call("setup", Battles.party(), Battles.pack_for(spot, rng), rng.randi())
 	stage = Stage.new()
 	add_child(stage)
-	var look := Battles.look_for(spot)
-	if night and Stage.LOOKS.has(look + "_night"):
-		look += "_night"
-	stage.call("build", look, 11 + spot)
+	stage.call("build", look, 11 + maxi(spot, 0) + story.length())
 	_cam_home = stage.cam.position
 	var party: Array = fight.party
 	var foes: Array = fight.foes
 	for i in party.size():
 		_place(party[i], PARTY_AT[i], false)
 	for i in foes.size():
-		_place(foes[i], FOES_AT[i], true)
+		# a boss stands alone in the middle of its side
+		_place(foes[i], Vector3(3.9, 0.0, 0.2) if bool(foes[i].get("boss", false)) else FOES_AT[i], true)
 	_build_screen()
 	_refresh()
-	_run.call_deferred(String(kind.get("title", "A fight")))
+	_run.call_deferred(title)
 
 
 # ------------------------------------------------------------------ the fighters on the stage
@@ -92,6 +107,11 @@ func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 	var m := Art.meta(String(unit["sprite"]))
 	var bw := float(m.get("body_width", 16.0)) * PX
 	var bh := float(m.get("body_height", 28.0)) * PX
+	if bool(unit.get("boss", false)):
+		# boss art has no body measurements: its picture, less the empty air the pack leaves round it
+		var used := UI.used_rect(String(unit["sprite"]))
+		bw = used.size.x * PX * 0.8
+		bh = used.size.y * PX
 	unit["top"] = bh
 	unit["wide"] = bw
 	# the pack draws bodies without arms: a hand at each side, and the knight's sword in his
@@ -346,6 +366,14 @@ func _show_commands() -> void:
 	for b: Button in [attack, skills, guard, flee]:
 		b.custom_minimum_size = Vector2(54, 19)
 		grid.add_child(b)
+	if bool(fight.get("no_flee")):
+		flee.disabled = true
+		_menu_box.add_child(_reason("No running from this one."))
+	for foe: Dictionary in fight.call("alive", fight.foes):
+		if bool(fight.call("sweep_next", foe)):
+			var warn := _reason("%s draws back for a great blow at everybody. Guard!" % String(foe["name"]))
+			warn.add_theme_color_override("font_color", UI.C_ORANGE)
+			_menu_box.add_child(warn)
 	if (_acting["skills"] as Array).is_empty():
 		# never a dead button without the reason on the screen
 		skills.disabled = true
@@ -547,6 +575,14 @@ func _step(unit: Dictionary, reach: float) -> void:
 	var node: Node3D = unit["node"]
 	if not is_instance_valid(node) or _speed > 4.0:
 		return
+	if String(unit["side"]) == "foes" and Art.has_anim(String(unit["sprite"]), "attack"):
+		# the pack drew this one striking: play that instead of a step (then back to standing)
+		node.call("play", "attack")
+		await get_tree().create_timer(0.45 / _speed, false).timeout
+		_later(0.5 / _speed, node, func(n: Node) -> void:
+			if int(unit["hp"]) > 0:
+				n.call("play", "idle"))
+		return
 	var home: Vector3 = unit["home"]
 	var dir := 1.0 if String(unit["side"]) == "party" else -1.0
 	var tw := create_tween()
@@ -567,12 +603,20 @@ func _flash(unit: Dictionary) -> void:
 	var tw := create_tween()
 	tw.tween_property(node, "position", home + Vector3(back, 0.0, 0.0), 0.05)
 	tw.tween_property(node, "position", home, 0.14)
-	get_tree().create_timer(0.09, false).timeout.connect(func() -> void:
-		if is_instance_valid(node):
-			node.call("set_flash", 0.0))
-	get_tree().create_timer(0.36, false).timeout.connect(func() -> void:
-		if is_instance_valid(node) and int(unit["hp"]) > 0:
-			node.call("play", "idle"))
+	_later(0.09, node, func(n: Node) -> void: n.call("set_flash", 0.0))
+	_later(0.36, node, func(n: Node) -> void:
+		if int(unit["hp"]) > 0:
+			n.call("play", "idle"))
+
+
+## Does something to a fighter's picture a moment later, if the picture is still there then (a
+## battle may end, and free it, before the moment comes).
+func _later(seconds: float, node: Node, what: Callable) -> void:
+	var id := node.get_instance_id()
+	get_tree().create_timer(seconds, false).timeout.connect(func() -> void:
+		var n := instance_from_id(id) as Node
+		if n != null and is_instance_valid(n):
+			what.call(n))
 
 
 ## A fighter goes down: the pack's own death animation, then monsters fade from the ground.
@@ -611,17 +655,18 @@ func _finish() -> void:
 	_over = true
 	_menu.visible = false
 	var outcome := String(fight.call("result"))
-	var summary := {"spot": spot, "rounds": int(fight.round_no), "xp": 0, "coins": 0, "gear": "", "levels": 0}
+	var summary := {"spot": spot, "story": story, "rounds": int(fight.round_no), "xp": 0, "coins": 0, "gear": "", "levels": 0}
 	var lines: Array = []
 	var head := "Victory!"
 	if outcome == "win":
 		var reward := Battles.reward(fight.foes, _tier)
+		reward["xp"] = int(reward["xp"]) + _xp_bonus
 		summary.merge(reward, true)
 		var before := Rpg.level()
 		summary["levels"] = Rpg.add_xp(int(reward["xp"]))
 		Save.hub_set("bank:coins", Save.hub_get("bank:coins") + int(reward["coins"]))
 		lines.append("+%d XP" % int(reward["xp"]))
-		lines.append("+%d coins, sent to the camp chest" % int(reward["coins"]))
+		lines.append("+%d coins" % int(reward["coins"]))
 		if int(summary["levels"]) > 0:
 			lines.append("Level %d!  %d points to spend on the Knight page" % [Rpg.level(), Rpg.points()])
 			for lvl in range(before + 1, Rpg.level() + 1):

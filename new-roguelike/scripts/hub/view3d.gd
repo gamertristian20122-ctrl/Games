@@ -18,13 +18,14 @@ extends Node3D
 ## One world unit is 16 art pixels: 2D (x, y) is 3D (x / 16, 0, y / 16).
 
 const Stage = preload("res://scripts/battle/stage.gd")
+const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
 
 const PX := 1.0 / 16.0
-const PITCH := 44.0                 ## how steeply the camera looks down out of doors, in degrees
+const PITCH := 35.0                 ## how steeply the camera looks down out of doors, in degrees (low, like a stage)
 const PITCH_INDOORS := 62.0         ## a room is one painted picture: looked at more from above, it keeps its shape
-const TILT := 12.0                  ## how far standing things lean back towards the camera, out of doors ...
+const TILT := 8.0                   ## how far standing things lean back towards the camera, out of doors ...
 const TILT_INDOORS := 45.0          ## ... and in a room (so people are not squashed by the steep view)
 const FOV := 30.0
 const MARGIN := Vector2(336, 208)   ## how far past the edges of a place the ground is painted, px
@@ -35,19 +36,26 @@ const LAMP_REACH := 1.5             ## and reaches this many times as far as its
 const CARD_CODE := "
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
+" + Sprite3.SUN_PART + "
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec3 tint : source_color = vec3(1.0);
 uniform float shine = 0.0;
+varying vec2 foot;
+void vertex() {
+	// the patch of sun or shade a thing stands in is the one under it
+	foot = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+}
 void fragment() {
 	vec4 c = texture(tex, uv_rect.xy + UV * uv_rect.zw);
 	if (c.a < 0.5) { discard; }
 	ALBEDO = c.rgb * tint;
 	EMISSION = c.rgb * shine;
 	ROUGHNESS = 1.0;
+	sun_share = sun_at(foot);
 }
 void light() {
-	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? 1.0 : 0.35);
+	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);
 }
 "
 const FLOOR_PART := "
@@ -61,22 +69,28 @@ vec3 ground_colour(vec2 where) {
 	return mix(c, vec3(l) * 1.15, grey);
 }
 "
+const SUN_LIGHT := "
+void light() {
+	DIFFUSE_LIGHT += clamp(dot(NORMAL, LIGHT), 0.0, 1.0) * ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 1.0);
+}
+"
 const FLOOR_CODE := "
 shader_type spatial;
 render_mode specular_disabled;
-" + FLOOR_PART + "
+" + Sprite3.SUN_PART + FLOOR_PART + "
 void vertex() {
 	at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 }
 void fragment() {
 	ALBEDO = ground_colour(at);
 	ROUGHNESS = 1.0;
+	sun_share = sun_at(at);
 }
-"
+" + SUN_LIGHT
 const SHADE_CODE := "
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
-" + FLOOR_PART + "
+" + Sprite3.SUN_PART + FLOOR_PART + "
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform float dark = 0.6;
@@ -87,8 +101,9 @@ void fragment() {
 	if (texture(tex, uv_rect.xy + UV * uv_rect.zw).a < 0.5) { discard; }
 	ALBEDO = ground_colour(at) * dark;
 	ROUGHNESS = 1.0;
+	sun_share = sun_at(at);
 }
-"
+" + SUN_LIGHT
 
 var hub: Node2D
 var cam: Camera3D
@@ -113,12 +128,15 @@ var _outdoor := false
 var _dist := 21.0
 var _pitch := PITCH
 var _lift := 0.0                   ## how much the darks are lifted towards a warm haze (soft light)
+var _day := 0.0                    ## 1 = out of doors by day (patches of golden sun), 0 = night or a room
+var _drift := 0.0
 var _up := Vector3.UP              ## "up" for a standing card: straight up, leaned back by the tilt
 
 
 func setup(the_hub: Node2D) -> void:
 	hub = the_hub
 	process_priority = 100             # after hub.gd has moved everybody
+	Sprite3.ensure_sun()
 	_unit.size = Vector2.ONE
 	_card_shader = Shader.new()
 	_card_shader.code = CARD_CODE
@@ -426,8 +444,12 @@ func _shine_of(tex: Texture2D) -> float:
 	var path := tex.resource_path
 	if path.contains("hub_flame"):
 		return 2.4
+	if path.contains("hub_fire_b"):
+		return 2.0               # a lamp post's flame
 	if path.contains("hub_fire") or path.contains("hub_flava") or path.contains("hub_rune"):
 		return 0.5
+	if path.contains("hub_win"):
+		return 0.45              # lit windows
 	return 0.0
 
 
@@ -668,18 +690,22 @@ func _sync_light() -> void:
 		sky = (hub._sky_node as CanvasModulate).color
 	var bright := clampf((sky.g - 0.55) / 0.45, 0.0, 1.0)           # 1 by day, 0 in the middle of the night
 	if _outdoor:
-		# soft, warm light by day (the owner: "very soft light"): a golden sun, cooler shade
-		_sun.light_color = (sky * Color(1.0, 0.88, 0.68)).lerp(sky, 1.0 - bright)
-		_sun.light_energy = lerpf(0.30, 0.86, bright)
-		_env.ambient_light_color = sky.lerp(Color(0.55, 0.65, 1.0), 0.35 * (1.0 - bright)) * Color(0.86, 0.9, 1.0)
-		_env.ambient_light_energy = lerpf(0.36, 0.54, bright)
-		var mist := Color(0.06, 0.10, 0.18).lerp(Color(0.66, 0.60, 0.46), bright) * sky
+		# By day (the owner's reference picture): a low golden sun that falls in patches, deep warm
+		# shade between them, a pool of light where the knight stands. By night: even, cool, dark.
+		_sun.light_color = (sky * Color(1.0, 0.84, 0.58)).lerp(sky, 1.0 - bright)
+		_sun.light_energy = lerpf(0.30, 1.15, bright)
+		_env.ambient_light_color = (sky * Color(0.78, 0.72, 0.80)).lerp(sky.lerp(Color(0.55, 0.65, 1.0), 0.35), 1.0 - bright)
+		_env.ambient_light_energy = lerpf(0.36, 0.42, bright)
+		var mist := Color(0.06, 0.10, 0.18).lerp(Color(0.62, 0.50, 0.30), bright) * sky
 		_env.background_color = mist
 		_env.fog_enabled = true
 		_env.fog_light_color = mist
 		_env.fog_density = 0.003
 		_env.fog_sky_affect = 1.0
-		_lift = 0.03 * bright
+		_env.glow_bloom = lerpf(0.03, 0.10, bright)
+		_env.glow_hdr_threshold = lerpf(1.2, 0.95, bright)
+		_lift = 0.0
+		_day = bright
 	else:
 		_sun.light_color = Color(1.0, 0.96, 0.9)
 		_sun.light_energy = 0.6
@@ -688,6 +714,7 @@ func _sync_light() -> void:
 		_env.background_color = Color("07060a")
 		_env.fog_enabled = false
 		_lift = 0.02
+		_day = 0.0
 	for pair: Array in _lamps:
 		if is_instance_valid(pair[0]) and is_instance_valid(pair[1]):
 			(pair[1] as OmniLight3D).light_energy = (pair[0] as PointLight2D).energy * LAMP_ENERGY
@@ -733,10 +760,17 @@ func _sync(_delta: float) -> void:
 	cam.look_at(target, Vector3.UP)
 	var mat: ShaderMaterial = _post.material_override
 	mat.set_shader_parameter("focus", _dist)
-	mat.set_shader_parameter("sharp", _dist * 0.24)
-	mat.set_shader_parameter("falloff", _dist * 0.9)
-	mat.set_shader_parameter("blur_px", 5.0)
-	mat.set_shader_parameter("rim", 0.38)
+	mat.set_shader_parameter("sharp", _dist * lerpf(0.24, 0.17, _day))
+	mat.set_shader_parameter("falloff", _dist * lerpf(0.9, 0.62, _day))
+	mat.set_shader_parameter("blur_px", lerpf(5.0, 8.5, _day))
+	mat.set_shader_parameter("rim", lerpf(0.38, 0.62, _day))
+	# the colours of the picture: amber light and brown shade by day, the old cool night otherwise
+	mat.set_shader_parameter("warm", Vector3(1.07, 1.0, 0.90).lerp(Vector3(1.11, 1.02, 0.84), _day))
+	mat.set_shader_parameter("shade", Vector3(0.88, 0.96, 1.12).lerp(Vector3(1.04, 0.90, 0.76), _day))
+	mat.set_shader_parameter("punch", lerpf(1.0, 1.14, _day))
+	mat.set_shader_parameter("rich", lerpf(1.0, 1.08, _day))
+	_drift += _delta * 0.004
+	Sprite3.set_sun(_day, 7.0, Vector2(_drift, _drift * 0.6), Vector2(target.x, target.z), _dist * 0.8, 0.95)
 	mat.set_shader_parameter("lift", _lift)
 	mat.set_shader_parameter("haze", Vector3(1.0, 0.85, 0.63))
 	_sync_words(zoom)

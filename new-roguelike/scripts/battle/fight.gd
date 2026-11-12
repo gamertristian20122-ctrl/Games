@@ -164,9 +164,20 @@ func _blow(who: Dictionary, target: Dictionary, power: float, sure: bool, events
 	events.append({"type": "hit", "who": who, "target": target, "amount": dealt, "crit": crit, "dead": int(target["hp"]) <= 0, "guarded": bool(target["guard"])})
 
 
+## Will this boss sweep everybody on its NEXT turn? (The screen warns the player.)
+func sweep_next(who: Dictionary) -> bool:
+	return int(who.get("sweep", 0)) > 0 and (int(who.get("turns", 0)) + 1) % int(who["sweep"]) == 0
+
+
 ## What a monster does on its turn: a blow at somebody who still stands (the knight more often).
-func foe_choice(_who: Dictionary) -> Dictionary:
+func foe_choice(who: Dictionary) -> Dictionary:
 	var standing := alive(party)
+	if int(who.get("sweep", 0)) > 0:
+		who["turns"] = int(who.get("turns", 0)) + 1
+		if int(who["turns"]) % int(who["sweep"]) == 0:
+			# a boss's heavy move: everybody on your side at once (Guard on the turn before helps)
+			return {"do": "skill", "skill": {"id": "sweep", "name": String(who.get("sweep_name", "Sweep")), "kind": "sword", "mana": 0,
+				"aim": "foes", "power": float(who.get("sweep_power", 0.7))}, "target": null}
 	var target: Dictionary = standing[rng.randi() % standing.size()]
 	if standing.size() > 1 and rng.randf() < 0.3:
 		target = standing[0]

@@ -9,6 +9,7 @@ const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 const WIDTH := 126.0
 
 var in_camp := false
@@ -64,6 +65,10 @@ func refresh() -> void:
 				lines.append(["Find the boss key", UI.C_GOLD])       # the boss door is sealed (run.gd "keys")
 			else:
 				lines.append(["Beat " + boss, UI.C_GOLD])
+	elif in_camp and Tale.on():
+		lines.append(["Next: " + Tale.objective(), UI.C_GOLD])      # the story's next step (scripts/data/tale.gd)
+		if Tale.beacons() > 0:
+			lines.append(["Beacons lit: %d of 4" % Tale.beacons(), UI.C_BONE])
 	elif in_camp:
 		var next := Story.next_level()
 		# the goal names the place to go to: the next level and where its gate is
@@ -75,13 +80,13 @@ func refresh() -> void:
 	# in the middle of a fight only the goal is shown, so the list never hides a monster
 	var room: Variant = run.get("room") if is_instance_valid(run) else null
 	var fighting: bool = is_instance_valid(room) and room.get("fighting") == true
-	for q: Dictionary in ([] if fighting or goal_only else Quests.offered() + Quests.side_active()):
+	for q: Dictionary in ([] if fighting or goal_only or (in_camp and Tale.on()) else Quests.offered() + Quests.side_active()):
 		if Quests.complete(q):
 			lines.append([String(q["name"]) + ": done!", UI.C_GREEN])
 		else:
 			lines.append(["%s %d/%d" % [q["name"], Quests.progress(q), int(q["need"])], UI.C_BONE])
 	if in_camp and not goal_only:
-		lines.append(["Camp chest: %d coins" % Upgrades.coins(), UI.C_DIM])
+		lines.append([("Coins: %d" if Tale.on() else "Camp chest: %d coins") % Upgrades.coins(), UI.C_DIM])
 	var key := str(lines)
 	if key == _shown:
 		return
@@ -89,7 +94,7 @@ func refresh() -> void:
 	for c in _box.get_children():
 		_box.remove_child(c)
 		c.queue_free()
-	var head := UI.label("Quests", "Small")
+	var head := UI.label("Story" if in_camp and Tale.on() else "Quests", "Small")
 	head.add_theme_color_override("font_color", UI.C_FAINT)
 	_box.add_child(head)
 	for line: Array in lines:

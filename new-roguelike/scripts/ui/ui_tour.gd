@@ -16,6 +16,7 @@ const Gear = preload("res://scripts/data/gear.gd")
 const Skills = preload("res://scripts/data/skills.gd")
 const Allies = preload("res://scripts/data/allies.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Unlocks = preload("res://scripts/data/unlocks.gd")
 
@@ -26,7 +27,9 @@ var _fails := 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	if G.arg("uitour") == "flow":
+	if G.arg("uitour") == "tale":
+		_run_tale.call_deferred()
+	elif G.arg("uitour") == "flow":
 		_run_flow.call_deferred()
 	else:
 		_run_tour.call_deferred()
@@ -638,4 +641,94 @@ func _run_flow() -> void:
 	await _settle()
 	_check("Esc on the title asks before quitting", _focus_text() == "Stay")
 	print("[flow] done: %d checks, %d failed" % [_count, _fails])
+	G.quit(1 if _fails > 0 else 0)
+
+
+# ------------------------------------------------------------------ the story test (--uitour=tale)
+## Plays chapter one of the story (scripts/data/tale.gd) from the first step to the last: talks to
+## the people who move it on, lets a bot fight its battles, and checks after each step that the
+## story, the places and the party are what they should be. Prints "[tale] ok / FAIL" lines.
+##   xvfb-run ... godot --path . ... -- --uitour=tale --nosave [--shots=<dir>]
+func _tale_talk(npc_id: String) -> bool:
+	var hub: Node = main.get("hub")
+	if not is_instance_valid(hub):
+		return false
+	var there := false
+	for p: Dictionary in hub.get("_people"):
+		there = there or String(p["row"]["id"]) == npc_id
+	if not there:
+		return false
+	hub.call("talk_to", npc_id)
+	await _settle(0.6)
+	var said := Tale.beat(npc_id)
+	if main.call("top_name") != "hub_talk" or not said.has("do"):
+		return false
+	main.call("_on_action", "tale_do", said["do"])
+	return true
+
+
+func _tale_wait_battle() -> void:
+	var waited := 0
+	while not is_instance_valid(main.get("battle")) and waited < 20:
+		await _settle(0.3)
+		waited += 1
+	waited = 0
+	while is_instance_valid(main.get("battle")) and waited < 400:
+		await _settle(0.5)
+		waited += 1
+	await _settle(2.0)
+
+
+func _tale_go(place: String) -> void:
+	main.call("show_hub", place)
+	await _settle(1.6)
+
+
+func _run_tale() -> void:
+	G.args["autobattle"] = ""             # a bot fights the story's battles
+	G.args["speed"] = "5"
+	main.call("close_all")
+	await _tale_go("village")
+	var hub: Node = main.get("hub")
+	_check("the story starts in Wickmere at step 0", Tale.step() == 0 and String(hub.get("place").get("name", "")) == "Wickmere")
+	await G.save_shot("tale_01_wickmere.png")
+	_check("Captain Hale sends him east", await _tale_talk("hale"))
+	await _settle(2.0)
+	_check("that was step 1", Tale.step() == 1)
+	await _tale_go("elfwood")
+	_check("walking into the Elfwood is step 2", Tale.step() == 2)
+	await G.save_shot("tale_02_elfwood.png")
+	await _tale_go("glade")
+	_check("Thessaly asks him to stand with her", await _tale_talk("thessaly"))
+	await _tale_wait_battle()
+	_check("winning at the glade: step 3 and Thessaly has joined", Tale.step() == 3 and Allies.joined("thessaly"))
+	hub = main.get("hub")
+	_check("he is back in the glade and she no longer stands at the stones", is_instance_valid(hub) and String(hub.get("place_id")) == "glade"
+		and (hub.get("_people") as Array).all(func(p: Dictionary) -> bool: return String(p["row"]["id"]) != "thessaly"))
+	await G.save_shot("tale_03_glade_after.png")
+	await _tale_go("deepwood")
+	await G.save_shot("tale_04_deepwood.png")
+	_check("the lost wardens bar the Deepwood", await _tale_talk("thornwatch"))
+	await _tale_wait_battle()
+	_check("beating them is step 4", Tale.step() == 4)
+	await _tale_go("beacon")
+	await G.save_shot("tale_05_beacon_dark.png")
+	_check("the Bramble Giant sits by the dark beacon", await _tale_talk("giant"))
+	await _tale_wait_battle()
+	_check("the giant falls: step 5", Tale.step() == 5)
+	hub = main.get("hub")
+	_check("he stands on the beacon's hill again", is_instance_valid(hub) and String(hub.get("place_id")) == "beacon")
+	_check("the shard goes into the beacon", await _tale_talk("beacon"))
+	await _settle(2.5)
+	_check("the beacon of the Elfwood burns: step 6", Tale.step() == 6 and Tale.lit("elfwood") and Tale.beacons() == 1)
+	await G.save_shot("tale_06_beacon_lit.png")
+	await _tale_go("elfwood")
+	await G.save_shot("tale_07_elfwood_lit.png")
+	await _tale_go("village")
+	var coins := Save.hub_get("bank:coins")
+	_check("Captain Hale hears of it", await _tale_talk("hale"))
+	await _settle(2.0)
+	_check("chapter one is done: step 7 and the watch's coins", Tale.step() == 7 and Save.hub_get("bank:coins") == coins + 60)
+	await G.save_shot("tale_08_wickmere_after.png")
+	print("[tale] done: %d checks, %d failed, knight level %d" % [_count, _fails, Rpg.level()])
 	G.quit(1 if _fails > 0 else 0)

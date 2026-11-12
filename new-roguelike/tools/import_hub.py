@@ -71,6 +71,27 @@ RECTS = [
     ("doorway", BUILD, "Props.png", 1, 23, 30, 41),
     ("window", BUILD, "Props.png", 132, 99, 24, 25),
     ("bench_long", BUILD, "Props.png", 83, 160, 58, 32),
+    # the town of the new story (v0.19.0): more walls and a second roof, doors, windows, a chimney, fences
+    ("wall_log", BUILD, "Walls.png", 0, 184, 96, 56),
+    ("wall_plank", BUILD, "Walls.png", 96, 186, 96, 54),
+    ("wall_dark", BUILD, "Walls.png", 192, 189, 96, 51),
+    ("wall_white", BUILD, "Walls.png", 384, 189, 96, 51),
+    ("wall_brick", BUILD, "Walls.png", 480, 189, 96, 51),
+    ("roof_teal", BUILD, "Roofs.png", 128, 6, 128, 89),
+    ("door_wood", BUILD, "Props.png", 102, 29, 20, 36),
+    ("door_iron", BUILD, "Props.png", 134, 27, 20, 38),
+    ("door_arch", BUILD, "Props.png", 166, 25, 20, 40),
+    ("win_arch", BUILD, "Props.png", 67, 62, 26, 35),
+    ("win_shut", BUILD, "Props.png", 128, 62, 32, 34),
+    ("win_closed", BUILD, "Props.png", 197, 64, 22, 32),
+    ("win_tall", BUILD, "Props.png", 35, 94, 26, 35),
+    ("chimney", BUILD, "Props.png", 4, 73, 24, 55),
+    ("post", BUILD, "Props.png", 4, 128, 8, 48),
+    ("stonebench", BUILD, "Props.png", 17, 132, 30, 12),
+    ("flowerbox", BUILD, "Props.png", 18, 160, 28, 11),
+    ("planter", BUILD, "Props.png", 50, 154, 28, 17),
+    ("fence_a", BUILD, "Props.png", 20, 176, 40, 18),
+    ("fence_b", BUILD, "Props.png", 20, 236, 40, 20),
     ("note", FREE, "Props/Static/Esoteric.png", 35, 130, 9, 11),      # a written page: the notes found in the levels
 ]
 # (name, pack, file ending, x, y, w, h) in NATIVE pixels of a picture the pack ships at twice its

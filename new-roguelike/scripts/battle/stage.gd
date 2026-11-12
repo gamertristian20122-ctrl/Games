@@ -20,10 +20,12 @@ const LOOKS := {
 	# the woods late in the day: low golden sun, long soft shadows, dust in the light
 	"forest": {
 		"ground": "hub_grass", "ground_tile": Rect2(0, 0, 48, 48), "ground_tint": Color(1.0, 1.0, 1.0), "grey": 0.18,
-		"sky": Color("b9a878"), "mist": Color("b4a67c"), "mist_density": 0.0045,
-		"ambient": Color("aeb4cc"), "ambient_energy": 0.6,
-		"sun": Color("ffd8a0"), "sun_energy": 1.5, "sun_angle": Vector3(-36.0, 138.0, 0.0), "shadow_dark": 0.6, "shadow_rows": 1,
-		"glow_bloom": 0.07, "glow_from": 1.0, "lift": 0.03, "haze": Color("ffd9a0"), "beam": 0.085,
+		"sky": Color("8a6a34"), "mist": Color("9a7a40"), "mist_density": 0.0045,
+		"ambient": Color("a89a9c"), "ambient_energy": 0.42,
+		"sun": Color("ffd08a"), "sun_energy": 2.1, "sun_angle": Vector3(-36.0, 138.0, 0.0), "shadow_dark": 0.6, "shadow_rows": 1,
+		"glow_bloom": 0.10, "glow_from": 0.95, "lift": 0.0, "haze": Color("ffd9a0"), "beam": 0.10,
+		"patches": 1.0, "rim": 0.64,
+		"grade": [Vector3(1.11, 1.02, 0.84), Vector3(1.04, 0.90, 0.76), 1.14, 1.08],
 		"cool": Color("9ff0d8"),
 		"big_trees": ["hub_tree_green_0", "hub_tree_green_1", "hub_tree_teal_0", "hub_tree_teal_1", "hub_tree_green_1", "hub_tree_pink_1"],
 		"trees": ["hub_tree_green_2", "hub_tree_teal_2", "hub_tree_green_2", "hub_tree_pink_2"],
@@ -62,7 +64,9 @@ const LOOKS := {
 		"sky": Color("e0bd8c"), "mist": Color("ddb98a"), "mist_density": 0.004,
 		"ambient": Color("b9b4c4"), "ambient_energy": 0.5,
 		"sun": Color("ffdca8"), "sun_energy": 1.0, "sun_angle": Vector3(-38.0, 140.0, 0.0), "shadow_dark": 0.62, "shadow_rows": 2,
-		"glow_bloom": 0.04, "glow_from": 1.15, "lift": 0.025, "haze": Color("ffd9a0"), "beam": 0.0,
+		"glow_bloom": 0.04, "glow_from": 1.15, "lift": 0.0, "haze": Color("ffd9a0"), "beam": 0.0,
+		"patches": 0.45, "rim": 0.66,
+		"grade": [Vector3(1.12, 1.02, 0.82), Vector3(1.04, 0.90, 0.76), 1.12, 1.1],
 		"cool": Color("ffd28a"),
 		"big_trees": ["hub_dstone_0", "hub_obelisk_0", "hub_dtree_0", "hub_dstone_1", "hub_obelisk_1", "hub_dboulder_0"],
 		"trees": ["hub_dtree_0", "hub_dstone_0", "hub_cactus_4", "hub_obelisk_2"],
@@ -121,6 +125,10 @@ uniform float sharp = 2.2;       // this far either side of them stays crisp
 uniform float falloff = 10.0;    // and over this distance the blur grows to full
 uniform float blur_px = 8.0;     // full blur, in pixels on a 720-high screen
 uniform float rim = 0.55;        // how dark the corners get
+uniform vec3 warm = vec3(1.07, 1.0, 0.90);     // what bright things are tinted by
+uniform vec3 shade = vec3(0.88, 0.96, 1.12);   // what dark things are tinted by
+uniform float punch = 1.0;       // above 1: deeper darks (more contrast)
+uniform float rich = 1.0;        // above 1: stronger colours
 uniform float lift = 0.0;        // soft light: the darks are lifted a little towards the haze
 uniform vec3 haze : source_color = vec3(1.0, 0.85, 0.6);
 uniform float show_depth = 0.0;
@@ -158,8 +166,11 @@ void fragment() {
 	}
 	vec3 col = sum / n;
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
-	col = mix(col, col * vec3(1.07, 1.0, 0.90), smoothstep(0.25, 0.9, l));          // warm lights
-	col = mix(col, col * vec3(0.88, 0.96, 1.12), 1.0 - smoothstep(0.0, 0.3, l));    // cool shade
+	col = pow(max(col, vec3(0.0)), vec3(punch));
+	l = dot(col, vec3(0.299, 0.587, 0.114));
+	col = mix(vec3(l), col, rich);
+	col = mix(col, col * warm, smoothstep(0.25, 0.9, l));          // the tint of the light
+	col = mix(col, col * shade, 1.0 - smoothstep(0.0, 0.3, l));    // the tint of the shade
 	col = mix(col, haze, lift * (1.0 - l));                                         // soft, hazy shade
 	vec2 q = SCREEN_UV - 0.5;
 	col *= 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * rim;
@@ -194,13 +205,17 @@ vec3 ground_colour(vec2 where) {
 const GROUND_CODE := "
 shader_type spatial;
 render_mode specular_disabled;
-" + GROUND_PART + "
+" + Sprite3.SUN_PART + GROUND_PART + "
 void vertex() {
 	at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 }
 void fragment() {
 	ALBEDO = ground_colour(at);
 	ROUGHNESS = 1.0;
+	sun_share = sun_at(at);
+}
+void light() {
+	DIFFUSE_LIGHT += clamp(dot(NORMAL, LIGHT), 0.0, 1.0) * ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 1.0);
 }
 "
 ## A shadow is the same picture laid flat on the ground, leaning away from the sky light, and
@@ -209,7 +224,7 @@ void fragment() {
 const SHADOW_CODE := "
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
-" + GROUND_PART + "
+" + Sprite3.SUN_PART + GROUND_PART + "
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform float flip = 0.0;
 uniform float dark = 0.5;
@@ -222,6 +237,10 @@ void fragment() {
 	if (texture(tex, uv).a < 0.5) { discard; }
 	ALBEDO = ground_colour(at) * dark;
 	ROUGHNESS = 1.0;
+	sun_share = sun_at(at);
+}
+void light() {
+	DIFFUSE_LIGHT += clamp(dot(NORMAL, LIGHT), 0.0, 1.0) * ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 1.0);
 }
 "
 
@@ -229,6 +248,9 @@ void fragment() {
 func build(look_name: String = "forest", seed_value: int = 11) -> void:
 	look = LOOKS.get(look_name, LOOKS["forest"])
 	rng.seed = seed_value
+	Sprite3.ensure_sun()
+	# patches of sun on the day stages (see sprite3.gd SUN_PART), a pool of light on the fighters
+	Sprite3.set_sun(float(look.get("patches", 0.0)), 6.0, Vector2(seed_value * 0.37, seed_value * 0.11), Vector2(0.0, 0.0), 13.0, 1.0)
 	_camera()
 	_sky_and_light()
 	_ground()
@@ -624,6 +646,14 @@ func _post() -> void:
 	mat.set_shader_parameter("focus", cam.position.distance_to(Vector3(0.0, 1.0, 0.0)))
 	mat.set_shader_parameter("sharp", 2.6)
 	mat.set_shader_parameter("lift", float(look.get("lift", 0.0)))
+	if look.has("grade"):
+		# [tint of the light, tint of the shade, contrast, colour]
+		var g: Array = look["grade"]
+		mat.set_shader_parameter("warm", g[0])
+		mat.set_shader_parameter("shade", g[1])
+		mat.set_shader_parameter("punch", float(g[2]))
+		mat.set_shader_parameter("rich", float(g[3]))
+		mat.set_shader_parameter("rim", float(look.get("rim", 0.55)))
 	var haze: Color = look.get("haze", Color(1.0, 0.85, 0.6))
 	mat.set_shader_parameter("haze", Vector3(haze.r, haze.g, haze.b))
 	var q := QuadMesh.new()

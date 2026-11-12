@@ -1,0 +1,397 @@
+extends RefCounted
+## THE STORY (the owner said yes to it on 12 Nov 2026). Everything the story IS lives in this file:
+## its steps, what people say at each step, the story's battles, its places, the intro's words.
+##
+## The story in short: the first king set the Dawnfire in his crown and lit four beacons with it;
+## their light keeps the long night out and keeps something asleep under Hollow Hill. The king
+## died, the crown was broken in four, four lords carried the shards away and the beacons went
+## dark. The nights grow longer. Aldous, last knight of the king's guard, sets out from Wickmere,
+## the lantern town under the hill, to bring the shards back and relight the beacons. Each beacon
+## SWALLOWS its shard: the crown can never be made again. Three companions join on the way.
+##
+## CHAPTER ONE (built): the Elfwood. Thessaly the warden joins; the Bramble Giant; the first beacon.
+## Chapters two to four (the Sands and Seraphine, the Cinder Mountains and Grukk, the Sunken
+## Archive) and the end under Hollow Hill are NOT built yet.
+##
+## HOW IT WORKS
+##   step()        where the story stands: a number kept in the save ("tale:step"). STEPS[step] is
+##                 the line in the top left corner ("Next: ...").
+##   TALK          who says what at which step: id of a person -> rows
+##                   {"from": 0, "to": 0, "pages": [...], "option": "button words", "do": {...}}
+##                 ("to" may be left out = from then on). No "option" = just talk.
+##   "do"          what choosing the option does: {"step": n}  {"battle": id}  {"light": land}
+##                 {"join": companion id}  {"coins": n}  {"say": "banner words"}; several at once is fine.
+##   BATTLES       the story's own turn-based battles (scripts/battle/): who is in them, where,
+##                 and the "do" of winning.
+##   ENTER         walking into a place at a step: {place: {step: do}}.
+##   places        town(), deepwood(), beacon() are the story's places (the format is that of
+##                 scripts/data/places.gd, which hands them out). An exit may have "tale": the
+##                 step it opens at, and "why": what the banner says before. A person may have
+##                 "tale_from" / "tale_to": the steps they are there for.
+## The OLD story (the hill's seals, scripts/data/story.gd, the real-time levels) is switched off
+## while this one is on. `--oldstory` on the command line brings it back (the old tests use it).
+## Names and words are placeholders the owner may rewrite.
+
+const Allies = preload("res://scripts/data/allies.gd")
+
+## The line in the corner, by step.
+const STEPS := [
+	"Find Captain Hale in the square of Wickmere",        # 0
+	"Take the east road into the Elfwood",                # 1
+	"Find the Warden of the Wood in the Rune Glade",      # 2
+	"Go on into the Deepwood with Thessaly",              # 3
+	"Climb to the dark beacon of the wood",               # 4
+	"Set the shard in the beacon",                        # 5
+	"Bring word to Captain Hale in Wickmere",             # 6
+	"The road to the Sands opens in the next chapter",    # 7
+]
+const LAST_STEP := 7
+
+## The words under the intro's seven pictures (scripts/hub/intro.gd; the pictures are the old ones).
+const INTRO := [
+	"Long ago the first king set the Dawnfire in his crown, and no night could stand before him.",
+	"With it he lit four beacons, one in each land. While they burned, the long night stayed away.",
+	"The king died. His crown was broken in four, and four lords carried the shards home. One by one the beacons went dark.",
+	"Now every night is longer than the last, and things walk in it.",
+	"Aldous, last knight of the king's guard, was there when the crown broke. He has walked every night since.",
+	"He came to Wickmere, the lantern town under Hollow Hill, where they still keep the lamps lit.",
+	"And under the hill, something that has slept since the first dawn opened its eyes.",
+]
+
+const TALK := {
+	"hale": [
+		{"from": 0, "to": 0, "pages": [
+			"So you are the one Oswin put up at the Flagon. Aldous, of the king's guard. I thought you were all dead.",
+			"Then you know what broke. The crown is in four pieces and the beacons are cold. We burn lamps here from dusk to dawn, and dusk comes earlier every week.",
+			"The beacon of the Elfwood went dark first. Lord Caerwyn of the elves carried his shard up to it, and nobody has come down that hill since.",
+			"The wood is sick now. Thorns in the roots, thorns in the people. Go east, find the Warden of the Wood. She will know the way up.",
+		], "option": "I will go east", "do": {"step": 1, "say": "The east road is open"}},
+		{"from": 1, "to": 5, "pages": ["East, knight. The Warden keeps the Rune Glade past the Elfwood Road. Rest at the Flagon if the night is too long."]},
+		{"from": 6, "to": 6, "pages": [
+			"We saw it from the wall. A light over the Elfwood, the colour of morning. Half the town stood in the square and wept.",
+			"And the shard is gone into the stone? Then there will never be a crown again. Good. A light does more than a king.",
+			"Three beacons are still dark: the Sands, the Cinder Mountains, the Sunken Archive. Rest first. Take this from the watch's chest.",
+		], "option": "Take the watch's thanks", "do": {"step": 7, "coins": 60, "say": "Chapter one is done: +60 coins"}},
+		{"from": 7, "pages": ["The road to the Sands is being cleared. Soon, knight. Until then the wild lands south of the gate will keep your sword sharp."]},
+	],
+	"barkeep": [
+		{"from": 0, "pages": ["The Hollow Flagon. Your bed is upstairs and paid for by the watch. Sleep when the night gets too long; the lamps will keep."]},
+	],
+	"patron": [
+		{"from": 0, "pages": ["I was a girl when the king still rode through with the fire on his head. You could read by him at midnight. Nobody believes me."]},
+	],
+	"tam": [
+		{"from": 0, "pages": ["Lamp oil, wicks, and steel when there is time for steel. Helmets and mail are on the shelf, if the watch's coin is good."]},
+	],
+	"odo": [
+		{"from": 0, "to": 5, "pages": [
+			"I am writing it all down, in case there is a morning to read it in.",
+			"Four lords took four shards: Caerwyn of the Elfwood, the Dune Queen, the Forgemaster, and the Archivist who answers no letters. Each thought the fire would keep their own people safe.",
+		]},
+		{"from": 6, "pages": ["One beacon lit, and it ate its shard to burn. I have written that down twice. A crown that cannot be remade: the lords will not like it."]},
+	],
+	"ysolde": [
+		{"from": 0, "to": 2, "pages": ["I walked out of the Elfwood with thorns in my hair and my sister's name in my mouth. Thessaly would not leave the stones. If you go east, tell her Ysolde is alive."]},
+		{"from": 3, "to": 5, "pages": ["Thessaly is with you? Then the stones are safe for one more night. Mind the Deepwood. It listens."]},
+		{"from": 6, "pages": ["I can smell the wood from here. It smells like it did when we were small. Thank you, tin man."]},
+	],
+	"marta": [
+		{"from": 0, "pages": ["Forty lamps on the square and I trim every one. If one goes out, the dark comes to look. Do not stand under a dead lamp, dear."]},
+	],
+	"mira": [
+		{"from": 0, "to": 5, "pages": ["No wagons since the nights got long. I sell what I carried in, and I carried in very little."]},
+		{"from": 6, "pages": ["A wagon came through the Elfwood this morning. The first in a month. I could kiss you."]},
+	],
+	"brandt": [
+		{"from": 0, "to": 0, "pages": ["Nobody takes the east road without the Captain's word. He is by the fire in the square."]},
+		{"from": 1, "to": 5, "pages": ["East road is yours. The wood starts where the lamps stop."]},
+		{"from": 6, "pages": ["I have stood this gate at night for a year. Tonight I could see the trees."]},
+	],
+	"aelin": [
+		{"from": 0, "to": 5, "pages": ["Turn back, tin man. Past the glade our own kin wait with thorns in their eyes. When the beacon died the dark got into the roots."]},
+		{"from": 6, "pages": ["The roots are drinking light again. I had forgotten what the road looked like."]},
+	],
+	"wicker": [
+		{"from": 0, "to": 5, "pages": ["The mushrooms walk at night. I counted nine. Mother says do not count them, they count back."]},
+		{"from": 6, "pages": ["They went back into the ground when the big light came. All nine. I checked."]},
+	],
+	"thessaly": [
+		{"from": 2, "to": 2, "pages": [
+			"Knight. You picked a poor hour. They come for the stones every night now, and tonight there are more of them.",
+			"They were my wardens once. The thorn does not kill, it keeps. If we put them down, they sleep, and wake themselves.",
+			"Stand with me and I will take you to the beacon after. Lord Caerwyn went up with his shard a year ago. I mean to know why he never came down.",
+		], "option": "Stand with her", "do": {"battle": "glade"}},
+	],
+	"thornwatch": [
+		{"from": 3, "to": 3, "pages": [
+			"Three of the lost wardens stand in the path, bows half drawn, thorns through their hands. They do not blink.",
+			"Thessaly: \"Orrin. Maeve. Little Pell. Forgive me.\"",
+		], "option": "Go through them", "do": {"battle": "deepwood"}},
+	],
+	"giant": [
+		{"from": 4, "to": 4, "pages": [
+			"Something as big as a house sits against the dead beacon, grown through with briar. On its brow, tangled in thorn, a splinter of gold burns like a held breath.",
+			"Thessaly: \"That is Caerwyn's shard. And that is Caerwyn's hound, old Bramblejaw, who was the size of a pony when I was a girl.\"",
+			"Thessaly: \"He carried the fire up here to keep the wood safe. It fed the thorns instead. It fed HIM.\"",
+			"The giant opens one eye.",
+		], "option": "Draw your sword", "do": {"battle": "giant"}},
+	],
+	"beacon": [
+		{"from": 5, "to": 5, "pages": [
+			"In the briar where the giant fell lies a silver circlet, an elf lord's, and nothing else of him. Thessaly picks it up and says nothing for a while.",
+			"The shard is warm in your hand. The beacon's cold bowl is carved with a hollow its exact shape.",
+			"Thessaly: \"It will not come out again once it is in. No crown, after this. Only the light.\"",
+		], "option": "Set the shard in the beacon", "do": {"step": 6, "light": "elfwood", "say": "The beacon of the Elfwood burns"}},
+		{"from": 6, "pages": ["The beacon burns the colour of morning. The shard is somewhere inside the fire, and the fire does not give it back."]},
+	],
+}
+
+## The story's own battles. "foes": ids of scripts/data/enemies.gd, or "boss": a row of BOSSES.
+## "look": a stage of scripts/battle/stage.gd.  "tier": how hard the monsters hit (see battles.gd).
+## "xp_bonus": XP on top of the monsters' own (the two battles before the giant are set so that a
+## knight who fights only the story's battles meets the giant at level 3; dev/battle_sim.tscn).
+const BATTLES := {
+	"glade": {"title": "The thorn-sick come for the stones", "look": "forest_night", "tier": 0,
+		"foes": ["thorn_elf", "elf_stalker", "sporeling"], "with": ["thessaly"], "xp_bonus": 15,
+		"win": {"step": 3, "join": "thessaly", "say": "Thessaly, Warden of the Wood, travels with you"}},
+	"deepwood": {"title": "The lost wardens", "look": "forest_night", "tier": 0,
+		"foes": ["elf_stalker", "wood_beast", "elf_stalker", "long_cap"], "xp_bonus": 26,
+		"win": {"step": 4, "say": "The path to the beacon is open"}},
+	"giant": {"title": "Old Bramblejaw", "look": "forest_night", "tier": 0, "boss": "bramblejaw",
+		"win": {"step": 5, "say": "The Bramble Giant falls"}},
+}
+
+## Bosses of the story's battles. The numbers are for a knight of about level 4 with one companion.
+##   "sweep"  every this-many turns the boss strikes everybody at once, at "sweep_power"
+const BOSSES := {
+	"bramblejaw": {"name": "Old Bramblejaw", "sprite": "boss_ogre", "tint": Color(0.72, 0.95, 0.70),
+		"hp": 185, "atk": 8.8, "def": 2.0, "speed": 8.0, "sweep": 3, "sweep_power": 0.75, "sweep_name": "Briar Sweep",
+		"xp": 90, "coins": 40},
+}
+
+## Walking into a place at a step: {place: {step: do}}.
+const ENTER := {
+	"elfwood": {1: {"step": 2}},
+}
+
+## What people of the old story do (open the hill's levels, hand out its quests, sell its
+## items ...) has no part in this one: with the story on they only talk.
+const RETIRED := ["gate", "quests", "collection", "side", "train", "pack", "hero", "shop", "ally"]
+const LATER := "This road belongs to a later chapter of the story."
+
+
+# ------------------------------------------------------------------ state
+static func on() -> bool:
+	return not G.flag("oldstory")
+
+
+static func step() -> int:
+	return clampi(Save.hub_get("tale:step"), 0, LAST_STEP)
+
+
+static func objective() -> String:
+	return STEPS[step()]
+
+
+static func lit(land: String) -> bool:
+	return Save.hub_get("tale:lit:" + land) > 0
+
+
+## How many beacons burn (0 to 4).
+static func beacons() -> int:
+	var n := 0
+	for land: String in ["elfwood", "sands", "cinder", "archive"]:
+		if lit(land):
+			n += 1
+	return n
+
+
+## The row of TALK that fits this person now, or {}.
+static func beat(npc_id: String) -> Dictionary:
+	var s := step()
+	for row: Dictionary in TALK.get(npc_id, []):
+		if s >= int(row.get("from", 0)) and s <= int(row.get("to", 999)):
+			return row
+	return {}
+
+
+## Is this person (a row of a place's "people") there at this step?
+static func here(row: Dictionary) -> bool:
+	var s := step()
+	return s >= int(row.get("tale_from", 0)) and s <= int(row.get("tale_to", 999))
+
+
+## Does what a "do" says. Returns {"battle": id} when a battle must start, {"say": words} for
+## the banner, or {}. A step never goes backwards.
+static func apply(what: Dictionary) -> Dictionary:
+	var out := {}
+	if what.has("step") and int(what["step"]) > step():
+		Save.hub_set("tale:step", int(what["step"]))
+	if what.has("light"):
+		Save.hub_set("tale:lit:" + String(what["light"]), 1)
+	if what.has("join"):
+		Allies.join(String(what["join"]))
+	if what.has("coins"):
+		Save.hub_set("bank:coins", Save.hub_get("bank:coins") + int(what["coins"]))
+	if what.has("say"):
+		out["say"] = String(what["say"])
+	if what.has("battle"):
+		out["battle"] = String(what["battle"])
+	Save.flush()
+	return out
+
+
+## Walking into a place: does what ENTER says for this step. Returns as apply() does.
+static func entered(place_id: String) -> Dictionary:
+	var by: Dictionary = ENTER.get(place_id, {})
+	if by.has(step()):
+		return apply(by[step()])
+	return {}
+
+
+# ------------------------------------------------------------------ places
+## A house front: a wall under a roof, a door, windows either side. Returns rows for "props".
+static func _house(x: float, y: float, wall: String, wall_h: float, roof: String, door: String, windows: String, chimney: bool = false) -> Array:
+	var out: Array = [[wall, x, y, 0, 0], [roof, x, y + 1.0, 0, -(wall_h - 6.0)], [door, x, y + 2.0, 0, 0],
+		[windows, x - 30.0, y + 2.0, 0, -12], [windows, x + 30.0, y + 2.0, 0, -12]]
+	if chimney:
+		out.append(["hub_chimney", x + 34.0, y - 1.0, 0, -(wall_h + 46.0)])
+	return out
+
+
+## WICKMERE, the lantern town under Hollow Hill: where the story starts and comes back to.
+## (It takes the old village's place: the id is still "village", so every door that led there does.)
+static func town() -> Dictionary:
+	var size := Vector2(960, 560)
+	var props: Array = [
+		# the sealed gate of Hollow Hill in the rocks, north: nobody goes in until four beacons burn
+		["hub_rock_2", 438, 104, 0, 2], ["hub_rock_moss_2", 524, 105, 0, 2], ["hub_rock_moss_1", 408, 108, 0, 2], ["hub_rock_1", 554, 108, 0, 2],
+		["hub_gate_0", 480, 108, 0, 0], ["hub_statue_1", 436, 134, 9, 2], ["hub_statue_0", 526, 134, 7, 2],
+		# the Hollow Flagon, north-west (its door leads into the hall, as before)
+		["hub_wall_plaster", 124, 152, 0, 0], ["hub_roof_wood", 124, 153, 0, -50], ["hub_doorway", 124, 154, 0, 0],
+		["hub_window", 88, 154, 0, -14], ["hub_window", 160, 154, 0, -14], ["hub_bench_long", 206, 168, 10, 2], ["hub_chimney", 164, 151, 0, -98],
+		# the watch-fire square in the middle: benches, the lamp trimmer's planters
+		["hub_stonebench", 420, 330, 8, 1], ["hub_stonebench", 540, 330, 8, 1], ["hub_stonebench", 480, 372, 8, 1],
+		["hub_planter", 392, 262, 6, 1], ["hub_planter", 568, 262, 6, 1], ["hub_flowerbox", 400, 372, 0, 0], ["hub_flowerbox", 560, 372, 0, 0],
+		# the smithy's yard, east of the square
+		["hub_anvil_0", 716, 258, 16, 4], ["hub_bench_1", 752, 236, 12, 3], ["hub_stone_0", 684, 240, 8, 2],
+		# garden fences and green
+		["hub_fence_a", 296, 196, 6, 0], ["hub_fence_a", 336, 196, 6, 0], ["hub_fence_a", 190, 424, 6, 0], ["hub_fence_a", 230, 424, 6, 0],
+		["hub_fence_a", 740, 500, 6, 0], ["hub_fence_a", 780, 500, 6, 0], ["hub_fence_b", 860, 208, 6, 0], ["hub_fence_b", 820, 208, 6, 0],
+		["hub_bush_green_1", 232, 236, 10, 4], ["hub_bush_orange_2", 618, 220, 9, 4], ["hub_bush_deep_1", 310, 372, 10, 4],
+		["hub_bush_rust_2", 646, 372, 9, 4], ["hub_tree_green_3", 64, 300, 6, 6], ["hub_tree_teal_3", 900, 392, 6, 6],
+		["hub_tree_pink_4", 372, 500, 4, 5], ["hub_tree_teal_4", 596, 502, 4, 5], ["hub_bloom_1", 250, 300, 0, 2], ["hub_bloom_5", 720, 330, 0, 2],
+		# lamp posts: the town keeps them lit from dusk to dawn (each has a light, see "lights")
+		["hub_post", 360, 250, 3, 0], ["hub_post", 600, 250, 3, 0], ["hub_post", 360, 400, 3, 0], ["hub_post", 600, 400, 3, 0],
+		["hub_post", 210, 300, 3, 0], ["hub_post", 760, 310, 3, 0], ["hub_post", 480, 470, 3, 0], ["hub_post", 880, 250, 3, 0],
+	]
+	# the houses: two more on the north row, the watch house and the smithy, three along the south
+	props.append_array(_house(300, 160, "hub_wall_brick", 51, "hub_roof_teal", "hub_door_arch", "hub_win_arch"))
+	props.append_array(_house(660, 160, "hub_wall_dark", 51, "hub_roof_wood", "hub_door_iron", "hub_win_tall", true))
+	props.append_array(_house(836, 172, "hub_wall_log", 56, "hub_roof_teal", "hub_door_wood", "hub_win_shut"))
+	# (a house hides the ground behind it as high as its roof, so the two that do not stand on the
+	# north row stand at the west and east edges, and that ground is blocked: see "blocks")
+	props.append_array(_house(104, 400, "hub_wall_white", 51, "hub_roof_teal", "hub_door_wood", "hub_win_shut", true))
+	props.append_array(_house(856, 480, "hub_wall_plank", 54, "hub_roof_wood", "hub_door_arch", "hub_win_closed"))
+	var lamp := Color(1.0, 0.78, 0.46)
+	var lights: Array = [[Vector2(480, 290), Color(1.0, 0.72, 0.42), 2.3, 0.8]]
+	for at: Vector2 in [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)]:
+		lights.append([at - Vector2(0, 40), lamp, 1.0, 0.55])
+	for at: Vector2 in [Vector2(124, 150), Vector2(300, 158), Vector2(660, 158), Vector2(836, 170), Vector2(104, 398), Vector2(856, 478)]:
+		lights.append([at + Vector2(0, 8), lamp, 0.8, 0.4])           # the glow of a house's windows on its doorstep
+	lights.append([Vector2(480, 96), Color(0.6, 0.55, 1.0), 1.2, 0.4])    # the cold of the sealed gate
+	return {
+		"name": "Wickmere", "camp": 0, "size": size, "outdoor": true, "walk": Rect2(40, 150, 880, 380), "spawn": Vector2(480, 340),
+		"props": props,
+		"floor": [["hub_paving", Rect2(384, 240, 192, 128)]],
+		"paths": [[Vector2(480, 130), Vector2(480, 236)], [Vector2(480, 372), Vector2(480, 570)],
+			[Vector2(384, 300), Vector2(210, 250), Vector2(130, 176)], [Vector2(576, 300), Vector2(760, 280), Vector2(970, 280)],
+			[Vector2(300, 176), Vector2(330, 250)], [Vector2(660, 176), Vector2(640, 250)], [Vector2(120, 416), Vector2(360, 420)],
+			[Vector2(840, 496), Vector2(610, 420)], [Vector2(836, 186), Vector2(850, 270)]],
+		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 70], "hub_pebble": [20, 26], "hub_twig": [10, 10]},
+		"scatter_rect": Rect2(8, 180, 944, 372),
+		"fire": Vector2(480, 304),
+		# a small flame on top of every lamp post (the posts are in "props", their glow in "lights")
+		"torches": [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)],
+		"forest": {"top_gaps": [[416.0, 544.0], [40.0, 250.0], [236.0, 364.0], [596.0, 724.0], [772.0, 900.0]],
+			"behind": [["hub_tree_pink_2", 480, 60], ["hub_tree_green_2", 416, 80], ["hub_tree_teal_2", 546, 80]],
+			"open": [Rect2(930, 220, 60, 130), Rect2(420, 520, 120, 90)]},
+		"blocks": [Rect2(60, 96, 128, 56), Rect2(252, 108, 96, 52), Rect2(612, 108, 96, 52), Rect2(788, 116, 96, 56),
+			Rect2(40, 262, 128, 138), Rect2(792, 340, 128, 140), Rect2(384, 96, 192, 34)],
+		"exits": [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)},
+			{"rect": Rect2(912, 240, 10, 80), "to": "elfwood", "at": Vector2(52, 204), "tale": 1, "why": "Nobody takes the east road without the Captain's word."},
+			{"rect": Rect2(440, 522, 80, 10), "to": "world", "at": Vector2(300, 650), "tale": 1, "why": "Speak with Captain Hale first. He is by the fire."}],
+		"people": [
+			{"id": "hale", "name": "Captain Hale", "title": "Captain of the Lantern Watch", "sprite": "pc_royal_knight", "hands": "pc_hand_castle_17",
+				"pos": Vector2(520, 290), "face": -1, "role": "chat", "text": ""},
+			{"id": "tam", "name": "Tam", "title": "Smith and Lampwright", "sprite": "pc_npc_peasant_a", "hands": "pc_hand_base_2",
+				"pos": Vector2(690, 262), "face": 1, "role": "chat", "as": "smith", "text": ""},
+			{"id": "odo", "name": "Brother Odo", "title": "Chronicler", "sprite": "pc_scholar_researcher", "hands": "pc_hand_library_6",
+				"pos": Vector2(300, 186), "face": 1, "role": "chat", "text": ""},
+			{"id": "ysolde", "name": "Ysolde", "title": "Elf of the Wood", "sprite": "pc_elf_druid", "hands": "pc_hand_elf_23",
+				"pos": Vector2(250, 330), "face": 1, "role": "chat", "text": ""},
+			{"id": "marta", "name": "Marta", "title": "Lamp Trimmer", "sprite": "pc_npc_tavern_a", "hands": "pc_hand_base_2",
+				"pos": Vector2(378, 262), "face": 1, "role": "chat", "text": ""},
+			{"id": "mira", "name": "Mira", "title": "Pedlar", "sprite": "pc_npc_tavern_b", "hands": "pc_hand_base_2",
+				"pos": Vector2(600, 430), "face": -1, "role": "chat", "text": ""},
+			{"id": "brandt", "name": "Sergeant Brandt", "title": "Watch of the East Gate", "sprite": "pc_royal_soldier", "hands": "pc_hand_castle_17",
+				"pos": Vector2(884, 300), "face": -1, "role": "chat", "text": ""},
+		],
+		"lights": lights,
+	}
+
+
+## THE DEEPWOOD: the old wood between the Rune Glade and the beacon's hill.
+static func deepwood() -> Dictionary:
+	var glow := lit("elfwood")
+	return {
+		"name": "The Deepwood", "size": Vector2(720, 380), "outdoor": true, "walk": Rect2(30, 110, 660, 236), "spawn": Vector2(50, 230),
+		"tint": Color(0.98, 0.92, 0.78) if glow else Color(0.56, 0.70, 0.90),
+		"props": [["hub_tree_teal_1", 250, 200, 8, 8], ["hub_tree_green_1", 470, 320, 8, 8], ["hub_tree_pink_2", 610, 190, 7, 7],
+			["hub_rune_2", 150, 180, 5, 2], ["hub_rune_0", 560, 300, 9, 3], ["hub_bloom_0", 130, 300, 0, 2], ["hub_bloom_6", 360, 170, 0, 2],
+			["hub_bloom_5", 640, 290, 0, 2], ["hub_shroom_0", 300, 310, 0, 1], ["hub_shroom_1", 420, 180, 0, 1], ["hub_shroom_2", 540, 220, 0, 1],
+			["hub_vine_0", 200, 300, 0, 2], ["hub_vine_1", 500, 160, 0, 2], ["hub_rock_moss_0", 330, 240, 12, 3], ["hub_rock_moss_2", 90, 170, 12, 3],
+			["hub_stump_0", 590, 250, 12, 4], ["hub_bush_deep_0", 400, 320, 12, 5], ["hub_bush_deep_1", 180, 240, 10, 4]],
+		"paths": [[Vector2(-10, 230), Vector2(150, 236), Vector2(300, 210), Vector2(440, 250), Vector2(600, 230), Vector2(730, 226)]],
+		"scatter": {"hub_tuft": [24, 100], "hub_flower": [26, 40], "hub_pebble": [20, 12], "hub_twig": [10, 22]},
+		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 170, 70, 120), Rect2(680, 170, 80, 120)]},
+		"exits": [{"rect": Rect2(26, 200, 10, 60), "to": "glade", "at": Vector2(430, 200)},
+			{"rect": Rect2(684, 196, 10, 60), "to": "beacon", "at": Vector2(240, 300), "tale": 4, "why": "The lost wardens bar the path."}],
+		"people": [
+			{"id": "thornwatch", "name": "The lost wardens", "title": "Thorn-sick", "sprite": "pc_elf_hunter", "hands": "pc_hand_elf_23",
+				"pos": Vector2(470, 240), "face": -1, "role": "chat", "text": "", "tale_from": 3, "tale_to": 3, "tint": Color(0.75, 0.6, 0.85)},
+		],
+		"lights": [[Vector2(150, 170), Color(0.45, 0.85, 1.0), 1.0, 0.45], [Vector2(420, 170), Color(0.5, 1.0, 0.85), 0.9, 0.5],
+			[Vector2(560, 290), Color(0.45, 0.85, 1.0), 1.0, 0.45], [Vector2(300, 300), Color(0.5, 1.0, 0.85), 0.8, 0.45]],
+	}
+
+
+## THE BEACON OF THE WOOD: a bare hilltop, a ring of rune stones, the beacon in the middle.
+static func beacon() -> Dictionary:
+	var glow := lit("elfwood")
+	var lights: Array = [[Vector2(140, 196), Color(0.45, 0.85, 1.0), 0.9, 0.4], [Vector2(340, 196), Color(0.45, 0.85, 1.0), 0.9, 0.4]]
+	if glow:
+		lights.append([Vector2(240, 170), Color(1.0, 0.82, 0.5), 3.4, 1.3])
+	else:
+		lights.append([Vector2(240, 180), Color(0.5, 0.6, 1.0), 1.4, 0.35])
+	return {
+		"name": "The Beacon of the Wood", "size": Vector2(480, 360), "outdoor": true, "walk": Rect2(30, 120, 420, 210), "spawn": Vector2(240, 300),
+		"tint": Color(1.0, 0.94, 0.78) if glow else Color(0.52, 0.64, 0.90),
+		"props": [["hub_rune_1", 150, 200, 12, 3], ["hub_rune_1", 330, 200, 12, 3], ["hub_rune_0", 120, 270, 9, 3], ["hub_rune_0", 360, 270, 9, 3],
+			["hub_rune_2", 190, 150, 5, 2], ["hub_rune_2", 290, 150, 5, 2], ["hub_rock_moss_1", 80, 200, 12, 3], ["hub_rock_moss_0", 400, 210, 12, 3],
+			["hub_vine_0", 196, 214, 0, 2], ["hub_vine_1", 286, 216, 0, 2], ["hub_bloom_0", 100, 310, 0, 2], ["hub_bloom_5", 390, 312, 0, 2],
+			# the beacon: a great stone with the fire bowl on top of it
+			["hub_stone_1", 240, 190, 16, 3], ["hub_stone_0", 214, 196, 8, 2], ["hub_stone_0", 268, 198, 8, 2]],
+		"beacon": {"pos": Vector2(240, 186), "lit": glow, "lift": 30.0},
+		"paths": [[Vector2(240, 370), Vector2(240, 230)]],
+		"scatter": {"hub_tuft": [24, 50], "hub_flower": [26, 30 if glow else 6], "hub_pebble": [20, 16], "hub_twig": [10, 10]},
+		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(180, 330, 120, 80)]},
+		"exits": [{"rect": Rect2(200, 322, 80, 10), "to": "deepwood", "at": Vector2(664, 226)}],
+		"people": [
+			{"id": "giant", "name": "Old Bramblejaw", "title": "The Bramble Giant", "sprite": "boss_ogre", "pos": Vector2(250, 232), "face": -1,
+				"role": "chat", "text": "", "tale_from": 4, "tale_to": 4, "tint": Color(0.72, 0.95, 0.70), "solid": 16.0},
+			{"id": "beacon", "name": "The beacon", "title": "", "ghost": true, "pos": Vector2(240, 214), "top": 44, "role": "chat", "text": "",
+				"tale_from": 5},
+		],
+		"lights": lights,
+	}

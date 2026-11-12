@@ -26,6 +26,13 @@ const LIST := [
 		],
 		"about": "She keeps her distance and throws bolts of sunlight. If she falls, she gets up when the room is clear.",
 		"hp": 6, "hp_levels": 3, "damage": 0.55, "rate": 1.0, "range": 130.0, "shot": "sunbolt", "shot_speed": 175.0, "keep": 58.0},
+	# the new story's companions (scripts/data/tale.gd). They join in a story scene, never by
+	# themselves ("from": 99); their battle numbers are in scripts/data/battles.gd ALLY. The
+	# real-time numbers below are only there so the old levels do not trip over them.
+	{"id": "thessaly", "name": "Thessaly", "title": "Warden of the Wood", "sprite": "pc_elf_ranger", "hands": "pc_hand_elf_23",
+		"from": 99, "place": "", "pos": Vector2.ZERO, "face": -1, "pages": [],
+		"about": "The elf warden of the Rune Glade. Quick with a bow; her roots can hold a monster still.",
+		"hp": 6, "hp_levels": 3, "damage": 0.5, "rate": 1.2, "range": 140.0, "shot": "sunbolt", "shot_speed": 190.0, "keep": 62.0},
 ]
 
 
@@ -38,6 +45,8 @@ static func row(id: String) -> Dictionary:
 
 ## She has turned up in the world (the story has reached her chapter).
 static func arrived(r: Dictionary) -> bool:
+	if not G.flag("oldstory"):
+		return false                 # the new story (scripts/data/tale.gd) brings companions in itself
 	return Story.chapter() >= int(r.get("from", 0))
 
 

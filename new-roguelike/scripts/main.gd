@@ -45,6 +45,7 @@ const Weapons = preload("res://scripts/data/weapons.gd")
 const Gear = preload("res://scripts/data/gear.gd")
 const Allies = preload("res://scripts/data/allies.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
@@ -99,7 +100,10 @@ func _ready() -> void:
 		if G.arg("with") != "":
 			Allies.join(G.arg("with"))
 			Allies.set_with(G.arg("with"))
-		show_battle(int(G.arg("battle", "0")), G.flag("night"))
+		if G.arg("battle").begins_with("story:"):        # --battle=story:<id of a battle of tale.gd>
+			show_battle(-1, G.flag("night"), G.arg("battle").trim_prefix("story:"))
+		else:
+			show_battle(int(G.arg("battle", "0")), G.flag("night"))
 	elif G.flag("autotest"):
 		if G.flag("yard"):               # --yard: the bot spars in the training yard
 			G.next_run = {"training": true, "kit": []}
@@ -246,7 +250,8 @@ func show_title() -> void:
 
 
 ## A turn-based battle (scripts/battle/battle.gd) with the pack of a roamer of the world map.
-func show_battle(spot: int, night: bool = false) -> void:
+## `story` = a battle of the story (scripts/data/tale.gd BATTLES) instead of a roamer's pack.
+func show_battle(spot: int, night: bool = false, story: String = "") -> void:
 	await _drop_run()
 	_drop_hub()
 	_drop_intro()
@@ -257,6 +262,7 @@ func show_battle(spot: int, night: bool = false) -> void:
 	battle.name = "Battle"
 	battle.set("spot", spot)
 	battle.set("night", night)
+	battle.set("story", story)
 	battle.connect("finished", _on_battle_finished)
 	_world.add_child(battle)
 	_refresh_layers()
@@ -280,10 +286,15 @@ func _on_battle_finished(outcome: String, summary: Dictionary) -> void:
 		return
 	if _busy:
 		return
+	var story := String(summary.get("story", ""))
 	match outcome:
 		"win":
-			Roamers.beaten(int(summary.get("spot", -1)))
-			_news = "Won: +%d XP, %d coins to the camp chest" % [int(summary.get("xp", 0)), int(summary.get("coins", 0))]
+			if story != "":
+				# a battle of the story: winning moves the story on (scripts/data/tale.gd)
+				_news = String(Tale.apply(Tale.BATTLES[story].get("win", {})).get("say", "Won"))
+			else:
+				Roamers.beaten(int(summary.get("spot", -1)))
+				_news = "Won: +%d XP, %d coins" % [int(summary.get("xp", 0)), int(summary.get("coins", 0))]
 		"lose":
 			_news = "You wake in your bed."
 			_from_place = ""
@@ -299,7 +310,7 @@ func _after_battle() -> void:
 		await show_hub()
 	if is_instance_valid(hub) and _news != "":
 		hub.call("say", _news)
-	if G.flag("autobattle"):             # test: --hub=world --hubfight=<spot> --autobattle ends here
+	if G.flag("autobattle") and G.arg("hubfight") != "":      # test: --hub=world --hubfight=<spot> --autobattle ends here
 		print("[main] after the battle: %s, in %s at %s" % [_news, hub.get("place_id"), hub.call("hero_pos")])
 		await get_tree().create_timer(1.0).timeout
 		if G.arg("shots") != "":
@@ -315,6 +326,7 @@ func show_intro() -> void:
 	get_tree().paused = false
 	close_all()
 	Save.hub_set("seen:cutscene", 1)
+	Save.hub_set("tale:intro", 1)
 	intro = (load(INTRO_SCRIPT) as Script).new()
 	intro.name = "Intro"
 	intro.connect("finished", func() -> void:
@@ -374,7 +386,7 @@ func _on_action(what: String, arg: Variant) -> void:
 				if is_instance_valid(hub) and _stack.is_empty():
 					hub.call("refresh_heroes")      # the mirror may have changed his looks
 		"play":
-			if Save.hub_get("seen:cutscene") == 0 and not G.flag("uitour"):
+			if Save.hub_get("tale:intro" if Tale.on() else "seen:cutscene") == 0 and not G.flag("uitour"):
 				_transition(show_intro)     # the first time: the animated intro, then your room
 			else:
 				_transition(show_hub)       # you wake in your room at the tavern
@@ -393,6 +405,23 @@ func _on_action(what: String, arg: Variant) -> void:
 				hub.call("retalk")
 		"talk":
 			open("hub_talk", {"info": arg})
+		"tale_do":
+			# the player chose what a person of the story offered (scripts/data/tale.gd): the story
+			# moves on, and either a battle starts or the place is shown anew (people come and go,
+			# a beacon burns) with a line on the banner
+			var fx := Tale.apply(arg)
+			close_all()
+			_from_place = ""
+			var dusk := false
+			if is_instance_valid(hub):
+				_from_place = String(hub.get("place_id"))
+				_from_at = hub.call("hero_pos")
+				dusk = bool(hub.call("_is_night"))
+			if fx.has("battle"):
+				_transition(show_battle.bind(-1, dusk, String(fx["battle"])))
+			else:
+				_news = String(fx.get("say", ""))
+				_transition(_after_battle)
 		"hub_encounter":
 			# a roamer touched the knight on the world map: a turn-based battle, then back to this spot
 			_encounter = {}

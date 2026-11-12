@@ -35,6 +35,7 @@ const Hands = preload("res://scripts/entities/hands.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
 const View3D = preload("res://scripts/hub/view3d.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 
 signal action(what: String, arg: Variant)
 
@@ -130,7 +131,7 @@ func _ready() -> void:
 	_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_banner.offset_top = 8
+	_banner.offset_top = 30            # under the story panel in the corner, not across it
 	_banner.add_theme_color_override("font_outline_color", UI.C_INK)
 	_banner.add_theme_constant_override("outline_size", 4)
 	_banner.visible = false
@@ -251,8 +252,18 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		_build_forest()
 	if place.has("fire"):
 		_build_fire()
+	if place.has("beacon"):
+		_build_beacon()
+	for spot: Vector2 in place.get("torches", []):     # a small flame on a lamp post (the post is a prop)
+		var torch := _anim("hub_fire_b", 8.0)
+		torch.position = spot + Vector2(0, 1)
+		torch.offset = Vector2(0, -52)
+		_ysort.add_child(torch)
 	for row: Dictionary in place.get("people", []):
-		if Story.chapter() >= int(row.get("from", 0)):        # some people only come once the story has moved on
+		if Tale.on():
+			if Tale.here(row):                                  # the story says who stands here at this step
+				_add_person(row)
+		elif Story.chapter() >= int(row.get("from", 0)):        # some people only come once the story has moved on
 			_add_person(row)
 	# companions (scripts/data/allies.gd): one who has arrived stands at her post until she travels
 	# with the knight; then she walks behind him wherever he goes
@@ -293,6 +304,10 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	if _entered:
 		_arrive_t = 2.2                 # the place's name floats up for a moment
 	_entered = true
+	if Tale.on():
+		var news := Tale.entered(id)                           # walking in here may move the story on
+		if news.has("say"):
+			say(String(news["say"]))
 	if _view != null:
 		_view.call("rebuild")
 
@@ -603,6 +618,24 @@ func _build_fire() -> void:
 		_solids.append([(place["grill"] as Vector2) - Vector2(0, 4), 10.0])
 
 
+## A beacon of the story (scripts/data/tale.gd): the fire bowl on its stone. Dark, it is cold
+## embers; lit, the flame stands on it (the place's "lights" hold its glow).
+func _build_beacon() -> void:
+	var spec: Dictionary = place["beacon"]
+	var lift := float(spec.get("lift", 24.0))
+	var bowl := _anim("hub_fire_a", 7.0)
+	bowl.position = spec["pos"]
+	bowl.offset = Vector2(0, -8.0 - lift)
+	_ysort.add_child(bowl)
+	if bool(spec.get("lit", false)):
+		var flame := _anim("hub_flame", 9.0)
+		flame.offset = Vector2(0, -18.0 - lift)
+		bowl.add_child(flame)
+	else:
+		bowl.stop()
+		bowl.modulate = Color(0.42, 0.46, 0.58)
+
+
 ## The forest wall round the clearing, fitted to the size of the map.
 func _build_forest() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -741,6 +774,7 @@ func _add_person(row: Dictionary) -> Dictionary:
 	node.add_child(EnemyScript.make_shadow(clampf(bw * 0.85, 11.0, 18.0)))
 	var body := Art.sprite(sprite_id)
 	body.position = Vector2(0, 2)
+	body.modulate = row.get("tint", Color.WHITE)
 	var face := float(row.get("face", 1))
 	body.flip_h = face < 0.0
 	node.add_child(body)
@@ -870,7 +904,14 @@ func _physics_process(delta: float) -> void:
 		for e: Dictionary in place.get("exits", []):
 			if (e["rect"] as Rect2).has_point(_hero.position) and _tour.is_empty():
 				var need := String(e.get("need", ""))
-				if need != "" and not Story.cleared(need):
+				var shut := need != "" and not Story.cleared(need)
+				if Tale.on():
+					# the story: a road opens at its step ("tale"); roads of the old story stay shut
+					shut = need != "" or Tale.step() < int(e.get("tale", 0))
+					if need != "":
+						e = e.duplicate()
+						e["why"] = Tale.LATER
+				if shut:
 					# the road is still shut: he is turned back and told why
 					_hero.position = was
 					if _shut_t <= 0.0:
@@ -1010,7 +1051,22 @@ func _talk(index: int) -> void:
 		return
 	var info := {"name": row["name"], "title": row.get("title", ""), "sprite": row.get("sprite", ""), "pages": pages, "heard": id,
 		"lines": [], "options": []}
-	match String(row.get("role", "chat")):
+	var role := String(row.get("role", "chat"))
+	if Tale.on():
+		# the story (scripts/data/tale.gd): what this person says at this step, and the one thing
+		# the player may choose to do about it. What people did in the old story is switched off.
+		var said_now := Tale.beat(id)
+		info["heard"] = ""
+		info["pages"] = (said_now.get("pages", []) as Array).duplicate()
+		if said_now.has("option"):
+			info["options"].append({"text": String(said_now["option"]), "what": "tale_do", "arg": said_now["do"]})
+		if Tale.RETIRED.has(role):
+			if said_now.is_empty():
+				info["pages"] = [Tale.LATER]
+			role = "chat"
+		elif said_now.is_empty() and String(row.get("text", "")) != "":
+			info["pages"] = [String(row["text"])]
+	match role:
 		"gate":
 			# every site this gate opens (scripts/data/story.gd): go in at the first level not cleared,
 			# or again from the start; a site that is still shut says what must be done first
@@ -1113,6 +1169,13 @@ func _talk(index: int) -> void:
 	# what this person sells for coins from the camp chest (scripts/data/upgrades.gd)
 	var sell := String(row.get("as", id))          # "as": "smith" = sells what the village smith sells
 	var sells := false
+	if Tale.on():
+		# the story: a smith sells helmets, armour and rings (they count in battles); the old
+		# upgrades and the real-time weapons are not part of it
+		if sell == "smith":
+			info["options"].append({"text": "Helmets, armour and rings", "what": "hub_shelf", "arg": String(row.get("name", "The smith"))})
+			info["lines"].append(["Coins: %d" % Upgrades.coins(), UI.C_GOLD])
+		sell = ""
 	for up: Dictionary in Upgrades.LIST:
 		if String(up["at"]) != sell:
 			continue
@@ -1142,7 +1205,7 @@ func _talk(index: int) -> void:
 	if sells:
 		info["lines"].append(["Camp chest: %d coins. What you carry out of the hill goes in (half if you fall)." % Upgrades.coins(), UI.C_GOLD])
 	# heard it already this visit and nothing new: straight to the choices
-	if not Story.has_news(id) and _talked.has(id) and not ((info["options"] as Array).is_empty() and (info["lines"] as Array).is_empty()):
+	if not Tale.on() and not Story.has_news(id) and _talked.has(id) and not ((info["options"] as Array).is_empty() and (info["lines"] as Array).is_empty()):
 		info["pages"] = []
 	_talked[id] = true
 	action.emit("talk", info)
