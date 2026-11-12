@@ -20,6 +20,8 @@ const ALL := {
 	"heart": {"sprite": ["prop_heart", "ui_heart_full"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"hp": 2}, "kind": "heart", "sfx": "heart_pickup", "need": "hurt"},
 	"armor": {"sprite": ["prop_armor", "ui_heart_full"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"armor": 2}, "kind": "armor", "sfx": "heart_pickup"},
 	"key": {"sprite": ["prop_key", "niji_key_gold", "flask_yellow"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 8.0, "give": {"keys": 1}, "kind": "key", "sfx": "key_pickup"},
+	# the boss key of a keyed dungeon (scripts/run/run.gd "keys"): a red key from the Raven icon pack
+	"boss_key": {"sprite": ["key_boss", "prop_key"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 10.0, "give": {"boss_key": 1}, "kind": "key", "sfx": "key_pickup"},
 	"bomb": {"sprite": ["prop_bomb", "bomb"], "tint": Color(1, 1, 1), "scale": 1.0, "shadow": 11.0, "give": {"bombs": 1}, "kind": "bomb", "sfx": "bomb_pickup"},
 }
 

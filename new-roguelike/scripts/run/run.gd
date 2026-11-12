@@ -294,6 +294,76 @@ func _start_floor() -> void:
 	_enter_floor()
 
 
+# =============================================================================== keys (Zelda-style dungeons, v0.15.0)
+## A story dungeon that ends at a BOSS has its boss door SEALED until the hero carries the boss key.
+##   the boss key   lies in the deepest fight room that is not next to the boss room: it drops when
+##                  that room is cleared (room record "boss_key")
+##   a small key    drops in one other fight room ("small_key"), so the locked treasure room can
+##                  always be opened; the treasure room also holds a Rare piece of gear
+## Outdoor levels (they end at a champion), the training yard and old-style runs have none of it.
+## Test flags: --nokeys (no seal), --goto=boss (no seal either, unless --sealtest is given too).
+var boss_key := false
+func uses_keys() -> bool:
+	return not level.is_empty() and level.has("boss") and not training and not G.flag("nokeys") and (G.arg("goto") == "" or G.flag("sealtest"))
+
+
+func _place_keys() -> void:
+	var boss_at := Vector2i.ZERO
+	for c: Vector2i in rooms:
+		if rooms[c]["type"] == G.RoomType.BOSS:
+			boss_at = c
+	# fight rooms, deepest first; a room next to the boss room comes last
+	var fights: Array = []
+	for c: Vector2i in rooms:
+		if rooms[c]["type"] != G.RoomType.COMBAT:
+			continue
+		var score := int(rooms[c]["dist"]) * 2
+		for d: Vector2i in rooms[c]["doors"]:
+			if rooms[c]["doors"][d]["to"] == boss_at:
+				score -= 100
+		fights.append([score, c])
+	fights.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) > int(b[0]) or (int(a[0]) == int(b[0]) and (a[1] as Vector2i) < (b[1] as Vector2i)))
+	if fights.is_empty():
+		return                        # no fight room at all: nothing is sealed
+	rooms[fights[0][1]]["boss_key"] = true
+	if fights.size() > 2:
+		@warning_ignore("integer_division")
+		rooms[fights[fights.size() / 2][1]]["small_key"] = true
+	for c: Vector2i in rooms:
+		for d: Vector2i in rooms[c]["doors"]:
+			var door: Dictionary = rooms[c]["doors"][d]
+			if door["boss"] and rooms[c]["type"] != G.RoomType.SECRET:
+				door["sealed"] = true
+
+
+## True while the boss door is still sealed (the quest list says "Find the boss key").
+func needs_boss_key() -> bool:
+	if boss_key or not uses_keys():
+		return false
+	for c: Vector2i in rooms:
+		for d: Vector2i in rooms[c]["doors"]:
+			if rooms[c]["doors"][d].get("sealed", false):
+				return true
+	return false
+
+
+## The hero picked up the boss key: every seal breaks.
+func take_boss_key() -> void:
+	boss_key = true
+	for c: Vector2i in rooms:
+		for d: Vector2i in rooms[c]["doors"]:
+			rooms[c]["doors"][d]["sealed"] = false
+	Sfx.play("door_unlock")
+	Sfx.play("secret_found", -4.0)
+	G.toast.emit("The boss key", "The guardian's door is unsealed.")
+	if G.flag("autotest"):
+		print("[rpg] boss key at %.0f s (kills %d)" % [time_s, kills])
+	G.stat.emit("boss_keys", 1)
+	if is_instance_valid(room):
+		room._doors_changed()
+	G.hud_changed.emit()
+
+
 ## Builds the map of the current floor (no signals yet, nothing on screen).
 func _generate_floor() -> void:
 	cur = Vector2i.ZERO
@@ -302,9 +372,16 @@ func _generate_floor() -> void:
 	scale_floor = int(level.get("tier", floor_index))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed_value, floor_index, "floor"])
+	if not level.is_empty() and not training and not G.flag("randommap"):
+		# a story level is the SAME dungeon on every visit (the owner picked "a fixed map per
+		# dungeon" on 12 Nov 2026); --randommap brings the old shuffle back for tests
+		rng.seed = hash([String(level["id"]), "fixed map"])
 	# a story level's boss lies deep: at least half its rooms away, so the way to it is a real fight
 	var room_count := int(level.get("rooms", theme["rooms"]))
 	rooms = FloorGen.generate(rng, room_count, 3 if level.is_empty() else maxi(3, room_count / 2))
+	boss_key = false
+	if uses_keys():
+		_place_keys()
 	if training:
 		rooms = {Vector2i.ZERO: FloorGen._record(G.RoomType.START, rng, 0)}
 		FloorGen._link(rooms)

@@ -41,6 +41,7 @@ var _curse_meter: Control
 var _level_label: Label          ## "Lv 3" and the XP bar beside it (scripts/data/rpg.gd)
 var _xp_bar: Control
 var _xp_flash := 0.0
+var _boss_key_icon: TextureRect
 var _mana_bar: Control           ## the blue mana bar under the hearts (shown once a skill is known)
 var _mana := 0.0
 var _mana_max := 1.0
@@ -111,6 +112,13 @@ func _ready() -> void:
 	_curse_meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_counters.add_child(_curse_meter)
 	_curse_meter.visible = G.curse_on()
+	# the boss key of this dungeon, once he carries it
+	_boss_key_icon = TextureRect.new()
+	_boss_key_icon.texture = Art.tex("key_boss") if Art.has("key_boss") else null
+	_boss_key_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	_boss_key_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_key_icon.visible = false
+	_counters.add_child(_boss_key_icon)
 	# the knight's level and how far the next one is
 	var lv := UI.hbox(2)
 	lv.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -370,6 +378,7 @@ func _refresh() -> void:
 		(_count_labels["coin"] as Label).text = str(_coins_shown)
 	(_count_labels["key"] as Label).text = str(_num(p, "keys"))
 	(_count_labels["bomb"] as Label).text = str(_num(p, "bombs"))
+	_boss_key_icon.visible = run.get("boss_key") == true
 	_level_label.text = "Lv %d" % Rpg.level()
 	_xp_bar.queue_redraw()
 	_curse_meter.call("set_values", _num(run, "curse_level"), _num(run, "belly"), int(run.call("belly_cap")) if run.has_method("belly_cap") else 5)

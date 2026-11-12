@@ -25,6 +25,7 @@ const Weapons = preload("res://scripts/data/weapons.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Pickups = preload("res://scripts/data/pickups.gd")
+const Gear = preload("res://scripts/data/gear.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const BossScript = preload("res://scripts/entities/boss.gd")
 const BombScript = preload("res://scripts/entities/bomb.gd")
@@ -307,6 +308,8 @@ func door_passable(dir: Vector2i) -> bool:
 	if fighting or not door_visible(dir):
 		return false
 	var door: Dictionary = rs["doors"][dir]
+	if door.get("sealed", false):
+		return false                  # the boss door: sealed until the boss key is found (run.gd "keys")
 	return not door["locked"] or type == G.RoomType.TREASURE
 
 
@@ -467,6 +470,12 @@ func _check_doors(player: Node) -> void:
 				else:
 					Sfx.play("shop_deny", -4.0)
 					G.toast.emit("Locked", "You need a key.")
+		elif door_visible(dir) and not fighting and rs["doors"][dir].get("sealed", false) and beyond > -(player.radius + 2.5):
+			# pushing against the sealed boss door: it says what it wants
+			if Controls.move.dot(Vector2(dir)) > 0.3 and _lock_bump_cd <= 0.0:
+				_lock_bump_cd = 1.6
+				Sfx.play("shop_deny", -4.0)
+				G.toast.emit("Sealed", "This door needs the boss key. It lies deeper in the dungeon.")
 
 
 # =============================================================================== collisions
@@ -876,6 +885,11 @@ func _first_visit_content() -> void:
 				add_thing("pedestal", {"item": item, "pos": G.ROOM_CENTER})
 			else:
 				add_thing("chest", {"pos": G.ROOM_CENTER, "locked": false, "rich": true})
+			# a keyed dungeon's treasure room also holds a Rare piece of gear (scripts/data/gear.gd)
+			if run.uses_keys() and (run.player.hero as Dictionary).has("melee"):
+				var piece := Gear.roll(run.gear_tier(), 1, rng)
+				if piece != "":
+					drop("gear:" + piece, _spot_or_near(G.ROOM_CENTER + Vector2(0, 28)), false)
 		G.RoomType.SHOP:
 			add_thing("shopkeeper", {"pos": Vector2(W * 0.5, 18)})
 			var y := 46.0
@@ -1065,6 +1079,17 @@ func _room_cleared() -> void:
 			add_thing("pedestal", {"item": item, "pos": free_spot_near(G.ROOM_CENTER + Vector2(-28, 4))})
 		if run.has_next_level() if not run.level.is_empty() else run.floor_index < run.floor_count - 1:
 			add_thing("floor_exit", {"pos": free_spot_near(G.ROOM_CENTER + Vector2(28, -12))})
+	elif rs.get("boss_key", false) and not run.boss_key:
+		# the dungeon's boss key (run.gd "keys"): it drops in the middle of the room it was hidden in
+		var key_at := free_spot_near(G.ROOM_CENTER)
+		drop("boss_key", key_at)
+		run.fx.ring(key_at, 2.0, 22.0, 0.5, Color(1.0, 0.4, 0.3, 0.9), 2.0, true)
+		Sfx.play("secret_found", -4.0)
+	elif rs.get("small_key", false):
+		rs["small_key"] = false
+		var small_at := free_spot_near(G.ROOM_CENTER)
+		drop("key", small_at)
+		run.fx.ring(small_at, 2.0, 14.0, 0.35, Color(1, 1, 0.8, 0.8), 1.5, true)
 	else:
 		_roll_room_reward()
 

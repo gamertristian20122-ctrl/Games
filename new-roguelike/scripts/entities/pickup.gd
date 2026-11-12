@@ -50,7 +50,7 @@ func setup(the_room: Node, desc: Dictionary) -> void:
 	if sprite.sprite_frames.get_frame_count("default") > 1:
 		sprite.frame = randi() % sprite.sprite_frames.get_frame_count("default")
 	add_child(sprite)
-	if String(info.get("kind", "")) in ["heart", "gear"]:
+	if String(info.get("kind", "")) in ["heart", "gear"] or id == "boss_key":
 		_add_plate()
 	_bob = randf() * 6.0
 	if desc.get("pop", false):

@@ -781,6 +781,22 @@ func draw_doors(c: Node2D) -> void:
 				var p := at + Vector2(float(op["dx"]), float(op["dy"]))
 				p.y = maxf(p.y, 5.0 - back)      # keep the mark inside the wall, on the screen
 				_boss_mark(c, p)
+				if room.rs["doors"][dir].get("sealed", false):
+					_seal_mark(c, p)
+
+
+## The seal on a boss door that still needs the boss key: an iron bar under the skull with a gold
+## keyhole plate in its middle. Plain squares, like the skull.
+func _seal_mark(c: Node2D, mid: Vector2) -> void:
+	var x := floorf(mid.x)
+	var y := floorf(mid.y) + 6.0
+	c.draw_rect(Rect2(x - 8, y, 17, 4), INK)
+	c.draw_rect(Rect2(x - 7, y + 1, 15, 2), Color(0.42, 0.44, 0.5))
+	c.draw_rect(Rect2(x - 7, y + 1, 15, 1), Color(0.62, 0.65, 0.72))
+	c.draw_rect(Rect2(x - 3, y - 1, 7, 7), INK)
+	c.draw_rect(Rect2(x - 2, y, 5, 5), Color(0.98, 0.8, 0.25))
+	c.draw_rect(Rect2(x - 2, y, 5, 1), Color(1.0, 0.93, 0.6))
+	c.draw_rect(Rect2(x, y + 1, 1, 3), INK)
 
 
 ## The mark of a boss door: a red skull, 9 x 9 px, made of plain squares (the pack has no emblem).

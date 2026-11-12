@@ -519,6 +519,18 @@ func _run_flow() -> void:
 	_check("the gate starts the first level", is_instance_valid(story_run) and String(story_run.get("level").get("id", "")) == "crypt_1")
 	if is_instance_valid(story_run):
 		story_run.get("player").set("coins", 7)
+		# a keyed dungeon: the boss door is sealed until the boss key is picked up
+		var sealed := 0
+		var marked := 0
+		for c: Vector2i in story_run.get("rooms"):
+			if story_run.get("rooms")[c].get("boss_key", false):
+				marked += 1
+			for d: Vector2i in story_run.get("rooms")[c]["doors"]:
+				if story_run.get("rooms")[c]["doors"][d].get("sealed", false):
+					sealed += 1
+		_check("a story dungeon seals its boss door and hides one boss key", sealed >= 1 and marked == 1 and story_run.call("needs_boss_key"))
+		story_run.get("player").call("give", {"boss_key": 1})
+		_check("picking up the boss key breaks the seal", not story_run.call("needs_boss_key") and story_run.get("boss_key") == true)
 	await _key(KEY_ESCAPE)
 	await _settle()
 	_check("the pause menu is open in a level", main.call("top_name") == "pause")

@@ -821,7 +821,7 @@ func _boss_step(p: Node) -> Vector2i:
 		for d: Vector2i in rooms[c]["doors"]:
 			var door: Dictionary = rooms[c]["doors"][d]
 			var n: Vector2i = door["to"]
-			if seen.has(n) or (door["hidden"] and not door["revealed"]) or (door["locked"] and p.keys <= 0):
+			if seen.has(n) or (door["hidden"] and not door["revealed"]) or (door["locked"] and p.keys <= 0) or door.get("sealed", false):
 				continue
 			seen[n] = d if c == run.cur else seen[c]
 			if rooms[n]["type"] == G.RoomType.BOSS:
@@ -848,6 +848,8 @@ func _search(p: Node, allow_boss: bool) -> Vector2i:
 			if door["hidden"] and not door["revealed"]:
 				continue
 			if door["locked"] and keys <= 0 and rooms[c]["type"] != G.RoomType.TREASURE:
+				continue
+			if door.get("sealed", false):
 				continue
 			var is_boss: bool = rooms[n]["type"] == G.RoomType.BOSS
 			if is_boss and not allow_boss:
@@ -937,6 +939,8 @@ func _step_toward(p: Node, target: Vector2i) -> Vector2i:
 			if seen.has(n) or (door["hidden"] and not door["revealed"]):
 				continue
 			if door["locked"] and p.keys <= 0 and rooms[c]["type"] != G.RoomType.TREASURE:
+				continue
+			if door.get("sealed", false):
 				continue
 			if not rooms[n]["visited"]:
 				continue

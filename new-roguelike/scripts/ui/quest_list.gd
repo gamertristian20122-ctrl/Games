@@ -58,7 +58,10 @@ func refresh() -> void:
 			lines.append(["Beat the champion of " + String(level.get("name", "the grove")), UI.C_GOLD])
 		else:
 			var boss := String(Bosses.info(String(level.get("boss", ""))).get("name", "the guardian"))
-			lines.append(["Beat " + boss, UI.C_GOLD])
+			if run.has_method("needs_boss_key") and run.call("needs_boss_key"):
+				lines.append(["Find the boss key", UI.C_GOLD])       # the boss door is sealed (run.gd "keys")
+			else:
+				lines.append(["Beat " + boss, UI.C_GOLD])
 	elif in_camp:
 		var next := Story.next_level()
 		# the goal names the place to go to: the next level and where its gate is

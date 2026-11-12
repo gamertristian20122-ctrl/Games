@@ -777,6 +777,8 @@ func give(bundle: Dictionary) -> int:
 		coins_collected += coins_added
 		G.stat.emit("coins", coins_added)
 		run.effects.fire("on_coins", [coins_added])
+	if bundle.has("boss_key"):
+		run.take_boss_key()
 	if bundle.has("max_hp"):
 		max_hp = clampi(max_hp + int(bundle["max_hp"]), 2, MAX_HP)
 		hp = mini(hp, max_hp)

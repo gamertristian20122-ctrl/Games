@@ -93,6 +93,10 @@
    "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2049.png",
    "shows": "grey vest"
   },
+  "key_boss": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa177.png",
+   "shows": "a red key (the boss key of a dungeon, scripts/data/pickups.gd)"
+  },
   "skill_cry": {
    "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa987.png",
    "shows": "golden rings"

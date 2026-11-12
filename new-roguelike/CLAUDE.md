@@ -48,7 +48,8 @@ The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It st
 - **Size: medium.** Build in steps, an APK after each: 1 levels and XP (DONE, v0.11.0), 2 gear and an
   inventory screen (DONE, v0.12.0), 3 skills and mana (DONE, v0.13.0), 4 the companion (DONE, v0.14.0: the owner picked the blonde mage of
   the Library pack, ranged, "gets back up"), 4 the companion, 5 roaming monsters and the Zelda-style
-  dungeons (keys, boss key), then a balance pass.
+  dungeons (keys, boss key: the DUNGEON half is DONE, v0.15.0; roaming monsters are NOT built yet, see
+  the v0.15.0 section for the open question), then a balance pass.
 - The owner's standing rules: few agents, one light tester, no re-checking what already passed; small
   64-bit APK sent in a message BY ITSELF, screenshots in a separate message; never a greyed-out
   button without the reason on screen; nothing for publishers.
@@ -753,6 +754,37 @@ The owner was shown five women from the purchased packs and picked **C, the blon
   the game too easy, lower `"damage"` or `"rate"` in her row.
 - **Not built:** she does not come to the training yard; she has no skills of her own, no gear, no
   lines during levels or after bosses; there is only one companion.
+
+## v0.15.0 (12 Nov 2026): RPG step 5a, Zelda-style dungeons (fixed maps, boss key, small key)
+The owner picked "a mix": a fixed map per dungeon with locked doors, small keys, a boss key and
+one treasure, the rooms themselves from the layouts already made. All of it is in `run.gd` under
+the heading "keys" (read the comment there first).
+- **Fixed maps:** a story level's floor is generated from its ID, not from the run's seed
+  (`_generate_floor`), so each dungeon is the same on every visit. `--randommap` shuffles again.
+- **Boss key:** in a level that ends at a BOSS (`run.uses_keys()`; not the outdoor champion levels,
+  not the yard) the boss door is SEALED (door record `"sealed"`). The boss key drops when the
+  deepest fight room that is not next to the boss room is cleared (room record `"boss_key"`,
+  pickup id `boss_key`, picture `key_boss` = a red key from the Raven icons). Picking it up breaks
+  every seal (`take_boss_key`). The HUD shows the key beside the counters; the quest list says
+  "Find the boss key" until then; pushing the sealed door says what it needs.
+- **The seal's look:** code-drawn (`room_look.gd _seal_mark`): an iron bar with a gold keyhole
+  under the red skull.
+- **Small key:** one other fight room always drops a key (`"small_key"`), so the locked treasure
+  room can always be opened. That room now also holds a Rare piece of gear.
+- **Bot:** treats a sealed door as a wall until the key is found; it found the key and reached the
+  boss in crypt_1, crypt_2, warrens_1 and warrens_2.
+- **IMPORTANT for tests:** a story level is only played through the MAIN scene:
+  `godot --headless --path . -- --autotest --nosave --level=crypt_1 ...`. With
+  `res://dev/world_test.tscn` the `--level` flag is ignored and an old-style run starts.
+- **Test flags:** `--nokeys`, `--randommap`, `--sealtest` (with `--goto=boss`: keep the seal, to
+  photograph the door). The bot prints `[rpg] boss key at t s`. Flow test: **77 checks**.
+- **Measured (bot with Seraphine, autolevel):** boss key after about 75 to 100 s, level 6 after
+  the two Crypt levels.
+- **OPEN QUESTION for the owner (roaming monsters):** the world map (`hub.gd`) has no fighting
+  code; fights only exist in the one-screen rooms (`run.gd` / `room.gd`). Two ways to do "monsters
+  roam the map": (a) monsters walk on the map and touching one fades into a one-room battle in
+  that terrain, then back to the same spot; (b) real fights on the scrolling map, which means
+  rebuilding the fight code for the camps scene. Ask before building either.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
