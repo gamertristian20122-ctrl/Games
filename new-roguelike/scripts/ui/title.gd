@@ -32,7 +32,7 @@ func build() -> void:
 	_name_label.offset_top = 2
 	area.add_child(_name_label)
 
-	_tag_label = UI.label(TAGLINE, "Small")
+	_tag_label = UI.label(TAGLINE if G.flag("oldstory") else "The beacons are dark. The nights grow long.", "Small")
 	_tag_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tag_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tag_label.add_theme_color_override("font_color", Color(0.98, 0.90, 0.58))

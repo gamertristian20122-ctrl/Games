@@ -514,6 +514,16 @@ func _ragged(points: Array, rng: RandomNumberGenerator) -> PackedVector2Array:
 
 ## Pieces scattered over big areas of the world map (woods, cacti, crags): the same every time, never
 ## on a road, never on top of a place, and far enough apart to walk between.
+## Is this spot in (or within `margin` px of) one of the place's ponds?
+func _in_water(at: Vector2, margin: float = 0.0) -> bool:
+	for pond: Dictionary in place.get("water", []):
+		var r: Vector2 = (pond["radius"] as Vector2) + Vector2(margin, margin)
+		var d: Vector2 = (at - (pond["at"] as Vector2)) / r
+		if d.length_squared() < 1.0:
+			return true
+	return false
+
+
 func _build_groves() -> void:
 	if not place.has("groves"):
 		return
@@ -540,7 +550,7 @@ func _build_groves() -> void:
 		while made < int(grove["n"]) and tries < int(grove["n"]) * 12:
 			tries += 1
 			var at := Vector2(rng.randf_range(rect.position.x, rect.end.x), rng.randf_range(rect.position.y, rect.end.y)).round()
-			var ok := true
+			var ok := not _in_water(at, 26.0)
 			for spot: Vector2 in keep:
 				if spot.distance_to(at) < 84.0:
 					ok = false

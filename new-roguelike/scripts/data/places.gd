@@ -54,6 +54,25 @@ static func get_place(id: String) -> Dictionary:
 		"beacon":
 			return Tale.beacon()
 	var place := _base_place(id)
+	# DEPTH (scripts/hub/view3d.gd): where the ground climbs, the hills, the water of each place
+	match id:
+		"elfwood":
+			place["rise"] = {"from": 100.0, "over": 84.0, "height": 44.0}
+			place["hills"] = [{"at": Vector2(486, 300), "radius": 120.0, "height": 16.0, "top": 24.0}, {"at": Vector2(120, 150), "radius": 100.0, "height": 14.0}]
+			place["water"] = [{"at": Vector2(252, 312), "radius": Vector2(58, 17)}]
+			(place["forest"] as Dictionary)["open"] = ((place["forest"] as Dictionary)["open"] as Array) + [Rect2(180, 330, 150, 60)]
+		"glade":
+			place["rise"] = {"from": 100.0, "over": 84.0, "height": 48.0}
+			place["hills"] = [{"at": Vector2(300, 208), "radius": 128.0, "height": 13.0, "top": 74.0}]      # the rune ring stands on a low rise
+		"world":
+			# Hollow Hill over its gate, the Cinder Mountains in the north-east, dunes in the sands, low wooded hills
+			place["hills"] = [{"at": Vector2(300, 462), "radius": 180.0, "height": 76.0}, {"at": Vector2(1700, 150), "radius": 430.0, "height": 112.0},
+				{"at": Vector2(1440, 110), "radius": 270.0, "height": 70.0}, {"at": Vector2(1960, 210), "radius": 260.0, "height": 84.0},
+				{"at": Vector2(1250, 940), "radius": 210.0, "height": 26.0}, {"at": Vector2(1040, 380), "radius": 190.0, "height": 22.0},
+				{"at": Vector2(1500, 730), "radius": 220.0, "height": 22.0}, {"at": Vector2(150, 240), "radius": 270.0, "height": 52.0},
+				{"at": Vector2(600, 960), "radius": 250.0, "height": 40.0}]
+			place["water"] = [{"at": Vector2(430, 812), "radius": Vector2(92, 40)}, {"at": Vector2(1424, 664), "radius": Vector2(58, 26)}]
+			(place["exits"] as Array)[0]["at"] = Vector2(480, 500)          # Wickmere's south gate
 	if id == "elfwood" or id == "glade":
 		place["tint"] = Color(0.98, 0.93, 0.80) if Tale.lit("elfwood") else place["tint"]
 		if id == "elfwood":

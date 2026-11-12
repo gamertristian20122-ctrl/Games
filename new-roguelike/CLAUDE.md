@@ -1069,6 +1069,34 @@ Asked "depth first or story first", the owner chose depth. Built in `scripts/hub
   the Elfwood are still cards on a flat floor); houses throw no shade ON people; no steps or
   raised ground you can walk on; the tavern's rooms are still one painted picture each.
 
+## v0.21.0 (12 Nov 2026): depth for the rest of what can be reached
+The owner: "ok do that for the rest of the game also I'm letting you [increase] the game [file]
+amount to max 5gb and you can use tools and anything to make it more [graphically] better and
+cleaner for the entire game".
+- **Read as, and told to the owner:** the APK stays small anyway (their phone could not download
+  69 MB once); "use tools and anything" does NOT lift "no AI art or audio, ever" (the Credits
+  screen says so to players). They were asked to say plainly if they want that rule lifted.
+  Until they do: only the purchased packs, free human-made art with a fit licence, and code.
+- **Hills you walk on** (`view3d.gd` `"hills"`, `_height`, `_slope`, `_shadow_ok`): people are
+  drawn as high as the ground under them; walking itself is still flat 2D. A hill with a `"top"`
+  is a plateau. Flat shadows are dropped for tall things on slopes and for anything on a steep one.
+- **Places given depth:** the Elfwood Road (the wood climbs behind, two low rises, a pond), the
+  Rune Glade (the ring stands on a low rise), the Deepwood (climbs, two rises), the Beacon of the
+  Wood (bigger place now; the knight comes in at the foot and CLIMBS to the stones and the
+  beacon on a plateau), the world map (Hollow Hill over its gate, the Cinder Mountains as real
+  mounds, dunes, wooded hills, a lake and an oasis; groves keep out of water: `hub.gd _in_water`).
+  The Elfwood's and the world's depth is added in `places.gd get_place()` (the story's fitting
+  of the old places); the Deepwood's and the beacon's is in `tale.gd`.
+- **Battles:** the ground climbs behind the fighters (`stage.gd height_at`), the wood stands
+  row above row.
+- **Title screen:** `scripts/ui/title_scene.gd`, the battle stage with the knight alone in the
+  golden wood and a drifting camera, in place of the flat backdrop (`main.gd _refresh_layers`);
+  the tagline is the new story's. Sub-menus dim it with the shade.
+- **Checked:** `--uitour=tale` 16/16, `--uitour=flow --oldstory` 82/82, `check.sh`.
+- **Still flat:** the two old camps (Dustwatch, Emberfall: not reachable in the story; rebuild
+  them with houses and height when chapters two and three are written), the tavern's two rooms
+  (one painted picture each), the intro's seven pictures, rain.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

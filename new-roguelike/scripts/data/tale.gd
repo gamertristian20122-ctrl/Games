@@ -372,6 +372,8 @@ static func deepwood() -> Dictionary:
 	var glow := lit("elfwood")
 	return {
 		"name": "The Deepwood", "size": Vector2(720, 380), "outdoor": true, "walk": Rect2(30, 110, 660, 236), "spawn": Vector2(50, 230),
+		"rise": {"from": 100.0, "over": 84.0, "height": 52.0},
+		"hills": [{"at": Vector2(330, 250), "radius": 120.0, "height": 18.0, "top": 20.0}, {"at": Vector2(600, 300), "radius": 110.0, "height": 14.0}],
 		"tint": Color(0.98, 0.92, 0.78) if glow else Color(0.56, 0.70, 0.90),
 		"props": [["hub_tree_teal_1", 250, 200, 8, 8], ["hub_tree_green_1", 470, 320, 8, 8], ["hub_tree_pink_2", 610, 190, 7, 7],
 			["hub_rune_2", 150, 180, 5, 2], ["hub_rune_0", 560, 300, 9, 3], ["hub_bloom_0", 130, 300, 0, 2], ["hub_bloom_6", 360, 170, 0, 2],
@@ -382,7 +384,7 @@ static func deepwood() -> Dictionary:
 		"scatter": {"hub_tuft": [24, 100], "hub_flower": [26, 40], "hub_pebble": [20, 12], "hub_twig": [10, 22]},
 		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 170, 70, 120), Rect2(680, 170, 80, 120)]},
 		"exits": [{"rect": Rect2(26, 200, 10, 60), "to": "glade", "at": Vector2(430, 200)},
-			{"rect": Rect2(684, 196, 10, 60), "to": "beacon", "at": Vector2(240, 300), "tale": 4, "why": "The lost wardens bar the path."}],
+			{"rect": Rect2(684, 196, 10, 60), "to": "beacon", "at": Vector2(240, 378), "tale": 4, "why": "The lost wardens bar the path."}],
 		"people": [
 			{"id": "thornwatch", "name": "The lost wardens", "title": "Thorn-sick", "sprite": "pc_elf_hunter", "hands": "pc_hand_elf_23",
 				"pos": Vector2(470, 240), "face": -1, "role": "chat", "text": "", "tale_from": 3, "tale_to": 3, "tint": Color(0.75, 0.6, 0.85)},
@@ -401,18 +403,23 @@ static func beacon() -> Dictionary:
 	else:
 		lights.append([Vector2(240, 180), Color(0.5, 0.6, 1.0), 1.4, 0.35])
 	return {
-		"name": "The Beacon of the Wood", "size": Vector2(480, 360), "outdoor": true, "walk": Rect2(30, 120, 420, 210), "spawn": Vector2(240, 300),
+		# the knight comes in at the foot (south) and climbs: the stones and the beacon stand on
+		# the flat top of a real hill (scripts/hub/view3d.gd "hills")
+		"name": "The Beacon of the Wood", "size": Vector2(480, 430), "outdoor": true, "walk": Rect2(30, 120, 420, 280), "spawn": Vector2(240, 378),
 		"tint": Color(1.0, 0.94, 0.78) if glow else Color(0.52, 0.64, 0.90),
-		"props": [["hub_rune_1", 150, 200, 12, 3], ["hub_rune_1", 330, 200, 12, 3], ["hub_rune_0", 120, 270, 9, 3], ["hub_rune_0", 360, 270, 9, 3],
-			["hub_rune_2", 190, 150, 5, 2], ["hub_rune_2", 290, 150, 5, 2], ["hub_rock_moss_1", 80, 200, 12, 3], ["hub_rock_moss_0", 400, 210, 12, 3],
-			["hub_vine_0", 196, 214, 0, 2], ["hub_vine_1", 286, 216, 0, 2], ["hub_bloom_0", 100, 310, 0, 2], ["hub_bloom_5", 390, 312, 0, 2],
+		"rise": {"from": 96.0, "over": 80.0, "height": 30.0},
+		"hills": [{"at": Vector2(240, 204), "radius": 182.0, "height": 46.0, "top": 104.0}],
+		"props": [["hub_rune_1", 150, 200, 12, 3], ["hub_rune_1", 330, 200, 12, 3], ["hub_rune_0", 150, 262, 9, 3], ["hub_rune_0", 330, 262, 9, 3],
+			["hub_rune_2", 190, 150, 5, 2], ["hub_rune_2", 290, 150, 5, 2], ["hub_rock_moss_1", 70, 300, 12, 3], ["hub_rock_moss_0", 410, 310, 12, 3],
+			["hub_vine_0", 196, 214, 0, 2], ["hub_vine_1", 286, 216, 0, 2], ["hub_bloom_0", 100, 372, 0, 2], ["hub_bloom_5", 390, 374, 0, 2],
+			["hub_bush_deep_1", 150, 380, 10, 4], ["hub_bush_green_1", 344, 384, 10, 4],
 			# the beacon: a great stone with the fire bowl on top of it
 			["hub_stone_1", 240, 190, 16, 3], ["hub_stone_0", 214, 196, 8, 2], ["hub_stone_0", 268, 198, 8, 2]],
 		"beacon": {"pos": Vector2(240, 186), "lit": glow, "lift": 30.0},
-		"paths": [[Vector2(240, 370), Vector2(240, 230)]],
-		"scatter": {"hub_tuft": [24, 50], "hub_flower": [26, 30 if glow else 6], "hub_pebble": [20, 16], "hub_twig": [10, 10]},
-		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(180, 330, 120, 80)]},
-		"exits": [{"rect": Rect2(200, 322, 80, 10), "to": "deepwood", "at": Vector2(664, 226)}],
+		"paths": [[Vector2(240, 440), Vector2(240, 230)]],
+		"scatter": {"hub_tuft": [24, 60], "hub_flower": [26, 34 if glow else 6], "hub_pebble": [20, 18], "hub_twig": [10, 12]},
+		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(180, 400, 120, 80)]},
+		"exits": [{"rect": Rect2(200, 392, 80, 10), "to": "deepwood", "at": Vector2(664, 226)}],
 		"people": [
 			{"id": "giant", "name": "Old Bramblejaw", "title": "The Bramble Giant", "sprite": "boss_ogre", "pos": Vector2(250, 232), "face": -1,
 				"role": "chat", "text": "", "tale_from": 4, "tale_to": 4, "tint": Color(0.72, 0.95, 0.70), "solid": 16.0},

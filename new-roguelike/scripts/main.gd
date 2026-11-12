@@ -52,6 +52,7 @@ var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
 var intro: Node                  ## the animated intro while it plays (scripts/hub/intro.gd), or null
 var battle: Node                 ## the turn-based battle being fought (scripts/battle/battle.gd), or null
+var _title3d: Node               ## the lit 3D picture behind the title and its menus (scripts/ui/title_scene.gd), or null
 var hud: CanvasLayer             ## scripts/ui/hud.gd
 var touch: CanvasLayer           ## scripts/ui/touch.gd
 var backdrop: Control            ## scripts/ui/backdrop.gd
@@ -229,8 +230,22 @@ func _refresh_layers() -> void:
 	var in_run := run != null
 	var in_hub := is_instance_valid(hub)
 	backdrop.visible = not in_run and not in_hub and not is_instance_valid(intro) and not is_instance_valid(battle)
-	backdrop.call("set_dimmed", not _names.is_empty() and not (_names.back() in BRIGHT))
-	_shade.visible = (in_run or in_hub) and not _stack.is_empty()
+	var dimmed: bool = not _names.is_empty() and not (_names.back() in BRIGHT)
+	backdrop.call("set_dimmed", dimmed)
+	# behind the title and its menus: the lit 3D picture (scripts/ui/title_scene.gd) in place of
+	# the old flat one, when the story and the 3D look are on
+	var lit: bool = backdrop.visible and Tale.on() and bool(Save.setting("look3d")) and DisplayServer.get_name() != "headless" and not G.flag("flat")
+	if lit and not is_instance_valid(_title3d):
+		_title3d = (load("res://scripts/ui/title_scene.gd") as Script).new()
+		_title3d.name = "TitleScene"
+		add_child(_title3d)
+		move_child(_title3d, 0)
+	elif not lit and is_instance_valid(_title3d):
+		_title3d.queue_free()
+		_title3d = null
+	if lit:
+		backdrop.visible = false
+	_shade.visible = ((in_run or in_hub) and not _stack.is_empty()) or (lit and dimmed)
 	hud.visible = in_run and _stack.is_empty()      # the pause menu shows its own numbers
 	touch.set("hub_mode", in_hub)
 	touch.call("set_active", (in_run or in_hub) and _stack.is_empty() and not _ending)

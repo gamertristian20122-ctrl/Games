@@ -327,12 +327,23 @@ func _ground() -> void:
 	mat.shader = sh
 	for k: String in _ground_params:
 		mat.set_shader_parameter(k, _ground_params[k])
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(220.0, 150.0)
+	# the ground climbs behind the fighters (height_at): the wood stands row above row
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_normal(Vector3.UP)
+	var z := 25.0
+	while z > -125.0:
+		var step := 2.0 if z > -40.0 else 12.0
+		var x := -110.0
+		while x < 110.0:
+			var x2 := x + 10.0
+			for v: Vector2 in [Vector2(x, z - step), Vector2(x2, z - step), Vector2(x2, z), Vector2(x, z - step), Vector2(x2, z), Vector2(x, z)]:
+				st.add_vertex(Vector3(v.x, height_at(v.y), v.y))
+			x = x2
+		z -= step
 	var m := MeshInstance3D.new()
-	m.mesh = plane
+	m.mesh = st.commit()
 	m.material_override = mat
-	m.position = Vector3(0.0, 0.0, -50.0)
 	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(m)
 	# which way a shadow leans on the ground, for every unit of height
@@ -340,6 +351,13 @@ func _ground() -> void:
 	_lean = (Vector2(d.x, d.z) / maxf(-d.y, 0.2)).limit_length(1.15)
 	_shadow_shader = Shader.new()
 	_shadow_shader.code = SHADOW_CODE
+
+
+## How high the ground is this far back (z; the fighters stand at 0). Level where they fight,
+## then a slope up to a wooded ridge behind them.
+func height_at(z: float) -> float:
+	var t := clampf((-7.6 - z) / 15.0, 0.0, 1.0)
+	return 4.2 * t * t * (3.0 - 2.0 * t)
 
 
 ## The material that paints a picture's shadow (see SHADOW_CODE).
@@ -365,6 +383,10 @@ func shadow_basis() -> Basis:
 ##   tint    darker or coloured                        shine    how much it glows by itself
 func prop(id: String, at: Vector3, flip: bool = false, sway: float = 0.0, shadow: bool = true,
 		tint: Color = Color.WHITE, shine: float = 0.0, lie_flat: bool = false, turn: float = 0.0) -> void:
+	var up := height_at(at.z)
+	if up > 0.0:
+		at.y += up                     # it stands on the slope behind the fighting ground
+		shadow = shadow and up < 0.05
 	var key := "%s|%.3f|%s|%s|%.2f|%s" % [id, sway, shadow, tint.to_html(false), shine, lie_flat]
 	if not _batches.has(key):
 		_batches[key] = {"id": id, "sway": sway, "shadow": shadow, "tint": tint, "shine": shine, "flat": lie_flat, "at": []}

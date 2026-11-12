@@ -17,8 +17,9 @@ extends Node3D
 ##   "houses"  [{"at", "wide", "deep", "wall", "roof", "rise", "gable", "door", "windows", ...}]
 ##             a box of walls with a sloped roof, a chimney that smokes, a door and windows on
 ##             the front, and a shadow of its true shape (_build_house)
-##   "rise"    {"from", "over", "height", "mound"}  the ground climbs behind the place (a hill):
-##             the floor is a mesh with height and everything standing on it stands that high
+##   "rise"    {"from", "over", "height", "mound"}  the ground climbs behind the place, and
+##   "hills"   [{"at", "radius", "height", "top"}]  hills you walk on: the floor is a mesh with
+##             height and everything standing on it stands that high (_height)
 ##   "water"   [{"at", "radius"}]  a pond: ripples, the sky in it, glints of sun (WATER_CODE)
 ## Plants sway in the wind. (hub.gd shows houses as flat pieces and water as a flat shape when
 ## the 3D look is off.)
@@ -209,6 +210,8 @@ var _day := 0.0                    ## 1 = out of doors by day (patches of golden
 var _drift := 0.0
 var _up := Vector3.UP              ## "up" for a standing card: straight up, leaned back by the tilt
 var _rise := {}                    ## the place's "rise" (the ground climbs behind it), or {}
+var _hills: Array = []              ## the place's "hills"
+var _has_height := false
 var _surf := {}                    ## texture id -> [Texture2D, SurfaceTool]: the houses being built
 var _window_mats: Array = []       ## window materials: they glow at night
 var _water_mats: Array = []
@@ -303,6 +306,8 @@ func rebuild() -> void:
 	var ysort: Node2D = hub._ysort
 	_outdoor = bool(place.get("outdoor", false))
 	_rise = place.get("rise", {})
+	_hills = place.get("hills", [])
+	_has_height = not _rise.is_empty() or not _hills.is_empty()
 	_window_mats.clear()
 	_water_mats.clear()
 	_pitch = PITCH if _outdoor else PITCH_INDOORS
@@ -342,7 +347,7 @@ func rebuild() -> void:
 	for pair: Array in hub._lamps if _outdoor else []:
 		var two: PointLight2D = pair[0]
 		var three := OmniLight3D.new()
-		three.position = Vector3(two.position.x * PX, 1.1, two.position.y * PX + 0.4)
+		three.position = Vector3(two.position.x * PX, 1.1 + _height(two.position), two.position.y * PX + 0.4)
 		three.light_color = two.color
 		three.omni_range = 64.0 * two.texture_scale * PX * LAMP_REACH
 		three.omni_attenuation = 1.4
@@ -382,7 +387,7 @@ func _paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 	for k: String in _ground_params:
 		mat.set_shader_parameter(k, _ground_params[k])
 	var floor_mesh := MeshInstance3D.new()
-	if _rise.is_empty():
+	if not _has_height:
 		var plane := PlaneMesh.new()
 		plane.size = (size + margin * 2.0) * PX
 		floor_mesh.mesh = plane
@@ -420,20 +425,45 @@ func _paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 
 # ------------------------------------------------------------------ ground with height
 ## How high the ground is at a spot of the flat picture (px in, world units out). 0 everywhere
-## unless the place has a "rise": north of "from" the ground climbs to "height" over "over" px,
-## and a "mound" {"at", "radius", "height"} swells out of that slope (Hollow Hill itself).
+## unless the place has:
+##   "rise"   north of "from" the ground climbs to "height" over "over" px, and a "mound"
+##            {"at", "radius", "height"} swells out of that slope (Hollow Hill itself)
+##   "hills"  [{"at", "radius", "height", "top"}]: a hill with a flat top of radius "top" (0 = a
+##            round top) that falls away to nothing at "radius". People WALK on hills: they are
+##            drawn as high as the ground they stand on (walking itself is still flat).
 func _height(at: Vector2) -> float:
-	if _rise.is_empty():
+	if not _has_height:
 		return 0.0
-	var from := float(_rise.get("from", 100.0))
-	var t := clampf((from - at.y) / maxf(float(_rise.get("over", 90.0)), 1.0), 0.0, 1.0)
-	t = t * t * (3.0 - 2.0 * t)
-	var h := float(_rise.get("height", 48.0)) * t
-	if _rise.has("mound"):
-		var m: Dictionary = _rise["mound"]
-		var d := at.distance_to(m["at"]) / float(m["radius"])
-		h += float(m["height"]) * exp(-d * d) * t
+	var h := 0.0
+	if not _rise.is_empty():
+		var from := float(_rise.get("from", 100.0))
+		var t := clampf((from - at.y) / maxf(float(_rise.get("over", 90.0)), 1.0), 0.0, 1.0)
+		t = t * t * (3.0 - 2.0 * t)
+		h = float(_rise.get("height", 48.0)) * t
+		if _rise.has("mound"):
+			var m: Dictionary = _rise["mound"]
+			var d := at.distance_to(m["at"]) / float(m["radius"])
+			h += float(m["height"]) * exp(-d * d) * t
+	for hill: Dictionary in _hills:
+		var top := float(hill.get("top", 0.0))
+		var k := clampf((at.distance_to(hill["at"]) - top) / maxf(float(hill["radius"]) - top, 1.0), 0.0, 1.0)
+		h += float(hill["height"]) * (1.0 - k * k * (3.0 - 2.0 * k))
 	return h * PX
+
+
+## How steep the ground is at a spot (0 = level; 0.3 = it climbs 3 for every 10 across).
+func _slope(at: Vector2) -> float:
+	if not _has_height:
+		return 0.0
+	var h := _height(at)
+	return maxf(absf(_height(at + Vector2(8, 0)) - h), absf(_height(at + Vector2(0, 8)) - h)) * 2.0
+
+
+## May a thing standing here throw its flat shadow? On level ground always; on a slope the flat
+## shadow would hang in the air or sink into the hill, so only small things on gentle slopes do.
+func _shadow_ok(at: Vector2, tall: float) -> bool:
+	var steep := _slope(at)
+	return steep < 0.1 or (tall < 2.6 and steep < 0.45)
 
 
 ## A floor of square cells that follows _height(). `rect` in px of the flat picture.
@@ -689,7 +719,7 @@ func _build_water(place: Dictionary) -> void:
 		var node := MeshInstance3D.new()
 		node.mesh = plane
 		node.material_override = mat
-		node.position = Vector3(c.x * PX, 0.03, c.y * PX)
+		node.position = Vector3(c.x * PX, 0.03 + _height(c), c.y * PX)
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_world.add_child(node)
 		_water_mats.append(mat)
@@ -865,8 +895,8 @@ func _batch_holder(holder: Node2D, ysort: Node2D, batches: Dictionary) -> void:
 			batches[key] = {"tex": tex, "uv": card["uv"], "tint": card["tint"], "at": [], "shade": []}
 		var origin := foot + (card["at"] as Vector3) + _up * (lift * PX) + Vector3(0.0, 0.0, i * 0.004)
 		(batches[key]["at"] as Array).append(Transform3D(Basis(card["x"], card["y"], Vector3(0, 0, 1)), origin))
-		# (no flat shadow on a slope: it would hang in the air below the thing that throws it)
-		(batches[key]["shade"] as Array).append(_shade_transform(card, foot if foot.y < 0.05 else foot + Vector3(0, -50, 0), lift))
+		var ok := _shadow_ok(holder.position, (card["y"] as Vector3).length())
+		(batches[key]["shade"] as Array).append(_shade_transform(card, foot if ok else foot + Vector3(0, -50, 0), lift))
 
 
 ## A card laid down on the ground along the shadow's lean.
@@ -983,6 +1013,8 @@ func _sync_holder(entry: Dictionary, ysort: Node2D, stamp: int) -> void:
 		bm.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
 		body.transform = Transform3D(Basis(card["x"], card["y"], Vector3(0, 0, 1)), foot + (card["at"] as Vector3) + _up * (lift * PX) + Vector3(0.0, 0.0, i * 0.004))
 		shade.transform = _shade_transform(card, foot, lift)
+		if _has_height and not _shadow_ok(holder.position, (card["y"] as Vector3).length()):
+			shade.visible = false
 	for id: int in cards.keys():
 		if int(cards[id]["stamp"]) != stamp:
 			(cards[id]["body"] as Node).queue_free()
@@ -1140,7 +1172,7 @@ func _sync(_delta: float) -> void:
 	var centre := flat_cam.get_screen_center_position()
 	var view_h := UI.screen_size(hub).y / zoom * PX
 	_dist = view_h / (2.0 * tan(deg_to_rad(FOV * 0.5))) * (WIDE if _outdoor else 1.0)
-	var target := Vector3(centre.x * PX, 0.6, centre.y * PX)
+	var target := Vector3(centre.x * PX, 0.6 + _height(centre), centre.y * PX)
 	var pool_at := Vector2(target.x, target.z)
 	if _outdoor:
 		target.z -= view_h * 0.14          # look a little past the knight: more of the distance, where the depth is
