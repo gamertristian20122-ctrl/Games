@@ -34,6 +34,7 @@ const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
+const View3D = preload("res://scripts/hub/view3d.gd")
 
 signal action(what: String, arg: Variant)
 
@@ -91,6 +92,7 @@ var _rain: CPUParticles2D
 var _zoom := 1.0                 ## the place's camera zoom (0.5 on the world map: twice as much is seen)
 var _k := 1.0                    ## how big the knight is drawn there (2 on the world map)
 var _shut_t := 0.0               ## a moment before a shut road says so again
+var _view: Node3D                ## the lit 3D look (scripts/hub/view3d.gd): it shows what this file builds. null = the old flat look
 
 
 func _ready() -> void:
@@ -99,6 +101,12 @@ func _ready() -> void:
 	_cam = Camera2D.new()
 	add_child(_cam)
 	_cam.make_current()
+	# The lit 3D look (the owner, 12 Nov 2026: "for the entire game"). `--flat` keeps the old picture;
+	# tests without a screen have nothing to show it on.
+	if not G.flag("flat") and bool(Save.setting("look3d")) and DisplayServer.get_name() != "headless":
+		_view = View3D.new()
+		add_child(_view)
+		_view.call("setup", self)
 	_prompt = UI.label("", "Small")
 	_prompt.theme = UI.theme()
 	_prompt.z_index = 200
@@ -283,6 +291,8 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	if _entered:
 		_arrive_t = 2.2                 # the place's name floats up for a moment
 	_entered = true
+	if _view != null:
+		_view.call("rebuild")
 
 
 ## Through a door or off the edge of the screen: a short fade, then the next place.

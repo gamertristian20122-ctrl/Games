@@ -3,7 +3,7 @@ extends Node
 ## world" game and asked for that level of look, then turn-based fights. This screen is the first
 ## step: ONE battle scene in the new look, to judge on the phone before anything else is changed.
 ## NOTHING FIGHTS YET: the menu is a picture of where the buttons will be.
-## Opened from the title ("New look (test)") or with `--look` (and `--shots=<dir>` for a picture).
+## Opened from the title ("Battle look (test)") or with `--look` (and `--shots=<dir>` for a picture).
 ## When the real battle is built, it takes this file's place and the title button goes.
 
 signal finished

@@ -23,6 +23,7 @@ const VERSION := 1
 const DEFAULT_SETTINGS := {
 	"sfx_volume": 1.0, "music_volume": 0.7, "vibration": true, "swap_sticks": false, "last_hero": "knight",
 	"difficulty": "normal", "hero_name": "Aldous", "armour": "steel", "sword_look": "knight", "weapon": "sword",
+	"look3d": true,          # the lit 3D look of the places you walk in (scripts/hub/view3d.gd); off = the old flat picture
 }
 const DEFAULTS := {
 	"version": VERSION,

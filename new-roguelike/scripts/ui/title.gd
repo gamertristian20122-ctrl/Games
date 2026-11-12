@@ -45,17 +45,17 @@ func build() -> void:
 	_column.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
 	_column.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_column.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_column.offset_top = 12
-	_column.offset_bottom = 12
+	_column.offset_top = 22           # (five buttons: lower, so the top one stays clear of the tagline)
+	_column.offset_bottom = 22
 	_column.offset_right = -2
 	_column.offset_left = -2
 	area.add_child(_column)
 	var play := UI.button("Play", func() -> void: send("play"), "Big", "ui_start")
 	play.custom_minimum_size = Vector2(104, 26)
 	_column.add_child(play)
-	# "New look (test)" opens the look test of the turn-based battle screen (scripts/battle/preview.gd).
+	# "Battle look (test)" opens the look test of the turn-based battle screen (scripts/battle/preview.gd).
 	# It goes when the real battles are in.
-	for row: Array in [["Collection", "collection"], ["Settings", "settings"], ["Credits", "credits"], ["New look (test)", "look"]]:
+	for row: Array in [["Collection", "collection"], ["Settings", "settings"], ["Credits", "credits"], ["Battle look (test)", "look"]]:
 		var what: String = row[1]
 		var b := UI.button(row[0], func() -> void: send(what))
 		b.custom_minimum_size = Vector2(104, 19)
@@ -64,11 +64,9 @@ func build() -> void:
 
 	var version := UI.label("v" + String(ProjectSettings.get_setting("application/config/version", "0")), "Small")
 	version.add_theme_color_override("font_color", UI.C_FAINT)
-	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	version.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)      # (bottom right is under the fifth button now)
 	version.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	version.offset_right = -2
+	version.offset_left = 2
 	area.add_child(version)
 
 	resized.connect(_fit)

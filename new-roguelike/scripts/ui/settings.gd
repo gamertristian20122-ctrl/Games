@@ -24,11 +24,20 @@ func build() -> void:
 	list.add_child(sound)
 	sound.changed.connect(func(_v: Variant) -> void: Sfx.play("ui_click"))
 	list.add_child(_row("steps", "Music", "music_volume"))
+	# two short switches share a line, so the list still fits a phone screen
+	var switches := UI.hbox(2)
+	list.add_child(switches)
 	var vib := _row("toggle", "Vibration", "vibration")
-	list.add_child(vib)
+	vib.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	switches.add_child(vib)
 	vib.changed.connect(func(v: Variant) -> void:
 		if v:
 			Input.vibrate_handheld(40))
+	# the lit 3D look of camps and the world map; off = the old flat picture (for a phone that runs it
+	# slowly). It counts from the next time you press Play or come back from a fight.
+	var look := _row("toggle", "3D look", "look3d")
+	look.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	switches.add_child(look)
 	list.add_child(_row("toggle", "Left-handed sticks", "swap_sticks"))
 	# Easy / Normal / Hard (the numbers are G.DIFFICULTY); it counts from the next level you enter
 	var hard := SettingRow.new()

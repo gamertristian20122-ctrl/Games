@@ -40,11 +40,18 @@ The owner sent six pictures of a famous "pixel people in a lit 3D world" turn-ba
 - A big studio's hand-built scenery cannot be matched; the mood (light, blur, glow, depth) can.
 - Turn-based REPLACES the real-time fighting of RPG steps 1 to 5. Levels, stats, gear, skills, mana,
   the companion, keys and roamers carry over as data.
-- Order of work: (1) a LOOK TEST of one battle scene (DONE, v0.16.1, see that section; the owner has
-  to say whether it runs smoothly on the phone and whether the look is right), (2) the real
-  turn-based battle on that stage, started by a roamer's touch (it replaces `Roamers.fight` rooms),
-  (3) dungeons: monsters stand in the rooms, a touch starts a battle; bosses as battles, (4) the
-  world map and camps in the same lit 3D look, (5) balance. An APK after each.
+- After the look test the owner answered only: **"That needs to be for the entire game."** So the
+  look goes EVERYWHERE, walking places first (they are what Play opens).
+- Order of work: (1) a LOOK TEST of one battle scene (DONE, v0.16.1), (2) every place you WALK in
+  shown in the lit 3D look: camps, world map, tavern rooms (DONE, v0.17.0, `scripts/hub/view3d.gd`),
+  (3) the real turn-based battle on the battle stage, started by a roamer's touch (it replaces
+  `Roamers.fight` rooms), (4) dungeons as walking places in the same look (monsters stand in the
+  rooms, a touch starts a battle; bosses are battles) which retires the flat real-time rooms,
+  (5) the title picture and the intro in the look, (6) balance. An APK after each.
+- STILL FLAT after v0.17.0 (say so to the owner, do not pretend): every fight (dungeon rooms, the
+  roamer's one-room fights, the training yard), the title backdrop, the intro cutscene.
+- The owner has NOT yet said how it runs on the phone (the look test shows an fps number). Until
+  they do, keep Settings > "3D look" (off = the old flat places) working.
 - Not yet asked (ask with multiple choice before building step 2): how many fight at once (the
   knight and ONE companion today), and how deep the battle rules should be.
 
@@ -828,7 +835,7 @@ a meeting should work, the owner picked **"touch = quick battle"** (not fights o
   beaten roamers come back when the app restarts.
 
 ## v0.16.1 (12 Nov 2026): the look test of the lit 3D battle stage
-One battle scene to LOOK at; nothing fights. Title > "New look (test)", or `--look` (with
+One battle scene to LOOK at; nothing fights. Title > "Battle look (test)", or `--look` (with
 `--shots=<dir>` it writes `look.png` and quits). The button and `preview.gd` go when battles are real.
 - **`scripts/battle/stage.gd`**: the stage. `LOOKS` has one row per place (only "forest" so far:
   colours, lights, which pack pieces). `build()` makes the camera (fixed, 30 degrees, looking a
@@ -864,6 +871,36 @@ One battle scene to LOOK at; nothing fights. Title > "New look (test)", or `--lo
      If it is slow: fewer blur samples (`TAPS`), then no blur on low settings.
 - **Not done:** weapons and hands on the fighters (the pack draws bodies without arms; the 2D game
   adds them in `hero_look.gd` / `hands.gd`), other places than the forest, any battle rules.
+
+## v0.17.0 (12 Nov 2026): every place you walk in, in the lit 3D look
+`hub.gd` is UNCHANGED in what it does: it still builds each place as a flat 2D picture and moves
+everybody in it. `scripts/hub/view3d.gd` shows that picture as a lit 3D place instead:
+- **How:** `hub.gd` makes the view in `_ready` and calls `rebuild()` at the end of `enter()`. The
+  view hides `_stage` and copies it every frame:
+  - everything flat on `_stage` (ground, regions, paths, decals, a room's art) is MOVED into a
+    SubViewport, painted once, and used as the floor texture;
+  - every child of `_ysort` becomes upright cards on the same spot (2D x, y = 3D x / 16, z / 16;
+    a sprite's own offset, turn, size and flip carry over, so the knight's sword and hands just
+    work). Still things are batched (MultiMesh per texture); anything animated, the knight, people
+    and roamers are followed live (`_sync_holder`);
+  - the day's `CanvasModulate` colour becomes the sky light and mist; each `PointLight2D` an
+    `OmniLight3D`; fireflies follow `_flies.emitting`;
+  - every `Label` (signs, "!", the name prompt) gets a copy drawn over the 3D picture.
+- **So: to add things to a place, keep adding them in `hub.gd` / `places.gd` as before.** A flat
+  thing goes on `_stage`, a standing thing in `_ysort`; the view picks both up. Anything drawn by
+  a `_draw()` on a STANDING node is not copied (only Sprite2D and AnimatedSprite2D are).
+- **Camera:** stands where the 2D camera is and shows the same width of ground; looks down 44
+  degrees outdoors, 62 in rooms (a room is one painted picture; seen flatter it looks like a
+  leaning board). Cards lean back 12 degrees outdoors, 45 in rooms, so people are not squashed.
+- **Colours:** tone mapping is LINEAR here so the pack's colours stay as painted (the battle stage
+  uses filmic for its night mood); glow only on things with `shine` (flames, lava, rune stones).
+- **Settings > "3D look"** (`look3d` in the save, default on) and `--flat` give the old picture.
+  Tests without a screen (`check.sh`) never make the view.
+- **Checked:** the flow test (81 checks) runs through it; pictures of the village by day and
+  night, the world map, both rooms, Dustwatch, Emberfall, and the walk from village to world.
+- **Not done / rough:** rain is still the flat 2D rain over the picture; rooms are lit evenly (no
+  lamps of their own); the far ground past a place's edge is plain grass; nothing is known about
+  speed on a real phone (the world map paints a 2672 x 1536 floor texture once per visit).
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
