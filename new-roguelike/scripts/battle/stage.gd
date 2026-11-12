@@ -140,7 +140,13 @@ const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
 	float d = texture(depth_tex, uv).r;
+	// (GL keeps depth in -1..1; Vulkan, Forward+ on PC, in 0..1: read the wrong way, everything
+	// seemed out of focus and the whole picture was blurred)
+#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
 	vec4 v = inv * vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+#else
+	vec4 v = inv * vec4(uv * 2.0 - 1.0, d, 1.0);
+#endif
 	return -v.z / v.w;
 }
 float soft(float z) {
@@ -875,7 +881,9 @@ func _post() -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
 	mat.set_shader_parameter("focus", cam.position.distance_to(Vector3(0.0, 1.0, 0.0)))
-	mat.set_shader_parameter("sharp", 2.6)
+	# every fighter stays sharp (the owner, 12 Nov 2026: "the blurriness is so strong that I can't
+	# see the characters"): the band in focus holds the whole line of both sides, front to back
+	mat.set_shader_parameter("sharp", 3.4)
 	mat.set_shader_parameter("lift", float(look.get("lift", 0.0)))
 	if look.has("grade"):
 		# [tint of the light, tint of the shade, contrast, colour]

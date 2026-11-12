@@ -109,7 +109,13 @@ const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
 	float d = texture(depth_tex, uv).r;
+	// (GL keeps depth in -1..1; Vulkan, Forward+ on PC, in 0..1: read the wrong way, everything
+	// seemed out of focus and the whole picture was blurred)
+#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
 	vec4 v = inv * vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+#else
+	vec4 v = inv * vec4(uv * 2.0 - 1.0, d, 1.0);
+#endif
 	return -v.z / v.w;
 }
 float soft(float z) {
