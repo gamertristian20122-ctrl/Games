@@ -216,7 +216,9 @@ func rebuild() -> void:
 	_outdoor = bool(place.get("outdoor", false))
 	_pitch = PITCH if _outdoor else PITCH_INDOORS
 	var tilt := deg_to_rad(TILT if _outdoor else TILT_INDOORS)
-	_up = Vector3(0.0, cos(tilt), -sin(tilt))
+	# Standing things are drawn taller by exactly what the camera's slant takes away, so on the
+	# screen they keep the shape the artist gave them (they looked squashed before: the owner).
+	_up = Vector3(0.0, cos(tilt), -sin(tilt)) / cos(deg_to_rad(_pitch) - tilt)
 	_paint_ground(stage, ysort, place)
 	stage.visible = false
 	hub._prompt.modulate.a = 0.0

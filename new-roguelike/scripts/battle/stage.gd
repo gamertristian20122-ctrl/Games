@@ -270,6 +270,9 @@ func _camera() -> void:
 	cam.position = Vector3(0.0, 7.5, 17.0)
 	cam.look_at(AIM, Vector3.UP)
 	cam.current = true
+	# standing pictures are drawn taller by the camera's slant, so nobody looks squashed (sprite3.gd)
+	var slant := (AIM - cam.position).normalized()
+	Sprite3.tall = 1.0 / maxf(Vector2(slant.x, slant.z).length(), 0.5)
 
 
 func _sky_and_light() -> void:
@@ -386,7 +389,8 @@ func _flush() -> void:
 		if bool(b["flat"]):
 			quad.center_offset = Vector3((off.x + size.x * 0.5) * PX, 0.0, 0.0)
 		else:
-			quad.center_offset = Vector3((off.x + size.x * 0.5) * PX, -(off.y + size.y * 0.5) * PX, 0.0)
+			quad.size.y *= Sprite3.tall
+			quad.center_offset = Vector3((off.x + size.x * 0.5) * PX, -(off.y + size.y * 0.5) * PX * Sprite3.tall, 0.0)
 		var mat := ShaderMaterial.new()
 		mat.shader = Sprite3.shader()
 		mat.set_shader_parameter("tex", tex)
@@ -634,6 +638,73 @@ func _beams_of_light() -> void:
 		b.rotation_degrees = Vector3(0.0, 0.0, 26.0)
 		add_child(b)
 		_beams.append(b)
+
+
+# ------------------------------------------------------------------ blows and spells
+## A burst of glowing sparks and a flash of coloured light on a spot (a blow landing, a spell).
+## `power` 1 = a plain blow; a big spell is 2 to 3. All of it is light and particles, no art.
+func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0) -> void:
+	var p := CPUParticles3D.new()
+	p.one_shot = true
+	p.explosiveness = 0.9
+	p.amount = int(clampf(14.0 * power, 8.0, 60.0))
+	p.lifetime = 0.5 + 0.12 * power
+	p.position = at
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.2 + 0.1 * power
+	p.direction = Vector3(0.0, 1.0, 0.0)
+	p.spread = 180.0 if rise <= 0.0 else 28.0
+	p.gravity = Vector3(0.0, -4.0 if rise <= 0.0 else 1.5, 0.0)
+	p.initial_velocity_min = 1.2 + rise
+	p.initial_velocity_max = 2.8 + 1.2 * power + rise * 2.0
+	p.scale_amount_min = 0.5
+	p.scale_amount_max = 1.2 + 0.25 * power
+	p.color_ramp = _fade_ramp()
+	var q := QuadMesh.new()
+	q.size = Vector2(0.16, 0.16)
+	q.material = _spark_material(colour * 2.4)
+	p.mesh = q
+	add_child(p)
+	p.emitting = true
+	get_tree().create_timer(p.lifetime + 0.3).timeout.connect(p.queue_free)
+	var l := lamp(at + Vector3(0.0, 0.4, 0.6), colour, 0.0, 6.0 + 2.5 * power)
+	var tw := create_tween()
+	tw.tween_property(l, "light_energy", 5.0 + 6.0 * power, 0.05)
+	tw.tween_property(l, "light_energy", 0.0, 0.35 + 0.08 * power)
+	tw.tween_callback(l.queue_free)
+
+
+## A column of light that stands on a spot for a moment (lightning, a pillar of fire, a blessing).
+func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0) -> void:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+	g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	var across := GradientTexture2D.new()
+	across.gradient = g
+	across.width = 32
+	across.height = 4
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_texture = across
+	m.albedo_color = Color(colour.r * 2.0, colour.g * 2.0, colour.b * 2.0, 0.0)
+	m.disable_fog = true
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.render_priority = 11
+	var q := QuadMesh.new()
+	q.size = Vector2(width, height)
+	var beam := MeshInstance3D.new()
+	beam.mesh = q
+	beam.material_override = m
+	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	beam.position = at + Vector3(0.0, height * 0.5, 0.05)
+	add_child(beam)
+	var tw := create_tween()
+	tw.tween_property(m, "albedo_color:a", 0.9, 0.05)
+	tw.tween_property(beam, "scale:x", 0.25, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(m, "albedo_color:a", 0.0, 0.32)
+	tw.tween_callback(beam.queue_free)
 
 
 ## The last pass over the whole picture: blur away from the fighters, warm lights and cool shade,

@@ -1026,6 +1026,21 @@ is off"** (read as: my look was off from it):
   the cool even light. First try was too dark and too orange: shade share 0.44, ambient 0.42.
 - **Still not done:** the title picture and the intro's pictures are the old flat ones; rain is flat.
 
+## v0.19.1 (12 Nov 2026): "the characters look squished", and spell effects
+The owner sent four more pictures of the same reference game (a town street, a spell in a
+battle, a harbour, the golden camp) and wrote: "This is a company that I'm trying to make a game
+to be like". They are the look to aim for; the house rule stands (same KIND, nothing copied).
+- **Squish:** a camera that looks down makes standing pictures shorter. Now they are drawn
+  taller by exactly that much: `view3d.gd` divides `_up` by cos(pitch - tilt); in battles
+  `Sprite3.tall` (set in `stage.gd _camera`) stretches every standing picture and batch.
+  If the camera's angle changes, these follow by themselves. Never "fix" it by scaling sprites.
+- **Blow and spell effects** (light and particles only): `stage.gd burst()` and `pillar()`;
+  `battles.gd FX` says what each skill looks like; `battle.gd _show_fx()` plays it and shakes the
+  camera a little. `--shotfx` (with `--autotest --shots`) writes `battle_fx.png` mid-spell.
+- **What the reference has that this game still lacks** (in order of how much it would add):
+  real 3D buildings and ground with height (ours are flat cards on a flat floor); water;
+  hand-made scenery per place; bigger, layered spell effects; a battle HUD with portraits.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

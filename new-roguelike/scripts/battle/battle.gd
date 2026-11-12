@@ -52,6 +52,8 @@ var _shot_done := false
 var _cam_home := Vector3.ZERO
 var _t := 0.0
 var _tier := 0
+var _fx: Array = []                ## the look of the skill being shown now (battles.gd FX), [] = a plain blow
+var _shake := 0.0                  ## seconds of camera shake left
 var _xp_bonus := 0                ## a battle of the story may give XP of its own on top
 
 
@@ -112,6 +114,7 @@ func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 		var used := UI.used_rect(String(unit["sprite"]))
 		bw = used.size.x * PX * 0.8
 		bh = used.size.y * PX
+	bh *= Sprite3.tall                 # standing pictures are drawn taller by the camera's slant (sprite3.gd)
 	unit["top"] = bh
 	unit["wide"] = bw
 	# the pack draws bodies without arms: a hand at each side, and the knight's sword in his
@@ -527,14 +530,17 @@ func _play(events: Array) -> void:
 			"skill":
 				_say("%s: %s!" % [String(e["who"]["name"]), String(e["skill"]["name"])])
 				Sfx.play("ui_start", -6.0)
+				_fx = Battles.FX.get(String(e["skill"].get("id", "")), [])
 				await _step(e["who"], 0.5)
 			"hit":
 				var who: Dictionary = e["who"]
 				var target: Dictionary = e["target"]
 				if _message.text == "" or not _message.text.ends_with("!"):
 					_say("%s strikes %s." % [String(who["name"]), String(target["name"])])
-				await _step(who, 0.9)
+				if _fx.is_empty():
+					await _step(who, 0.9)          # (a skill has already stepped forward once)
 				Sfx.play("hit", -4.0)
+				_show_fx(target)
 				_flash(target)
 				_float(target, ("%d!" if bool(e["crit"]) else "%d") % int(e["amount"]), UI.C_GOLD if bool(e["crit"]) else UI.C_BONE)
 				_refresh()
@@ -542,6 +548,7 @@ func _play(events: Array) -> void:
 				if bool(e["dead"]):
 					await _fall(target)
 			"heal":
+				_show_fx(e["target"])
 				_float(e["target"], "+%d" % int(e["amount"]), UI.C_GREEN)
 				Sfx.play("pickup", -6.0)
 				_refresh()
@@ -554,6 +561,8 @@ func _play(events: Array) -> void:
 				_float(e["who"], "Guard", UI.C_ICE)
 				await _wait(0.35)
 			"stun":
+				if not _fx.is_empty() and String(_fx[1]) == "rise":
+					_show_fx(e["target"])
 				_float(e["target"], "Stunned", UI.C_ICE)
 				await _wait(0.25)
 			"stunned":
@@ -567,7 +576,36 @@ func _play(events: Array) -> void:
 			"say":
 				_say(String(e["text"]))
 				await _wait(0.5)
+	_fx = []
 	await _wait(0.12)
+
+
+## The light and sparks of a blow or a spell on the one it lands on (scripts/data/battles.gd FX).
+func _show_fx(target: Dictionary) -> void:
+	if _speed > 4.0:
+		return
+	var at: Vector3 = (target["home"] as Vector3) + Vector3(0.0, float(target["top"]) * 0.5, 0.15)
+	if _fx.is_empty():
+		stage.call("burst", at, Color(1.0, 0.97, 0.9), 0.8)
+		_shake = 0.12
+		return
+	var colour: Color = _fx[0]
+	var power := float(_fx[2])
+	if G.flag("shotfx") and not _shot_done and G.arg("shots", "") != "" and String(_fx[1]) == "pillar":
+		_shot_done = true                  # test: --shotfx writes battle_fx.png in the middle of a spell
+		get_tree().create_timer(0.09).timeout.connect(func() -> void:
+			DirAccess.make_dir_recursive_absolute(G.arg("shots", ""))
+			get_viewport().get_texture().get_image().save_png(G.arg("shots", "").path_join("battle_fx.png"))
+			G.quit(0))
+	match String(_fx[1]):
+		"pillar":
+			stage.call("pillar", target["home"], colour, 0.5 + 0.25 * power)
+			stage.call("burst", at, colour, power)
+		"rise":
+			stage.call("burst", (target["home"] as Vector3) + Vector3(0.0, 0.2, 0.15), colour, power, 1.6)
+		_:
+			stage.call("burst", at, colour, power)
+	_shake = 0.1 + 0.08 * power if String(_fx[1]) != "rise" else 0.0
 
 
 ## A fighter steps towards the other side and back.
@@ -741,7 +779,9 @@ func _take_shot() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	# the camera breathes a little from side to side: it shows the depth of the place
-	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0)
+	_shake = maxf(_shake - delta, 0.0)
+	var jolt := Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * _shake * 0.9
+	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + jolt
 	stage.cam.look_at(Stage.AIM, Vector3.UP)
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]

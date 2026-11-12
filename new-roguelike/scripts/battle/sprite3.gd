@@ -67,6 +67,11 @@ void light() {
 "
 
 static var _shader: Shader
+## The camera looks DOWN at the stage, which makes anything standing look shorter than it was
+## drawn ("the characters look squished", the owner, 12 Nov 2026). Standing pictures are drawn
+## this much taller so that on the screen they keep the shape the artist gave them
+## (1 / cosine of the camera's slant; stage.gd sets it when it places the camera).
+static var tall := 1.0
 static var _sun_ready := false
 static var _dapple: ImageTexture
 
@@ -187,7 +192,7 @@ func set_flash(v: float) -> void:
 
 
 func height() -> float:
-	return _size.y * PX
+	return _size.y * PX * (1.0 if flat else tall)
 
 
 func _show(t: Texture2D) -> void:
@@ -197,7 +202,7 @@ func _show(t: Texture2D) -> void:
 	var sz := t.get_size()
 	if sz != _size:
 		_size = sz
-		(mesh as QuadMesh).size = sz * PX
+		(mesh as QuadMesh).size = Vector2(sz.x, sz.y * (1.0 if flat else tall)) * PX
 		_place(float(_mat.get_shader_parameter("flip") if _mat.get_shader_parameter("flip") != null else 0.0) > 0.5)
 
 
@@ -210,7 +215,7 @@ func _place(flipped: bool) -> void:
 	if flat:
 		(mesh as QuadMesh).center_offset = Vector3(cx, 0.0, 0.0)
 	else:
-		(mesh as QuadMesh).center_offset = Vector3(cx, cy, 0.0)
+		(mesh as QuadMesh).center_offset = Vector3(cx, cy * tall, 0.0)
 
 
 func _ready() -> void:

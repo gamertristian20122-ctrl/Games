@@ -52,6 +52,20 @@ const FOE_DEF_TIER := 1.0
 const FOE_XP := 0.7                ## XP per point of the row's "hp" (x 1 + tier)
 const FOE_COINS := 2
 
+## What a blow or a spell LOOKS like (scripts/battle/battle.gd shows it with light and sparks):
+## by skill id: [colour, "burst" | "pillar" | "rise", strength]. "pillar" = a column of light
+## from the sky, "rise" = sparks that float up (healing). Anything not listed: a plain white hit.
+const FX := {
+	"whirl": [Color(0.9, 0.95, 1.0), "burst", 1.4], "lunge": [Color(0.9, 0.95, 1.0), "burst", 1.6],
+	"slam": [Color(1.0, 0.85, 0.55), "burst", 2.4], "cry": [Color(1.0, 0.9, 0.6), "burst", 1.2],
+	"firebolt": [Color(1.0, 0.5, 0.15), "pillar", 2.4], "frost": [Color(0.5, 0.85, 1.0), "burst", 2.0],
+	"storm": [Color(0.45, 0.7, 1.0), "pillar", 2.8], "mend": [Color(0.5, 1.0, 0.6), "rise", 1.6],
+	"sunbolt": [Color(1.0, 0.85, 0.4), "pillar", 2.2], "sunflare": [Color(1.0, 0.9, 0.5), "burst", 2.4],
+	"sunmend": [Color(1.0, 0.95, 0.6), "rise", 1.6],
+	"pierce": [Color(0.7, 1.0, 0.7), "burst", 1.6], "volley": [Color(0.8, 1.0, 0.8), "burst", 1.2],
+	"roots": [Color(0.4, 0.9, 0.4), "rise", 1.4], "sweep": [Color(0.5, 0.9, 0.4), "burst", 2.2],
+}
+
 ## What each of the knight's skills (scripts/data/skills.gd) does in a battle.
 ##   "aim"    foe = one monster | foes = all of them | friend = one of your side | self
 ##   "power"  the blow, as a share of a plain Attack ("spell" skills also grow with Spirit)
