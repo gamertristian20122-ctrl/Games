@@ -53,6 +53,8 @@ func refresh() -> void:
 		level = run.get("level")
 	if is_instance_valid(run) and run.get("training") == true:
 		lines.append(["Train. Pause to go back.", UI.C_GOLD])
+	elif bool(level.get("encounter", false)):
+		lines.append(["Win the fight", UI.C_GOLD])
 	elif not level.is_empty():
 		if level.has("champion"):
 			lines.append(["Beat the champion of " + String(level.get("name", "the grove")), UI.C_GOLD])

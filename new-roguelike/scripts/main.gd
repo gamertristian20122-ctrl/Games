@@ -44,6 +44,7 @@ const Shop = preload("res://scripts/data/shop.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
 const Gear = preload("res://scripts/data/gear.gd")
 const Allies = preload("res://scripts/data/allies.gd")
+const Roamers = preload("res://scripts/data/roamers.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
@@ -64,6 +65,7 @@ var _hero_id := "knight"
 var _level_id := ""              ## the story level being played ("" = none)
 var _from_place := ""            ## where the hero went into that level (a place of scripts/data/places.gd) ...
 var _from_at := Vector2.INF      ## ... and the spot he stood on, so a run puts him back there
+var _encounter := {}             ## the roamer's fight being played (scripts/data/roamers.gd fight()), or {}
 var _waiting_talk: Variant = null    ## words that could not be shown yet (see _on_action "talk")
 var _seed := 0
 var _clock := 0.0
@@ -95,6 +97,8 @@ func _ready() -> void:
 			G.next_run = {"training": true, "kit": []}
 		if G.arg("level") != "":       # --level=<story level id>: the bot plays that level
 			G.next_run = {"level": Story.level(G.arg("level")), "kit": []}
+		if G.arg("encounter") != "":   # --encounter=<spot number>: the bot fights that roamer's pack
+			G.next_run = {"level": Roamers.fight(int(G.arg("encounter"))), "kit": []}
 		start_run(G.arg("hero", "knight"), int(G.arg("seed", "1")))
 	elif G.flag("intro"):
 		show_intro()                   # test: --intro plays the cutscene at once
@@ -316,7 +320,17 @@ func _on_action(what: String, arg: Variant) -> void:
 				hub.call("retalk")
 		"talk":
 			open("hub_talk", {"info": arg})
+		"hub_encounter":
+			# a roamer touched the knight on the world map: one fight room, then back to this spot
+			_encounter = Roamers.fight(int(arg))
+			_level_id = String(_encounter["id"])
+			_from_place = ""
+			if is_instance_valid(hub):
+				_from_place = String(hub.get("place_id"))
+				_from_at = hub.call("hero_pos")
+			_transition(_start_level)
 		"hub_level":
+			_encounter = {}
 			_level_id = String(arg)
 			_from_place = ""
 			if is_instance_valid(hub):
@@ -443,6 +457,11 @@ func start_run(hero_id: String, seed_value: int) -> void:
 
 ## Goes down into the story level `_level_id` with the gear kept from earlier levels.
 func _start_level() -> void:
+	if _level_id.begins_with("enc_") and not _encounter.is_empty():
+		# a roamer's fight: what he carries comes along, the quest pack and the shops are left alone
+		G.next_run = {"level": _encounter, "kit": Story.kit()}
+		await start_run("knight", _fresh_seed())
+		return
 	var lv := Story.level(_level_id)
 	if lv.is_empty():
 		return
@@ -487,6 +506,15 @@ func _on_run_ended(victory: bool, summary: Dictionary) -> void:
 			return                      # the world's own bot starts the next run in the same node
 		_seed += 1
 		start_run.call_deferred(_hero_id, _seed)
+		return
+	if bool(summary.get("encounter", false)) and victory:
+		# a roamer's pack is beaten: no end screen, straight back to the spot on the map; that
+		# roamer stays away for a while (scripts/data/roamers.gd RESPAWN)
+		Roamers.beaten(int(summary.get("spot", -1)))
+		_news = "Won: +%d XP, %d coins to the camp chest" % [int(summary.get("xp", 0)), int(summary.get("banked", 0))]
+		_busy = false
+		await _transition(_back_to_world)
+		_ending = false
 		return
 	# (the world has already let the death or the win play out before it sends run_ended)
 	_show_end(victory, summary, 0.4)
@@ -543,7 +571,14 @@ func _on_note_found(index: int) -> void:
 
 
 ## Where a run puts you back: the village's crypt gate, or the glade for the Elfwood's levels.
+var _news := ""                  ## a line for the map's banner once he stands on it again
 func _back_to_world() -> void:
+	if _level_id.begins_with("enc_") and _from_place != "" and _from_at != Vector2.INF:
+		await show_hub(_from_place, _from_at)       # a roamer's fight: the very spot it began on
+		if is_instance_valid(hub) and _news != "":
+			hub.call("say", _news)
+		_news = ""
+		return
 	var home: Array = Story.home_of(_level_id)
 	# the gate he went in by, when the game knows it and the level belongs there; else the site's own spot
 	if _from_place == String(home[0]) and _from_at != Vector2.INF:

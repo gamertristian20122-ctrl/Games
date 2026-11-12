@@ -21,6 +21,8 @@ const Floors = preload("res://scripts/data/floors.gd")
 const Quests = preload("res://scripts/data/quests.gd")
 const Gear = preload("res://scripts/data/gear.gd")
 const Allies = preload("res://scripts/data/allies.gd")
+const Roamers = preload("res://scripts/data/roamers.gd")
+const Enemies = preload("res://scripts/data/enemies.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Places = preload("res://scripts/data/places.gd")
 const Shop = preload("res://scripts/data/shop.gd")
@@ -253,6 +255,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_hero.scale = Vector2(_k, _k)
 	refresh_heroes()
 	_build_follower()
+	_build_roamers()
 	if int(place.get("camp", -1)) >= 0 and Save.hub_get("camp") != int(place["camp"]):
 		Save.hub_set("camp", int(place["camp"]))      # the next Play opens here
 	_build_signs()
@@ -818,6 +821,7 @@ func refresh_heroes() -> void:
 func _physics_process(delta: float) -> void:
 	_time += delta
 	_move_follower(delta)
+	_move_roamers(delta)
 	var move := Vector2.ZERO
 	if not frozen and not _changing:
 		move = Controls.move
@@ -1130,6 +1134,107 @@ func _talk(index: int) -> void:
 		info["pages"] = []
 	_talked[id] = true
 	action.emit("talk", info)
+
+
+# ------------------------------------------------------------------ roamers (the world map's monsters)
+## Monsters that walk the world map (scripts/data/roamers.gd). Each strolls round its own patch,
+## comes for the knight when he is near (a red "!" over it), gives up when he gets away, and on a
+## touch asks main.gd for its fight ("hub_encounter"). Only on the world map.
+var _roamers: Array = []
+var _roam_grace := 0.0
+var _caught := false
+func _build_roamers() -> void:
+	_roamers.clear()
+	_caught = false
+	_roam_grace = Roamers.GRACE
+	if place_id != "world":
+		return
+	for i in Roamers.SPOTS.size():
+		if not Roamers.here(i):
+			continue
+		var spot: Dictionary = Roamers.SPOTS[i]
+		var row := Enemies.info(Roamers.shows(i))
+		var sprite_id := String(row.get("sprite", "pc_skeleton_base"))
+		var m := Art.meta(sprite_id)
+		var node := Node2D.new()
+		node.position = spot["at"]
+		node.scale = Vector2(_k, _k)
+		_ysort.add_child(node)
+		node.add_child(EnemyScript.make_shadow(clampf(float(m.get("body_width", 16.0)) * 0.85, 11.0, 18.0)))
+		var body := Art.sprite(sprite_id)
+		body.position = Vector2(0, 2)
+		body.modulate = row.get("tint", Color.WHITE)
+		node.add_child(body)
+		var hands: RefCounted = null
+		if String(row.get("hands", "")) != "":
+			hands = Hands.new()
+			hands.build(node, body, String(row["hands"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)))
+		var mark := UI.label("!", "Head")
+		mark.theme = UI.theme()
+		mark.add_theme_color_override("font_color", UI.C_RED)
+		mark.add_theme_color_override("font_outline_color", UI.C_INK)
+		mark.add_theme_constant_override("outline_size", 3)
+		mark.position = Vector2(-2, -float(m.get("body_height", 28.0)) - 16.0)
+		mark.visible = false
+		node.add_child(mark)
+		_roamers.append({"spot": i, "node": node, "body": body, "hands": hands, "mark": mark, "home": spot["at"], "leash": float(spot.get("leash", 60.0)),
+			"goal": spot["at"], "wait": randf_range(0.5, 3.0), "chasing": false, "face": 1.0, "runs": Art.has_anim(sprite_id, "run"), "tint": row.get("tint", Color.WHITE)})
+
+
+func _move_roamers(delta: float) -> void:
+	if _roamers.is_empty() or frozen or _changing or _caught:
+		return
+	_roam_grace -= delta
+	var walk: Rect2 = place["walk"]
+	for r: Dictionary in _roamers:
+		var node: Node2D = r["node"]
+		var to_hero: Vector2 = _hero.position - node.position
+		var far := to_hero.length()
+		var home: Vector2 = r["home"]
+		if not r["chasing"] and _roam_grace <= 0.0 and _tour.is_empty() and far < Roamers.SEE:
+			r["chasing"] = true
+			Sfx.play("enemy_shoot", -10.0, 0.05, 0.7)
+		elif r["chasing"] and (far > Roamers.LOSE or node.position.distance_to(home) > float(r["leash"]) + 220.0):
+			r["chasing"] = false
+			r["goal"] = home
+		var step := Vector2.ZERO
+		if r["chasing"]:
+			if far < Roamers.TOUCH:
+				_caught = true
+				Sfx.play("door_close", -4.0)
+				action.emit("hub_encounter", int(r["spot"]))
+				return
+			step = to_hero.normalized() * Roamers.CHASE * delta
+		else:
+			var to_goal: Vector2 = (r["goal"] as Vector2) - node.position
+			if to_goal.length() < 3.0:
+				r["wait"] = float(r["wait"]) - delta
+				if float(r["wait"]) <= 0.0:
+					r["wait"] = randf_range(1.0, 4.0)
+					r["goal"] = home + Vector2.RIGHT.rotated(randf() * TAU) * randf() * float(r["leash"])
+			else:
+				step = to_goal.normalized() * Roamers.WALK * delta
+		var moving := step.length() > 0.001
+		if moving:
+			node.position = (node.position + step).clamp(walk.position, walk.end)
+			if absf(step.x) > 0.01:
+				r["face"] = signf(step.x)
+		var body: AnimatedSprite2D = r["body"]
+		body.flip_h = float(r["face"]) < 0.0
+		var anim := "run" if moving and r["runs"] else "idle"
+		if body.animation != anim:
+			body.play(anim)
+		if r["hands"] != null:
+			(r["hands"] as RefCounted).update(delta, moving, float(r["face"]), 0.0, true, null, r["tint"])
+		var mark: Label = r["mark"]
+		mark.visible = r["chasing"]
+		mark.position.y = -float(Art.meta(String(Enemies.info(Roamers.shows(int(r["spot"]))).get("sprite", ""))).get("body_height", 28.0)) - 16.0 + roundf(sin(_time * 8.0) * 1.5)
+
+
+## A line in the place's banner for a few seconds (main.gd: what a won roamer fight paid).
+func say(text: String) -> void:
+	_banner_text = text
+	_arrive_t = 3.5
 
 
 ## Who travels with the knight changed (main.gd): build the place again around him, where he stands.

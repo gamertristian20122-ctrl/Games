@@ -204,6 +204,7 @@ func _begin() -> void:
 	call_pulse = false
 	elite_chance = ELITE_CHANCE
 	_end_t = -1.0
+	_encounter_t = 0.0
 	_has_pending = false
 	_floor_change = 0.0
 	_shot_counts = {}
@@ -302,6 +303,7 @@ func _start_floor() -> void:
 ##                  always be opened; the treasure room also holds a Rare piece of gear
 ## Outdoor levels (they end at a champion), the training yard and old-style runs have none of it.
 ## Test flags: --nokeys (no seal), --goto=boss (no seal either, unless --sealtest is given too).
+var _encounter_t := 0.0
 var boss_key := false
 func uses_keys() -> bool:
 	return not level.is_empty() and level.has("boss") and not training and not G.flag("nokeys") and (G.arg("goto") == "" or G.flag("sealtest"))
@@ -364,6 +366,11 @@ func take_boss_key() -> void:
 	G.hud_changed.emit()
 
 
+## A roamer's fight (scripts/data/roamers.gd): the "level" is one fight room; clearing it wins.
+func is_encounter() -> bool:
+	return bool(level.get("encounter", false))
+
+
 ## Builds the map of the current floor (no signals yet, nothing on screen).
 func _generate_floor() -> void:
 	cur = Vector2i.ZERO
@@ -380,6 +387,11 @@ func _generate_floor() -> void:
 	var room_count := int(level.get("rooms", theme["rooms"]))
 	rooms = FloorGen.generate(rng, room_count, 3 if level.is_empty() else maxi(3, room_count / 2))
 	boss_key = false
+	if is_encounter():
+		# a roamer's fight on the world map (scripts/data/roamers.gd): one fight room and nothing else
+		rooms = {Vector2i.ZERO: FloorGen._record(G.RoomType.COMBAT, rng, 0)}
+		FloorGen._link(rooms)
+		floor_name = String(level.get("name", floor_name))
 	if uses_keys():
 		_place_keys()
 	if training:
@@ -586,6 +598,12 @@ func _enter_room(coord: Vector2i, from_dir: Vector2i) -> void:
 func on_room_cleared(the_room: Node) -> void:
 	rooms_cleared += 1
 	rooms_cleared_floor += 1
+	if is_encounter() and not over:
+		# the roamer's pack is beaten: a moment to breathe, everything on the floor flies to him,
+		# then back to the map (main.gd)
+		_encounter_t = 1.6
+		player.give({"coins": 3 + 2 * gear_tier()})
+		G.toast.emit("Won", "Back to the road")
 	G.room_cleared.emit(the_room.coord)
 	G.stat.emit("rooms_cleared", 1)
 	effects.fire("on_room_clear", [the_room])
@@ -807,7 +825,7 @@ func summary() -> Dictionary:
 		"items": player.items.duplicate() if player != null else [],
 		"rooms_cleared": rooms_cleared, "secrets_found": secrets_found, "bosses": bosses_beaten.duplicate(),
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
-		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")), "side": String(level.get("side", "")), "final": bool(level.get("final", false)), "champion": String(level.get("champion", "")),
+		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")), "side": String(level.get("side", "")), "encounter": is_encounter(), "spot": int(level.get("spot", -1)), "final": bool(level.get("final", false)), "champion": String(level.get("champion", "")),
 		"coins_held": player.coins if player != null else 0,
 	}
 
@@ -845,6 +863,17 @@ func _physics_process(delta: float) -> void:
 		world.process_mode = Node.PROCESS_MODE_DISABLED
 	elif world.process_mode != Node.PROCESS_MODE_INHERIT:
 		world.process_mode = Node.PROCESS_MODE_INHERIT
+	# ---- a roamer's fight is won: sweep up what lies on the floor, then end
+	if _encounter_t > 0.0 and not over:
+		_encounter_t -= delta
+		if is_instance_valid(room) and is_instance_valid(player) and not player.dead:
+			for t in room.things.duplicate():
+				if is_instance_valid(t) and t.get("kind") == "pickup" and t.has_method("_collect") and float(t.get("age")) > 0.3:
+					t._collect(player)
+		if _encounter_t <= 0.0:
+			victory = true
+			over = true
+			_end_t = 0.3
 	# ---- the training yard: the dummy stands, sparring monsters come back
 	if training and not over and is_instance_valid(room):
 		_spar_t -= delta

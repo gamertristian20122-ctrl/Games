@@ -60,6 +60,8 @@ func build() -> void:
 		leave.disabled = fight and not in_yard
 		if fight and not in_yard:
 			leave.text = "Camp (not in a fight)"
+		if fight and (run.get("level") as Dictionary).get("encounter", false) == true:
+			leave.text = "No way out: win the fight"
 		left.add_child(leave)
 	else:
 		var give_up := UI.button("Give up", _ask_give_up)

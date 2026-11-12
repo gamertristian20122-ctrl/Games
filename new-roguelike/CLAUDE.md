@@ -48,8 +48,9 @@ The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It st
 - **Size: medium.** Build in steps, an APK after each: 1 levels and XP (DONE, v0.11.0), 2 gear and an
   inventory screen (DONE, v0.12.0), 3 skills and mana (DONE, v0.13.0), 4 the companion (DONE, v0.14.0: the owner picked the blonde mage of
   the Library pack, ranged, "gets back up"), 4 the companion, 5 roaming monsters and the Zelda-style
-  dungeons (keys, boss key: the DUNGEON half is DONE, v0.15.0; roaming monsters are NOT built yet, see
-  the v0.15.0 section for the open question), then a balance pass.
+  dungeons (keys, boss key: DONE, v0.15.0; roaming monsters: DONE, v0.16.0, as "touch = quick battle"), then a
+  balance pass. ALL FIVE STEPS ARE BUILT; nobody has played any of it by hand yet. Next: the owner
+  plays, then balance and polish from their notes.
 - The owner's standing rules: few agents, one light tester, no re-checking what already passed; small
   64-bit APK sent in a message BY ITSELF, screenshots in a separate message; never a greyed-out
   button without the reason on screen; nothing for publishers.
@@ -780,11 +781,33 @@ the heading "keys" (read the comment there first).
   photograph the door). The bot prints `[rpg] boss key at t s`. Flow test: **77 checks**.
 - **Measured (bot with Seraphine, autolevel):** boss key after about 75 to 100 s, level 6 after
   the two Crypt levels.
-- **OPEN QUESTION for the owner (roaming monsters):** the world map (`hub.gd`) has no fighting
-  code; fights only exist in the one-screen rooms (`run.gd` / `room.gd`). Two ways to do "monsters
-  roam the map": (a) monsters walk on the map and touching one fades into a one-room battle in
-  that terrain, then back to the same spot; (b) real fights on the scrolling map, which means
-  rebuilding the fight code for the camps scene. Ask before building either.
+- (The roaming-monsters question raised here was answered: see v0.16.0.)
+
+## v0.16.0 (12 Nov 2026): RPG step 5b, monsters roam the world map
+The world map (`hub.gd`) has no fighting code; fights only exist in the one-screen rooms. Asked how
+a meeting should work, the owner picked **"touch = quick battle"** (not fights on the map itself).
+- **`scripts/data/roamers.gd`**: `KINDS` (one per terrain: grass = the forest look, robbers = the
+  road look, sand = the desert look, rock = floor 3 indoors, "a cinder cave", because there is no
+  outdoor rock look), `SPOTS` (13 roamers: where each lives, how far it strays, from which chapter),
+  and the numbers (`SEE`, `LOSE`, `WALK`, `CHASE`, `TOUCH`, `GRACE`, `RESPAWN` 240 s). Which roamers
+  are beaten is a static table: it lasts while the app runs.
+- **On the map** (`hub.gd _build_roamers`, `_move_roamers`): each strolls round its spot, comes for
+  the knight inside `SEE` (a red "!"), is slower than he is, gives up past `LOSE`, and on a touch
+  sends `hub_encounter`. Nothing chases for `GRACE` seconds after he arrives, nor during a picture tour.
+- **The fight** is a run whose "level" is `Roamers.fight(spot)`: `"encounter": true`, one COMBAT
+  room in that terrain's look and tier (`run.is_encounter()`; `_generate_floor` builds the single
+  room). When the room is cleared everything on the floor flies to him, he gets a few coins, and
+  1.6 s later the run ends as a win. `main.gd _on_run_ended` then skips the end screen: coins to
+  the camp chest (`Story.walk_out`), the roamer marked beaten, back to the exact spot
+  (`_back_to_world`), and a banner "Won: +XP, coins" (`hub.say`). A death shows the usual end
+  screen; "Try again" repeats the fight, "Camp" puts him back on the map.
+- XP, gear drops, skills and the companion all work in these fights (they are ordinary rooms).
+  The pause menu cannot leave one ("No way out: win the fight").
+- **Test flags:** `--encounter=<spot number>` (main scene; the bot fights that pack),
+  `--hub=world --shots=<dir>` (the map with its roamers). Flow test: **81 checks**.
+- **Rough edges:** roamers walk through trees and props (no collision); the rock region's fight
+  is an indoor Ashen room; roamers do not scale with the knight beyond the usual level scaling;
+  beaten roamers come back when the app restarts.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
