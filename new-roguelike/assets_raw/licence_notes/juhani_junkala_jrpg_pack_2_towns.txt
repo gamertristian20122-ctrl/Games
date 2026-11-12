@@ -23,3 +23,9 @@ Game-ready files made from this source:
   ../../music/shop.ogg <- Town4 - Bazaar.ogg
 
 Processing for the game-ready files in ../../music/: decode, one fixed gain per track to reach about -16 LUFS integrated (no compressor, no dynamic loudness filter), stereo 44.1 kHz Ogg Vorbis at about 100 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.
+
+Added 12 Nov 2026 (sound pass): three more loops of the same zip (sha256 above), same processing
+(gain to about -16 LUFS integrated, stereo 44.1 kHz Ogg Vorbis 96 kbps):
+  ../../music/town.ogg  <- Town1 - Home Town.ogg              (Wickmere, Emberfall)
+  ../../music/woods.ogg <- Town2 - Where Time Stands Still.ogg (the Elfwood, the Rune Glade, the Deepwood)
+  ../../music/world.ogg <- Town3 - Sunshine Coast.ogg          (the world map)

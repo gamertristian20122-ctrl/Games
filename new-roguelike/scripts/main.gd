@@ -281,7 +281,7 @@ func show_battle(spot: int, night: bool = false, story: String = "") -> void:
 	battle.connect("finished", _on_battle_finished)
 	_world.add_child(battle)
 	_refresh_layers()
-	Sfx.music("run")
+	Sfx.battle(story != "" and Tale.BATTLES.has(story) and Tale.BATTLES[story].has("boss"))
 
 
 func _drop_battle() -> void:
@@ -375,7 +375,6 @@ func show_hub(place: String = "", at: Vector2 = Vector2.INF) -> void:
 	hub.connect("action", _on_action)
 	_world.add_child(hub)
 	_refresh_layers()
-	Sfx.music("title")
 
 
 func _drop_hub() -> void:
