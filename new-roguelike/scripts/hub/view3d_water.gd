@@ -4,6 +4,7 @@ extends RefCounted
 
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const CardShader = preload("res://scripts/fx/card_shader.gd")
+const Hd = preload("res://scripts/fx/hd.gd")
 
 const PX := 1.0 / 16.0
 
@@ -40,6 +41,83 @@ void fragment() {
 }
 " + CardShader.SUN_LIGHT
 
+## HD WATER (Forward+ on PC, scripts/fx/hd.gd), like a harbour at dusk: deep dark water whose
+## colour is in its reflections, not its paint. The surface is a moving field of pixel ripples (a
+## normal per art pixel from three drifting layers of noise), and every real light bounces off it:
+## the sun or the moon as a glittering path of single pixels that sparkle and blaze into the bloom,
+## each lamp as a broken bright streak on the water between it and the camera (its true mirror
+## point, so it moves as you walk), and the sky at the far, grazing side (Fresnel). Soft broken
+## foam laps at the bank. Still no art: light and movement only.
+const HD_WATER_CODE := "
+shader_type spatial;
+render_mode cull_back;
+" + Sprite3.SUN_PART + "
+uniform vec3 sky : source_color = vec3(0.6, 0.75, 0.9);
+uniform float day = 1.0;
+uniform vec3 deep : source_color = vec3(0.010, 0.040, 0.062);
+uniform vec3 shallow : source_color = vec3(0.030, 0.140, 0.175);
+uniform float chop = 0.022;              // how steep the ripples are
+uniform float glitter = 5.0;            // how bright the sparkles of the sun and the moon are
+uniform float streak = 1.6;             // how bright the lamps' streaks are
+varying vec2 at;
+varying float spark;                    // this art pixel is one that sparkles just now
+varying float foam;
+float nz(vec2 p) { return texture(hh_dapple, p).r; }
+float waves(vec2 p) {
+	return nz(p * 0.13 + vec2(TIME * 0.011, TIME * 0.006))
+		+ nz(p * 0.29 - vec2(TIME * 0.014, -TIME * 0.009)) * 0.7
+		+ nz(p * 0.83 + vec2(-TIME * 0.035, TIME * 0.027)) * 0.35;
+}
+void vertex() {
+	at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+}
+void fragment() {
+	vec2 cell = floor(at * 16.0);
+	vec2 w = (cell + 0.5) / 16.0;                                  // the middle of this art pixel
+	float wob = nz(w * 0.19) - 0.5;
+	float edge = length(UV * 2.0 - 1.0) * 1.1 + wob * 0.16;
+	if (edge > 1.0) { discard; }
+	// the ripples' slope, one art pixel at a time
+	float e = 1.0 / 16.0;
+	float h0 = waves(w);
+	vec2 slope = vec2(waves(w + vec2(e, 0.0)) - h0, waves(w + vec2(0.0, e)) - h0) / e;
+	vec3 nw = normalize(vec3(-slope.x * chop, 1.0, -slope.y * chop));
+	NORMAL = normalize((VIEW_MATRIX * vec4(nw, 0.0)).xyz);
+	// deep in the middle, a little lighter near the bank, then foam, then the muddy bank itself
+	vec3 c = mix(deep, shallow, smoothstep(0.45, 0.95, edge));
+	float lap = nz(w * 0.9 + vec2(TIME * 0.02, -TIME * 0.015)) + 0.5 * sin(TIME * 1.3 + edge * 18.0);
+	foam = smoothstep(0.86, 0.92, edge) * (1.0 - smoothstep(0.95, 0.98, edge)) * step(0.95, lap + (edge - 0.9) * 3.0);
+	c = mix(c, vec3(0.42, 0.48, 0.48), foam * 0.6);
+	c = mix(c, vec3(0.20, 0.15, 0.09), smoothstep(0.95, 1.0, edge));
+	ALBEDO = c;
+	ROUGHNESS = 1.0;
+	SPECULAR = 0.2;
+	// a handful of art pixels sparkle at any moment, each for a blink
+	float seed = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+	spark = step(0.965, fract(seed * 7.13 + TIME * (0.35 + seed * 0.5))) * (1.0 - smoothstep(0.88, 0.95, edge));
+	// the sky in the water, strongest where we look across it
+	float fres = 0.06 + 0.94 * pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 5.0);
+	// moving crests: thin lines of art pixels where the ripples run highest catch the sky
+	float crest = step(1.20, h0) * (1.0 - step(1.235, h0)) + step(0.80, h0) * (1.0 - step(0.82, h0)) * 0.5;
+	vec3 seen = mix(sky, vec3(0.30, 0.52, 0.62) * dot(sky, vec3(0.333)) * 1.6, 0.45);     // the sky, bluer in the water
+	EMISSION = (seen * (0.05 + 0.6 * fres + 0.45 * crest) * (0.35 + 0.65 * day) + c * 0.9 * day) * (1.0 - foam) * (1.0 - smoothstep(0.95, 1.0, edge));
+	sun_share = sun_at(at);
+}
+void light() {
+	float ndl = clamp(dot(NORMAL, LIGHT), 0.0, 1.0);
+	DIFFUSE_LIGHT += ndl * ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 1.0);
+	float m = max(dot(reflect(-LIGHT, NORMAL), VIEW), 0.0);
+	float open = 1.0 - foam;
+	if (LIGHT_IS_DIRECTIONAL) {
+		// the sun's (or the moon's) path: a soft sheen, and in it single pixels that blaze
+		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * (pow(m, 80.0) * 0.3 + smoothstep(0.86, 0.97, m) * spark * glitter);
+	} else {
+		// a lamp: a long broken streak towards the camera, its brightest pixels sparkling
+		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * streak * pow(m, 12.0) * (0.6 + 1.4 * spark);
+	}
+}
+"
+
 var v                              ## the view (scripts/hub/view3d.gd; untyped: its members are read by name)
 var mats: Array = []
 var _shader: Shader
@@ -48,7 +126,7 @@ var _shader: Shader
 func _init(view) -> void:
 	v = view
 	_shader = Shader.new()
-	_shader.code = WATER_CODE
+	_shader.code = HD_WATER_CODE if Hd.on() else WATER_CODE
 
 
 func reset() -> void:
