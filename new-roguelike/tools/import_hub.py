@@ -78,6 +78,9 @@ RECTS = [
     ("wall_white", BUILD, "Walls.png", 384, 189, 96, 51),
     ("wall_brick", BUILD, "Walls.png", 480, 189, 96, 51),
     ("roof_teal", BUILD, "Roofs.png", 128, 6, 128, 89),
+    # flat stretches of roof, for the real 3D houses (v0.20.0): they repeat sideways, plank by plank
+    ("roof_planks", BUILD, "Roofs.png", 36, 166, 56, 38),
+    ("roof_tiles", BUILD, "Roofs.png", 164, 166, 56, 38),
     ("door_wood", BUILD, "Props.png", 102, 29, 20, 36),
     ("door_iron", BUILD, "Props.png", 134, 27, 20, 38),
     ("door_arch", BUILD, "Props.png", 166, 25, 20, 40),

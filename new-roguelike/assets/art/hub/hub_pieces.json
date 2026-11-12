@@ -2482,6 +2482,19 @@
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
  },
+ "hub_roof_planks": {
+  "box": [
+   36,
+   166,
+   92,
+   204
+  ],
+  "size": [
+   56,
+   38
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
+ },
  "hub_roof_teal": {
   "box": [
    128,
@@ -2492,6 +2505,19 @@
   "size": [
    128,
    89
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
+ },
+ "hub_roof_tiles": {
+  "box": [
+   164,
+   166,
+   220,
+   204
+  ],
+  "size": [
+   56,
+   38
   ],
   "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
  },

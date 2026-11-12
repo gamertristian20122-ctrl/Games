@@ -250,12 +250,22 @@ static func entered(place_id: String) -> Dictionary:
 
 
 # ------------------------------------------------------------------ places
-## A house front: a wall under a roof, a door, windows either side. Returns rows for "props".
-static func _house(x: float, y: float, wall: String, wall_h: float, roof: String, door: String, windows: String, chimney: bool = false) -> Array:
-	var out: Array = [[wall, x, y, 0, 0], [roof, x, y + 1.0, 0, -(wall_h - 6.0)], [door, x, y + 2.0, 0, 0],
-		[windows, x - 30.0, y + 2.0, 0, -12], [windows, x + 30.0, y + 2.0, 0, -12]]
-	if chimney:
-		out.append(["hub_chimney", x + 34.0, y - 1.0, 0, -(wall_h + 46.0)])
+## A house (a row of a place's "houses") as the flat pieces the old 2D look shows it with: a wall
+## under the pack's drawn roof, a door, a window either side. Rows for hub.gd's _prop().
+## (The 3D look builds a real house from the same row: scripts/hub/view3d.gd _build_house.)
+static func house_props(h: Dictionary) -> Array:
+	var at: Vector2 = h["at"]
+	var wall := String(h["wall"])
+	var wall_h := float(h.get("wall_h", 51.0))
+	var dx := float(h.get("win_dx", 30.0))
+	var up := float(h.get("win_up", 12.0))
+	var out: Array = [[wall, at.x, at.y, 0, 0], [String(h.get("flat_roof", "hub_roof_wood")), at.x, at.y + 1.0, 0, -(wall_h - 6.0)],
+		[String(h.get("door", "hub_door_wood")), at.x, at.y + 2.0, 0, 0]]
+	if String(h.get("windows", "")) != "":
+		out.append([String(h["windows"]), at.x - dx, at.y + 2.0, 0, -up])
+		out.append([String(h["windows"]), at.x + dx, at.y + 2.0, 0, -up])
+	if bool(h.get("chimney", false)):
+		out.append(["hub_chimney", at.x + 34.0, at.y - 1.0, 0, -(wall_h + 46.0)])
 	return out
 
 
@@ -267,32 +277,42 @@ static func town() -> Dictionary:
 		# the sealed gate of Hollow Hill in the rocks, north: nobody goes in until four beacons burn
 		["hub_rock_2", 438, 104, 0, 2], ["hub_rock_moss_2", 524, 105, 0, 2], ["hub_rock_moss_1", 408, 108, 0, 2], ["hub_rock_1", 554, 108, 0, 2],
 		["hub_gate_0", 480, 108, 0, 0], ["hub_statue_1", 436, 134, 9, 2], ["hub_statue_0", 526, 134, 7, 2],
-		# the Hollow Flagon, north-west (its door leads into the hall, as before)
-		["hub_wall_plaster", 124, 152, 0, 0], ["hub_roof_wood", 124, 153, 0, -50], ["hub_doorway", 124, 154, 0, 0],
-		["hub_window", 88, 154, 0, -14], ["hub_window", 160, 154, 0, -14], ["hub_bench_long", 206, 168, 10, 2], ["hub_chimney", 164, 151, 0, -98],
+		["hub_bench_long", 206, 168, 10, 2],
 		# the watch-fire square in the middle: benches, the lamp trimmer's planters
 		["hub_stonebench", 420, 330, 8, 1], ["hub_stonebench", 540, 330, 8, 1], ["hub_stonebench", 480, 372, 8, 1],
 		["hub_planter", 392, 262, 6, 1], ["hub_planter", 568, 262, 6, 1], ["hub_flowerbox", 400, 372, 0, 0], ["hub_flowerbox", 560, 372, 0, 0],
 		# the smithy's yard, east of the square
 		["hub_anvil_0", 716, 258, 16, 4], ["hub_bench_1", 752, 236, 12, 3], ["hub_stone_0", 684, 240, 8, 2],
 		# garden fences and green
-		["hub_fence_a", 296, 196, 6, 0], ["hub_fence_a", 336, 196, 6, 0], ["hub_fence_a", 190, 424, 6, 0], ["hub_fence_a", 230, 424, 6, 0],
+		["hub_fence_a", 296, 196, 6, 0], ["hub_fence_a", 336, 196, 6, 0], ["hub_stonebench", 250, 444, 8, 1], ["hub_planter", 330, 446, 6, 1],
 		["hub_fence_a", 740, 500, 6, 0], ["hub_fence_a", 780, 500, 6, 0], ["hub_fence_b", 860, 208, 6, 0], ["hub_fence_b", 820, 208, 6, 0],
-		["hub_bush_green_1", 232, 236, 10, 4], ["hub_bush_orange_2", 618, 220, 9, 4], ["hub_bush_deep_1", 310, 372, 10, 4],
+		["hub_bush_green_1", 232, 236, 10, 4], ["hub_bush_orange_2", 618, 220, 9, 4], ["hub_bush_deep_1", 150, 470, 10, 4],
 		["hub_bush_rust_2", 646, 372, 9, 4], ["hub_tree_green_3", 64, 300, 6, 6], ["hub_tree_teal_3", 900, 392, 6, 6],
-		["hub_tree_pink_4", 372, 500, 4, 5], ["hub_tree_teal_4", 596, 502, 4, 5], ["hub_bloom_1", 250, 300, 0, 2], ["hub_bloom_5", 720, 330, 0, 2],
+		["hub_tree_pink_4", 392, 478, 4, 5], ["hub_tree_teal_4", 596, 502, 4, 5], ["hub_bloom_1", 250, 300, 0, 2], ["hub_bloom_5", 720, 330, 0, 2],
 		# lamp posts: the town keeps them lit from dusk to dawn (each has a light, see "lights")
 		["hub_post", 360, 250, 3, 0], ["hub_post", 600, 250, 3, 0], ["hub_post", 360, 400, 3, 0], ["hub_post", 600, 400, 3, 0],
 		["hub_post", 210, 300, 3, 0], ["hub_post", 760, 310, 3, 0], ["hub_post", 480, 470, 3, 0], ["hub_post", 880, 250, 3, 0],
 	]
-	# the houses: two more on the north row, the watch house and the smithy, three along the south
-	props.append_array(_house(300, 160, "hub_wall_brick", 51, "hub_roof_teal", "hub_door_arch", "hub_win_arch"))
-	props.append_array(_house(660, 160, "hub_wall_dark", 51, "hub_roof_wood", "hub_door_iron", "hub_win_tall", true))
-	props.append_array(_house(836, 172, "hub_wall_log", 56, "hub_roof_teal", "hub_door_wood", "hub_win_shut"))
-	# (a house hides the ground behind it as high as its roof, so the two that do not stand on the
-	# north row stand at the west and east edges, and that ground is blocked: see "blocks")
-	props.append_array(_house(104, 400, "hub_wall_white", 51, "hub_roof_teal", "hub_door_wood", "hub_win_shut", true))
-	props.append_array(_house(856, 480, "hub_wall_plank", 54, "hub_roof_wood", "hub_door_arch", "hub_win_closed"))
+	# The houses ("houses": real 3D in the 3D look, flat pieces in the old one). The Hollow Flagon
+	# first (its door leads into the hall); two more on the north row; the watch house; one at
+	# each of the west and east edges. A house hides the ground behind it as high as its roof, so
+	# none stands in the middle of the town, and the ground behind each is in "blocks".
+	#   "gable": true = the pointed end faces the street     "rise" = how high the roof stands, px
+	#   "roof" = the 3D roof's cover (hub_roof_planks / hub_roof_tiles); "flat_roof" = the old look's drawn roof
+	var houses: Array = [
+		{"at": Vector2(124, 152), "wide": 128.0, "deep": 60.0, "wall": "hub_wall_plaster", "wall_h": 56.0, "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood",
+			"rise": 40.0, "gable": true, "door": "hub_doorway", "windows": "hub_window", "win_dx": 38.0, "win_up": 14.0, "chimney": true},
+		{"at": Vector2(300, 160), "wall": "hub_wall_brick", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 30.0,
+			"door": "hub_door_arch", "windows": "hub_win_arch"},
+		{"at": Vector2(660, 160), "wall": "hub_wall_dark", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 34.0, "gable": true,
+			"door": "hub_door_iron", "windows": "hub_win_tall", "chimney": true},
+		{"at": Vector2(836, 172), "wall": "hub_wall_log", "wall_h": 56.0, "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 30.0,
+			"door": "hub_door_wood", "windows": "hub_win_shut"},
+		{"at": Vector2(104, 400), "wall": "hub_wall_white", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 32.0, "gable": true,
+			"door": "hub_door_wood", "windows": "hub_win_shut", "chimney": true},
+		{"at": Vector2(856, 480), "wall": "hub_wall_plank", "wall_h": 54.0, "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 30.0,
+			"door": "hub_door_arch", "windows": "hub_win_closed"},
+	]
 	var lamp := Color(1.0, 0.78, 0.46)
 	var lights: Array = [[Vector2(480, 290), Color(1.0, 0.72, 0.42), 2.3, 0.8]]
 	for at: Vector2 in [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)]:
@@ -302,11 +322,17 @@ static func town() -> Dictionary:
 	lights.append([Vector2(480, 96), Color(0.6, 0.55, 1.0), 1.2, 0.4])    # the cold of the sealed gate
 	return {
 		"name": "Wickmere", "camp": 0, "size": size, "outdoor": true, "walk": Rect2(40, 150, 880, 380), "spawn": Vector2(480, 340),
-		"props": props,
+		"props": props, "houses": houses,
+		"tour": [Vector2(480, 190), Vector2(300, 436), Vector2(480, 320), Vector2(720, 270), Vector2(170, 210)],     # test pictures (--hub=village --shots)
+		# Hollow Hill: behind the north row the ground climbs, and the hill itself swells out of
+		# the slope behind the sealed gate (only in the 3D look; nobody walks up there)
+		"rise": {"from": 100.0, "over": 96.0, "height": 52.0, "mound": {"at": Vector2(480, 6), "radius": 210.0, "height": 70.0}},
+		# the mere the town is named for, in the south-west corner (nobody walks into it)
+		"water": [{"at": Vector2(262, 484), "radius": Vector2(116, 36)}],
 		"floor": [["hub_paving", Rect2(384, 240, 192, 128)]],
 		"paths": [[Vector2(480, 130), Vector2(480, 236)], [Vector2(480, 372), Vector2(480, 570)],
 			[Vector2(384, 300), Vector2(210, 250), Vector2(130, 176)], [Vector2(576, 300), Vector2(760, 280), Vector2(970, 280)],
-			[Vector2(300, 176), Vector2(330, 250)], [Vector2(660, 176), Vector2(640, 250)], [Vector2(120, 416), Vector2(360, 420)],
+			[Vector2(300, 176), Vector2(330, 250)], [Vector2(660, 176), Vector2(640, 250)], [Vector2(120, 416), Vector2(360, 412)],
 			[Vector2(840, 496), Vector2(610, 420)], [Vector2(836, 186), Vector2(850, 270)]],
 		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 70], "hub_pebble": [20, 26], "hub_twig": [10, 10]},
 		"scatter_rect": Rect2(8, 180, 944, 372),
@@ -315,7 +341,7 @@ static func town() -> Dictionary:
 		"torches": [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)],
 		"forest": {"top_gaps": [[416.0, 544.0], [40.0, 250.0], [236.0, 364.0], [596.0, 724.0], [772.0, 900.0]],
 			"behind": [["hub_tree_pink_2", 480, 60], ["hub_tree_green_2", 416, 80], ["hub_tree_teal_2", 546, 80]],
-			"open": [Rect2(930, 220, 60, 130), Rect2(420, 520, 120, 90)]},
+			"open": [Rect2(930, 220, 60, 130), Rect2(420, 520, 120, 90), Rect2(130, 500, 270, 110)]},     # (the last: no hedge in front of the mere)
 		"blocks": [Rect2(60, 96, 128, 56), Rect2(252, 108, 96, 52), Rect2(612, 108, 96, 52), Rect2(788, 116, 96, 56),
 			Rect2(40, 262, 128, 138), Rect2(792, 340, 128, 140), Rect2(384, 96, 192, 34)],
 		"exits": [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)},

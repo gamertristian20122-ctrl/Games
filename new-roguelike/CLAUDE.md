@@ -1041,6 +1041,34 @@ to be like". They are the look to aim for; the house rule stands (same KIND, not
   real 3D buildings and ground with height (ours are flat cards on a flat floor); water;
   hand-made scenery per place; bigger, layered spell effects; a battle HUD with portraits.
 
+## v0.20.0 (12 Nov 2026): real depth (the owner: "Depth first and grafix and quality")
+Asked "depth first or story first", the owner chose depth. Built in `scripts/hub/view3d.gd`
+(its header lists the three data keys); Wickmere (`tale.gd town()`) is the first place to use them.
+- **`"houses"`**: real 3D houses from one data row each: walls on three sides with the pack's
+  wall art (stretched by the camera's slant like the cards), a roof of two slopes covered with
+  `hub_roof_planks` / `hub_roof_tiles` (flat stretches cut from the pack's roof sheet;
+  `"gable": true` turns the pointed end to the street), a chimney that smokes, a door, two
+  windows that glow at night, and a shadow of the house's true outline (`_cast`: the convex
+  outline of its corners thrown along `LEAN`). Faces are lit by how they face (`SOLID_CODE`).
+  The old flat look shows the same row as flat pieces (`Tale.house_props`).
+- **`"rise"`**: the ground climbs behind the place and a mound swells out of the slope (Hollow
+  Hill). `_height()` is the one function for it; the floor and the far ground are grid meshes
+  (`_grid`); everything standing stands that high; things on the slope throw no flat shadow.
+  `hub.gd` plants extra rows of wood up the slope. NOBODY WALKS on raised ground: walking is
+  still flat 2D. Do not put a path, a door or a person where `_height()` is not 0.
+- **`"water"`**: a pond (`WATER_CODE`: two sliding layers of noise, the sky in it, twinkling
+  one-pixel glints, a wet bank; drawn in steps of one art pixel). `hub.gd` blocks it with a
+  row of round stops. Wickmere has its mere in the south-west.
+- **Also:** plants sway (`_sway_of`); lamp posts carry a glowing glass (a 6 x 8 flat shape made
+  by code, `hub.gd _lamp_glass`); out of doors the camera stands 1.3 x further back (`WIDE`)
+  and looks a little past the knight, so whole houses fit and people are smaller.
+- **Test pictures:** a place may give `"tour"` (where `--hub=<place> --shots` stops).
+- **Checked:** `--uitour=tale` 16/16, `--uitour=flow --oldstory` 82/82, `check.sh`; pictures by
+  day, by night and with `--flat`.
+- **Not done:** the other places have no houses, rise or water yet (the camps, the world map,
+  the Elfwood are still cards on a flat floor); houses throw no shade ON people; no steps or
+  raised ground you can walk on; the tavern's rooms are still one painted picture each.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

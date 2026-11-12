@@ -189,7 +189,9 @@ func _ready() -> void:
 			await get_tree().create_timer(0.3).timeout
 			G.quit(0))
 	elif G.arg("shots") != "" and G.flag("hub") and G.arg("hubgo") == "":
-		if place_id == "village":
+		if place.has("tour"):
+			_tour = (place["tour"] as Array).duplicate()         # the place says where its test pictures are taken
+		elif place_id == "village":
 			_tour = [Vector2(376, 170), Vector2(180, 276), Vector2(360, 300), Vector2(540, 276), Vector2(150, 176)]
 		elif place_id == "world":
 			_tour = [Vector2(330, 690), Vector2(730, 700), Vector2(1130, 700), Vector2(1250, 960), Vector2(1580, 570), Vector2(1780, 330), Vector2(1650, 910)]
@@ -247,6 +249,27 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_k = float(place.get("hero_scale", 1.0))
 	for p: Array in place.get("props", []):
 		_prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
+	# houses and water: the 3D look builds them as real things (scripts/hub/view3d.gd); the old
+	# flat look shows a house as the pack's flat pieces and water as a flat shape
+	if _view == null:
+		for h: Dictionary in place.get("houses", []):
+			for p: Array in Tale.house_props(h):
+				_prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
+	for pond: Dictionary in place.get("water", []):
+		var c: Vector2 = pond["at"]
+		var r: Vector2 = pond["radius"]
+		var n := maxi(1, int(ceil(r.x / r.y)))
+		for i in range(-n, n + 1):                           # nobody walks into it: a row of round stops
+			_solids.append([c + Vector2(float(i) / float(n) * (r.x - r.y * 0.7), 0.0), r.y * 0.9])
+		if _view == null:
+			var shape := Polygon2D.new()
+			var ring := PackedVector2Array()
+			for k in 28:
+				ring.append(c + Vector2(cos(TAU * k / 28.0) * r.x, sin(TAU * k / 28.0) * r.y))
+			shape.polygon = ring
+			shape.color = Color("1c5560")
+			_stage.add_child(shape)
+			_stage.move_child(shape, _ysort.get_index())
 	_build_groves()
 	if place.has("forest"):
 		_build_forest()
@@ -254,11 +277,12 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		_build_fire()
 	if place.has("beacon"):
 		_build_beacon()
-	for spot: Vector2 in place.get("torches", []):     # a small flame on a lamp post (the post is a prop)
-		var torch := _anim("hub_fire_b", 8.0)
-		torch.position = spot + Vector2(0, 1)
-		torch.offset = Vector2(0, -52)
-		_ysort.add_child(torch)
+	for spot: Vector2 in place.get("torches", []):     # the lit glass on top of a lamp post (the post is a prop)
+		var glass := Sprite2D.new()
+		glass.texture = _lamp_glass()
+		glass.position = spot + Vector2(0, 1)
+		glass.offset = Vector2(0, -51)
+		_ysort.add_child(glass)
 	for row: Dictionary in place.get("people", []):
 		if Tale.on():
 			if Tale.here(row):                                  # the story says who stands here at this step
@@ -618,6 +642,20 @@ func _build_fire() -> void:
 		_solids.append([(place["grill"] as Vector2) - Vector2(0, 4), 10.0])
 
 
+## The glass of a lamp post: a small flat shape made by code (pale gold, a darker frame), like the
+## other flat shapes the code draws. The 3D look makes it glow.
+static var _glass_tex: ImageTexture
+func _lamp_glass() -> ImageTexture:
+	if _glass_tex == null:
+		var img := Image.create(6, 8, false, Image.FORMAT_RGBA8)
+		img.fill(Color("3a2414"))
+		img.fill_rect(Rect2i(1, 1, 4, 6), Color("ffd98a"))
+		img.fill_rect(Rect2i(2, 2, 2, 4), Color("fff4cf"))
+		_glass_tex = ImageTexture.create_from_image(img)
+		_glass_tex.resource_name = "hub_lampglass"
+	return _glass_tex
+
+
 ## A beacon of the story (scripts/data/tale.gd): the fire bowl on its stone. Dark, it is cold
 ## embers; lit, the flame stands on it (the place's "lights" hold its glow).
 func _build_beacon() -> void:
@@ -650,6 +688,16 @@ func _build_forest() -> void:
 	var sink := 8.0 if not spec.has("big") else 2.0
 	for p: Array in spec.get("behind", []):
 		_prop(String(p[0]), Vector2(p[1], p[2]), 0.0, 8.0)
+	if place.has("rise") and _view != null:
+		# the ground climbs behind this place (the 3D look): more wood up the slope, row behind row
+		var row_y := 62.0
+		while row_y > -150.0:
+			var tx := -60.0 + rng.randf() * 40.0
+			while tx < size.x + 60.0:
+				var ids: Array = f_big if rng.randf() < 0.6 else f_side
+				_prop(String(ids[rng.randi() % ids.size()]), Vector2(tx, row_y + rng.randf_range(-8, 8)).round(), 0.0, 6.0)
+				tx += rng.randf_range(40.0, 66.0)
+			row_y -= 42.0
 	var i := 0
 	var x := 24.0
 	while x < size.x:

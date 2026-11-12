@@ -12,6 +12,16 @@ extends Node3D
 ##                    move are drawn in batches; people, fires and the knight are followed live
 ##   light            the day's colour becomes a sky light, every lamp of the place a small light
 ##   words            labels ("!", names, signs) are shown over the 3D picture on the same spots
+## REAL DEPTH (v0.20.0, the owner: "depth first and graphics and quality"). Three things in a
+## place's data are built here as true 3D instead of flat cards:
+##   "houses"  [{"at", "wide", "deep", "wall", "roof", "rise", "gable", "door", "windows", ...}]
+##             a box of walls with a sloped roof, a chimney that smokes, a door and windows on
+##             the front, and a shadow of its true shape (_build_house)
+##   "rise"    {"from", "over", "height", "mound"}  the ground climbs behind the place (a hill):
+##             the floor is a mesh with height and everything standing on it stands that high
+##   "water"   [{"at", "radius"}]  a pond: ripples, the sky in it, glints of sun (WATER_CODE)
+## Plants sway in the wind. (hub.gd shows houses as flat pieces and water as a flat shape when
+## the 3D look is off.)
 ## On top: flat shadows, mist, glow, fireflies and the blur away from the knight (as in
 ## scripts/battle/stage.gd, whose lessons apply here too).
 ## The flat 2D picture is hidden, not removed: `--flat` on the command line shows the old look.
@@ -28,6 +38,7 @@ const PITCH_INDOORS := 62.0         ## a room is one painted picture: looked at 
 const TILT := 8.0                   ## how far standing things lean back towards the camera, out of doors ...
 const TILT_INDOORS := 45.0          ## ... and in a room (so people are not squashed by the steep view)
 const FOV := 30.0
+const WIDE := 1.3                   ## out of doors the camera stands this much further back than the flat one: whole houses fit, people are smaller
 const MARGIN := Vector2(336, 208)   ## how far past the edges of a place the ground is painted, px
 const LEAN := Vector2(-0.55, 0.5)   ## which way a shadow falls on the ground, per unit of height
 const LAMP_ENERGY := 9.0            ## a 2D lamp of energy 1 is this strong here
@@ -41,8 +52,12 @@ uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec3 tint : source_color = vec3(1.0);
 uniform float shine = 0.0;
+uniform float sway = 0.0;
 varying vec2 foot;
 void vertex() {
+	// plants move a little in the wind: the top of the picture, never the foot
+	float top = 1.0 - UV.y;
+	VERTEX.x += sin(TIME * 0.9 + MODEL_MATRIX[3].x * 1.7 + MODEL_MATRIX[3].z * 0.9) * sway * top * top;
 	// the patch of sun or shade a thing stands in is the one under it
 	foot = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 }
@@ -105,6 +120,68 @@ void fragment() {
 }
 " + SUN_LIGHT
 
+## Walls and roofs: real surfaces. Each is lit by how it faces (the front brightest, the sides
+## darker, a roof by its slope), so a house reads as a solid thing.
+const SOLID_CODE := "
+shader_type spatial;
+render_mode cull_disabled, specular_disabled;
+" + Sprite3.SUN_PART + "
+uniform sampler2D tex : source_color, filter_nearest, repeat_enable;
+uniform float shine = 0.0;
+varying vec3 wn;
+varying vec2 foot;
+varying float facing;
+void vertex() {
+	wn = (MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz;
+	foot = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+}
+void fragment() {
+	vec4 c = texture(tex, UV);
+	if (c.a < 0.5) { discard; }
+	float f = clamp(dot(normalize(wn), normalize(vec3(0.25, 0.75, 0.6))), 0.0, 1.0);
+	ALBEDO = c.rgb * (0.78 + 0.22 * f);
+	EMISSION = c.rgb * shine;
+	ROUGHNESS = 1.0;
+	sun_share = sun_at(foot);
+	facing = 0.55 + 0.45 * f;
+}
+void light() {
+	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share * facing : 0.6);
+}
+"
+## Water: all light and movement, no art. Two layers of soft noise slide over each other; where
+## they agree the sky shows in the water, and where they peak the sun glints. It is drawn in
+## steps of one art pixel so it sits with the pixel art.
+const WATER_CODE := "
+shader_type spatial;
+render_mode specular_disabled;
+" + Sprite3.SUN_PART + "
+uniform vec3 sky : source_color = vec3(0.6, 0.75, 0.9);
+uniform float day = 1.0;
+varying vec2 at;
+void vertex() {
+	at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+}
+void fragment() {
+	vec2 w = floor(at * 16.0) / 16.0;
+	float wob = texture(hh_dapple, w * 0.19).r - 0.5;
+	float edge = length(UV * 2.0 - 1.0) * 1.1 + wob * 0.16;
+	if (edge > 1.0) { discard; }
+	float n1 = texture(hh_dapple, w * 0.13 + vec2(TIME * 0.011, TIME * 0.006)).r;
+	float n2 = texture(hh_dapple, w * 0.29 - vec2(TIME * 0.014, -TIME * 0.009)).r;
+	float ripple = n1 * n2 * 4.0;
+	vec3 c = mix(vec3(0.03, 0.13, 0.17), vec3(0.10, 0.32, 0.33), smoothstep(0.35, 0.95, edge));
+	c = mix(c, sky, smoothstep(0.85, 1.35, ripple) * 0.5);
+	c = mix(c, vec3(0.22, 0.17, 0.10), smoothstep(0.93, 1.0, edge));
+	ALBEDO = c;
+	// glints: single art pixels that twinkle where the ripples run highest
+	float twinkle = step(0.955, fract(sin(dot(floor(at * 16.0), vec2(12.9898, 78.233))) * 43758.5453 + TIME * 0.3));
+	EMISSION = vec3(1.0, 0.92, 0.7) * smoothstep(1.3, 1.6, ripple) * twinkle * (0.2 + day) * 1.6 * (1.0 - smoothstep(0.85, 0.95, edge));
+	ROUGHNESS = 1.0;
+	sun_share = sun_at(at);
+}
+" + SUN_LIGHT
+
 var hub: Node2D
 var cam: Camera3D
 var _world: Node3D                 ## everything of the current place; freed and rebuilt on rebuild()
@@ -131,6 +208,13 @@ var _lift := 0.0                   ## how much the darks are lifted towards a wa
 var _day := 0.0                    ## 1 = out of doors by day (patches of golden sun), 0 = night or a room
 var _drift := 0.0
 var _up := Vector3.UP              ## "up" for a standing card: straight up, leaned back by the tilt
+var _rise := {}                    ## the place's "rise" (the ground climbs behind it), or {}
+var _surf := {}                    ## texture id -> [Texture2D, SurfaceTool]: the houses being built
+var _window_mats: Array = []       ## window materials: they glow at night
+var _water_mats: Array = []
+var _solid_shader: Shader
+var _water_shader: Shader
+var _dot_tex: GradientTexture2D
 
 
 func setup(the_hub: Node2D) -> void:
@@ -144,6 +228,10 @@ func setup(the_hub: Node2D) -> void:
 	_shade_shader.code = SHADE_CODE
 	_floor_shader = Shader.new()
 	_floor_shader.code = FLOOR_CODE
+	_solid_shader = Shader.new()
+	_solid_shader.code = SOLID_CODE
+	_water_shader = Shader.new()
+	_water_shader.code = WATER_CODE
 	cam = Camera3D.new()
 	cam.fov = FOV
 	cam.near = 0.5
@@ -214,6 +302,9 @@ func rebuild() -> void:
 	var stage: Node2D = hub._stage
 	var ysort: Node2D = hub._ysort
 	_outdoor = bool(place.get("outdoor", false))
+	_rise = place.get("rise", {})
+	_window_mats.clear()
+	_water_mats.clear()
 	_pitch = PITCH if _outdoor else PITCH_INDOORS
 	var tilt := deg_to_rad(TILT if _outdoor else TILT_INDOORS)
 	# Standing things are drawn taller by exactly what the camera's slant takes away, so on the
@@ -241,6 +332,8 @@ func rebuild() -> void:
 			_batch_holder(holder, ysort, batches)
 	_known = ysort.get_child_count()
 	_flush(batches)
+	_build_houses(place)
+	_build_water(place)
 	# words: signs on the ground, the "!" over people, the name of whoever is in reach
 	for l in _labels_under(stage):
 		_twin(l, _holder_of(l, ysort))
@@ -288,12 +381,15 @@ func _paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 	mat.shader = _floor_shader
 	for k: String in _ground_params:
 		mat.set_shader_parameter(k, _ground_params[k])
-	var plane := PlaneMesh.new()
-	plane.size = (size + margin * 2.0) * PX
 	var floor_mesh := MeshInstance3D.new()
-	floor_mesh.mesh = plane
+	if _rise.is_empty():
+		var plane := PlaneMesh.new()
+		plane.size = (size + margin * 2.0) * PX
+		floor_mesh.mesh = plane
+		floor_mesh.position = Vector3(size.x * 0.5 * PX, 0.0, size.y * 0.5 * PX)
+	else:
+		floor_mesh.mesh = _grid(Rect2(-margin, size + margin * 2.0), 16.0, 0.0)      # the ground has height
 	floor_mesh.material_override = mat
-	floor_mesh.position = Vector3(size.x * 0.5 * PX, 0.0, size.y * 0.5 * PX)
 	floor_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_world.add_child(floor_mesh)
 	if _outdoor:
@@ -309,14 +405,294 @@ func _paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 		far_mat.set_shader_parameter("cell", Vector2(img.get_width() * PX, img.get_height() * PX))
 		far_mat.set_shader_parameter("texel", Vector2(0.5 / img.get_width(), 0.5 / img.get_height()))
 		far_mat.set_shader_parameter("grey", 0.12)
-		var far_plane := PlaneMesh.new()
-		far_plane.size = Vector2(size.x * PX + 400.0, size.y * PX + 400.0)
 		var far := MeshInstance3D.new()
-		far.mesh = far_plane
+		if _rise.is_empty():
+			var far_plane := PlaneMesh.new()
+			far_plane.size = Vector2(size.x * PX + 400.0, size.y * PX + 400.0)
+			far.mesh = far_plane
+			far.position = Vector3(size.x * 0.5 * PX, -0.03, size.y * 0.5 * PX)
+		else:
+			far.mesh = _grid(Rect2(Vector2(-1200, -1200), size + Vector2(2400, 2400)), 24.0, -0.3)
 		far.material_override = far_mat
-		far.position = Vector3(size.x * 0.5 * PX, -0.03, size.y * 0.5 * PX)
 		far.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_world.add_child(far)
+
+
+# ------------------------------------------------------------------ ground with height
+## How high the ground is at a spot of the flat picture (px in, world units out). 0 everywhere
+## unless the place has a "rise": north of "from" the ground climbs to "height" over "over" px,
+## and a "mound" {"at", "radius", "height"} swells out of that slope (Hollow Hill itself).
+func _height(at: Vector2) -> float:
+	if _rise.is_empty():
+		return 0.0
+	var from := float(_rise.get("from", 100.0))
+	var t := clampf((from - at.y) / maxf(float(_rise.get("over", 90.0)), 1.0), 0.0, 1.0)
+	t = t * t * (3.0 - 2.0 * t)
+	var h := float(_rise.get("height", 48.0)) * t
+	if _rise.has("mound"):
+		var m: Dictionary = _rise["mound"]
+		var d := at.distance_to(m["at"]) / float(m["radius"])
+		h += float(m["height"]) * exp(-d * d) * t
+	return h * PX
+
+
+## A floor of square cells that follows _height(). `rect` in px of the flat picture.
+func _grid(rect: Rect2, cell: float, lift: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var nx := int(ceil(rect.size.x / cell))
+	var ny := int(ceil(rect.size.y / cell))
+	var rows: Array = []
+	for j in ny + 1:
+		var row := PackedVector3Array()
+		for i in nx + 1:
+			var p := rect.position + Vector2(i, j) * cell
+			row.append(Vector3(p.x * PX, _height(p) + lift, p.y * PX))
+		rows.append(row)
+	st.set_normal(Vector3.UP)
+	for j in ny:
+		var near_row: PackedVector3Array = rows[j]
+		var far_row: PackedVector3Array = rows[j + 1]
+		for i in nx:
+			for v: Vector3 in [near_row[i], near_row[i + 1], far_row[i + 1], near_row[i], far_row[i + 1], far_row[i]]:
+				st.add_vertex(v)
+	return st.commit()
+
+
+# ------------------------------------------------------------------ houses
+func _st(tex: Texture2D) -> SurfaceTool:
+	var key := tex.get_rid().get_id()
+	if not _surf.has(key):
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		_surf[key] = [tex, st]
+	return _surf[key][1]
+
+
+## One flat face of a house: four corners (or three), their places on the texture, the way it faces.
+func _face(tex: Texture2D, pts: Array, uvs: Array, normal: Vector3) -> void:
+	var st := _st(tex)
+	for i: int in ([0, 1, 2, 0, 2, 3] if pts.size() == 4 else [0, 1, 2]):
+		st.set_normal(normal)
+		st.set_uv(uvs[i])
+		st.add_vertex(pts[i])
+
+
+func _build_houses(place: Dictionary) -> void:
+	var houses: Array = place.get("houses", [])
+	if houses.is_empty():
+		return
+	_surf.clear()
+	var shade := SurfaceTool.new()
+	shade.begin(Mesh.PRIMITIVE_TRIANGLES)
+	shade.set_normal(Vector3.UP)
+	shade.set_uv(Vector2(0.5, 0.5))
+	for h: Dictionary in houses:
+		_build_house(h, shade)
+	for key: int in _surf:
+		var tex: Texture2D = _surf[key][0]
+		var mat := ShaderMaterial.new()
+		mat.shader = _solid_shader
+		mat.set_shader_parameter("tex", tex)
+		if tex.resource_path.contains("hub_win") or tex.resource_path.contains("hub_window"):
+			_window_mats.append(mat)
+		var node := MeshInstance3D.new()
+		node.mesh = (_surf[key][1] as SurfaceTool).commit()
+		node.material_override = mat
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_world.add_child(node)
+	_surf.clear()
+	var white := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+	white.fill(Color.WHITE)
+	var shadows := MeshInstance3D.new()
+	shadows.mesh = shade.commit()
+	shadows.material_override = _shade_material(ImageTexture.create_from_image(white), Vector4(0, 0, 1, 1))
+	shadows.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_world.add_child(shadows)
+
+
+## A house: walls on three sides (the back is never seen), a roof with two slopes, a chimney,
+## a door and two windows. Heights are stretched by the camera's slant, like the cards, so the
+## wall art keeps the shape it was drawn with.
+func _build_house(h: Dictionary, shade: SurfaceTool) -> void:
+	var v := 1.0 / cos(deg_to_rad(_pitch))
+	var at: Vector2 = h["at"]
+	var wide := float(h.get("wide", 96.0))
+	var deep := float(h.get("deep", 56.0))
+	var wall := Art.tex(String(h["wall"]))
+	var ws := wall.get_size()
+	var cx := at.x * PX
+	var cz := at.y * PX
+	var w := wide * 0.5 * PX
+	var d := deep * PX
+	var top := ws.y * PX * v                              # where the walls end
+	var rise := float(h.get("rise", 30.0)) * PX * v       # how far the ridge stands above that
+	var o := 5.0 * PX                                     # the roof sticks out this far
+	var u := wide / ws.x
+	var us := deep / ws.x
+	var front := Vector3(0, 0, 1)
+	_face(wall, [Vector3(cx - w, top, cz), Vector3(cx + w, top, cz), Vector3(cx + w, 0, cz), Vector3(cx - w, 0, cz)],
+		[Vector2(0, 0), Vector2(u, 0), Vector2(u, 1), Vector2(0, 1)], front)
+	for side: float in [-1.0, 1.0]:
+		var x := cx + side * w
+		_face(wall, [Vector3(x, top, cz), Vector3(x, top, cz - d), Vector3(x, 0, cz - d), Vector3(x, 0, cz)],
+			[Vector2(0, 0), Vector2(us, 0), Vector2(us, 1), Vector2(0, 1)], Vector3(side, 0, 0))
+	var roof := Art.tex(String(h.get("roof", "hub_roof_planks")))
+	var rs := roof.get_size()
+	var high: Array = []                                  # the roof's corners, for the shadow
+	if bool(h.get("gable", false)):
+		# the ridge runs from front to back: a pointed front, a slope to either side
+		var eave := top - o * rise / w
+		var zf := cz + o
+		var zb := cz - d - o
+		var ur := (deep + 10.0) / rs.x
+		for side: float in [-1.0, 1.0]:
+			_face(roof, [Vector3(cx, top + rise, zf), Vector3(cx, top + rise, zb), Vector3(cx + side * (w + o), eave, zb), Vector3(cx + side * (w + o), eave, zf)],
+				[Vector2(0, 0), Vector2(ur, 0), Vector2(ur, 1), Vector2(0, 1)], Vector3(side * rise, w, 0).normalized())
+			high.append(Vector3(cx + side * (w + o), eave, zf))
+			high.append(Vector3(cx + side * (w + o), eave, zb))
+		_face(wall, [Vector3(cx - w, top, cz), Vector3(cx + w, top, cz), Vector3(cx, top + rise, cz)],
+			[Vector2(0, 0.72), Vector2(u, 0.72), Vector2(u * 0.5, 0.12)], front)
+		high.append(Vector3(cx, top + rise, zf))
+		high.append(Vector3(cx, top + rise, zb))
+	else:
+		# the ridge runs from side to side: one long slope faces the street
+		var zr := cz - d * 0.5
+		var eave := top - o * rise / (d * 0.5)
+		var ur := (wide + 10.0) / rs.x
+		_face(roof, [Vector3(cx - w - o, top + rise, zr), Vector3(cx + w + o, top + rise, zr), Vector3(cx + w + o, eave, cz + o), Vector3(cx - w - o, eave, cz + o)],
+			[Vector2(0, 0), Vector2(ur, 0), Vector2(ur, 1), Vector2(0, 1)], Vector3(0, d * 0.5, rise).normalized())
+		for side: float in [-1.0, 1.0]:
+			var x := cx + side * w
+			_face(wall, [Vector3(x, top, cz), Vector3(x, top, cz - d), Vector3(x, top + rise, zr)],
+				[Vector2(0, 0.72), Vector2(us, 0.72), Vector2(us * 0.5, 0.12)], Vector3(side, 0, 0))
+			high.append(Vector3(cx + side * (w + o), eave, cz + o))
+			high.append(Vector3(cx + side * (w + o), eave, cz - d - o))
+			high.append(Vector3(cx + side * (w + o), top + rise, zr))
+	# the door and a window either side of it, a hair in front of the wall
+	var zd := cz + 0.03
+	var door := Art.tex(String(h.get("door", "hub_door_wood")))
+	var ds := door.get_size()
+	var full := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
+	_face(door, [Vector3(cx - ds.x * 0.5 * PX, ds.y * PX * v, zd), Vector3(cx + ds.x * 0.5 * PX, ds.y * PX * v, zd),
+		Vector3(cx + ds.x * 0.5 * PX, 0, zd), Vector3(cx - ds.x * 0.5 * PX, 0, zd)], full, front)
+	if String(h.get("windows", "")) != "":
+		var win := Art.tex(String(h["windows"]))
+		var wz := win.get_size()
+		var y0 := float(h.get("win_up", 12.0)) * PX * v
+		for side: float in [-1.0, 1.0]:
+			var wx := cx + side * float(h.get("win_dx", 30.0)) * PX
+			_face(win, [Vector3(wx - wz.x * 0.5 * PX, y0 + wz.y * PX * v, zd), Vector3(wx + wz.x * 0.5 * PX, y0 + wz.y * PX * v, zd),
+				Vector3(wx + wz.x * 0.5 * PX, y0, zd), Vector3(wx - wz.x * 0.5 * PX, y0, zd)], full, front)
+	# the shadow: the outline of the whole house as the sky light throws it on the ground
+	var low := [Vector3(cx - w, 0, cz), Vector3(cx + w, 0, cz), Vector3(cx + w, 0, cz - d), Vector3(cx - w, 0, cz - d)]
+	_cast(low + high, shade)
+	if bool(h.get("chimney", false)):
+		var stack := Art.tex("hub_chimney")
+		var cs := stack.get_size()
+		var bx := cx + w * 0.5
+		var bz := cz - d * 0.5 - 0.3
+		var hw := cs.x * 0.5 * PX
+		var tip := top + rise + 10.0 * PX * v
+		var foot := tip - cs.y * PX * v
+		_face(stack, [Vector3(bx - hw, tip, bz + hw), Vector3(bx + hw, tip, bz + hw), Vector3(bx + hw, foot, bz + hw), Vector3(bx - hw, foot, bz + hw)], full, front)
+		for side: float in [-1.0, 1.0]:
+			var x := bx + side * hw * 0.8
+			_face(stack, [Vector3(x, tip, bz + hw), Vector3(x, tip, bz - hw), Vector3(x, foot, bz - hw), Vector3(x, foot, bz + hw)], full, Vector3(side, 0, 0))
+		_cast([Vector3(bx - hw, top, bz - hw), Vector3(bx + hw, top, bz + hw), Vector3(bx - hw, tip, bz - hw), Vector3(bx + hw, tip, bz + hw),
+			Vector3(bx + hw, tip, bz - hw), Vector3(bx - hw, tip, bz + hw)], shade)
+		_smoke(Vector3(bx, tip, bz))
+
+
+## Adds the shadow of a solid thing to `shade`: the outline of its corners as they fall on the ground.
+func _cast(corners: Array, shade: SurfaceTool) -> void:
+	var flat := PackedVector2Array()
+	for p: Vector3 in corners:
+		flat.append(Vector2(p.x + LEAN.x * p.y, p.z + LEAN.y * p.y))
+	var hull := Geometry2D.convex_hull(flat)
+	if hull.size() < 4:
+		return
+	hull.remove_at(hull.size() - 1)                # (the last point repeats the first)
+	var area := 0.0
+	for i in hull.size():
+		var a := hull[i]
+		var b := hull[(i + 1) % hull.size()]
+		area += a.x * b.y - b.x * a.y
+	if area < 0.0:
+		hull.reverse()                             # so that the shadow faces up
+	for i in range(1, hull.size() - 1):
+		for q: Vector2 in [hull[0], hull[i], hull[i + 1]]:
+			shade.add_vertex(Vector3(q.x, 0.022, q.y))
+
+
+func _dot() -> GradientTexture2D:
+	if _dot_tex == null:
+		var g := Gradient.new()
+		g.set_color(0, Color(1, 1, 1, 1))
+		g.set_color(1, Color(1, 1, 1, 0))
+		_dot_tex = GradientTexture2D.new()
+		_dot_tex.gradient = g
+		_dot_tex.fill = GradientTexture2D.FILL_RADIAL
+		_dot_tex.fill_from = Vector2(0.5, 0.5)
+		_dot_tex.fill_to = Vector2(1.0, 0.5)
+		_dot_tex.width = 32
+		_dot_tex.height = 32
+	return _dot_tex
+
+
+## Slow grey smoke from a chimney.
+func _smoke(at: Vector3) -> void:
+	var p := CPUParticles3D.new()
+	p.amount = 9
+	p.lifetime = 5.0
+	p.preprocess = 5.0
+	p.position = at
+	p.direction = Vector3(0.25, 1.0, 0.0)
+	p.spread = 10.0
+	p.gravity = Vector3(0.10, 0.05, 0.0)
+	p.initial_velocity_min = 0.35
+	p.initial_velocity_max = 0.6
+	p.scale_amount_min = 1.0
+	p.scale_amount_max = 1.8
+	var grow := Curve.new()
+	grow.add_point(Vector2(0.0, 0.35))
+	grow.add_point(Vector2(1.0, 1.0))
+	p.scale_amount_curve = grow
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.15, 0.6, 1.0])
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0.34), Color(1, 1, 1, 0.2), Color(1, 1, 1, 0)])
+	p.color_ramp = ramp
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.albedo_texture = _dot()
+	m.albedo_color = Color(0.78, 0.74, 0.70)
+	m.vertex_color_use_as_albedo = true
+	m.render_priority = 10             # after the blur pass
+	var q := QuadMesh.new()
+	q.size = Vector2(1.1, 1.1)
+	q.material = m
+	p.mesh = q
+	_world.add_child(p)
+
+
+# ------------------------------------------------------------------ water
+func _build_water(place: Dictionary) -> void:
+	for pond: Dictionary in place.get("water", []):
+		var c: Vector2 = pond["at"]
+		var r: Vector2 = pond["radius"]
+		var plane := PlaneMesh.new()
+		plane.size = r * 2.2 * PX
+		var mat := ShaderMaterial.new()
+		mat.shader = _water_shader
+		var node := MeshInstance3D.new()
+		node.mesh = plane
+		node.material_override = mat
+		node.position = Vector3(c.x * PX, 0.03, c.y * PX)
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_world.add_child(node)
+		_water_mats.append(mat)
 
 
 func _has_animation(node: Node) -> bool:
@@ -446,8 +822,8 @@ func _shine_of(tex: Texture2D) -> float:
 	var path := tex.resource_path
 	if path.contains("hub_flame"):
 		return 2.4
-	if path.contains("hub_fire_b"):
-		return 2.0               # a lamp post's flame
+	if tex.resource_name == "hub_lampglass":
+		return 2.6               # the glass of a lamp post
 	if path.contains("hub_fire") or path.contains("hub_flava") or path.contains("hub_rune"):
 		return 0.5
 	if path.contains("hub_win"):
@@ -456,7 +832,16 @@ func _shine_of(tex: Texture2D) -> float:
 
 
 func _where(holder: Node2D) -> Vector3:
-	return Vector3(holder.position.x * PX, 0.0, holder.position.y * PX)
+	return Vector3(holder.position.x * PX, _height(holder.position), holder.position.y * PX)
+
+
+## How much a still picture sways in the wind (plants do, stone and wood do not).
+func _sway_of(tex: Texture2D) -> float:
+	var path := tex.resource_path
+	for word: String in ["hub_tree", "hub_bush", "hub_bloom", "hub_vine", "hub_plant", "hub_dtree", "hub_dbush", "hub_planter"]:
+		if path.contains(word):
+			return 0.035
+	return 0.0
 
 
 # ------------------------------------------------------------------ things that never move
@@ -480,7 +865,8 @@ func _batch_holder(holder: Node2D, ysort: Node2D, batches: Dictionary) -> void:
 			batches[key] = {"tex": tex, "uv": card["uv"], "tint": card["tint"], "at": [], "shade": []}
 		var origin := foot + (card["at"] as Vector3) + _up * (lift * PX) + Vector3(0.0, 0.0, i * 0.004)
 		(batches[key]["at"] as Array).append(Transform3D(Basis(card["x"], card["y"], Vector3(0, 0, 1)), origin))
-		(batches[key]["shade"] as Array).append(_shade_transform(card, foot, lift))
+		# (no flat shadow on a slope: it would hang in the air below the thing that throws it)
+		(batches[key]["shade"] as Array).append(_shade_transform(card, foot if foot.y < 0.05 else foot + Vector3(0, -50, 0), lift))
 
 
 ## A card laid down on the ground along the shadow's lean.
@@ -522,6 +908,8 @@ func _flush(batches: Dictionary) -> void:
 			var list: Array = b[pass_name]
 			var quad := _unit.duplicate() as QuadMesh
 			quad.material = _material(b["tex"], b["uv"], b["tint"]) if pass_name == "at" else _shade_material(b["tex"], b["uv"])
+			if pass_name == "at":
+				(quad.material as ShaderMaterial).set_shader_parameter("sway", _sway_of(b["tex"]))
 			var mm := MultiMesh.new()
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.mesh = quad
@@ -658,16 +1046,7 @@ func _build_flies(place: Dictionary) -> void:
 	ramp.offsets = PackedFloat32Array([0.0, 0.25, 0.7, 1.0])
 	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0.8), Color(1, 1, 1, 0)])
 	_flies.color_ramp = ramp
-	var g := Gradient.new()
-	g.set_color(0, Color(1, 1, 1, 1))
-	g.set_color(1, Color(1, 1, 1, 0))
-	var dot := GradientTexture2D.new()
-	dot.gradient = g
-	dot.fill = GradientTexture2D.FILL_RADIAL
-	dot.fill_from = Vector2(0.5, 0.5)
-	dot.fill_to = Vector2(1.0, 0.5)
-	dot.width = 32
-	dot.height = 32
+	var dot := _dot()
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -717,6 +1096,11 @@ func _sync_light() -> void:
 		_env.fog_enabled = false
 		_lift = 0.02
 		_day = 0.0
+	for mat: ShaderMaterial in _window_mats:
+		mat.set_shader_parameter("shine", lerpf(1.25, 0.1, _day))       # windows glow when it is dark
+	for mat: ShaderMaterial in _water_mats:
+		mat.set_shader_parameter("day", _day)
+		mat.set_shader_parameter("sky", Vector3(sky.r, sky.g, sky.b) * Vector3(0.62, 0.78, 0.95))
 	for pair: Array in _lamps:
 		if is_instance_valid(pair[0]) and is_instance_valid(pair[1]):
 			(pair[1] as OmniLight3D).light_energy = (pair[0] as PointLight2D).energy * LAMP_ENERGY
@@ -755,8 +1139,11 @@ func _sync(_delta: float) -> void:
 	var zoom := maxf(flat_cam.zoom.x, 0.05)
 	var centre := flat_cam.get_screen_center_position()
 	var view_h := UI.screen_size(hub).y / zoom * PX
-	_dist = view_h / (2.0 * tan(deg_to_rad(FOV * 0.5)))
+	_dist = view_h / (2.0 * tan(deg_to_rad(FOV * 0.5))) * (WIDE if _outdoor else 1.0)
 	var target := Vector3(centre.x * PX, 0.6, centre.y * PX)
+	var pool_at := Vector2(target.x, target.z)
+	if _outdoor:
+		target.z -= view_h * 0.14          # look a little past the knight: more of the distance, where the depth is
 	var pitch := deg_to_rad(_pitch)
 	cam.position = target + Vector3(0.0, sin(pitch), cos(pitch)) * _dist
 	cam.look_at(target, Vector3.UP)
@@ -772,7 +1159,7 @@ func _sync(_delta: float) -> void:
 	mat.set_shader_parameter("punch", lerpf(1.0, 1.14, _day))
 	mat.set_shader_parameter("rich", lerpf(1.0, 1.08, _day))
 	_drift += _delta * 0.004
-	Sprite3.set_sun(_day, 7.0, Vector2(_drift, _drift * 0.6), Vector2(target.x, target.z), _dist * 0.8, 0.95)
+	Sprite3.set_sun(_day, 7.0, Vector2(_drift, _drift * 0.6), pool_at, _dist * 0.8, 0.95)
 	mat.set_shader_parameter("lift", _lift)
 	mat.set_shader_parameter("haze", Vector3(1.0, 0.85, 0.63))
 	_sync_words(zoom)
