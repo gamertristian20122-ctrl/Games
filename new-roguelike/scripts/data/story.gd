@@ -142,6 +142,16 @@ static func kit() -> Array[String]:
 	return out
 
 
+## Something bought or found outside a level joins what he carries.
+static func add_to_kit(item_id: String) -> void:
+	var top := 0
+	for key: String in Save.data.get("hub", {}):
+		if key.begins_with("kit:"):
+			top = maxi(top, Save.hub_get(key))
+	if Save.hub_get("kit:" + item_id) == 0:
+		Save.hub_set("kit:" + item_id, top + 1)
+
+
 ## A level was won: remember it, keep the items, let a rescued hero join. Returns the hero id that
 ## joined just now ("" for nobody).
 static func clear(id: String, items: Array) -> String:

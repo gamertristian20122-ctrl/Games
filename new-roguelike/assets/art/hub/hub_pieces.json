@@ -51,6 +51,19 @@
   ],
   "source": "Pixel Crawler - Free Pack/Environment/Structures/Stations/Workbench/Workbench.png"
  },
+ "hub_bench_long": {
+  "box": [
+   83,
+   160,
+   141,
+   192
+  ],
+  "size": [
+   58,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
  "hub_bloom_0": {
   "box": [
    293,
@@ -401,6 +414,19 @@
    32
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
+ },
+ "hub_doorway": {
+  "box": [
+   1,
+   23,
+   31,
+   64
+  ],
+  "size": [
+   30,
+   41
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
  },
  "hub_farm_0": {
   "box": [
@@ -1078,6 +1104,32 @@
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Tiles.png"
  },
+ "hub_in_hall": {
+  "box": [
+   168,
+   88,
+   632,
+   350
+  ],
+  "size": [
+   464,
+   262
+  ],
+  "source": "Pixel Crawler - Free Pack/MockUps/Tavern.png"
+ },
+ "hub_in_room": {
+  "box": [
+   488,
+   470,
+   632,
+   634
+  ],
+  "size": [
+   144,
+   164
+  ],
+  "source": "Pixel Crawler - Free Pack/MockUps/Tavern.png"
+ },
  "hub_patch_0": {
   "box": [
    0,
@@ -1558,6 +1610,19 @@
    12
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_roof_wood": {
+  "box": [
+   0,
+   6,
+   128,
+   95
+  ],
+  "size": [
+   128,
+   89
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
  },
  "hub_rune_0": {
   "box": [
@@ -2702,5 +2767,31 @@
    19
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_wall_plaster": {
+  "box": [
+   288,
+   184,
+   416,
+   240
+  ],
+  "size": [
+   128,
+   56
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Walls.png"
+ },
+ "hub_window": {
+  "box": [
+   132,
+   99,
+   156,
+   124
+  ],
+  "size": [
+   24,
+   25
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
  }
 }

@@ -38,6 +38,8 @@ const HUB_SCRIPT := "res://scripts/hub/hub.gd"
 const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
+const Shop = preload("res://scripts/data/shop.gd")
+const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
@@ -78,11 +80,13 @@ func _ready() -> void:
 		tour.set("main", self)
 		add_child(tour)
 	elif G.flag("autotest"):
+		if G.flag("yard"):               # --yard: the bot spars in the training yard
+			G.next_run = {"training": true, "kit": []}
 		if G.arg("level") != "":       # --level=<story level id>: the bot plays that level
 			G.next_run = {"level": Story.level(G.arg("level")), "kit": []}
 		start_run(G.arg("hero", "knight"), int(G.arg("seed", "1")))
 	elif G.flag("hub"):
-		show_hub()
+		show_hub("village" if G.arg("hub") == "" else G.arg("hub"))
 	else:
 		_fade.color.a = 1.0
 		show_title()
@@ -205,7 +209,7 @@ func show_title() -> void:
 
 
 ## The camp between runs: walk around, talk, pick a stage at the gate.
-func show_hub() -> void:
+func show_hub(place: String = "", at: Vector2 = Vector2.INF) -> void:
 	await _drop_run()
 	_drop_hub()
 	get_tree().paused = false
@@ -213,6 +217,8 @@ func show_hub() -> void:
 	_ending = false
 	hub = (load(HUB_SCRIPT) as Script).new()
 	hub.name = "Hub"
+	hub.set("start_place", place)          # "" = your room in the tavern (Places.START)
+	hub.set("start_at", at)
 	hub.connect("action", _on_action)
 	_world.add_child(hub)
 	_refresh_layers()
@@ -239,7 +245,20 @@ func _on_action(what: String, arg: Variant) -> void:
 				if is_instance_valid(hub) and _stack.is_empty():
 					hub.call("refresh_heroes")      # the mirror may have changed his looks
 		"play":
-			_transition(show_hub)
+			_transition(show_hub)           # you wake in your room at the tavern
+		"hub_train":
+			G.next_run = {"training": true, "kit": Story.kit()}
+			_transition(start_run.bind("knight", _fresh_seed()))
+		"hub_shop":
+			var ok := false
+			if (arg as Dictionary).has("slot"):
+				ok = Shop.buy_item(int(arg["slot"]))
+			else:
+				ok = Shop.buy_supply(String(arg["supply"]))
+			Sfx.play("ui_start" if ok else "ui_back")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("retalk")
 		"talk":
 			open("hub_talk", {"info": arg})
 		"hub_level":
@@ -272,7 +291,7 @@ func _on_action(what: String, arg: Variant) -> void:
 			else:
 				_transition(start_run.bind(_hero_id, _fresh_seed()))
 		"menu":
-			_transition(show_hub)         # after a run you are back in the camp
+			_transition(show_hub.bind("village", HubData.GATE_SPOT))         # after a run you stand at the gate again
 		"title":
 			_transition(show_title)
 		"resume":
@@ -318,6 +337,7 @@ func _start_level() -> void:
 	if lv.is_empty():
 		return
 	G.next_run = {"level": lv, "kit": Story.kit(), "pack": Quests.take_pack()}
+	Shop.restock()                    # the barkeep's shelf changes while you are away
 	await start_run("knight", _fresh_seed())       # Aldous is the only hero (weapons will be switchable later)
 
 
@@ -393,11 +413,12 @@ func leave_run() -> void:
 	if run == null or _ending:
 		return
 	var p: Variant = run.get("player")
-	if is_instance_valid(p):
+	var yard: bool = run.get("training") == true       # nothing done in the yard is kept
+	if is_instance_valid(p) and not yard:
 		Story.walk_out(p.get("items"), int(p.get("coins")))
 	_ending = true
 	_busy = false
-	await _transition(show_hub)
+	await _transition(show_hub.bind("village", Vector2(620, 330) if yard else HubData.GATE_SPOT))
 
 
 ## "Give up" in the pause menu: the run counts as lost and the end screen is shown.

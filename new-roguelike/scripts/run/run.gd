@@ -55,6 +55,11 @@ var floor_index := 0
 ## A level is ONE small floor that ends when its boss falls. The camp passes it in G.next_run:
 ##   {"level": <row of Story.LEVELS>, "kit": [item ids the hero carries], "pack": {coins, bombs, keys}}
 var level := {}
+## The training yard (the Sergeant in the village): one room, a straw dummy, and sparring monsters
+## that come back. The hero cannot die here and nothing he does is kept.
+var training := false
+var _spar_t := 0.0
+const SPARRING := ["shambler", "bone_walker", "bone_archer"]
 const LEVEL_HEAL := 2             ## half hearts given back when a level's boss falls
 const LEVEL_STEP_BUDGET := 0.8    ## extra monster budget for the second level of an area
 var floor_name := ""
@@ -200,6 +205,7 @@ func _begin() -> void:
 	var asked: Dictionary = G.next_run          # set by the camp; used once
 	G.next_run = {}
 	level = asked.get("level", {})
+	training = bool(asked.get("training", false))
 	if not level.is_empty():
 		asked["floor"] = int(level.get("floor", 1))
 	floor_index = clampi(int(G.arg("floor", str(asked.get("floor", 1)))) - 1, 0, floor_count - 1)
@@ -289,6 +295,10 @@ func _generate_floor() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([seed_value, floor_index, "floor"])
 	rooms = FloorGen.generate(rng, int(level.get("rooms", theme["rooms"])))
+	if training:
+		rooms = {Vector2i.ZERO: FloorGen._record(G.RoomType.START, rng, 0)}
+		FloorGen._link(rooms)
+		floor_name = "The Training Yard"
 	var listed: Array = theme.get("enemies", [])
 	enemy_pool = Enemies.pool_for_floor(floor_index + 1)
 	if not listed.is_empty():
@@ -350,7 +360,9 @@ func _enter_floor() -> void:
 	if from != Vector2i.ZERO:
 		# --goto=boss: stand in front of the boss door instead of at the opposite one
 		player.position = room.door_pos(from) - Vector2(from) * 22.0
-	if level.is_empty():
+	if training:
+		G.toast.emit(floor_name, "Nobody dies here")
+	elif level.is_empty():
 		G.toast.emit(floor_name, "Floor %d" % (floor_index + 1))
 	else:
 		G.toast.emit(floor_name, "%s · level %d of %d" % [String(level.get("area", "")), Story.LEVELS.find(level) + 1, Story.LEVELS.size()])
@@ -628,6 +640,24 @@ func _physics_process(delta: float) -> void:
 		world.process_mode = Node.PROCESS_MODE_DISABLED
 	elif world.process_mode != Node.PROCESS_MODE_INHERIT:
 		world.process_mode = Node.PROCESS_MODE_INHERIT
+	# ---- the training yard: the dummy stands, sparring monsters come back
+	if training and not over and is_instance_valid(room):
+		_spar_t -= delta
+		if _spar_t <= 0.0:
+			_spar_t = 1.5
+			var dummy := false
+			var live := 0
+			for e in room.enemies:
+				if is_instance_valid(e) and not e.dead:
+					if String(e.id) == "training_dummy":
+						dummy = true
+					else:
+						live += 1
+			if not dummy:
+				room.spawn_enemy("training_dummy", G.ROOM_CENTER + Vector2(-70, -10), {"delay": 0.2})
+			if live < 2:
+				var who: String = SPARRING[randi() % SPARRING.size()]
+				room.spawn_enemy(who, G.ROOM_CENTER + Vector2(randf_range(40, 110), randf_range(-36, 36)), {"delay": 0.6, "minion": true})
 	# ---- room and floor changes
 	if _has_pending:
 		_has_pending = false

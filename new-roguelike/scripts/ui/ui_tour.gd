@@ -257,8 +257,8 @@ func _run_flow() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_touch(0, centre, false)
-	await _settle()
-	_check("a tap on Play opens the camp", is_instance_valid(main.get("hub")))
+	await _settle(0.9)             # the fade out, your room being built, the fade in
+	_check("a tap on Play opens your room", is_instance_valid(main.get("hub")) and String(main.get("hub").get("place_id")) == "room")
 	_check("a touch switches to touch controls", Controls.using_touch)
 	await _key(KEY_ESCAPE)
 	await _settle()
@@ -351,6 +351,7 @@ func _run_flow() -> void:
 	await _key(KEY_ENTER)
 	await _settle(1.0)
 	_check("Camp opens the camp", is_instance_valid(main.get("hub")) and main.get("run") == null)
+	_check("coming back from a level puts you in the village", String(main.get("hub").get("place_id")) == "village")
 	# talking, and LEAVING the talk window (this was broken in v0.5.1)
 	main.get("hub").call("talk_to", "cook")
 	await _settle()

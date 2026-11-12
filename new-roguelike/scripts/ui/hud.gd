@@ -430,6 +430,8 @@ func _draw_rule() -> void:
 func _on_floor_started(floor_index: int, floor_name: String) -> void:
 	_dirty = true
 	var over := "Floor %d" % (floor_index + 1)
+	if is_instance_valid(run) and run.get("training") == true:
+		over = "The village"
 	if is_instance_valid(run) and run.get("level") is Dictionary and not (run.get("level") as Dictionary).is_empty():
 		var lv: Dictionary = run.get("level")       # the story: which level of the descent this is
 		over = "%s · level %d of %d" % [String(lv.get("area", "")), Story.LEVELS.find(lv) + 1, Story.LEVELS.size()]

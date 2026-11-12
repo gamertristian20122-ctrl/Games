@@ -50,7 +50,9 @@ func refresh() -> void:
 	var level: Dictionary = {}
 	if is_instance_valid(run) and run.get("level") is Dictionary:
 		level = run.get("level")
-	if not level.is_empty():
+	if is_instance_valid(run) and run.get("training") == true:
+		lines.append(["Train. Pause to go back.", UI.C_GOLD])
+	elif not level.is_empty():
 		var boss := String(Bosses.info(String(level.get("boss", ""))).get("name", "the guardian"))
 		lines.append(["Beat " + boss, UI.C_GOLD])
 	elif in_camp:
@@ -80,7 +82,7 @@ func refresh() -> void:
 		var lab := UI.label(String(line[0]), "Small")
 		lab.add_theme_color_override("font_color", line[1])
 		lab.custom_minimum_size.x = WIDTH
-		lab.clip_text = true
+		lab.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART       # a long line folds, it is never cut off
 		_box.add_child(lab)
 	visible = not lines.is_empty()
 	size = Vector2.ZERO               # shrink to what is shown now

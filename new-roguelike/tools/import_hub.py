@@ -19,6 +19,8 @@ OUT = os.path.join(ROOT, "assets", "art", "hub")
 FOREST = ("Pixel_Crawler_-_Fairy_Forest_1.7.zip", "Assets/")
 CEM = ("Pixel_Crawler_-_Cemetery_0.4.zip", "Environment/Props/")
 FREE = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "Environment/")
+BUILD = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "Environment/Structures/Buildings/")
+MOCK = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "MockUps/")
 
 # (name, pack, file ending, region x0 y0 x1 y1, gap px that still joins two islands, smallest piece px)
 ISLANDS = [
@@ -57,6 +59,19 @@ RECTS = [
     ("dirt", FOREST, "Tiles.png", 16, 280, 32, 32),
     ("patch_0", FOREST, "Tiles.png", 0, 128, 48, 48),
     ("patch_1", FOREST, "Tiles.png", 0, 176, 48, 48),
+    # the tavern from outside: a stretch of plastered wall, the wooden gable roof, an open doorway, a window
+    ("wall_plaster", BUILD, "Walls.png", 288, 184, 128, 56),
+    ("roof_wood", BUILD, "Roofs.png", 0, 6, 128, 89),
+    ("doorway", BUILD, "Props.png", 1, 23, 30, 41),
+    ("window", BUILD, "Props.png", 132, 99, 24, 25),
+    ("bench_long", BUILD, "Props.png", 83, 160, 58, 32),
+]
+# (name, pack, file ending, x, y, w, h) in NATIVE pixels of a picture the pack ships at twice its
+# size (every pixel doubled; halving it by taking every second pixel gives the artist's own pixels
+# back). The tavern picture is the pack's own finished tavern: your room and the hall are cut from it.
+HALVED = [
+    ("in_room", MOCK, "Tavern.png", 488, 470, 144, 164),
+    ("in_hall", MOCK, "Tavern.png", 168, 88, 464, 262),
 ]
 # (name, pack, file ending, frame w, frame h): animation strips, cut into frames hub_<name>_f<n>.png
 STRIPS = [
@@ -134,10 +149,16 @@ def main():
                     if g > r + 12:
                         px[xx, yy] = (r, g, b, 0)
         save(name, piece, src, (x, y, x + w, y + h))
+    for name, pack, ending, x, y, w, h in HALVED:
+        im, src = sheet(pack, ending)
+        small = im.resize((im.width // 2, im.height // 2), Image.NEAREST)
+        save(name, small.crop((x, y, x + w, y + h)), src, (x, y, x + w, y + h))
     for name, pack, ending, fw, fh in STRIPS:
         im, src = sheet(pack, ending)
         for i in range(im.width // fw):
             save("%s_f%d" % (name, i), im.crop((i * fw, 0, i * fw + fw, fh)), src, (i * fw, 0, i * fw + fw, fh))
+    # the training dummy: the scarecrow again, under a name the game reads as a one-frame animation
+    Image.open(os.path.join(OUT, "hub_farm_2.png")).save(os.path.join(OUT, "hub_dummy_idle_anim_f0.png"))
     with open(os.path.join(OUT, "hub_pieces.json"), "w") as f:
         json.dump(pieces, f, indent=1, sort_keys=True)
     print("%d pieces written to %s" % (len(pieces), OUT))

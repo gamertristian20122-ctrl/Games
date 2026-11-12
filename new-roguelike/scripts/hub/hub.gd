@@ -20,6 +20,9 @@ const Heroes = preload("res://scripts/data/heroes.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Quests = preload("res://scripts/data/quests.gd")
 const Story = preload("res://scripts/data/story.gd")
+const Places = preload("res://scripts/data/places.gd")
+const Shop = preload("res://scripts/data/shop.gd")
+const Items = preload("res://scripts/data/items.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const QuestList = preload("res://scripts/ui/quest_list.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
@@ -34,6 +37,14 @@ const HERO_RADIUS := 5.0
 const DUSK := Color(0.80, 0.86, 0.92)          ## the forest's evening tint (the fire lights through it)
 
 var frozen := false              ## a window is open: the hero stands still
+var start_place := ""            ## main.gd sets these before the scene is added: where to begin ...
+var start_at := Vector2.INF      ## ... and where to stand there (INF = the place's own spawn point)
+var place_id := ""               ## the place being shown (scripts/data/places.gd)
+var place := {}
+var _stage: Node2D               ## everything of the current place hangs on this and goes with it
+var _blocks: Array = []          ## Rect2 walls and furniture of the place
+var _changing := false           ## walking through a door: a short fade is running
+var _fade: ColorRect
 var _ysort: Node2D
 var _hero: Node2D
 var _body: AnimatedSprite2D
@@ -52,30 +63,13 @@ var _tour_t := 0.0
 var _news := false              ## a quest is waiting to be handed in
 var _talked := {}               ## npc ids spoken to during this visit
 var _quests: Control
+var _small := false              ## the place fits on the screen: the camera stands still
 
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	Controls.action_enabled = true
-	_build_ground()
-	_ysort = Node2D.new()
-	_ysort.y_sort_enabled = true
-	add_child(_ysort)
-	for p: Array in Hub.PROPS:
-		_prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
-	_build_forest()
-	_build_fire()
-	for row: Dictionary in Hub.NPCS:
-		_add_person(row)
-	_build_hero()
-	refresh_heroes()
-	_build_light()
 	_cam = Camera2D.new()
-	_cam.limit_left = 0
-	_cam.limit_top = 0
-	_cam.limit_right = int(Hub.MAP.x)
-	_cam.limit_bottom = int(Hub.MAP.y)
-	_cam.position = _hero.position
 	add_child(_cam)
 	_cam.make_current()
 	_prompt = UI.label("", "Small")
@@ -96,14 +90,97 @@ func _ready() -> void:
 	_quests.position = Vector2(ins.x + 2.0, ins.y + 2.0)
 	_quests.modulate.a = 0.92
 	layer.add_child(_quests)
+	_fade = ColorRect.new()
+	_fade.color = Color(UI.C_VOID, 0.0)
+	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_fade)
+	if G.arg("hub") != "":
+		start_place = G.arg("hub")       # test: --hub=<place id>
+	enter(start_place if start_place != "" else Places.START, start_at)
 	if G.arg("hublevel") != "":          # test: go down into that level after a second
 		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_level", G.arg("hublevel")))
-	elif Save.hub_get("seen:intro") == 0 and G.arg("shots") == "":
-		# the very first visit: the Druid speaks first
+	elif Save.hub_get("seen:intro") == 0 and G.arg("shots") == "" and not G.flag("uitour") and place_id == "village":
+		# the first time in the village: the Druid speaks first
 		Save.hub_set("seen:intro", 1)
 		get_tree().create_timer(0.7).timeout.connect(func() -> void: action.emit("talk", Story.INTRO.duplicate(true)))
 	if G.arg("shots") != "" and G.flag("hub"):
-		_tour = [Vector2(376, 170), Vector2(180, 276), Vector2(360, 300), Vector2(540, 276), Vector2(520, 410)]
+		if place_id == "village":
+			_tour = [Vector2(376, 170), Vector2(180, 276), Vector2(360, 300), Vector2(540, 276), Vector2(150, 176)]
+		else:
+			_tour = [_hero.position + Vector2(0, 14)]
+
+
+## Shows a place (scripts/data/places.gd) with the hero at `at` (or at its own spawn point).
+func enter(id: String, at: Vector2 = Vector2.INF) -> void:
+	if is_instance_valid(_stage):
+		_stage.free()
+	place_id = id
+	place = Places.get_place(id)
+	_solids.clear()
+	_people.clear()
+	_near = -1
+	_last_talk = -1
+	_blocks = (place.get("blocks", []) as Array).duplicate()
+	_stage = Node2D.new()
+	add_child(_stage)
+	move_child(_stage, 0)
+	var size: Vector2 = place["size"]
+	if bool(place.get("outdoor", false)):
+		_build_ground()
+	else:
+		var art := Sprite2D.new()
+		art.texture = Art.tex(String(place["art"]))
+		art.centered = false
+		_stage.add_child(art)
+	_ysort = Node2D.new()
+	_ysort.y_sort_enabled = true
+	_stage.add_child(_ysort)
+	for p: Array in place.get("props", []):
+		_prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
+	if place.has("forest"):
+		_build_forest()
+	if place.has("fire"):
+		_build_fire()
+	for row: Dictionary in place.get("people", []):
+		_add_person(row)
+	_build_hero()
+	_hero.position = at if at != Vector2.INF else place["spawn"]
+	refresh_heroes()
+	if bool(place.get("outdoor", false)):
+		_build_light()
+	# a place smaller than the screen stands still in the middle; a bigger one scrolls with the hero
+	var view := UI.screen_size(self)
+	_small = size.x <= view.x and size.y <= view.y
+	if _small:
+		_cam.limit_left = -100000
+		_cam.limit_top = -100000
+		_cam.limit_right = 100000
+		_cam.limit_bottom = 100000
+		_cam.position = (size / 2.0).round()
+	else:
+		_cam.limit_left = 0 if size.x > view.x else int((size.x - view.x) / 2.0)
+		_cam.limit_top = 0 if size.y > view.y else int((size.y - view.y) / 2.0)
+		_cam.limit_right = int(size.x) if size.x > view.x else int((size.x + view.x) / 2.0)
+		_cam.limit_bottom = int(size.y) if size.y > view.y else int((size.y + view.y) / 2.0)
+		_cam.position = _hero.position.round()
+	_cam.reset_smoothing()
+
+
+## Through a door or off the edge of the screen: a short fade, then the next place.
+func _go(to: String, at: Vector2) -> void:
+	if _changing:
+		return
+	_changing = true
+	Sfx.play("door_open", -8.0)
+	var tw := create_tween()
+	tw.tween_property(_fade, "color:a", 1.0, 0.12)
+	await tw.finished
+	enter(to, at)
+	var back := create_tween()
+	back.tween_property(_fade, "color:a", 0.0, 0.16)
+	await back.finished
+	_changing = false
 
 
 func _exit_tree() -> void:
@@ -116,13 +193,13 @@ func _build_ground() -> void:
 	ground.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	var grass := Art.tex("hub_grass")
 	ground.draw.connect(func() -> void:
-		ground.draw_texture_rect(grass, Rect2(Vector2(-64, -64), Hub.MAP + Vector2(128, 128)), true))
-	add_child(ground)
+		ground.draw_texture_rect(grass, Rect2(Vector2(-64, -64), (place["size"] as Vector2) + Vector2(128, 128)), true))
+	_stage.add_child(ground)
 	# small flat things on the grass and the trodden paths: the same every time
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261111
 	var n := 0
-	for path: Array in Hub.PATHS:
+	for path: Array in place.get("paths", []):
 		for i in path.size() - 1:
 			var from: Vector2 = path[i]
 			var to: Vector2 = path[i + 1]
@@ -132,16 +209,17 @@ func _build_ground() -> void:
 				s.texture = Art.tex("hub_patch_%d" % (n % 2))
 				s.position = (from.lerp(to, float(k) / float(steps)) + Vector2(rng.randf_range(-4, 4), rng.randf_range(-4, 4))).round()
 				s.flip_h = rng.randf() < 0.5
-				add_child(s)
+				_stage.add_child(s)
 				n += 1
-	for id: String in Hub.SCATTER:
-		var spec: Array = Hub.SCATTER[id]
+	var scatter: Dictionary = place.get("scatter", {})
+	for id: String in scatter:
+		var spec: Array = scatter[id]
 		for i in int(spec[1]):
 			var s := Sprite2D.new()
 			s.texture = Art.tex("%s_%d" % [id, rng.randi() % int(spec[0])])
-			s.position = Vector2(roundf(rng.randf_range(8.0, Hub.MAP.x - 8.0)), roundf(rng.randf_range(70.0, Hub.MAP.y - 8.0)))
+			s.position = Vector2(roundf(rng.randf_range(8.0, (place["size"] as Vector2).x - 8.0)), roundf(rng.randf_range(70.0, (place["size"] as Vector2).y - 8.0)))
 			s.flip_h = rng.randf() < 0.5
-			add_child(s)
+			_stage.add_child(s)
 
 
 ## A standing piece: its base on `at`, `below` px of the picture hanging under the base line.
@@ -150,7 +228,7 @@ func _prop(id: String, at: Vector2, solid: float, below: float) -> Sprite2D:
 	s.texture = Art.tex(id)
 	s.centered = false
 	var sz := s.texture.get_size()
-	s.offset = Vector2(-floorf(sz.x * 0.5), -sz.y + below)
+	s.offset = Vector2(-floorf(sz.x * 0.5), -sz.y + below)        # a negative `below` lifts the picture above its base
 	s.position = at
 	_ysort.add_child(s)
 	if solid > 0.0:
@@ -173,55 +251,74 @@ func _anim(id: String, fps: float) -> AnimatedSprite2D:
 
 func _build_fire() -> void:
 	var pit := _anim("hub_fire_a", 7.0)
-	pit.position = Hub.FIRE
+	pit.position = (place["fire"] as Vector2)
 	pit.offset = Vector2(0, -8)
 	_ysort.add_child(pit)
 	var flame := _anim("hub_flame", 9.0)
 	flame.offset = Vector2(0, -16)
 	pit.add_child(flame)
-	_solids.append([Hub.FIRE - Vector2(0, 6), 11.0])
-	var grill := _anim("hub_fire_c", 7.0)        # the cook's fire
-	grill.position = Hub.GRILL
-	grill.offset = Vector2(0, -10)
-	_ysort.add_child(grill)
-	_solids.append([Hub.GRILL - Vector2(0, 4), 10.0])
+	_solids.append([(place["fire"] as Vector2) - Vector2(0, 6), 11.0])
+	if place.has("grill"):
+		var grill := _anim("hub_fire_c", 7.0)        # the cook's fire
+		grill.position = (place["grill"] as Vector2)
+		grill.offset = Vector2(0, -10)
+		_ysort.add_child(grill)
+		_solids.append([(place["grill"] as Vector2) - Vector2(0, 4), 10.0])
 
 
 ## The forest wall round the clearing, fitted to the size of the map.
 func _build_forest() -> void:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 7071
-	for p: Array in Hub.BEHIND_GATE:
+	rng.seed = 7071 + hash(place_id) % 1000
+	var spec: Dictionary = place["forest"]
+	var size: Vector2 = place["size"]
+	var open: Array = spec.get("open", [])          # Rect2 areas kept free of trees (ways out)
+	for p: Array in spec.get("behind", []):
 		_prop(String(p[0]), Vector2(p[1], p[2]), 0.0, 8.0)
 	var i := 0
 	var x := 24.0
-	while x < Hub.MAP.x:
-		if x < float(Hub.GATE_GAP[0]) or x > float(Hub.GATE_GAP[1]):
+	while x < size.x:
+		var free := true
+		for gap: Array in spec.get("top_gaps", []):
+			if x >= float(gap[0]) and x <= float(gap[1]):
+				free = false
+		if free and not _in_any(open, Vector2(x, 94.0)):
 			_prop(String(Hub.FOREST_BIG[i % Hub.FOREST_BIG.size()]), Vector2(x, 94.0 + rng.randf_range(-6, 6)).round(), 0.0, 8.0)
 			i += 1
 		x += 78.0
 	var y := 176.0
-	while y < Hub.MAP.y - 10.0:
-		_prop(String(Hub.FOREST_SIDE[i % Hub.FOREST_SIDE.size()]), Vector2(4.0 + rng.randf_range(-4, 4), y).round(), 0.0, 8.0)
-		_prop(String(Hub.FOREST_SIDE[(i + 1) % Hub.FOREST_SIDE.size()]), Vector2(Hub.MAP.x - 4.0 + rng.randf_range(-4, 4), y + 30.0).round(), 0.0, 8.0)
+	while y < size.y - 10.0:
+		if not _in_any(open, Vector2(4.0, y)):
+			_prop(String(Hub.FOREST_SIDE[i % Hub.FOREST_SIDE.size()]), Vector2(4.0 + rng.randf_range(-4, 4), y).round(), 0.0, 8.0)
+		if not _in_any(open, Vector2(size.x - 4.0, y + 30.0)):
+			_prop(String(Hub.FOREST_SIDE[(i + 1) % Hub.FOREST_SIDE.size()]), Vector2(size.x - 4.0 + rng.randf_range(-4, 4), y + 30.0).round(), 0.0, 8.0)
 		i += 1
 		y += 84.0
 	x = 22.0
-	while x < Hub.MAP.x:
-		_prop(String(Hub.FOREST_LOW[i % Hub.FOREST_LOW.size()]), Vector2(x, Hub.MAP.y - 6.0 + rng.randf_range(-5, 3)).round(), 0.0, 5.0)
+	while x < size.x:
+		if not _in_any(open, Vector2(x, size.y - 6.0)):
+			_prop(String(Hub.FOREST_LOW[i % Hub.FOREST_LOW.size()]), Vector2(x, size.y - 6.0 + rng.randf_range(-5, 3)).round(), 0.0, 5.0)
 		i += 1
 		x += 58.0
 	x = 70.0
-	while x < Hub.MAP.x:
-		_prop(String(Hub.FOREST_YOUNG[i % Hub.FOREST_YOUNG.size()]), Vector2(x, Hub.MAP.y + 34.0).round(), 0.0, 8.0)
+	while x < size.x:
+		if not _in_any(open, Vector2(x, size.y - 6.0)):
+			_prop(String(Hub.FOREST_YOUNG[i % Hub.FOREST_YOUNG.size()]), Vector2(x, size.y + 34.0).round(), 0.0, 8.0)
 		i += 1
 		x += 104.0
 
 
+func _in_any(rects: Array, at: Vector2) -> bool:
+	for r: Rect2 in rects:
+		if r.has_point(at):
+			return true
+	return false
+
+
 func _build_light() -> void:
 	var dusk := CanvasModulate.new()
-	dusk.color = DUSK
-	add_child(dusk)
+	dusk.color = place.get("tint", DUSK)
+	_stage.add_child(dusk)
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
 	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.35), Color(1, 1, 1, 0)])
@@ -232,9 +329,7 @@ func _build_light() -> void:
 	tex.fill_to = Vector2(1.0, 0.5)
 	tex.width = 128
 	tex.height = 128
-	for spec: Array in [[Hub.FIRE - Vector2(0, 10), Color(1.0, 0.72, 0.42), 2.1, 0.7], [Hub.GRILL - Vector2(0, 10), Color(1.0, 0.7, 0.45), 1.1, 0.5],
-			[Vector2(146, 216), Color(0.45, 0.85, 1.0), 1.3, 0.5], [Vector2(360, 88), Color(0.75, 0.6, 1.0), 1.1, 0.4],
-			[Vector2(590, 236), Color(1.0, 0.75, 0.5), 0.9, 0.35]]:
+	for spec: Array in place.get("lights", []):
 		var l := PointLight2D.new()
 		l.texture = tex
 		l.position = spec[0]
@@ -242,12 +337,12 @@ func _build_light() -> void:
 		l.texture_scale = spec[2]
 		l.energy = spec[3]
 		l.name = "light%d" % get_child_count()
-		add_child(l)
+		_stage.add_child(l)
 	# fireflies: single pale squares drifting over the clearing
 	var flies := CPUParticles2D.new()
-	flies.position = Hub.MAP * 0.5
+	flies.position = (place["size"] as Vector2) * 0.5
 	flies.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	flies.emission_rect_extents = Hub.MAP * 0.5
+	flies.emission_rect_extents = (place["size"] as Vector2) * 0.5
 	flies.amount = 40
 	flies.lifetime = 7.0
 	flies.preprocess = 7.0
@@ -266,7 +361,7 @@ func _build_light() -> void:
 	var unlit := CanvasItemMaterial.new()
 	unlit.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 	flies.material = unlit
-	add_child(flies)
+	_stage.add_child(flies)
 
 
 ## A person standing in the camp: body, both hands, a shadow, and a gold "!" when they have news.
@@ -274,6 +369,24 @@ func _add_person(row: Dictionary) -> Dictionary:
 	var node := Node2D.new()
 	node.position = row["pos"]
 	_ysort.add_child(node)
+	var mark := UI.label("!", "Head")
+	mark.theme = UI.theme()
+	mark.add_theme_color_override("font_color", UI.C_GOLD)
+	mark.add_theme_color_override("font_outline_color", UI.C_INK)
+	mark.add_theme_constant_override("outline_size", 3)
+	mark.visible = false
+	mark.z_index = 100
+	node.add_child(mark)
+	if bool(row.get("ghost", false)):
+		# someone (or something) already painted into the place's picture: only a spot to talk to
+		var top := float(row.get("top", 20.0))
+		mark.position = Vector2(-2, -top - 16)
+		if float(row.get("solid", 0.0)) > 0.0:
+			_solids.append([row["pos"], float(row["solid"])])
+		var ghost := {"row": row, "node": node, "hands": null, "mark": mark, "face": 1.0, "top": top, "solid": -1,
+			"body": null, "post": row["pos"], "goal": row["pos"], "wait": 0.0, "walks": false, "ghost": true}
+		_people.append(ghost)
+		return ghost
 	var sprite_id := String(row["sprite"])
 	var m := Art.meta(sprite_id)
 	var bw := float(m.get("body_width", 16.0))
@@ -288,32 +401,17 @@ func _add_person(row: Dictionary) -> Dictionary:
 	if String(row.get("hands", "")) != "":
 		hands = Hands.new()
 		hands.build(node, body, String(row["hands"]), bw, bh)
-	if row.has("weapon"):
-		var w := HeroLook.make_weapon(row)
-		node.add_child(w)
-		HeroLook.rest(w, face)
-		if hands != null and hands.near != null:
-			hands.near.queue_free()            # that hand holds the weapon
-			hands.near = null
-	var mark := UI.label("!", "Head")
-	mark.theme = UI.theme()
-	mark.add_theme_color_override("font_color", UI.C_GOLD)
-	mark.add_theme_color_override("font_outline_color", UI.C_INK)
-	mark.add_theme_constant_override("outline_size", 3)
 	mark.position = Vector2(-2, -bh - 16)
-	mark.visible = false
-	mark.z_index = 100
-	node.add_child(mark)
+	node.move_child(mark, node.get_child_count() - 1)
 	_solids.append([row["pos"] - Vector2(0, 2), 6.0])
 	var person := {"row": row, "node": node, "hands": hands, "mark": mark, "face": face, "top": bh, "solid": _solids.size() - 1,
-		"body": body, "post": row["pos"], "goal": row["pos"], "wait": randf_range(1.0, 4.0), "walks": Art.has_anim(sprite_id, "run") and not row.has("weapon")}
+		"body": body, "post": row["pos"], "goal": row["pos"], "wait": randf_range(1.0, 4.0), "walks": Art.has_anim(sprite_id, "run")}
 	_people.append(person)
 	return person
 
 
 func _build_hero() -> void:
 	_hero = Node2D.new()
-	_hero.position = Hub.SPAWN
 	_ysort.add_child(_hero)
 
 
@@ -342,20 +440,40 @@ func refresh_heroes() -> void:
 func _physics_process(delta: float) -> void:
 	_time += delta
 	var move := Vector2.ZERO
-	if not frozen:
+	if not frozen and not _changing:
 		move = Controls.move
 		if not _tour.is_empty():
 			move = _tour_step(delta)
 	var moving := move.length() > 0.12
 	if moving:
 		var to := _hero.position + move.limit_length(1.0) * SPEED * delta
-		to = to.clamp(Hub.WALK.position, Hub.WALK.end)
+		var walk: Rect2 = place["walk"]
+		to = to.clamp(walk.position, walk.end)
 		for s: Array in _solids:
 			var d: Vector2 = to - (s[0] as Vector2)
 			var reach: float = float(s[1]) + HERO_RADIUS
 			if d.length_squared() < reach * reach and d.length_squared() > 0.0001:
 				to = (s[0] as Vector2) + d.normalized() * reach
-		_hero.position = to.clamp(Hub.WALK.position, Hub.WALK.end)
+		for b: Rect2 in _blocks:
+			var g := b.grow(HERO_RADIUS)
+			if not g.has_point(to):
+				continue
+			# out through the nearest side
+			var gaps := [to.x - g.position.x, g.end.x - to.x, to.y - g.position.y, g.end.y - to.y]
+			var least: float = gaps.min()
+			if least == gaps[0]:
+				to.x = g.position.x
+			elif least == gaps[1]:
+				to.x = g.end.x
+			elif least == gaps[2]:
+				to.y = g.position.y
+			else:
+				to.y = g.end.y
+		_hero.position = to.clamp(walk.position, walk.end)
+		for e: Dictionary in place.get("exits", []):
+			if (e["rect"] as Rect2).has_point(_hero.position) and _tour.is_empty():
+				_go(String(e["to"]), e["at"])
+				break
 		if absf(move.x) > 0.1:
 			_face = signf(move.x)
 	var want := "run" if moving else "idle"
@@ -364,7 +482,8 @@ func _physics_process(delta: float) -> void:
 	_body.flip_h = _face < 0.0
 	HeroLook.rest(_weapon, _face, delta)
 	_off_hand.update(delta, moving, _face)
-	_cam.position = _hero.position.round()
+	if not _small:
+		_cam.position = _hero.position.round()
 	_update_people(delta)
 
 
@@ -391,7 +510,7 @@ func _update_people(delta: float) -> void:
 		mark.visible = (news and String(p["row"].get("role", "")) == "quests") or bool(p.get("news", false))
 		mark.position.y = -float(p["top"]) - 16.0 + roundf(sin(_time * 5.0) * 1.5)
 	_near = best
-	_quests.visible = not frozen
+	_quests.visible = not frozen and place_id == "village"
 	G.hub_near = best >= 0 and not frozen
 	if best >= 0 and not frozen:
 		var p: Dictionary = _people[best]
@@ -408,6 +527,8 @@ func _update_people(delta: float) -> void:
 ## walking wander a few steps round their post now and then. Returns true while walking.
 func _stroll(p: Dictionary, delta: float, hero_dist: float) -> bool:
 	var node: Node2D = p["node"]
+	if p["body"] == null:
+		return false
 	var body: AnimatedSprite2D = p["body"]
 	if hero_dist < 44.0 or frozen:
 		if absf(_hero.position.x - node.position.x) > 3.0:
@@ -435,7 +556,8 @@ func _stroll(p: Dictionary, delta: float, hero_dist: float) -> bool:
 	body.flip_h = float(p["face"]) < 0.0
 	if body.animation != "run":
 		body.play("run")
-	_solids[int(p["solid"])] = [node.position - Vector2(0, 2), 6.0]
+	if int(p["solid"]) >= 0:
+		_solids[int(p["solid"])] = [node.position - Vector2(0, 2), 6.0]
 	return true
 
 
@@ -465,7 +587,10 @@ func _talk(index: int) -> void:
 	var pages: Array = said.duplicate()
 	if pages.is_empty() and String(row.get("text", "")) != "":
 		pages = [String(row["text"])]
-	var info := {"name": row["name"], "title": row.get("title", ""), "sprite": row["sprite"], "pages": pages, "heard": id,
+	if String(row.get("role", "")) == "mirror":
+		action.emit("customize", null)             # the looking glass opens "Your knight"
+		return
+	var info := {"name": row["name"], "title": row.get("title", ""), "sprite": row.get("sprite", ""), "pages": pages, "heard": id,
 		"lines": [], "options": []}
 	match String(row.get("role", "chat")):
 		"gate":
@@ -492,6 +617,22 @@ func _talk(index: int) -> void:
 			info["lines"].append(["Quests done: %d of %d" % [Quests.done_count(), Quests.LIST.size()], UI.C_FAINT])
 		"collection":
 			info["options"].append({"text": "Open the Collection", "what": "collection"})
+		"train":
+			info["options"].append({"text": "Train in the yard", "what": "hub_train"})
+		"bed":
+			var carried := Story.kit()
+			info["lines"].append(["Your room at the Hollow Flagon. The looking glass by the bed changes your name, armour and sword.", UI.C_DIM])
+			info["lines"].append(["You carry %d item%s. Camp chest: %d coins." % [carried.size(), "" if carried.size() == 1 else "s", Upgrades.coins()], UI.C_GOLD])
+		"shop":
+			for entry: Array in Shop.stock():
+				var item: Dictionary = Items.ALL[String(entry[0])]
+				info["lines"].append(["%s: %s" % [item["name"], item["desc"]], UI.C_DIM])
+				info["options"].append({"text": "%s: %d coins" % [item["name"], int(entry[1])], "what": "hub_shop", "arg": {"slot": int(entry[2])},
+					"off": Upgrades.coins() < int(entry[1])})
+			for row2: Dictionary in Shop.SUPPLIES:
+				info["options"].append({"text": "%s: %d coins" % [row2["name"], int(row2["price"])], "what": "hub_shop", "arg": {"supply": row2["id"]},
+					"off": Upgrades.coins() < int(row2["price"])})
+			info["lines"].append(["Camp chest: %d coins. The shelf changes each time you go down." % Upgrades.coins(), UI.C_GOLD])
 		"pack":
 			info["lines"].append([_pack_line(), UI.C_GOLD])
 			var kit := Story.kit()

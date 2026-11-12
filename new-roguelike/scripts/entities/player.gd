@@ -643,7 +643,10 @@ func hurt(half_hearts: int, from: Vector2, cause: String = "") -> void:
 	G.player_hurt.emit(amount)
 	run.effects.fire("on_hurt", [amount, cause])
 	if hp <= 0:
-		if god:
+		if run.get("training") == true:
+			hp = max_hp                  # the yard: he gets back up
+			G.toast.emit("Again!", "Nobody dies in the yard")
+		elif god:
 			hp = 1
 		else:
 			hp = 0

@@ -44,15 +44,16 @@ func build() -> void:
 	stage.add_child(sprite)
 	stage.resized.connect(func() -> void:
 		sprite.position = Vector2(roundf(stage.size.x / 2.0), roundf(stage.size.y / 2.0 + Art.size(String(hero["sprite"])).y) - 2.0))
-	var in_story: bool = run != null and run.get("level") is Dictionary and not (run.get("level") as Dictionary).is_empty()
+	var in_yard: bool = run != null and run.get("training") == true
+	var in_story: bool = in_yard or (run != null and run.get("level") is Dictionary and not (run.get("level") as Dictionary).is_empty())
 	if in_story:
 		# walk back out with what you carry: only while no fight is on
 		var room: Variant = run.get("room")
 		var fight: bool = is_instance_valid(room) and room.get("fighting") == true
-		var leave := UI.button("Back to camp", _ask_leave)
+		var leave := UI.button("Back to camp", (func() -> void: send("leave_run")) if in_yard else _ask_leave)
 		leave.custom_minimum_size.y = 22
-		leave.disabled = fight
-		if fight:
+		leave.disabled = fight and not in_yard
+		if fight and not in_yard:
 			leave.text = "Camp (not in a fight)"
 		left.add_child(leave)
 	else:

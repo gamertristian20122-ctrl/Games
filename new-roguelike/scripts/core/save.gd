@@ -273,6 +273,8 @@ func _on_run_started(_run: Node) -> void:
 
 
 func _on_stat(key: String, amount: int) -> void:
+	if is_instance_valid(G.run) and G.run.get("training") == true:
+		return                                  # nothing done in the training yard is counted
 	if key in OWN_KEYS or key.begins_with("wins:"):
 		return                                  # counted by record_run() / _on_item_acquired()
 	stat_add(key, amount)

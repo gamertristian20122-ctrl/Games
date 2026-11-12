@@ -29,6 +29,10 @@ extends RefCounted
 
 const ALL := {
 	# ---- floor 1, the Crypt: the restless dead
+	# the training yard's straw dummy: never dies, never hurts (run.gd training)
+	"training_dummy": {"name": "Straw Dummy", "sprite": "hub_dummy", "hp": 99999.0, "speed": 0.0,
+		"ai": "dummy", "params": {}, "touch": 0, "flying": false, "floors": [], "cost": 99.0, "coin": 0.0, "heart": 0.0, "minion": true,
+		"radius": 6.0, "hit_up": 8.0},
 	"shambler": {"name": "Shambler", "sprite": "pc_zombie_base", "hands": "pc_hand_cemetery_30", "hp": 9.0, "speed": 30.0,
 		"ai": "chaser", "params": {}, "touch": 1, "flying": false, "floors": [1], "cost": 1.0, "coin": 0.20, "heart": 0.04},
 	"bone_walker": {"name": "Bone Walker", "sprite": "pc_skeleton_base", "hands": "pc_hand_base_7", "hp": 6.0, "speed": 46.0,

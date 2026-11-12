@@ -17,8 +17,14 @@ const PROPS := [
 	["hub_rock_2", 318, 104, 0, 2], ["hub_rock_moss_2", 404, 105, 0, 2], ["hub_rock_moss_1", 288, 108, 0, 2], ["hub_rock_1", 434, 108, 0, 2],
 	["hub_gate_0", 360, 108, 0, 0],
 	["hub_statue_1", 316, 134, 9, 2], ["hub_statue_0", 406, 134, 7, 2],
-	["hub_tomb_7", 262, 128, 10, 2], ["hub_tomb_8", 458, 128, 10, 2], ["hub_tomb_1", 222, 136, 9, 2], ["hub_tomb_2", 498, 134, 9, 2],
-	["hub_cross_2", 240, 160, 5, 1], ["hub_cross_3", 482, 162, 5, 1], ["hub_statue_2", 528, 146, 8, 2], ["hub_cross_1", 196, 152, 6, 1],
+	["hub_tomb_7", 266, 128, 10, 2], ["hub_tomb_8", 458, 128, 10, 2], ["hub_tomb_2", 498, 134, 9, 2],
+	["hub_cross_2", 280, 162, 5, 1], ["hub_cross_3", 482, 162, 5, 1], ["hub_statue_2", 528, 146, 8, 2],
+	# the tavern, north-west: a plastered wall under a wooden gable, an open doorway, two windows
+	# (a negative last number lifts a picture above its base line: the roof sits on top of the wall)
+	["hub_wall_plaster", 124, 152, 0, 0], ["hub_roof_wood", 124, 153, 0, -50], ["hub_doorway", 124, 154, 0, 0],
+	["hub_window", 88, 154, 0, -14], ["hub_window", 160, 154, 0, -14], ["hub_bench_long", 206, 168, 10, 2],
+	# the training yard, east: two straw dummies
+	["hub_farm_2", 664, 352, 5, 1], ["hub_farm_2", 606, 356, 5, 1],
 	# the fire in the middle of the open ground
 	["hub_stump_1", 322, 278, 7, 3], ["hub_stump_2", 400, 280, 6, 3],
 	# the rune ring, west
@@ -34,7 +40,7 @@ const PROPS := [
 	# a few bushes and young trees at the edges; the middle stays open
 	["hub_bush_green_1", 262, 372, 12, 5], ["hub_bush_orange_2", 462, 334, 9, 4], ["hub_bush_deep_1", 252, 214, 10, 4],
 	["hub_bush_rust_2", 478, 222, 9, 4], ["hub_tree_pink_4", 276, 418, 4, 5], ["hub_tree_teal_4", 440, 420, 4, 5],
-	["hub_tree_green_4", 58, 156, 4, 5], ["hub_tree_pink_3", 664, 168, 6, 6], ["hub_tree_green_3", 56, 344, 6, 6], ["hub_tree_teal_3", 668, 326, 6, 6],
+	["hub_tree_pink_3", 664, 168, 6, 6], ["hub_tree_green_3", 56, 344, 6, 6], ["hub_tree_teal_3", 668, 326, 6, 6],
 ]
 
 ## The forest wall round the clearing is planted by hub.gd from these (it fits itself to MAP):
@@ -45,6 +51,11 @@ const FOREST_SIDE := ["hub_tree_green_2", "hub_tree_pink_2", "hub_tree_teal_2"]
 const FOREST_LOW := ["hub_bush_green_0", "hub_bush_deep_0", "hub_bush_orange_0", "hub_bush_rust_0", "hub_bush_green_1", "hub_bush_orange_1"]
 const FOREST_YOUNG := ["hub_tree_green_3", "hub_tree_teal_3", "hub_tree_pink_3"]
 const GATE_GAP := [296.0, 424.0]            ## no big tree in front of the crypt gate (x from, x to)
+const TAVERN_GAP := [40.0, 250.0]           ## ... nor in front of the tavern
+## Walls the hero cannot walk through (rectangles), and doors that lead somewhere else.
+const BLOCKS := [Rect2(60, 96, 128, 56)]
+const EXITS := [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)}]
+const GATE_SPOT := Vector2(360, 150)        ## where he stands when he comes back out of the hill
 const BEHIND_GATE := [["hub_tree_pink_2", 360, 60], ["hub_tree_green_2", 296, 80], ["hub_tree_teal_2", 426, 80]]
 
 ## Trodden earth: each list is a path; hub.gd lays the pack's 48 px earth patches along it.
@@ -81,9 +92,12 @@ const NPCS := [
 		"pos": Vector2(562, 254), "face": 1, "role": "chat",        # he also sells sword upgrades (scripts/data/upgrades.gd, "at": "smith")
 		"text": ""},
 	{"id": "hunter", "name": "Fen", "title": "Forest Elf", "sprite": "pc_elf_base", "hands": "pc_hand_elf_23",
-		"pos": Vector2(636, 332), "face": -1, "role": "chat",
+		"pos": Vector2(226, 196), "face": 1, "role": "chat",
 		"text": ""},
 	{"id": "ranger", "name": "Ilse", "title": "Elf Ranger", "sprite": "pc_elf_ranger", "hands": "pc_hand_elf_23",
-		"pos": Vector2(94, 152), "face": 1, "role": "chat",
+		"pos": Vector2(300, 404), "face": 1, "role": "chat",
 		"text": ""},
+	{"id": "sergeant", "name": "Sergeant Brandt", "title": "Master of the Yard", "sprite": "pc_royal_soldier", "hands": "pc_hand_castle_17",
+		"pos": Vector2(634, 318), "face": -1, "role": "train",
+		"text": "Hit the straw, then hit something that hits back. Nobody dies in my yard."},
 ]
