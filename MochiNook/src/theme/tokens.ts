@@ -11,6 +11,8 @@ export interface Palette {
   /** Accent used as text on `bg`/`surface` — tuned for AA contrast. */
   accentInk: string;
   onAccent: string;
+  /** Text and icons placed ON a pastel fill (lavender, butter, peach). Always dark so it stays readable in dark mode. */
+  onPastel: string;
   peach: string;
   peachSoft: string;
   lavender: string;
@@ -33,6 +35,7 @@ const light: Palette = {
   accentSoft: '#E3EDDF',
   accentInk: '#4F6E4A',
   onAccent: '#2F3A2C',
+  onPastel: '#2B2420',
   peach: '#F6C6A8',
   peachSoft: '#FCE8DB',
   lavender: '#CDBFE6',
@@ -55,6 +58,7 @@ const dark: Palette = {
   accentSoft: '#38443A',
   accentInk: '#B5CFAE',
   onAccent: '#1D261B',
+  onPastel: '#2B2420',
   peach: '#D9A88B',
   peachSoft: '#4A3A31',
   lavender: '#AE9FCB',
@@ -78,6 +82,7 @@ const calmLight: Palette = {
   accentSoft: '#E6EBE4',
   accentInk: '#56664F',
   onAccent: '#343B31',
+  onPastel: '#2B2420',
   peach: '#E3D3C8',
   peachSoft: '#F1E9E3',
   lavender: '#D6D1DF',
@@ -100,6 +105,7 @@ const calmDark: Palette = {
   accentSoft: '#343A33',
   accentInk: '#AEBDA9',
   onAccent: '#1C211B',
+  onPastel: '#2B2420',
   peach: '#B39C8E',
   peachSoft: '#3D3530',
   lavender: '#9D95AC',

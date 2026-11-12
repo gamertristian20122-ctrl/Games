@@ -75,19 +75,34 @@ export function playSfx(sfx: Sfx, prefs: FeedbackPrefs): void {
   playKey(key).catch(() => undefined);
 }
 
-export function haptic(kind: 'light' | 'success' | 'select', prefs: FeedbackPrefs): void {
-  if (prefs.calm || !prefs.haptics) return;
+export type HapticKind = 'light' | 'medium' | 'success' | 'select';
+
+/** Whether a haptic should fire at all. Pure, so it can be tested without a phone. */
+export function hapticsAllowed(prefs: FeedbackPrefs): boolean {
+  return !prefs.calm && prefs.haptics;
+}
+
+/**
+ * - light:   squishing the pet
+ * - medium:  finishing one tiny step
+ * - success: finishing a quest, levelling up, unlocking a Nook item
+ * - select:  small UI picks
+ */
+export function haptic(kind: HapticKind, prefs: FeedbackPrefs): void {
+  if (!hapticsAllowed(prefs)) return;
   const run =
     kind === 'success'
       ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       : kind === 'light'
         ? Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-        : Haptics.selectionAsync();
+        : kind === 'medium'
+          ? Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+          : Haptics.selectionAsync();
   run.catch(() => undefined);
 }
 
 export function stepFeedback(prefs: FeedbackPrefs): void {
-  haptic('light', prefs);
+  haptic('medium', prefs);
   playSfx('note', prefs);
 }
 

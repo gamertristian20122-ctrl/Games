@@ -146,7 +146,7 @@ export function ProBadge() {
   const { c } = useTheme();
   return (
     <View style={{ backgroundColor: c.lavender, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 }}>
-      <T variant="label" color={c.ink}>
+      <T variant="label" color={c.onPastel}>
         PLUS
       </T>
     </View>

@@ -1,8 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import React, { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Glyph } from '../../components/art/Glyph';
 import { MoodFace } from '../../components/art/MoodFace';
 import { Icon } from '../../components/Icon';
@@ -10,6 +10,8 @@ import { PetCard } from '../../components/PetCard';
 import { ANCHOR_LABEL, QuestListItem, SponsorCard } from '../../components/QuestBits';
 import { Button, Card, Pill, Row, Screen, SectionTitle, T } from '../../components/ui';
 import * as repo from '../../db/repo';
+import { tapFeedback } from '../../lib/feedback';
+import { COMPANION_AVAILABLE, COMPANION_COMING_SOON } from '../../lib/ai/companion';
 import { MOODS, allClearLine, idleLine, spoonSavingLines } from '../../lib/copy';
 import { currentAnchor, dayKey, greeting, minutesNow } from '../../lib/time';
 import type { Anchor, Energy, QuestWithProgress, StepWithState } from '../../lib/types';
@@ -110,12 +112,13 @@ export default function Home() {
 
   return (
     <Screen>
-      <View style={{ paddingTop: space.lg, paddingBottom: space.lg, gap: space.sm }}>
-        <Row style={{ justifyContent: 'space-between' }}>
+      <View style={{ paddingTop: space.lg, paddingBottom: space.lg, gap: space.sm, zIndex: 10, elevation: 10 }}>
+        <Row style={{ justifyContent: 'space-between', zIndex: 2, elevation: 2 }}>
           <View style={{ flex: 1 }}>
             <T variant="label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()}</T>
             <T variant="title">{greeting(now)}</T>
           </View>
+          <TalkButton />
         </Row>
         <Row gap={space.sm}>
           <OverwhelmedButton />
@@ -303,6 +306,58 @@ export default function Home() {
   );
 }
 
+/**
+ * "Talk with Dumpling": a placeholder for a future on-device chat companion (Plus).
+ * For now it shows a soft "coming soon" toast. See src/lib/ai/companion.ts.
+ */
+function TalkButton() {
+  const { c, motionLevel } = useTheme();
+  const { pet, feedbackPrefs } = useApp();
+  const [toast, setToast] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+  const onPress = () => {
+    tapFeedback(feedbackPrefs);
+    if (COMPANION_AVAILABLE) return;
+    setToast(true);
+    AccessibilityInfo.announceForAccessibility(COMPANION_COMING_SOON);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setToast(false), 2800);
+  };
+  const fade = motionLevel !== 'still';
+  return (
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Talk with ${pet.name}`}
+        accessibilityHint="Coming soon in MochiNook Plus"
+        onPress={onPress}
+        hitSlop={6}
+        style={({ pressed }) => [styles.talk, { backgroundColor: c.lavenderSoft, borderColor: c.lavender, opacity: pressed ? 0.8 : 1 }]}
+      >
+        <Glyph name="chat" size={26} />
+      </Pressable>
+      {toast ? (
+        <Animated.View
+          entering={fade ? FadeIn.duration(180) : undefined}
+          exiting={fade ? FadeOut.duration(220) : undefined}
+          pointerEvents="none"
+          style={[styles.toast, { backgroundColor: c.ink, shadowColor: c.shadow }]}
+        >
+          <T variant="small" color={c.bg} style={{ fontFamily: 'AtkinsonHyperlegible_700Bold' }}>
+            Coming soon in MochiNook Plus
+          </T>
+          <T variant="small" color={c.bg}>
+            Chatting with {pet.name}, right on your phone.
+          </T>
+        </Animated.View>
+      ) : null}
+    </View>
+  );
+}
+
 function OverwhelmedButton() {
   const { c } = useTheme();
   return (
@@ -344,6 +399,21 @@ function CalmButton() {
 }
 
 const styles = StyleSheet.create({
+  talk: { width: 52, height: 52, borderRadius: 26, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  toast: {
+    position: 'absolute',
+    top: 60,
+    right: 0,
+    width: 264,
+    zIndex: 10,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
   calm: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -94,7 +94,7 @@ export default function TipJar() {
               <T variant="small">{t.note}</T>
             </View>
             <View style={[styles.price, { backgroundColor: c.butter }]}>
-              <T variant="bodyBold" color={c.ink}>
+              <T variant="bodyBold" color={c.onPastel}>
                 {busy === t.size ? '...' : prices[t.size]}
               </T>
             </View>

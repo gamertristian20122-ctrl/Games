@@ -146,7 +146,7 @@ function PlanCard({ selected, title, sub, note, onPress }: { selected: boolean; 
           <T variant="bodyBold">{title}</T>
           {note ? (
             <View style={[styles.save, { backgroundColor: c.butter }]}>
-              <T variant="label" color={c.ink}>
+              <T variant="label" color={c.onPastel}>
                 {note}
               </T>
             </View>

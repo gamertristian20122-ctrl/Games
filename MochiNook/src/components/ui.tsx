@@ -140,7 +140,7 @@ export function Button({
   const { tap } = useApp();
   const bg =
     kind === 'primary' ? c.accent : kind === 'soft' ? c.surfaceAlt : kind === 'peach' ? c.peach : kind === 'lavender' ? c.lavender : 'transparent';
-  const fg = kind === 'ghost' ? c.accentInk : kind === 'primary' ? c.onAccent : c.ink;
+  const fg = kind === 'ghost' ? c.accentInk : kind === 'primary' ? c.onAccent : kind === 'peach' || kind === 'lavender' ? c.onPastel : c.ink;
   return (
     <Pressable
       accessibilityRole="button"

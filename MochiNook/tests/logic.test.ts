@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import library from '../src/data/quests.json';
 import { HATS, PET_COLORS, ROOMS, SCARVES, seasonalRewards } from '../src/data/cosmetics';
 import { SHOP_ITEMS } from '../src/data/shop';
+import { pickPalette, type Palette } from '../src/theme/tokens';
 import { synthNoise, wavBytes } from '../src/lib/noiseSynth';
 import { PRIVACY_POLICY, TERMS_OF_USE } from '../src/data/legal';
 import { levelFromXp, xpForNextLevel } from '../src/lib/progression';
@@ -306,4 +307,33 @@ test('ambient noise is generated in code, loops seamlessly and stays gentle', ()
   assert.equal(String.fromCharCode(...wav.slice(0, 4)), 'RIFF');
   assert.equal(String.fromCharCode(...wav.slice(8, 12)), 'WAVE');
   assert.equal(wav.length, 44 + 6);
+});
+
+test('every text/background pair meets WCAG AA (4.5:1) in light, dark, calm light and calm dark', () => {
+  const lum = (hex: string) => {
+    const n = parseInt(hex.slice(1), 16);
+    const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * ch[0]! + 0.7152 * ch[1]! + 0.0722 * ch[2]!;
+  };
+  const ratio = (a: string, b: string) => {
+    const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p) as [number, number];
+    return (x + 0.05) / (y + 0.05);
+  };
+  const pairs: [keyof Palette, keyof Palette][] = [
+    ['ink', 'bg'], ['ink', 'surface'], ['ink', 'surfaceAlt'], ['inkSoft', 'bg'], ['inkSoft', 'surface'], ['inkSoft', 'surfaceAlt'],
+    ['accentInk', 'bg'], ['accentInk', 'surface'], ['accentInk', 'accentSoft'], ['onAccent', 'accent'],
+    ['ink', 'accentSoft'], ['ink', 'lavenderSoft'], ['ink', 'peachSoft'], ['ink', 'butterSoft'],
+    ['inkSoft', 'lavenderSoft'], ['inkSoft', 'accentSoft'], ['inkSoft', 'butterSoft'],
+    ['onPastel', 'lavender'], ['onPastel', 'butter'], ['onPastel', 'peach'],
+  ];
+  for (const [scheme, calm] of [['light', false], ['dark', false], ['light', true], ['dark', true]] as const) {
+    const p = pickPalette(scheme, calm);
+    for (const [fg, bg] of pairs) {
+      const r = ratio(p[fg], p[bg]);
+      assert.ok(r >= 4.5, `${scheme}${calm ? '+calm' : ''}: ${fg} on ${bg} is ${r.toFixed(2)}`);
+    }
+  }
 });

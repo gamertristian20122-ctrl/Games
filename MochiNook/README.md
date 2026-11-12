@@ -29,7 +29,7 @@ npx expo start --dev-client
 ```bash
 npm run typecheck   # TypeScript, strict
 npm run lint        # Expo ESLint config (incl. React Compiler rules)
-npm test            # 44 tests: quest library, share codes, Smart Match, and every SQLite query
+npm test            # 53 tests: quest library, share codes, Smart Match, name filter, task splitter, contrast, every SQLite query
 npx expo-doctor     # dependency + config checks
 ```
 
@@ -88,9 +88,18 @@ Until you add keys, the app runs in **store testing mode**: buying Plus or tippi
 **Hidden developer toggle:** Settings → tap the version number 5 times → "Force Free / Force Plus / Real status".
 It (and free test purchases) only exist in development builds or builds without store keys. Once the RevenueCat keys are in `app.json`, they are switched off completely.
 
-## On-device AI
+## On-device AI (hooks ready, no model yet)
 
-Not in this version. The earlier `react-native-executorch` setup is in git history (commit `ac80948`) if you want to bring it back.
+There is no AI model in this version. Two hooks are ready so a small offline model (for example a GGUF model run with `llama.rn`) can be added later without changing any screens:
+
+- `src/lib/ai/taskSplitter.ts`: `splitTaskIntoSteps()` is what Magic Break Down calls. Today it uses the offline Smart Match rules. Call `registerTaskSplitter()` with a model and it will be used for tasks the quest library doesn't cover. Its output is cleaned to 3–5 steps, and if the model is slow, broken or still loading, the offline rules answer instead.
+- `src/lib/ai/companion.ts`: "Talk with Dumpling" (the speech bubble on Today). It shows a "Coming soon in MochiNook Plus" toast until `COMPANION_AVAILABLE` is switched on.
+
+The earlier `react-native-executorch` setup is in git history (commit `ac80948`).
+
+## Name safety filter
+
+`src/lib/nameSafety.ts` checks the pet's name everywhere it can come from: the welcome screen, Settings, and a friend's race code. It works offline and is always on. It catches leetspeak (`sh1t`), stretched letters, spaced-out letters and hidden characters, without blocking innocent names like Peacock, Cassie or Scunthorpe. A blocked name gets a gentle "let's pick a different name" message and the old name stays.
 
 ## Motion & sensory style
 
@@ -103,6 +112,8 @@ Dumpling's animations run on the UI thread (Reanimated) and only use `transform`
 | Hearts / sparkles / crumbs | none | 1–2 | up to 6 |
 | Confetti on quests & level-ups | none | none | yes |
 | Marimba chimes & haptics | per setting | off | on |
+
+Haptics (Dopamine Mode, when Gentle vibration is on): a light tap when you squish your pet, a medium tap for each tiny step, and a success buzz for a finished quest, a level-up or a new Nook item.
 
 Tuning lives in `src/theme/motion.ts`; the chimes are synthesized WAVs in `assets/sounds/` (React Native has no Web Audio API).
 

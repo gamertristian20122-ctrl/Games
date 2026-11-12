@@ -7,7 +7,8 @@ import { ANCHOR_LABEL, CADENCE_LABEL, ProBadge, ProUpsell } from '../components/
 import { Button, Card, IconButton, Pill, Row, Screen, SectionTitle, Segmented, T } from '../components/ui';
 import * as repo from '../db/repo';
 import { LIBRARY } from '../db/schema';
-import { magicBreakdown, splitBrainDump, type BrainDumpItem } from '../lib/smartMatch';
+import { splitTaskIntoSteps } from '../lib/ai/taskSplitter';
+import { splitBrainDump, type BrainDumpItem } from '../lib/smartMatch';
 import type { Anchor, Cadence } from '../lib/types';
 import { useAssistant } from '../lib/useAssistant';
 import { useApp } from '../state/AppContext';
@@ -40,6 +41,7 @@ export default function CustomQuest() {
   const [steps, setSteps] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [splitting, setSplitting] = useState(false);
 
   const inputStyle = [
     typeScale.body,
@@ -50,8 +52,10 @@ export default function CustomQuest() {
   const breakDown = async () => {
     const text = task.trim();
     if (text.length < 3) return;
+    if (splitting) return;
     tap();
-    const result = magicBreakdown(text, LIBRARY);
+    setSplitting(true);
+    const result = await splitTaskIntoSteps(text, LIBRARY).finally(() => setSplitting(false));
     setSteps(result.steps);
     setEmoji(glyphFor(result.icon));
     if (!title) setTitle(text.length > 40 ? `${text.slice(0, 38)}…` : text.charAt(0).toUpperCase() + text.slice(1));
@@ -203,7 +207,7 @@ export default function CustomQuest() {
       <T variant="small" style={{ marginTop: space.sm }}>
         Magic Break Down turns it into 3–5 ultra-tiny starter steps, offline.
       </T>
-      <Button label="Magic Break Down" icon="wand" disabled={task.trim().length < 3} style={{ marginTop: space.md }} onPress={breakDown} />
+      <Button label={splitting ? "Breaking it down…" : "Magic Break Down"} icon="wand" disabled={splitting || task.trim().length < 3} style={{ marginTop: space.md }} onPress={breakDown} />
 
       {steps.length > 0 ? (
         <>

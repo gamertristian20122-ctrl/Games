@@ -11,6 +11,7 @@ import { PlusPaywall } from '../components/PlusPaywall';
 import { Button, Pill, Row, Screen, T } from '../components/ui';
 import { PET_COLORS, PET_NAMES, findColor } from '../data/cosmetics';
 import { LIBRARY } from '../db/schema';
+import { checkPetName } from '../lib/nameSafety';
 import { FRICTION_QUESTS } from '../lib/routineBuilder';
 import type { Friction } from '../lib/types';
 import { useApp } from '../state/AppContext';
@@ -48,6 +49,10 @@ export default function Welcome() {
   const [reaction, setReaction] = useState<PetReaction | null>(null);
   const [saving, setSaving] = useState(false);
   const lastTap = useRef(0);
+  // Empty or symbols-only falls back to Dumpling; unkind words are gently refused.
+  const nameCheck = checkPetName(name);
+  const petName = nameCheck.ok ? nameCheck.name : 'Dumpling';
+  const nameBlocked = !nameCheck.ok && nameCheck.reason === 'unkind';
 
   const shake = useSharedValue(0);
   const lid = useSharedValue(0);
@@ -92,7 +97,7 @@ export default function Welcome() {
     if (saving) return;
     setSaving(true);
     try {
-      await finishWelcome({ petName: name.trim() || 'Dumpling', color, friction, wantsReminders: reminders });
+      await finishWelcome({ petName: petName, color, friction, wantsReminders: reminders });
       router.replace('/home');
     } finally {
       setSaving(false);
@@ -104,7 +109,7 @@ export default function Welcome() {
       router.back();
       return;
     }
-    await finishWelcome({ petName: name.trim() || 'Dumpling', color, friction, wantsReminders: false });
+    await finishWelcome({ petName: petName, color, friction, wantsReminders: false });
     router.replace('/home');
   };
 
@@ -219,10 +224,15 @@ export default function Welcome() {
               />
               <Row gap={space.sm} style={{ flexWrap: 'wrap' }}>
                 {['Dumpling', ...PET_NAMES.filter((n) => n !== 'Dumpling')].map((n) => (
-                  <Pill key={n} label={n} selected={(name.trim() || 'Dumpling') === n} onPress={() => setName(n)} />
+                  <Pill key={n} label={n} selected={(petName) === n} onPress={() => setName(n)} />
                 ))}
               </Row>
-              <Button label={`Hi, ${name.trim() || 'Dumpling'}!`} onPress={() => go(2)} />
+              {nameBlocked && !nameCheck.ok ? (
+                <T variant="small" color={c.ink} accessibilityLiveRegion="polite">
+                  {nameCheck.message}
+                </T>
+              ) : null}
+              <Button label={nameBlocked ? 'Pick a name' : `Hi, ${petName}!`} disabled={nameBlocked} onPress={() => go(2)} />
             </Animated.View>
           )}
         </View>
@@ -231,7 +241,7 @@ export default function Welcome() {
       {step === 2 ? (
         <View style={{ gap: space.md, marginTop: space.lg }}>
           <T variant="title">What’s been hardest lately?</T>
-          <T variant="small">Pick one. {name.trim() || 'Dumpling'} will fill your Today tab with tiny quests that help. You can change everything later.</T>
+          <T variant="small">Pick one. {petName} will fill your Today tab with tiny quests that help. You can change everything later.</T>
           {FRICTIONS.map((f) => {
             const selected = friction === f.id;
             return (

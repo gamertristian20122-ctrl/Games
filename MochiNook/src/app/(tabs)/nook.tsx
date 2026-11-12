@@ -287,7 +287,7 @@ export default function Nook() {
                               {item.season ? (
                                 <Glyph name={SEASON_GLYPH[item.season]} size={14} />
                               ) : (
-                                <Icon name="lock" size={12} color={c.ink} strokeWidth={2.4} />
+                                <Icon name="lock" size={12} color={c.onPastel} strokeWidth={2.4} />
                               )}
                             </View>
                           ) : null}

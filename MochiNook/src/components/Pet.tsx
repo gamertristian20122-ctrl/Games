@@ -14,6 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 import { findColor } from '../data/cosmetics';
+import { haptic, playSfx } from '../lib/feedback';
+import { useApp } from '../state/AppContext';
 import { TUNING, press, settle, type MotionLevel } from '../theme/motion';
 import { Burst, Zzz, type BurstKind } from './art/Particles';
 
@@ -377,6 +379,7 @@ export function Pet({ color, hat, scarf, mood, size = 200, level, reaction = nul
   const blush = useSharedValue(0);
   const anim: FaceAnim = { eyeOpen, earL, earR, blush };
   const [tap, setTap] = useState<PetReaction | null>(null);
+  const { feedbackPrefs } = useApp();
 
   // Breathing: a slow squash-and-stretch so the mochi feels alive.
   useEffect(() => {
@@ -494,6 +497,9 @@ export function Pet({ color, hat, scarf, mood, size = 200, level, reaction = nul
   }, [reaction?.id]);
 
   const onPress = () => {
+    // A light tap you can feel; muted when Gentle vibration is off (and in Calm Mode).
+    haptic('light', feedbackPrefs);
+    playSfx('squish', feedbackPrefs);
     run('squish');
     setTap({ id: Date.now(), type: 'squish' });
     onTap?.();

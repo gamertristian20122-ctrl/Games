@@ -2,6 +2,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { happyLine, levelUpLine, petCareLines, questDoneLine, welcomeBack } from '../lib/copy';
+import { checkPetName, safePetName } from '../lib/nameSafety';
 import { celebrateFeedback, haptic, playSfx, stepFeedback, tapFeedback, type FeedbackPrefs } from '../lib/feedback';
 import { migrateDatabase } from '../db/schema';
 import {
@@ -168,6 +169,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updatePet = useCallback(
     async (patch: Partial<Omit<Pet, 'xp' | 'affection' | 'pebbles'>>) => {
       const before = await repo.getPet(db);
+      // Last line of defense: an unkind name never gets saved, whichever screen sent it.
+      if (patch.name !== undefined) {
+        const res = checkPetName(patch.name);
+        patch = { ...patch, name: res.ok ? res.name : before.name };
+      }
       await repo.updatePet(db, patch);
       const after = await repo.getPet(db);
       setPet(after);
@@ -223,7 +229,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const finishWelcome = useCallback(
     async (a: WelcomeAnswers) => {
-      await repo.updatePet(db, { name: a.petName.trim().slice(0, 20) || 'Dumpling', color: a.color });
+      await repo.updatePet(db, { name: safePetName(a.petName), color: a.color });
       await repo.setRoutine(db, buildFrictionRoutine(a.friction));
       await repo.saveSettings(db, { onboarded: true, friction: a.friction, reminders: a.wantsReminders, lastOpenDay: dayKey() });
       setPet(await repo.getPet(db));

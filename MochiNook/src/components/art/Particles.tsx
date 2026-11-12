@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { TUNING, type MotionLevel } from '../../theme/motion';
+import { useTheme } from '../../theme/ThemeContext';
 import { Glyph } from './Glyph';
 
 /**
@@ -143,25 +144,34 @@ function Particle({
 }
 
 /** Slow drifting "z Z z" while the pet is tucked in. Static letters when motion is off. */
+/** z's that stay readable on the dimmed room: near-white with a dark halo at night, deep lavender with a white halo by day. */
+function useZStyle() {
+  const { scheme } = useTheme();
+  return scheme === 'dark'
+    ? { color: '#F3EEFF', textShadowColor: 'rgba(20, 16, 40, 0.95)' }
+    : { color: '#5B4894', textShadowColor: 'rgba(255, 255, 255, 0.95)' };
+}
+
 export function Zzz({ level, size }: { level: MotionLevel; size: number }) {
+  const zs = useZStyle();
   if (level === 'still') {
     return (
       <View pointerEvents="none" style={[styles.zzzStill, { left: size * 0.72, top: size * 0.05 }]}>
-        <Text style={[styles.z, { fontSize: 14 }]}>z</Text>
-        <Text style={[styles.z, { fontSize: 20 }]}>Z</Text>
+        <Text style={[styles.z, zs, { fontSize: 16 }]}>z</Text>
+        <Text style={[styles.z, zs, { fontSize: 22 }]}>Z</Text>
       </View>
     );
   }
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {[0, 1, 2].map((i) => (
-        <ZLetter key={i} i={i} level={level} size={size} />
+        <ZLetter key={i} i={i} level={level} size={size} zs={zs} />
       ))}
     </View>
   );
 }
 
-function ZLetter({ i, level, size }: { i: number; level: Exclude<MotionLevel, 'still'>; size: number }) {
+function ZLetter({ i, level, size, zs }: { i: number; level: Exclude<MotionLevel, 'still'>; size: number; zs: { color: string; textShadowColor: string } }) {
   const p = useSharedValue(0);
   const dur = level === 'calm' ? 4200 : 3000;
   useEffect(() => {
@@ -174,7 +184,7 @@ function ZLetter({ i, level, size }: { i: number; level: Exclude<MotionLevel, 's
   }));
   return (
     <Animated.View style={[{ position: 'absolute', left: size * 0.68 + i * 12, top: size * 0.1 }, style]}>
-      <Text style={[styles.z, { fontSize: 18 + i * 6 }]}>{i === 1 ? 'Z' : 'z'}</Text>
+      <Text style={[styles.z, zs, { fontSize: 19 + i * 6 }]}>{i === 1 ? 'Z' : 'z'}</Text>
     </Animated.View>
   );
 }
@@ -185,10 +195,8 @@ const styles = StyleSheet.create({
   confetti: { width: 7, height: 11, borderRadius: 2 },
   zzzStill: { position: 'absolute', flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
   z: {
-    color: '#7E6BB0',
     fontFamily: 'Nunito_800ExtraBold',
-    textShadowColor: 'rgba(255,255,255,0.8)',
-    textShadowRadius: 3,
+    textShadowRadius: 4,
     textShadowOffset: { width: 0, height: 0 },
   },
 });

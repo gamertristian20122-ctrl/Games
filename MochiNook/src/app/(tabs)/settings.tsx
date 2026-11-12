@@ -6,6 +6,7 @@ import { Button, Card, Divider, LinkRow, Pill, Row, Screen, Segmented, SectionTi
 import { WidgetPreview } from '../../components/WidgetPreview';
 import { PET_NAMES } from '../../data/cosmetics';
 import { confirmAction } from '../../lib/dialogs';
+import { checkPetName } from '../../lib/nameSafety';
 import { TEST_TOOLS_ALLOWED, restorePurchases } from '../../lib/purchases';
 import type { Anchors, DevOverride } from '../../lib/types';
 import { useApp } from '../../state/AppContext';
@@ -19,10 +20,14 @@ export default function SettingsScreen() {
   // Drafts are null until the user edits; then they hold the unsaved value.
   const [anchorDraft, setAnchorDraft] = useState<Anchors | null>(null);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [nameNote, setNameNote] = useState<string | null>(null);
   const anchors = anchorDraft ?? settings.anchors;
   const name = nameDraft ?? pet.name;
   const setAnchors = (update: (a: Anchors) => Anchors) => setAnchorDraft(update(anchors));
-  const setName = (n: string) => setNameDraft(n);
+  const setName = (n: string) => {
+    setNameDraft(n);
+    setNameNote(null);
+  };
   const taps = useRef<number[]>([]);
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -41,8 +46,15 @@ export default function SettingsScreen() {
   };
 
   const saveName = () => {
-    const trimmed = name.trim().slice(0, 20);
-    if (trimmed.length > 0 && trimmed !== pet.name) app.updatePet({ name: trimmed }).catch(() => undefined);
+    if (nameDraft === null) return;
+    const res = checkPetName(nameDraft);
+    if (res.ok) {
+      if (res.name !== pet.name) app.updatePet({ name: res.name }).catch(() => undefined);
+      setNameNote(null);
+    } else if (res.reason === 'unkind') {
+      // Keep the old name and say so softly.
+      setNameNote(res.message);
+    }
     setNameDraft(null);
   };
 
@@ -139,6 +151,11 @@ export default function SettingsScreen() {
           placeholderTextColor={c.inkSoft}
           style={[typeScale.body, { color: c.ink, backgroundColor: c.surfaceAlt, borderRadius: radius.sm, paddingHorizontal: space.md, minHeight: 48 }]}
         />
+        {nameNote ? (
+          <T variant="small" color={c.ink} accessibilityLiveRegion="polite">
+            {nameNote} {pet.name} kept their name for now.
+          </T>
+        ) : null}
         <Row gap={space.sm} style={{ flexWrap: 'wrap' }}>
           {PET_NAMES.map((n) => (
             <Pill
@@ -147,6 +164,7 @@ export default function SettingsScreen() {
               selected={pet.name === n}
               onPress={() => {
                 setNameDraft(null);
+                setNameNote(null);
                 app.updatePet({ name: n }).catch(() => undefined);
               }}
             />

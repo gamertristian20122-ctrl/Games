@@ -1,4 +1,5 @@
 import type { Anchor, Cadence, SharePayload, SharedQuest } from './types';
+import { safePetName } from './nameSafety';
 
 /**
  * Caregiver share codes: a routine packed into a copy-pasteable string.
@@ -164,7 +165,8 @@ export function decodeRaceResult(raw: string): RaceResult {
   if (d.v !== 1 || typeof d.steps !== 'number' || typeof d.pet !== 'string') throw new Error('That race code is from a different version of MochiNook.');
   return {
     v: 1,
-    pet: d.pet.replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, 20) || 'A friend',
+    // A friend's code could carry any text, so it gets the same name filter as our own pet.
+    pet: safePetName(d.pet, 'A friend'),
     steps: Math.max(0, Math.min(500, Math.round(d.steps))),
     minutes: typeof d.minutes === 'number' ? Math.max(1, Math.min(60, Math.round(d.minutes))) : 15,
     day: typeof d.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.day) ? d.day : '',
