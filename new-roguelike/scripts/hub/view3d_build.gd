@@ -14,6 +14,9 @@ const CardShader = preload("res://scripts/fx/card_shader.gd")
 const HdLight = preload("res://scripts/fx/hd_light.gd")
 const WalkLight = preload("res://scripts/fx/walk_light.gd")
 const Hd = preload("res://scripts/fx/hd.gd")
+const Kit = preload("res://scripts/hub/arch/kit.gd")
+const House = preload("res://scripts/hub/arch/house.gd")
+const Sites = preload("res://scripts/hub/arch/sites.gd")
 
 const PX := 1.0 / 16.0
 const MARGIN := Vector2(336, 208)   ## how far past the edges of a place the ground is painted, px
@@ -32,14 +35,20 @@ void fragment() {
 	sun_share = sun_at(at);
 }
 " + CardShader.SUN_LIGHT
-## Walls and roofs: real surfaces. Each is lit by how it faces (the front brightest, the sides
-## darker, a roof by its slope), so a house reads as a solid thing.
-const SOLID_CODE := "
-shader_type spatial;
-render_mode cull_disabled, specular_disabled;
-" + Sprite3.SUN_PART + "
+## Walls, roofs and every built thing: real surfaces (scripts/hub/arch/kit.gd makes them). Each is
+## lit by how it faces: without HD the front brightest, the sides darker, a roof by its slope; in HD
+## (Forward+) by the real sun and lamps, so a wall that faces a lamp catches a hot pool of its light
+## and one turned away stays in deep shade. "glass" faces (window art) glow warm in their panes only
+## (the blue pixels of the pack's glass) when `shine` is up: the town's windows at night.
+static func solid_code() -> String:
+	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled;\n" + ("#define HD\n" if Hd.on() else "") + SOLID_BODY
+
+
+const SOLID_BODY := Sprite3.SUN_PART + """
 uniform sampler2D tex : source_color, filter_nearest, repeat_enable;
 uniform float shine = 0.0;
+uniform float glass = 0.0;
+uniform vec3 glow_col : source_color = vec3(1.0, 0.64, 0.30);
 varying vec3 wn;
 varying vec2 foot;
 varying float facing;
@@ -51,16 +60,31 @@ void fragment() {
 	vec4 c = texture(tex, UV);
 	if (c.a < 0.5) { discard; }
 	float f = clamp(dot(normalize(wn), normalize(vec3(0.25, 0.75, 0.6))), 0.0, 1.0);
-	ALBEDO = c.rgb * (0.78 + 0.22 * f);
-	EMISSION = c.rgb * shine;
+	vec3 col = c.rgb * (0.78 + 0.22 * f);
+	// a pane of glass (blue-ish pixels of a window's art) lit from inside when it is dark
+	float pane = glass * smoothstep(0.03, 0.14, c.b - c.r) * step(0.28, c.b);
+	float lit = min(shine, 1.0);
+	ALBEDO = mix(col, col * (1.0 - 0.75 * lit), pane);
+	EMISSION = c.rgb * shine * (1.0 - glass) + glass * mix(c.rgb * shine * 0.10, glow_col * (0.5 + 0.7 * c.g) * shine * 1.5, pane);
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(foot);
 	facing = 0.55 + 0.45 * f;
 }
 void light() {
+#ifdef HD
+	// the real light: the sun by the way a face turns to it (a little wrapped, so shade is never
+	// flat black), the lamps strongest on faces that look at them
+	float ndl = dot(NORMAL, LIGHT);
+	if (LIGHT_IS_DIRECTIONAL) {
+		DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * sun_share * clamp(ndl * 0.75 + 0.25, 0.0, 1.0);
+	} else {
+		DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * clamp(ndl * 0.85 + 0.2, 0.0, 1.05);
+	}
+#else
 	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share * facing : 0.6);
+#endif
 }
-"
+"""
 
 var v                              ## the view (scripts/hub/view3d.gd; untyped: its members are read by name)
 var port: SubViewport              ## paints the flat ground once
@@ -69,7 +93,6 @@ var rise_row := {}                 ## the place's "rise" (the ground climbs behi
 var hills: Array = []              ## the place's "hills"
 var has_height := false
 var window_mats: Array = []        ## window materials: they glow at night
-var _surf := {}                    ## texture id -> [Texture2D, SurfaceTool]: the houses being built
 var _floor_shader: Shader
 var _solid_shader: Shader
 
@@ -79,7 +102,7 @@ func _init(view) -> void:
 	_floor_shader = Shader.new()
 	_floor_shader.code = FLOOR_CODE
 	_solid_shader = Shader.new()
-	_solid_shader.code = SOLID_CODE
+	_solid_shader.code = solid_code()
 
 
 ## Forgets the last place (its nodes are freed with v._world) and reads the new one's depth.
@@ -233,48 +256,35 @@ func grid(rect: Rect2, cell: float, lift: float) -> ArrayMesh:
 
 
 # ------------------------------------------------------------------ houses
-func _st(tex: Texture2D) -> SurfaceTool:
-	var key := tex.get_rid().get_id()
-	if not _surf.has(key):
-		var st := SurfaceTool.new()
-		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_surf[key] = [tex, st]
-	return _surf[key][1]
-
-
-## One flat face of a house: four corners (or three), their places on the texture, the way it faces.
-func _face(tex: Texture2D, pts: Array, uvs: Array, normal: Vector3) -> void:
-	var st := _st(tex)
-	for i: int in ([0, 1, 2, 0, 2, 3] if pts.size() == 4 else [0, 1, 2]):
-		st.set_normal(normal)
-		st.set_uv(uvs[i])
-		st.add_vertex(pts[i])
-
-
 func build_houses(place: Dictionary) -> void:
-	var houses: Array = place.get("houses", [])
-	if houses.is_empty():
-		return
-	_surf.clear()
+	var kit := Kit.new()
+	kit.vs = 1.0 / cos(deg_to_rad(v._pitch))
 	var shade := SurfaceTool.new()
 	shade.begin(Mesh.PRIMITIVE_TRIANGLES)
 	shade.set_normal(Vector3.UP)
 	shade.set_uv(Vector2(0.5, 0.5))
-	for h: Dictionary in houses:
-		_build_house(h, shade)
-	for key: int in _surf:
-		var tex: Texture2D = _surf[key][0]
+	var walk: Rect2 = place.get("walk", Rect2(Vector2.ZERO, place["size"]))
+	var maker := House.new(kit, v)
+	for h: Dictionary in place.get("houses", []):
+		maker.build(h, walk.position.y)
+		_cast(kit.take_corners(), shade)
+	# the rest of a place's architecture: kerbs, walls, steps, a bridge, a jetty (scripts/hub/arch/sites.gd)
+	Sites.new(kit, self).build(String(v.hub.get("place_id")), place, shade)
+	var made := kit.commit()
+	if made.is_empty():
+		return
+	for row: Array in made:
 		var mat := ShaderMaterial.new()
 		mat.shader = _solid_shader
-		mat.set_shader_parameter("tex", tex)
-		if tex.resource_path.contains("hub_win") or tex.resource_path.contains("hub_window"):
+		mat.set_shader_parameter("tex", row[1])
+		if String(row[2]) == "glass":
+			mat.set_shader_parameter("glass", 1.0)
 			window_mats.append(mat)
 		var node := MeshInstance3D.new()
-		node.mesh = (_surf[key][1] as SurfaceTool).commit()
+		node.mesh = row[0]
 		node.material_override = mat
-		node.cast_shadow = CardShader.casts()            # HD: houses throw real shadows (on people too)
+		node.cast_shadow = CardShader.casts()            # HD: everything built throws real shadows (on people too)
 		v._world.add_child(node)
-	_surf.clear()
 	if Hd.on():
 		return                                           # (no flat shadow copies then)
 	var white := Image.create(1, 1, false, Image.FORMAT_RGBA8)
@@ -284,106 +294,6 @@ func build_houses(place: Dictionary) -> void:
 	shadows.material_override = CardShader.shade(ground_params, ImageTexture.create_from_image(white), Vector4(0, 0, 1, 1))
 	shadows.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	v._world.add_child(shadows)
-
-
-## A house: walls on three sides (the back is never seen), a roof with two slopes, a chimney,
-## a door and two windows. Heights are stretched by the camera's slant, like the cards, so the
-## wall art keeps the shape it was drawn with.
-func _build_house(h: Dictionary, shade: SurfaceTool) -> void:
-	var vs := 1.0 / cos(deg_to_rad(v._pitch))
-	var at: Vector2 = h["at"]
-	var wide := float(h.get("wide", 96.0))
-	var deep := float(h.get("deep", 56.0))
-	var wall := Art.tex(String(h["wall"]))
-	var ws := wall.get_size()
-	var cx := at.x * PX
-	var cz := at.y * PX
-	var w := wide * 0.5 * PX
-	var d := deep * PX
-	var top := ws.y * PX * vs                              # where the walls end
-	var rise := float(h.get("rise", 30.0)) * PX * vs       # how far the ridge stands above that
-	var o := 5.0 * PX                                     # the roof sticks out this far
-	var u := wide / ws.x
-	var us := deep / ws.x
-	var front := Vector3(0, 0, 1)
-	_face(wall, [Vector3(cx - w, top, cz), Vector3(cx + w, top, cz), Vector3(cx + w, 0, cz), Vector3(cx - w, 0, cz)],
-		[Vector2(0, 0), Vector2(u, 0), Vector2(u, 1), Vector2(0, 1)], front)
-	for side: float in [-1.0, 1.0]:
-		var x := cx + side * w
-		_face(wall, [Vector3(x, top, cz), Vector3(x, top, cz - d), Vector3(x, 0, cz - d), Vector3(x, 0, cz)],
-			[Vector2(0, 0), Vector2(us, 0), Vector2(us, 1), Vector2(0, 1)], Vector3(side, 0, 0))
-	var roof := Art.tex(String(h.get("roof", "hub_roof_planks")))
-	var rs := roof.get_size()
-	var high: Array = []                                  # the roof's corners, for the shadow
-	if bool(h.get("gable", false)):
-		# the ridge runs from front to back: a pointed front, a slope to either side
-		var eave := top - o * rise / w
-		var zf := cz + o
-		var zb := cz - d - o
-		var ur := (deep + 10.0) / rs.x
-		for side: float in [-1.0, 1.0]:
-			_face(roof, [Vector3(cx, top + rise, zf), Vector3(cx, top + rise, zb), Vector3(cx + side * (w + o), eave, zb), Vector3(cx + side * (w + o), eave, zf)],
-				[Vector2(0, 0), Vector2(ur, 0), Vector2(ur, 1), Vector2(0, 1)], Vector3(side * rise, w, 0).normalized())
-			high.append(Vector3(cx + side * (w + o), eave, zf))
-			high.append(Vector3(cx + side * (w + o), eave, zb))
-		_face(wall, [Vector3(cx - w, top, cz), Vector3(cx + w, top, cz), Vector3(cx, top + rise, cz)],
-			[Vector2(0, 0.72), Vector2(u, 0.72), Vector2(u * 0.5, 0.12)], front)
-		high.append(Vector3(cx, top + rise, zf))
-		high.append(Vector3(cx, top + rise, zb))
-	else:
-		# the ridge runs from side to side: one long slope faces the street
-		var zr := cz - d * 0.5
-		var eave := top - o * rise / (d * 0.5)
-		var ur := (wide + 10.0) / rs.x
-		_face(roof, [Vector3(cx - w - o, top + rise, zr), Vector3(cx + w + o, top + rise, zr), Vector3(cx + w + o, eave, cz + o), Vector3(cx - w - o, eave, cz + o)],
-			[Vector2(0, 0), Vector2(ur, 0), Vector2(ur, 1), Vector2(0, 1)], Vector3(0, d * 0.5, rise).normalized())
-		for side: float in [-1.0, 1.0]:
-			var x := cx + side * w
-			_face(wall, [Vector3(x, top, cz), Vector3(x, top, cz - d), Vector3(x, top + rise, zr)],
-				[Vector2(0, 0.72), Vector2(us, 0.72), Vector2(us * 0.5, 0.12)], Vector3(side, 0, 0))
-			high.append(Vector3(cx + side * (w + o), eave, cz + o))
-			high.append(Vector3(cx + side * (w + o), eave, cz - d - o))
-			high.append(Vector3(cx + side * (w + o), top + rise, zr))
-	# the door and a window either side of it, a hair in front of the wall
-	var zd := cz + 0.03
-	var door := Art.tex(String(h.get("door", "hub_door_wood")))
-	var ds := door.get_size()
-	var full := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
-	_face(door, [Vector3(cx - ds.x * 0.5 * PX, ds.y * PX * vs, zd), Vector3(cx + ds.x * 0.5 * PX, ds.y * PX * vs, zd),
-		Vector3(cx + ds.x * 0.5 * PX, 0, zd), Vector3(cx - ds.x * 0.5 * PX, 0, zd)], full, front)
-	if String(h.get("windows", "")) != "":
-		var win := Art.tex(String(h["windows"]))
-		var wz := win.get_size()
-		var y0 := float(h.get("win_up", 12.0)) * PX * vs
-		for side: float in [-1.0, 1.0]:
-			var wx := cx + side * float(h.get("win_dx", 30.0)) * PX
-			_face(win, [Vector3(wx - wz.x * 0.5 * PX, y0 + wz.y * PX * vs, zd), Vector3(wx + wz.x * 0.5 * PX, y0 + wz.y * PX * vs, zd),
-				Vector3(wx + wz.x * 0.5 * PX, y0, zd), Vector3(wx - wz.x * 0.5 * PX, y0, zd)], full, front)
-			# at night the window's light falls on the street in front of it, and glows in the air
-			var lamp_colour := Color(1.0, 0.72, 0.40)
-			var spill := WalkLight.pool(Vector3(wx, 0.0, cz + 0.9), 1.5, lamp_colour)
-			v._world.add_child(spill)
-			var glow := WalkLight.halo(Vector3(wx, y0 + wz.y * PX * vs * 0.5, zd + 0.05), 1.3, lamp_colour)
-			v._world.add_child(glow)
-			v.light.windows.append([spill.material_override, glow.material_override])
-	# the shadow: the outline of the whole house as the sky light throws it on the ground
-	var low := [Vector3(cx - w, 0, cz), Vector3(cx + w, 0, cz), Vector3(cx + w, 0, cz - d), Vector3(cx - w, 0, cz - d)]
-	_cast(low + high, shade)
-	if bool(h.get("chimney", false)):
-		var stack := Art.tex("hub_chimney")
-		var cs := stack.get_size()
-		var bx := cx + w * 0.5
-		var bz := cz - d * 0.5 - 0.3
-		var hw := cs.x * 0.5 * PX
-		var tip := top + rise + 10.0 * PX * vs
-		var foot := tip - cs.y * PX * vs
-		_face(stack, [Vector3(bx - hw, tip, bz + hw), Vector3(bx + hw, tip, bz + hw), Vector3(bx + hw, foot, bz + hw), Vector3(bx - hw, foot, bz + hw)], full, front)
-		for side: float in [-1.0, 1.0]:
-			var x := bx + side * hw * 0.8
-			_face(stack, [Vector3(x, tip, bz + hw), Vector3(x, tip, bz - hw), Vector3(x, foot, bz - hw), Vector3(x, foot, bz + hw)], full, Vector3(side, 0, 0))
-		_cast([Vector3(bx - hw, top, bz - hw), Vector3(bx + hw, top, bz + hw), Vector3(bx - hw, tip, bz - hw), Vector3(bx + hw, tip, bz + hw),
-			Vector3(bx + hw, tip, bz - hw), Vector3(bx - hw, tip, bz + hw)], shade)
-		_smoke(Vector3(bx, tip, bz))
 
 
 ## Adds the shadow of a solid thing to `shade`: the outline of its corners as they fall on the ground.

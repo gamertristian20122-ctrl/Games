@@ -25,6 +25,19 @@
   ],
   "source": "Pixel Crawler - Cemetery/Environment/Props/Props.png"
  },
+ "hub_bbeam": {
+  "box": [
+   1,
+   239,
+   47,
+   245
+  ],
+  "size": [
+   46,
+   6
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
+ },
  "hub_bench_0": {
   "box": [
    48,
@@ -63,6 +76,19 @@
    32
   ],
   "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Props.png"
+ },
+ "hub_bfringe": {
+  "box": [
+   3,
+   255,
+   46,
+   263
+  ],
+  "size": [
+   43,
+   8
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
  },
  "hub_bloom_0": {
   "box": [
@@ -167,6 +193,97 @@
    20
   ],
   "source": "Pixel Crawler - Fairy Forest 1.7/Assets/Props.png"
+ },
+ "hub_bplank": {
+  "box": [
+   96,
+   272,
+   144,
+   320
+  ],
+  "size": [
+   48,
+   48
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+ },
+ "hub_bpost": {
+  "box": [
+   5,
+   103,
+   11,
+   155
+  ],
+  "size": [
+   6,
+   52
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
+ },
+ "hub_brail": {
+  "box": [
+   128,
+   54,
+   176,
+   72
+  ],
+  "size": [
+   48,
+   18
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+ },
+ "hub_bsandcap": {
+  "box": [
+   16,
+   112,
+   80,
+   124
+  ],
+  "size": [
+   64,
+   12
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_bsandwall": {
+  "box": [
+   20,
+   198,
+   76,
+   236
+  ],
+  "size": [
+   56,
+   38
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
+ "hub_bsteps": {
+  "box": [
+   48,
+   372,
+   96,
+   400
+  ],
+  "size": [
+   48,
+   28
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
+ },
+ "hub_bstone": {
+  "box": [
+   80,
+   16,
+   128,
+   48
+  ],
+  "size": [
+   48,
+   32
+  ],
+  "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
  },
  "hub_bush_deep_0": {
   "box": [

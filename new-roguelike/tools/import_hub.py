@@ -121,6 +121,17 @@ RECTS = [
     ("fence_a", BUILD, "Props.png", 20, 176, 40, 18),
     ("fence_b", BUILD, "Props.png", 20, 236, 40, 20),
     ("note", FREE, "Props/Static/Esoteric.png", 35, 130, 9, 11),      # a written page: the notes found in the levels
+    # ARCHITECTURE (scripts/hub/view3d_build.gd, scripts/hub/arch/): surfaces laid on real 3D blocks at
+    # their true pixel size, so each must repeat without a seam (checked by laying them 3 x 2)
+    ("bstone", CASTLE, "Tiles.png", 80, 16, 48, 32),         # grey ashlar: plinths, garden walls, chimneys, kerbs, the bridge
+    ("bplank", CASTLE, "Tiles.png", 96, 272, 48, 48),        # dark upright boards: gable ends, decks, the jetty
+    ("bsteps", CASTLE, "Tiles.png", 48, 372, 48, 28),        # stone steps seen from the front
+    ("brail", CASTLE, "Tiles.png", 128, 54, 48, 18),         # a stone balustrade (see-through between the balusters)
+    ("bbeam", BUILD, "Roofs.png", 1, 239, 46, 6),            # a timber beam lying along (storey bands, fascias, ridges)
+    ("bpost", BUILD, "Roofs.png", 5, 103, 6, 52),            # a timber post standing up (corner posts, jetty posts)
+    ("bfringe", BUILD, "Roofs.png", 3, 255, 43, 8),          # the carved trim that hangs under an eave
+    ("bsandwall", DESERT, "Ground.png", 20, 198, 56, 38),    # sandstone wall with its blue band: Dustwatch's houses and wall
+    ("bsandcap", DESERT, "Ground.png", 16, 112, 64, 12),     # a sandstone coping slab: parapets, merlons, kerbs in the Sands
 ]
 # (name, pack, file ending, x, y, w, h) in NATIVE pixels of a picture the pack ships at twice its
 # size (every pixel doubled; halving it by taking every second pixel gives the artist's own pixels
