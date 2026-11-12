@@ -296,7 +296,7 @@ const SCENES := [
 	]},
 	{"id": "sunwell", "place": "suncourt", "from": 9, "to": 9, "name": "The Sunwell", "title": "The Dune Queen's court", "sprite": "", "pages": [
 		"The stair opens into a great round well, open to the sky. In the middle of it stands a beacon, cold, its bowl full of sand.",
-		"With her back to it sits the Dune Queen, and in her closed hand is a light so bright it shows the bones of her fingers.",
+		"With her back to it sits the Dune Queen in the old crown of the Sands, her eyes bound in linen, and in her closed hand a light so bright it shows the bones of her fingers.",
 	]},
 	{"id": "after_gorgon", "place": "world", "from": 11, "to": 11, "name": "Seraphine", "title": "Sun-mage of the Archive", "sprite": "pc_scholar_censor", "pages": [
 		"It is dead. It is really dead. Eleven years my mother sat in the dark for fear of that thing.",
@@ -655,7 +655,6 @@ static func suncourt() -> Dictionary:
 		"name": "The Sunwell", "size": Vector2(560, 420), "outdoor": true, "walk": Rect2(30, 110, 500, 280), "spawn": Vector2(280, 376),
 		"ground": "hub_sand", "tint": Color(1.0, 0.93, 0.80) if glow else Color(0.64, 0.68, 0.92),
 		"rise": {"from": 100.0, "over": 80.0, "height": 34.0},
-		"hills": [{"at": Vector2(280, 200), "radius": 150.0, "height": 22.0, "top": 84.0}],
 		"floor": [["hub_paving", Rect2(184, 144, 192, 160)]],
 		"props": [["hub_obelisk_0", 150, 186, 12, 2], ["hub_obelisk_1", 410, 186, 12, 2], ["hub_obelisk_2", 96, 330, 12, 2], ["hub_obelisk_2", 464, 330, 12, 2],
 			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_3", 390, 290, 6, 2],
@@ -669,7 +668,7 @@ static func suncourt() -> Dictionary:
 		"forest": forest,
 		"exits": [{"rect": Rect2(230, 392, 100, 10), "to": "dustwatch", "at": Vector2(320, 228)}],
 		"people": [
-			{"id": "queen", "name": "The Dune Queen", "title": "Lady of the Sands", "sprite": "pc_scholar_director", "hands": "pc_hand_library_6",
+			{"id": "queen", "name": "The Dune Queen", "title": "Lady of the Sands", "sprite": "pc_mummy_mage", "hands": "pc_hand_desert_13", "tint": Color(1.0, 0.95, 0.86),
 				"pos": Vector2(206, 262), "face": 1, "role": "chat", "text": "", "tale_from": 9},
 			{"id": "sandbeacon", "name": "The beacon", "title": "", "ghost": true, "pos": Vector2(280, 214), "top": 44, "role": "chat", "text": "",
 				"tale_from": 12},
