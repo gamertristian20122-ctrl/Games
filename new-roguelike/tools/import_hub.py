@@ -137,6 +137,10 @@ STRIPS = [
     ("flame", FREE, "Structures/Stations/Bonfire/Fire_01-Sheet.png", 32, 48),
 ]
 _cache = {}
+# (name, pack, file ending, x, y, w, h, (hole x0, y0, x1, y1) inside the piece): a rectangle with a hole cleared
+OPENED = [
+    ("ghedge_arch", GARDEN, "Tiles.png", 96, 100, 80, 80, (16, 40, 64, 80)),
+]
 
 
 # Desert and Forge pieces (the world map, Dustwatch, Emberfall, desert fights). Same as RECTS, and the
@@ -168,7 +172,6 @@ TRIMMED = [
     # world dressing (v0.24.0) from the Garden pack: a clipped hedge and the hedge arch (the pergola reads
     # wrong as an upright card, so it is not cut)
     ("ghedge", GARDEN, "Tiles.png", 16, 320, 64, 32),
-    ("ghedge_arch", GARDEN, "Tiles.png", 96, 100, 80, 80),
 ]
 
 
@@ -238,6 +241,17 @@ def main():
                     if g > r + 12:
                         px[xx, yy] = (r, g, b, 0)
         save(name, piece, src, (x, y, x + w, y + h))
+    for name, pack, ending, x, y, w, h, hole in OPENED:
+        # the hedge arch: the pack fills its opening with loose leaves; those pixels are removed (none
+        # changed), so the knight can be seen walking through it
+        im, src = sheet(pack, ending)
+        piece = im.crop((x, y, x + w, y + h))
+        px = piece.load()
+        for yy in range(hole[1], hole[3]):
+            for xx in range(hole[0], hole[2]):
+                px[xx, yy] = (0, 0, 0, 0)
+        box = piece.getbbox()
+        save(name, piece.crop(box), src, (x + box[0], y + box[1], x + box[2], y + box[3]))
     for name, pack, ending, x, y, w, h in TRIMMED:
         im, src = sheet(pack, ending)
         piece = im.crop((x, y, x + w, y + h))

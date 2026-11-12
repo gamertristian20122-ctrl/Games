@@ -48,7 +48,7 @@ static func get_place(id: String) -> Dictionary:
 		return _base_place(id)
 	match id:
 		"village":
-			return Tale.town()
+			return _dress_town(Tale.town())
 		"deepwood":
 			return Tale.deepwood()
 		"beacon":
@@ -87,6 +87,57 @@ static func get_place(id: String) -> Dictionary:
 					row["role"] = "chat"
 					row["tale_to"] = 2                                    # after that she walks with the knight
 	return place
+
+
+## WICKMERE'S DRESSING (v0.24.0): more of the owner's Garden and Castle pieces laid over the town of
+## tale.gd town() (that file keeps the story's houses, people and roads; this only adds things that
+## stand or lie about). Every row is a prop as in "props": [id, x, y, solid radius, px below base].
+##   the south gate   a clipped hedge arch over the road out, a hedge each side of it
+##   the kings' walk  stone busts of the old kings either side of the street to the sealed gate
+##   the herb garden  a hedged plot in the open ground south-east of the square
+##   flowers          single garden flowers in clumps by doors, fences, benches and the mere
+static func _dress_town(t: Dictionary) -> Dictionary:
+	var props: Array = (t["props"] as Array).duplicate()
+	var blocks: Array = (t["blocks"] as Array).duplicate()
+	# the south gate: the road to the wide world goes under a hedge arch
+	props.append_array([["hub_ghedge_arch", 480, 530, 0, 0], ["hub_ghedge", 404, 530, 0, 0], ["hub_ghedge", 556, 530, 0, 0]])
+	blocks.append_array([Rect2(372, 520, 68, 12), Rect2(520, 520, 68, 12)])
+	# the kings' walk: busts of the old kings on the street up to the sealed gate
+	props.append_array([["hub_cbust_0", 448, 220, 5, 1], ["hub_cbust_2", 512, 220, 5, 1], ["hub_cbust_4", 448, 186, 5, 1], ["hub_cbust_5", 512, 186, 5, 1]])
+	# the herb garden south-east of the square: a hedge behind, beds in rows, a bench and an urn
+	props.append_array([["hub_ghedge", 682, 356, 0, 0], ["hub_ghedge", 746, 356, 0, 0],
+		["hub_gbed_0", 668, 392, 0, 0], ["hub_gbed_5", 692, 392, 0, 0], ["hub_gbed_2", 716, 392, 0, 0], ["hub_gbed_7", 740, 392, 0, 0], ["hub_gbed_3", 764, 392, 0, 0],
+		["hub_gbed_1", 680, 418, 0, 0], ["hub_gbed_6", 704, 418, 0, 0], ["hub_gbed_4", 728, 418, 0, 0], ["hub_gbed_0", 752, 418, 0, 0],
+		["hub_gurn_1", 780, 376, 5, 1], ["hub_planter", 656, 432, 6, 1]])
+	blocks.append(Rect2(650, 346, 128, 10))
+	# flowers: clumps of single garden flowers (cut one by one from the Garden pack)
+	var clumps: Array = [Vector2(186, 178), Vector2(356, 196), Vector2(612, 196), Vector2(780, 206), Vector2(160, 420), Vector2(96, 432),
+		Vector2(344, 452), Vector2(170, 452), Vector2(400, 394), Vector2(560, 394), Vector2(272, 260), Vector2(822, 512), Vector2(892, 512),
+		Vector2(620, 470), Vector2(232, 316), Vector2(780, 440), Vector2(640, 330), Vector2(56, 220), Vector2(420, 210), Vector2(540, 210)]
+	var tints: Array = [[0, 1, 2, 4, 5], [6, 8, 9, 12, 13], [16, 17, 18, 19, 20], [23, 24, 25, 28, 29]]
+	for i in clumps.size():
+		var at: Vector2 = clumps[i]
+		var set: Array = tints[i % tints.size()]
+		for k in 5:
+			var off := Vector2(float((i * 7 + k * 13) % 23) - 11.0, float((i * 5 + k * 11) % 13) - 6.0)
+			props.append(["hub_gflower_%d" % int(set[(i + k) % set.size()]), at.x + off.x, at.y + off.y, 0, 0])
+	t["props"] = props
+	t["blocks"] = blocks
+	# lamps at the south gate and by the herb garden (their glass and glow like the town's others)
+	var torches: Array = (t["torches"] as Array).duplicate()
+	var lights: Array = (t["lights"] as Array).duplicate()
+	for at: Vector2 in [Vector2(428, 506), Vector2(532, 506), Vector2(786, 424)]:
+		props.append(["hub_post", at.x, at.y, 3, 0])
+		torches.append(at)
+		lights.append([at - Vector2(0, 40), Color(1.0, 0.78, 0.46), 1.0, 0.55])
+	t["torches"] = torches
+	t["lights"] = lights
+	# more kinds of grass and flowers lying in the grass
+	var scatter: Dictionary = (t["scatter"] as Dictionary).duplicate()
+	scatter["hub_gflower"] = [32, 36]
+	scatter["hub_gtuft"] = [4, 60]
+	t["scatter"] = scatter
+	return t
 
 
 static func _base_place(id: String) -> Dictionary:
