@@ -68,6 +68,7 @@ var mass := 1.0
 var touch := 1
 var flying := false
 var elite := false
+var champion := false     ## the one that ends a road or forest level (worth a lot of XP)
 var minion := false
 var owner_id := 0
 var shot_type := "enemy"
@@ -216,6 +217,7 @@ func setup(the_room: Node, enemy_id: String, opts: Dictionary = {}) -> void:
 	# its height, so a shot that visibly touches the chest or the head counts
 	hit_grow = clampf((body_w + body_h) * 0.25 - radius, 0.0, 4.0 * _base_scale) if not m.is_empty() else 0.0
 	if opts.get("champion", false):
+		champion = true
 		max_hp *= CHAMPION_HP             # the champion that ends a side level
 		display_name = "the " + display_name
 	if minion:

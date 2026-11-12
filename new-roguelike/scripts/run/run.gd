@@ -14,6 +14,7 @@ extends Node2D
 
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Story = preload("res://scripts/data/story.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
@@ -52,6 +53,7 @@ const TYPE_NAMES := ["start", "combat", "treasure", "shop", "secret", "boss", "a
 # ------------------------------------------------------------------ what the shell may read (see g.gd)
 var hero_id := "knight"
 var floor_index := 0
+var xp_earned := 0               ## XP earned in this run (the end screen shows it)
 var scale_floor := 0             ## how strong the monsters are: the floor, or a side level's "tier"
 ## Story mode (scripts/data/story.gd): the level being played, or {} for the old endless descent.
 ## A level is ONE small floor that ends when its boss falls. The camp passes it in G.next_run:
@@ -552,8 +554,37 @@ func _needs_curse(info: Dictionary) -> bool:
 # =============================================================================== kills, death, victory
 func enemy_killed(e: Node) -> void:
 	kills += 1
+	gain_xp(Rpg.xp_of(e, scale_floor))
 	G.stat.emit("kills", 1)
 	effects.fire("on_kill", [e])
+
+
+## RPG: XP for the knight (never in the training yard, never for the two old test heroes).
+## A new level mends LEVEL_HEAL, makes him stronger at once and asks the shell for the card choice.
+func gain_xp(amount: int) -> void:
+	if amount <= 0 or training or not is_instance_valid(player) or not player.hero.has("melee"):
+		return
+	xp_earned += amount
+	var ups := Rpg.gain(amount)
+	G.xp_changed.emit()
+	if ups <= 0:
+		return
+	player.apply_rpg(Rpg.LEVEL_HEAL * ups)
+	fx.flourish(player.global_position - Vector2(0, 10))
+	Sfx.play("victory_sting", -8.0, 0.0, 1.5)
+	G.toast.emit("Level %d" % Rpg.level(), Rpg.growth_text(Rpg.level()))
+	if G.flag("autotest") and not G.flag("uitour"):
+		# the bot takes the first card offered, so its fights are as strong as a player's
+		while Rpg.picks() > 0:
+			var cards := Rpg.offer()
+			if cards.is_empty():
+				Rpg.pick_coins()
+			else:
+				Rpg.pick(String(cards[0]))
+		player.apply_rpg()
+		print("[rpg] level %d" % Rpg.level())
+	G.level_up.emit(Rpg.level())
+	G.hud_changed.emit()
 
 
 ## The Hungry Curse swallowed an enemy whole. It counts as a kill, but nothing died the usual
@@ -577,6 +608,7 @@ func boss_killed(b: Node) -> void:
 	G.stat.emit("boss_killed", 1)
 	G.stat.emit("boss_killed:" + id, 1)
 	G.boss_defeated.emit(id)
+	gain_xp(Rpg.xp_of_boss(scale_floor))
 	var says: Dictionary = Story.BOSS_SAYS.get(id, {})
 	if says.has("end"):
 		G.toast.emit(String(Bosses.info(id).get("name", "")), "\"%s\"" % String(says["end"]))
@@ -641,6 +673,7 @@ func summary() -> Dictionary:
 		"damage_taken": player.damage_taken if player != null else 0, "cause": "" if victory else death_cause,
 		"curse_level": curse_level, "level": String(level.get("id", "")), "level_name": String(level.get("name", "")), "side": String(level.get("side", "")), "final": bool(level.get("final", false)), "champion": String(level.get("champion", "")),
 		"coins_held": player.coins if player != null else 0,
+		"xp": xp_earned, "rpg_level": Rpg.level(),
 	}
 
 

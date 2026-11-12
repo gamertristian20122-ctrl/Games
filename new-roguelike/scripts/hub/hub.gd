@@ -26,6 +26,7 @@ const Weapons = preload("res://scripts/data/weapons.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const QuestList = preload("res://scripts/ui/quest_list.gd")
+const XpBar = preload("res://scripts/ui/xp_bar.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
@@ -110,7 +111,10 @@ func _ready() -> void:
 	_quests = QuestList.new()
 	_quests.in_camp = true
 	var ins := UI.safe_insets(self)
-	_quests.position = Vector2(ins.x + 2.0, ins.y + 2.0)
+	var xp_bar := XpBar.new()             # the knight's level and XP, above the quests
+	xp_bar.position = Vector2(ins.x + 3.0, ins.y + 2.0)
+	layer.add_child(xp_bar)
+	_quests.position = Vector2(ins.x + 2.0, ins.y + 2.0 + XpBar.H + 2.0)
 	_quests.modulate.a = 0.92
 	layer.add_child(_quests)
 	_banner = UI.label("", "Head")

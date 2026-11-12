@@ -29,6 +29,9 @@ const SCREENS := {
 	"credits": "res://scripts/ui/credits.gd",
 	"hub_talk": "res://scripts/ui/hub_talk.gd",
 	"customize": "res://scripts/ui/customize.gd",
+	"level_up": "res://scripts/ui/level_up.gd",
+	"sheet": "res://scripts/ui/sheet.gd",
+	"camp_menu": "res://scripts/ui/camp_menu.gd",
 }
 ## Screens that keep the dungeon picture bright behind them; behind the others it is dimmed.
 const BRIGHT := ["title", "hero_select"]
@@ -42,6 +45,7 @@ const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Shop = preload("res://scripts/data/shop.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
 const HubData = preload("res://scripts/data/hub.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 var run: Node                    ## the game being played, or null on the menus
 var hub: Node                    ## the camp between runs (scripts/hub/hub.gd), or null
@@ -148,6 +152,26 @@ func _process(delta: float) -> void:
 			_time_limit = 0.0
 			print("[main] --time reached after %.1f s of game time, quitting" % _clock)
 			quit_game()
+	_offer_level_up()
+
+
+## RPG: a level-up card is waiting (scripts/data/rpg.gd). The choice opens as soon as nothing else is
+## on screen and no fight is on, in a level or in a camp. (The bot and the screen tests pick by themselves.)
+func _offer_level_up() -> void:
+	if _busy or _ending or not _stack.is_empty() or Rpg.picks() <= 0 or G.flag("autotest") or (G.flag("uitour") and G.arg("uitour") != "flow"):
+		return
+	if run != null:
+		var room: Variant = run.get("room")
+		var p: Variant = run.get("player")
+		if run.get("over") == true or run.get("training") == true or not is_instance_valid(room) or room.get("fighting") == true:
+			return
+		if not is_instance_valid(p) or p.get("dead") == true or (run.has_method("busy") and run.call("busy")):
+			return
+		get_tree().paused = true
+	elif not is_instance_valid(hub) or hub.get("frozen") == true:
+		return
+	Sfx.play("ui_start")
+	open("level_up")
 
 
 # ------------------------------------------------------------------ screens
@@ -286,7 +310,9 @@ func _on_action(what: String, arg: Variant) -> void:
 		return
 	match what:
 		"back":
-			if top_name() == "pause" or (run != null and top_name() == "hub_talk"):
+			if top_name() == "level_up":
+				pass                    # a level-up card must be chosen
+			elif top_name() == "pause" or (run != null and top_name() == "hub_talk"):
 				resume()                # (a note read in a level closes like the pause menu)
 			elif _stack.size() > 1 or is_instance_valid(hub):
 				close_top()             # in the camp a talk window is the only screen open: Leave must close it
@@ -365,8 +391,17 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("retalk")
-		"collection", "settings", "credits", "customize":
+		"collection", "settings", "credits", "customize", "sheet":
 			open(what)
+		"levelup_done":
+			# the card is taken: it works at once, and the game carries on
+			close_all()
+			if run != null:
+				var p: Variant = run.get("player")
+				if is_instance_valid(p) and p.has_method("apply_rpg"):
+					p.call("apply_rpg")
+				get_tree().paused = false
+			Save.flush()
 		"start":
 			_transition(start_run.bind(String(arg), _fresh_seed()))
 		"retry":
@@ -564,7 +599,8 @@ func _back() -> void:
 	elif is_instance_valid(intro):
 		intro.call("skip")             # Back during the intro: skip it
 	elif is_instance_valid(hub):
-		_transition(show_title)        # Back in the camp: to the title
+		Sfx.play("ui_click")
+		open("camp_menu")              # Back in the camp: the camp's menu (character, settings, title screen)
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -58,7 +58,7 @@ func build() -> void:
 	var tiles := UI.hbox(3)
 	inner.add_child(tiles)
 	for pair: Array in [
-			["Floor", str(int(summary.get("floor", 1)))],
+			(["XP", "+%d" % int(summary.get("xp", 0))] if summary.has("xp") and String(summary.get("level", "")) != "" else ["Floor", str(int(summary.get("floor", 1)))]),
 			["Time", UI.time_text(float(summary.get("time_s", 0.0)))],
 			["Kills", str(int(summary.get("kills", 0)))],
 			["To chest" if summary.has("banked") else "Coins", str(int(summary.get("banked", summary.get("coins", 0))))]]:

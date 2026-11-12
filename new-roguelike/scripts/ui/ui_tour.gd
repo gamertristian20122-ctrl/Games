@@ -13,6 +13,7 @@ extends Node
 const UI = preload("res://scripts/ui/theme.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Unlocks = preload("res://scripts/data/unlocks.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 var main: Node            ## scripts/main.gd, set by it
 var _count := 0
@@ -212,6 +213,24 @@ func _run_tour() -> void:
 	await _shot("stats")
 	main.call("close_top")
 
+	# ---- RPG: the level-up choice, the character page, the camp menu
+	Save.hub_set("rpg:lvl", 3)
+	Save.hub_set("rpg:xp", 61)
+	Save.hub_set("rpg:sp", 3)
+	Save.hub_set("rpg:picks", 1)
+	Save.hub_set("card:might", 2)
+	Save.hub_set("card:vigour", 1)
+	main.call("open", "level_up")
+	await _shot("level_up")
+	main.call("close_top")
+	Save.hub_set("rpg:picks", 0)
+	main.call("open", "sheet")
+	await _shot("character")
+	main.call("close_top")
+	main.call("open", "camp_menu")
+	await _shot("camp_menu")
+	main.call("close_top")
+
 	# ---- credits, settings from the title, the two questions
 	main.call("open", "credits")
 	await _shot("credits")
@@ -237,6 +256,19 @@ func _key(keycode: Key) -> void:
 		Input.parse_input_event(ev)
 		await get_tree().process_frame
 		await get_tree().process_frame
+
+
+## The first level-up card on the level-up screen (its buttons are named Card_<id>).
+func _find_card(node: Node) -> Button:
+	if node == null:
+		return null
+	if node is Button and String(node.name).begins_with("Card_"):
+		return node
+	for c in node.get_children():
+		var hit := _find_card(c)
+		if hit != null:
+			return hit
+	return null
 
 
 func _check(what: String, ok: bool) -> void:
@@ -274,7 +306,26 @@ func _run_flow() -> void:
 	_check("a touch switches to touch controls", Controls.using_touch)
 	await _key(KEY_ESCAPE)
 	await _settle()
-	_check("Esc in the camp goes back to the title", main.call("top_name") == "title" and not is_instance_valid(main.get("hub")))
+	_check("Esc in the camp opens the camp menu", main.call("top_name") == "camp_menu" and _focus_text() == "Carry on")
+	await _key(KEY_ESCAPE)
+	await _settle()
+	_check("Esc closes the camp menu again", main.call("top_name") == "" and is_instance_valid(main.get("hub")))
+	await _key(KEY_ESCAPE)
+	await _settle()
+	var sheet_button := _find_button(main.call("top_screen"), "Character")
+	_check("the camp menu offers Character", sheet_button != null)
+	if sheet_button != null:
+		sheet_button.pressed.emit()
+		await _settle()
+		_check("Character opens the character page", main.call("top_name") == "sheet")
+		await _key(KEY_ESCAPE)
+		await _settle()
+	var to_title := _find_button(main.call("top_screen"), "Title screen")
+	_check("the camp menu offers the title screen", to_title != null)
+	if to_title != null:
+		to_title.pressed.emit()
+	await _settle(1.0)
+	_check("Title screen in the camp menu goes back to the title", main.call("top_name") == "title" and not is_instance_valid(main.get("hub")))
 	main.call("open", "hero_select")
 	await _settle()
 	await _key(KEY_RIGHT)
@@ -348,6 +399,7 @@ func _run_flow() -> void:
 	await _settle()
 	await _key(KEY_DOWN)
 	await _key(KEY_DOWN)
+	await _key(KEY_DOWN)             # Resume, Settings, Character, Give up
 	_check("Give up can be reached", _focus_text() == "Give up")
 	await _key(KEY_ENTER)
 	await _settle()
@@ -430,17 +482,61 @@ func _run_flow() -> void:
 	_check("the gate starts the first level", is_instance_valid(story_run) and String(story_run.get("level").get("id", "")) == "crypt_1")
 	if is_instance_valid(story_run):
 		story_run.get("player").set("coins", 7)
+		# RPG: enough XP for one level; the card choice must open by itself and stop the game
+		var hearts := int(story_run.get("player").get("max_hp"))
+		story_run.call("gain_xp", Rpg.xp_need())
+		await _settle(0.5)
+		_check("a new level opens the card choice", main.call("top_name") == "level_up" and get_tree().paused)
+		_check("the knight is level 2 with one skill point", Rpg.level() == 2 and Rpg.skill_points() == 1 and Rpg.picks() == 1)
+		await _key(KEY_ESCAPE)
+		await _settle()
+		_check("Back does not skip the card choice", main.call("top_name") == "level_up")
+		await _settle(0.5)
+		await G.save_shot("flow_levelup.png")
+		var card := _find_card(main.call("top_screen"))
+		_check("cards are offered", card != null)
+		if card != null:
+			card.pressed.emit()
+		await _settle()
+		var cards_taken := 0
+		for r: Dictionary in Rpg.CARDS:
+			cards_taken += Rpg.taken(String(r["id"]))
+		_check("taking a card closes the choice and the game runs on", main.call("top_name") == "" and not get_tree().paused and Rpg.picks() == 0 and cards_taken == 1)
+		story_run.call("gain_xp", Rpg.xp_need() * 4)
+		await _settle(0.3)
+		_check("levels add hearts by themselves", int(story_run.get("player").get("max_hp")) > hearts or Rpg.taken("vigour") > 0 or Rpg.level() < 4)
+		while main.call("top_name") == "level_up":
+			await _settle(0.6)
+			var next_card := _find_card(main.call("top_screen"))
+			if next_card == null:
+				break
+			next_card.pressed.emit()
+			await _settle(0.2)
+		_check("several levels at once ask for a card each", Rpg.picks() == 0 and main.call("top_name") == "")
 	await _key(KEY_ESCAPE)
 	await _settle()
 	_check("the pause menu is open in a level", main.call("top_name") == "pause")
+	var pause_sheet := _find_button(main.call("top_screen"), "Character")
+	_check("the pause menu offers Character", pause_sheet != null)
+	if pause_sheet != null:
+		pause_sheet.pressed.emit()
+		await _settle()
+		_check("Character opens over the pause menu", main.call("top_name") == "sheet" and get_tree().paused)
+		await G.save_shot("flow_sheet.png")
+		await _key(KEY_ESCAPE)
+		await _settle()
+		_check("Back returns to the pause menu", main.call("top_name") == "pause" and get_tree().paused)
 	var bank := Save.hub_get("bank:coins")
 	main.call("_on_action", "leave_run", null)
 	await _settle(1.5)
 	_check("Back to camp returns to the camp", is_instance_valid(main.get("hub")) and main.get("run") == null and main.call("top_name") == "")
 	_check("the coins were banked", Save.hub_get("bank:coins") == bank + 7)
 	await _key(KEY_ESCAPE)
+	await _settle()
+	_check("Esc in the camp opens the camp menu after a level too", main.call("top_name") == "camp_menu")
+	main.call("_on_action", "title", null)
 	await _settle(1.0)
-	_check("Esc in the camp returns to the title", main.call("top_name") == "title")
+	_check("the camp menu returns to the title", main.call("top_name") == "title")
 	await _key(KEY_ESCAPE)
 	await _settle()
 	_check("Esc on the title asks before quitting", _focus_text() == "Stay")

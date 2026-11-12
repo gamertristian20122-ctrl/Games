@@ -124,6 +124,9 @@ signal run_ended(victory: bool, summary: Dictionary)
 ## Free-form counters for unlocks and achievements, e.g. ("secret_found", 1), ("boss_killed:gravekeeper", 1).
 ## The shell adds them to the save file and checks unlock rules.
 signal stat(key: String, amount: int)
+## RPG (scripts/data/rpg.gd): the knight earned XP / reached a new level (the shell shows the card choice).
+signal xp_changed
+signal level_up(level: int)
 ## The world asks for a short vibration (the touch layer does it if the setting allows).
 signal buzz(msec: int)
 

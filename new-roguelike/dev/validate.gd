@@ -19,6 +19,7 @@ const Pickups = preload("res://scripts/data/pickups.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const ShotTypes = preload("res://scripts/data/shot_types.gd")
 const Stats = preload("res://scripts/run/stats.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 const RoomLook = preload("res://scripts/run/room_look.gd")
 const CurseTests = preload("res://dev/curse_tests.gd")
 
@@ -89,8 +90,39 @@ static func curse(host: Node) -> Array[String]:
 	return CurseTests.run_all(host)
 
 
+## RPG: the level-up cards (scripts/data/rpg.gd) and the XP curve.
+static func rpg_checks() -> Array[String]:
+	var out: Array[String] = []
+	var seen := {}
+	for r: Dictionary in Rpg.CARDS:
+		var id := String(r.get("id", ""))
+		if id == "" or seen.has(id):
+			out.append("rpg card '%s': missing or repeated id" % id)
+		seen[id] = true
+		for field in ["name", "text", "icon", "max"]:
+			if not r.has(field):
+				out.append("rpg card %s: missing '%s'" % [id, field])
+		if not Art.has(String(r.get("icon", ""))):
+			out.append("rpg card %s: no picture '%s' in assets/art/icons" % [id, r.get("icon", "")])
+		var mods: Dictionary = r.get("mods", {})
+		for part: String in mods:
+			if not ["flat", "pct", "mult"].has(part):
+				out.append("rpg card %s: unknown mods part '%s'" % [id, part])
+			for stat in mods[part]:
+				if not Stats.DEFAULTS.has(stat):
+					out.append("rpg card %s: unknown stat '%s'" % [id, stat])
+	for id: String in ["vigour", "wall", "ready", "study"]:
+		if Rpg.row(id).is_empty():
+			out.append("rpg card '%s' is read by name in rpg.gd and must exist" % id)
+	for lvl in range(1, Rpg.MAX_LEVEL):
+		if Rpg.xp_for(lvl + 1) < Rpg.xp_for(lvl) or Rpg.xp_for(lvl) <= 0:
+			out.append("rpg: the XP needed must never shrink (level %d)" % lvl)
+	return out
+
+
 static func all() -> Array[String]:
 	var out: Array[String] = layout_checks()
+	out.append_array(rpg_checks())
 	# ---- items
 	var pool_sizes := {}
 	for id: String in Items.ALL:

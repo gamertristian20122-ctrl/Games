@@ -21,6 +21,7 @@ const Curse = preload("res://scripts/entities/curse.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -136,12 +137,35 @@ func setup(the_run: Node, hero_id: String) -> void:
 		hp = max_hp
 		block_max = maxi(int(G.diff("block")), 1)
 		block_left = block_max
-		_block_cool = maxf(BLOCK_COOLDOWN + Upgrades.block_cooldown(), 1.5)
+		apply_rpg()                 # his level and level-up cards (scripts/data/rpg.gd)
+		hp = max_hp
+		block_left = block_max
 	stats.changed.connect(_stats_changed)
 	_stats_changed()
 	_hook_bomb_button()
 	if hero.has("familiar"):
 		add_familiar(String(hero["familiar"]))
+
+
+## RPG: puts the knight's level and his level-up cards on him. Called at the start of a run and again
+## after every level-up or card choice; it only adds what is new since the last call.
+## `heal` = half hearts mended on top (a level-up mends a little).
+var _rpg_hp := 0
+var _rpg_block := 0
+func apply_rpg(heal: int = 0) -> void:
+	if not hero.has("melee"):
+		return
+	stats.set_layer("level", Rpg.mods())
+	var more_hp := Rpg.bonus_hp() - _rpg_hp
+	_rpg_hp += more_hp
+	max_hp = clampi(max_hp + more_hp, 2, MAX_HP)
+	hp = clampi(hp + maxi(more_hp, 0) + heal, 0 if dead else 1, max_hp)
+	var more_block := Rpg.bonus_block() - _rpg_block
+	_rpg_block += more_block
+	block_max = maxi(block_max + more_block, 1)
+	block_left = mini(block_left + maxi(more_block, 0), block_max)
+	_block_cool = maxf(BLOCK_COOLDOWN + Upgrades.block_cooldown() + Rpg.block_cooldown(), 1.5)
+	G.hud_changed.emit()
 
 
 ## The hero is taken out of the tree and put back at every room change, so the bomb button is

@@ -34,6 +34,9 @@ func build() -> void:
 	var settings := UI.button("Settings", func() -> void: send("settings"))
 	settings.custom_minimum_size.y = 22
 	left.add_child(settings)
+	var sheet := UI.button("Character", func() -> void: send("sheet"))
+	sheet.custom_minimum_size.y = 22
+	left.add_child(sheet)
 	var stage := Control.new()
 	stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE

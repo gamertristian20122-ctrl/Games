@@ -20,6 +20,7 @@ const Minimap = preload("res://scripts/ui/minimap.gd")
 const ItemRack = preload("res://scripts/ui/item_rack.gd")
 const CurseMeter = preload("res://scripts/ui/curse_meter.gd")
 const QuestList = preload("res://scripts/ui/quest_list.gd")
+const XpBar = preload("res://scripts/ui/xp_bar.gd")
 const Story = preload("res://scripts/data/story.gd")
 
 const CARD_TIME := 2.5           ## seconds an item card stays up
@@ -36,6 +37,7 @@ var _counters: HBoxContainer
 var _count_labels := {}
 var _count_icons := {}
 var _curse_meter: Control
+var _xp: Control                 ## level and XP (scripts/ui/xp_bar.gd)
 var _quests: Control             ## the quest list under the hearts (scripts/ui/quest_list.gd)
 var _coins_shown := 0
 var _coins_target := 0
@@ -105,6 +107,8 @@ func _ready() -> void:
 		if _boss_box != null:
 			_place_boss_bar())
 
+	_xp = XpBar.new()
+	_root.add_child(_xp)
 	_quests = QuestList.new()
 	_root.add_child(_quests)
 
@@ -193,7 +197,9 @@ func _layout() -> void:
 	_hearts.modulate.a = alpha
 	_counters.position = Vector2(left + 1.0, top + _hearts.size.y + 1.0)
 	_counters.modulate.a = alpha
-	_quests.position = Vector2(left - 1.0, _counters.position.y + _counters.size.y + 2.0)
+	_xp.position = Vector2(left, _counters.position.y + _counters.size.y + 1.0)
+	_xp.modulate.a = alpha
+	_quests.position = Vector2(left - 1.0, _xp.position.y + _xp.size.y + 2.0)
 	_quests.modulate.a = 0.9
 	var gap := PAUSE_GAP if Controls.using_touch else 0.0
 	_minimap.position = Vector2(right - _minimap.size.x - gap, top - 1.0)
@@ -255,7 +261,8 @@ func _refresh() -> void:
 		return
 	if _hearts.call("set_values", _num(p, "hp"), _num(p, "max_hp"), _num(p, "armor")):
 		_counters.position.y = _hearts.position.y + _hearts.size.y + 1.0
-		_quests.position.y = _counters.position.y + _counters.size.y + 2.0
+		_xp.position.y = _counters.position.y + _counters.size.y + 1.0
+		_quests.position.y = _xp.position.y + _xp.size.y + 2.0
 		_place_boss_bar()
 	_coins_target = _num(p, "coins")
 	if _coins_shown < 0:
