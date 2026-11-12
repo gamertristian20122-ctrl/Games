@@ -16,7 +16,7 @@ const PERKS: { icon: IconName; title: string; body: string }[] = [
 ];
 
 export default function Pro() {
-  const { c, motion } = useTheme();
+  const { c, motionLevel } = useTheme();
   const { isPro, mockStore, updateSettings } = useApp();
   const [price, setPrice] = useState(DISPLAY_PRICES.pro);
   const [busy, setBusy] = useState(false);
@@ -66,7 +66,7 @@ export default function Pro() {
         <IconButton icon="close" label="Close" onPress={() => router.back()} />
       </Row>
       <View style={{ alignItems: 'center' }}>
-        <Pet color="lavender" hat="wizard" scarf="stripes" mood="happy" size={170} animate={motion} />
+        <Pet color="lavender" hat="wizard" scarf="stripes" mood="happy" size={170} level={motionLevel} />
         <T variant="hero" style={{ textAlign: 'center', marginTop: space.md }}>
           MochiNook Pro
         </T>

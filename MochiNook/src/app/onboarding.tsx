@@ -32,7 +32,7 @@ const TOTAL_STEPS = 5;
 const STEP_NAMES = ['YOUR BRAIN', 'DAILY ENERGY', 'DAILY ANCHORS'] as const;
 
 export default function Onboarding() {
-  const { c, motion } = useTheme();
+  const { c, motion, motionLevel } = useTheme();
   const { finishOnboarding, enableReminders, updateSettings, settings, pet } = useApp();
   const [step, setStepRaw] = useState(0);
   // A quick double-tap must never skip a question: ignore step changes for a moment after each one.
@@ -88,7 +88,15 @@ export default function Onboarding() {
       </View>
 
       <View style={{ alignItems: 'center', marginTop: space.lg }}>
-        <Pet color="cream" hat="sprout" scarf="none" mood={step === 4 ? 'happy' : 'idle'} size={step === 0 ? 170 : 110} animate={motion} hopKey={step} />
+        <Pet
+          color="cream"
+          hat="sprout"
+          scarf="none"
+          mood={step === 4 ? 'happy' : 'idle'}
+          size={step === 0 ? 170 : 110}
+          level={motionLevel}
+          reaction={step > 0 ? { id: step, type: step === 4 ? 'bigHop' : 'hop' } : null}
+        />
       </View>
 
       <Animated.View key={step} entering={enter} style={{ gap: space.md }}>

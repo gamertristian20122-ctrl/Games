@@ -2,7 +2,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { happyLine, levelUpLine, petCareLines, questDoneLine, welcomeBack } from '../lib/copy';
-import { celebrateFeedback, stepFeedback, tapFeedback, type FeedbackPrefs } from '../lib/feedback';
+import { celebrateFeedback, haptic, playSfx, stepFeedback, tapFeedback, type FeedbackPrefs } from '../lib/feedback';
 import { migrateDatabase } from '../db/schema';
 import {
   cancelAllReminders,
@@ -22,13 +22,14 @@ import { buildStarterRoutine } from '../lib/routineBuilder';
 import { dayKey, daysBetween } from '../lib/time';
 import type { Anchors, BrainProfile, Energy, Pet, QuestRow, Settings, StepRow } from '../lib/types';
 
+/** Everything the pet reacts to. `xp` and `pebbles` feed the floating reward badges. */
 export type PetEvent =
-  | { id: number; kind: 'step'; line: string; pebbles: number }
-  | { id: number; kind: 'quest'; line: string; pebbles: number }
-  | { id: number; kind: 'level'; line: string; level: number; pebbles: number }
-  | { id: number; kind: 'treat'; line: string; pebbles: 0; itemId: string }
-  | { id: number; kind: 'care'; line: string; pebbles: 0 }
-  | { id: number; kind: 'reward'; line: string; pebbles: number };
+  | { id: number; kind: 'step'; line: string; pebbles: number; xp: number }
+  | { id: number; kind: 'quest'; line: string; pebbles: number; xp: number }
+  | { id: number; kind: 'level'; line: string; level: number; pebbles: number; xp: number }
+  | { id: number; kind: 'treat'; line: string; pebbles: 0; xp: 0; itemId: string }
+  | { id: number; kind: 'care'; line: string; pebbles: 0; xp: 0; care: CareKind; allowed: boolean }
+  | { id: number; kind: 'reward'; line: string; pebbles: number; xp: number };
 
 export type CareKind = 'pat' | 'snack' | 'tuck';
 
@@ -240,17 +241,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPet(await repo.getPet(db));
       setDataVersion((v) => v + 1);
       if (levelAfter > levelBefore) {
-        celebrateFeedback(feedbackPrefs);
-        emit({ kind: 'level', line: levelUpLine(current.name, levelAfter), level: levelAfter, pebbles });
+        celebrateFeedback(feedbackPrefs, 'levelup');
+        emit({ kind: 'level', line: levelUpLine(current.name, levelAfter), level: levelAfter, pebbles, xp: gained });
       } else if (questCompleted) {
-        celebrateFeedback(feedbackPrefs);
-        emit({ kind: 'quest', line: questDoneLine(after), pebbles });
+        celebrateFeedback(feedbackPrefs, 'chord');
+        emit({ kind: 'quest', line: questDoneLine(after), pebbles, xp: gained });
         setTimeout(() => {
           syncSprintRef.current().catch(() => undefined);
         }, 2600);
       } else {
         stepFeedback(feedbackPrefs);
-        emit({ kind: 'step', line: happyLine(after), pebbles });
+        emit({ kind: 'step', line: happyLine(after), pebbles, xp: gained });
       }
     },
     [db, emit, feedbackPrefs],
@@ -263,10 +264,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const [p, items] = await Promise.all([repo.getPet(db), repo.getOwnedItems(db)]);
         setPet(p);
         setOwned(items);
-        celebrateFeedback(feedbackPrefs);
+        celebrateFeedback(feedbackPrefs, result.kind === 'treat' ? 'chew' : 'pop');
         if (result.kind === 'treat') {
           const name = findShopItem(itemId)?.name.toLowerCase() ?? 'treat';
-          emit({ kind: 'treat', line: `Yum! Thank you for the ${name}!`, pebbles: 0, itemId });
+          emit({ kind: 'treat', line: `Yum! Thank you for the ${name}!`, pebbles: 0, xp: 0, itemId });
         }
       }
       return result;
@@ -296,7 +297,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setOwnedCosmetics(await repo.getOwnedCosmetics(db));
       const last = earned[earned.length - 1]!;
       celebrateFeedback(feedbackPrefs);
-      emit({ kind: 'reward', line: `Sprint reward unlocked: ${last.name}! It’s yours to keep.`, pebbles: 0 });
+      emit({ kind: 'reward', line: `Sprint reward unlocked: ${last.name}! It’s yours to keep.`, pebbles: 0, xp: 0 });
     }
   }, [db, emit, feedbackPrefs]);
 
@@ -309,7 +310,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await repo.addProgress(db, xp, 1, pebbles);
       setPet(await repo.getPet(db));
       celebrateFeedback(feedbackPrefs);
-      emit({ kind: 'reward', line, pebbles });
+      emit({ kind: 'reward', line, pebbles, xp });
       await syncSprint();
     },
     [db, emit, feedbackPrefs, syncSprint],
@@ -361,14 +362,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await repo.saveSettings(db, { lastTuckDay: today });
       }
       setSettings(await repo.getSettings(db));
+      // The animation and sound always play (it should feel responsive); affection only grows within the gentle limits.
+      haptic('light', feedbackPrefs);
+      playSfx(kind === 'pat' ? 'heart' : kind === 'snack' ? 'chew' : 'lullaby', feedbackPrefs);
       if (allowed) {
         await repo.addProgress(db, 0, 1, 0);
         setPet(await repo.getPet(db));
-        stepFeedback(feedbackPrefs);
-        emit({ kind: 'care', line: pick(petCareLines[kind]), pebbles: 0 });
-      } else {
-        emit({ kind: 'care', line: petCareLines.rested, pebbles: 0 });
       }
+      emit({ kind: 'care', line: allowed ? pick(petCareLines[kind]) : petCareLines.rested, pebbles: 0, xp: 0, care: kind, allowed });
       return allowed;
     },
     [db, emit, feedbackPrefs],

@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, Pressable, TextInput, View } from 'react-native';
-import { Button, Card, Divider, LinkRow, Pill, Row, Screen, SectionTitle, T, TimeStepper, ToggleRow } from '../../components/ui';
+import { Button, Card, Divider, LinkRow, Pill, Row, Screen, Segmented, SectionTitle, T, TimeStepper, ToggleRow } from '../../components/ui';
 import { PET_NAMES } from '../../data/cosmetics';
 import { confirmAction } from '../../lib/dialogs';
 import { TEST_TOOLS_ALLOWED, restorePurchases } from '../../lib/purchases';
@@ -92,14 +92,25 @@ export default function SettingsScreen() {
 
       <SectionTitle>Comfort</SectionTitle>
       <Card style={{ paddingVertical: space.sm }}>
-        <ToggleRow
-          label="Calm Mode"
-          hint="Still pet, no sounds or vibration, softer colors, no Calm pick card."
-          value={settings.calmMode}
-          onChange={() => app.toggleCalm()}
-        />
+        <View style={{ paddingVertical: space.md, gap: space.sm }}>
+          <T variant="bodyBold">Sensory style</T>
+          <Segmented
+            options={[
+              { value: 'calm', label: 'Calm' },
+              { value: 'dopamine', label: 'Dopamine' },
+            ]}
+            value={settings.calmMode ? 'calm' : 'dopamine'}
+            onChange={(v) => app.updateSettings({ calmMode: v === 'calm' })}
+          />
+          <T variant="small">
+            {settings.calmMode
+              ? 'Calm: slow, gentle motion, soft colors, no sounds or vibration, no Calm pick card.'
+              : 'Dopamine: bouncy, squishy motion, sparkles and confetti, soft marimba chimes.'}
+          </T>
+          <T variant="small">If your phone’s “Reduce motion” setting is on, {pet.name} always stays still.</T>
+        </View>
         <Divider />
-        <ToggleRow label="Soft sounds" hint="Tiny chimes when you check things off." value={settings.sounds} onChange={(sounds) => app.updateSettings({ sounds })} />
+        <ToggleRow label="Soft sounds" hint="Marimba chimes in Dopamine Mode (Calm is always silent)." value={settings.sounds} onChange={(sounds) => app.updateSettings({ sounds })} />
         <Divider />
         <ToggleRow label="Gentle vibration" value={settings.haptics} onChange={(haptics) => app.updateSettings({ haptics })} />
         <Divider />

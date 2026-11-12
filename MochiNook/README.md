@@ -29,7 +29,7 @@ npx expo start --dev-client
 ```bash
 npm run typecheck   # TypeScript, strict
 npm run lint        # Expo ESLint config (incl. React Compiler rules)
-npm test            # 36 tests: quest library, share codes, Smart Match, and every SQLite query
+npm test            # 38 tests: quest library, share codes, Smart Match, and every SQLite query
 npx expo-doctor     # dependency + config checks
 ```
 
@@ -86,6 +86,20 @@ It (and free test purchases) only exist in development builds or builds without 
 ## On-device AI
 
 Not in this version. The earlier `react-native-executorch` setup is in git history (commit `ac80948`) if you want to bring it back.
+
+## Motion & sensory style
+
+Dumpling's animations run on the UI thread (Reanimated) and only use `transform` and `opacity`, anchored at the bottom center so squishes sit on the rug. Every animation is interruptible: a new tap replaces the running one instead of queueing.
+
+| | Phone "Reduce motion" on | Calm | Dopamine |
+|---|---|---|---|
+| Breathing, blinks, ear twitches | off (still) | slow & small | full |
+| Tap-to-squish, hops, pat lean, chewing | expressions only | gentle ease-out | springy overshoot |
+| Hearts / sparkles / crumbs | none | 1–2 | up to 6 |
+| Confetti on quests & level-ups | none | none | yes |
+| Marimba chimes & haptics | per setting | off | on |
+
+Tuning lives in `src/theme/motion.ts`; the chimes are synthesized WAVs in `assets/sounds/` (React Native has no Web Audio API).
 
 ## Notifications (all local)
 

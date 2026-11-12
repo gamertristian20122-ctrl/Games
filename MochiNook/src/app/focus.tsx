@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useEffect, useRef, useState } from 'react';
+import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { Pet } from '../components/Pet';
@@ -10,6 +11,7 @@ import * as repo from '../db/repo';
 import { cancelNotification, scheduleTimerEnd } from '../lib/notifications';
 import { dayKey } from '../lib/time';
 import { useApp } from '../state/AppContext';
+import type { MotionLevel } from '../theme/motion';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space } from '../theme/tokens';
 
@@ -31,12 +33,13 @@ function mmss(ms: number): string {
 /** Body doubling: the pet "works" beside you, which makes starting and staying easier for many ADHD brains. */
 export default function Focus() {
   const db = useSQLiteContext();
-  const { c, motion, calm, scheme } = useTheme();
+  const { c, motionLevel, calm, scheme } = useTheme();
   const { pet, owned, completeFocus } = useApp();
   const [minutes, setMinutes] = useState<(typeof LENGTHS)[number]>(15);
   const [session, setSession] = useState<Session | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [done, setDone] = useState<'finished' | 'early' | null>(null);
+  const [finishedAt, setFinishedAt] = useState(0);
   const finishing = useRef(false);
   const decor = owned.filter((o) => o.placed === 1).map((o) => o.item_id);
 
@@ -47,6 +50,7 @@ export default function Focus() {
     await completeFocus(s.id, completed);
     setSession(null);
     setDone(completed ? 'finished' : 'early');
+    setFinishedAt(Date.now());
     finishing.current = false;
   };
 
@@ -87,7 +91,16 @@ export default function Focus() {
       <View style={[styles.stage, { borderColor: c.border }]}>
         <Room room={pet.room} muted={calm} dark={scheme === 'dark'} decor={decor} />
         <View style={{ alignItems: 'center' }}>
-          <Pet color={pet.color} hat={pet.hat} scarf={pet.scarf} mood={done === 'finished' ? 'proud' : 'idle'} size={140} animate={motion && !session} />
+          <Pet
+            color={pet.color}
+            hat={pet.hat}
+            scarf={pet.scarf}
+            mood={done === 'finished' ? 'proud' : 'idle'}
+            size={140}
+            level={motionLevel}
+            focus={!!session}
+            reaction={done === 'finished' && finishedAt ? { id: finishedAt, type: 'bigHop' } : null}
+          />
           <Svg width={150} height={46} viewBox="0 0 150 46" style={{ marginTop: -26 }}>
             <Rect x={8} y={20} width={134} height={10} rx={4} fill="#C9A27C" />
             <Rect x={52} y={4} width={46} height={18} rx={3} fill="#BFD8E6" stroke="#8FAEC0" strokeWidth={2} />
@@ -99,6 +112,7 @@ export default function Focus() {
       </View>
 
       <View style={{ alignItems: 'center', marginTop: space.xl }}>
+        <GlowRing active={!!session} level={motionLevel} color={c.lavender} />
         <Svg width={140} height={140} viewBox="0 0 140 140">
           <Circle cx={70} cy={70} r={54} stroke={c.surfaceAlt} strokeWidth={12} fill="none" />
           <Circle
@@ -153,6 +167,26 @@ export default function Focus() {
   );
 }
 
+/** A soft halo that breathes in and out behind the timer while you focus (4s cycle; still when motion is off). */
+function GlowRing({ active, level, color }: { active: boolean; level: MotionLevel; color: string }) {
+  const v = useSharedValue(0);
+  useEffect(() => {
+    if (!active || level === 'still') {
+      cancelAnimation(v);
+      v.value = active ? 0.5 : 0;
+      return;
+    }
+    v.value = withRepeat(withTiming(1, { duration: level === 'calm' ? 3000 : 2000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    return () => cancelAnimation(v);
+  }, [active, level, v]);
+  const style = useAnimatedStyle(() => ({
+    opacity: active ? 0.18 + 0.3 * v.value : 0,
+    transform: [{ scale: 1 + 0.07 * v.value }],
+  }));
+  return <Animated.View pointerEvents="none" style={[styles.glow, { borderColor: color }, style]} />;
+}
+
 const styles = StyleSheet.create({
+  glow: { position: 'absolute', top: -10, width: 160, height: 160, borderRadius: 80, borderWidth: 10 },
   stage: { height: 230, borderRadius: radius.xl, borderWidth: 1, overflow: 'hidden', justifyContent: 'flex-end', marginTop: space.lg },
 });

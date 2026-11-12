@@ -1,32 +1,40 @@
 import React, { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withRepeat,
   withSequence,
-  withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 import { findColor } from '../data/cosmetics';
+import { TUNING, press, settle, type MotionLevel } from '../theme/motion';
+import { Burst, Zzz, type BurstKind } from './art/Particles';
 
-export type PetMood = 'idle' | 'happy' | 'sleepy' | 'proud';
-
-interface Props {
-  color: string;
-  hat: string;
-  scarf: string;
-  mood: PetMood;
-  size?: number;
-  /** When false the pet is a still illustration (Calm Mode / reduce motion). */
-  animate: boolean;
-  /** Change this number to trigger a happy hop. */
-  hopKey?: number;
+export type PetMood = 'idle' | 'happy' | 'sleepy' | 'proud' | 'chew';
+export type PetReactionType = 'hop' | 'bigHop' | 'pat' | 'snack' | 'pop' | 'squish';
+export interface PetReaction {
+  id: number;
+  type: PetReactionType;
 }
 
 const INK = '#3E3833';
+const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+/** Shared values that drive the face (eyes, ears, cheeks) on the UI thread. */
+interface FaceAnim {
+  eyeOpen: SharedValue<number>;
+  earL: SharedValue<number>;
+  earR: SharedValue<number>;
+  blush: SharedValue<number>;
+}
 
 function Hat({ id }: { id: string }) {
   switch (id) {
@@ -178,174 +186,371 @@ function Scarf({ id }: { id: string }) {
   );
 }
 
-function Eyes({ mood, blink }: { mood: PetMood; blink: boolean }) {
-  if (mood === 'happy' || mood === 'proud') {
+
+// ---------- face parts (static or animated) ----------
+
+function OpenEyes({ ink, shine, anim }: { ink: string; shine: string; anim?: FaceAnim }) {
+  if (!anim) {
     return (
       <G>
-        <Path d="M68 114 Q76 102 84 114" stroke={INK} strokeWidth={4.5} strokeLinecap="round" fill="none" />
-        <Path d="M116 114 Q124 102 132 114" stroke={INK} strokeWidth={4.5} strokeLinecap="round" fill="none" />
-      </G>
-    );
-  }
-  if (mood === 'sleepy' || blink) {
-    return (
-      <G>
-        <Path d="M68 110 Q76 118 84 110" stroke={INK} strokeWidth={4.5} strokeLinecap="round" fill="none" />
-        <Path d="M116 110 Q124 118 132 110" stroke={INK} strokeWidth={4.5} strokeLinecap="round" fill="none" />
+        <Ellipse cx={76} cy={110} rx={6.5} ry={8.5} fill={ink} />
+        <Ellipse cx={124} cy={110} rx={6.5} ry={8.5} fill={ink} />
+        <Circle cx={78.5} cy={106.5} r={2.4} fill={shine} />
+        <Circle cx={126.5} cy={106.5} r={2.4} fill={shine} />
       </G>
     );
   }
   return (
     <G>
-      <Ellipse cx={76} cy={110} rx={6.5} ry={8.5} fill={INK} />
-      <Ellipse cx={124} cy={110} rx={6.5} ry={8.5} fill={INK} />
-      <Circle cx={78.5} cy={106.5} r={2.4} fill="#FFFFFF" />
-      <Circle cx={126.5} cy={106.5} r={2.4} fill="#FFFFFF" />
+      <AnimEye cx={76} ink={ink} anim={anim} />
+      <AnimEye cx={124} ink={ink} anim={anim} />
+      <AnimShine cx={78.5} fill={shine} anim={anim} />
+      <AnimShine cx={126.5} fill={shine} anim={anim} />
     </G>
   );
 }
 
-export function Pet({ color, hat, scarf, mood, size = 200, animate, hopKey = 0 }: Props) {
-  const [blink, setBlink] = useState(false);
-  const float = useSharedValue(0);
-  const hop = useSharedValue(0);
-  const squish = useSharedValue(1);
+/** Blink = squash the eye ellipse vertically (ry 8.5 → ~0.85). */
+function AnimEye({ cx, ink, anim }: { cx: number; ink: string; anim: FaceAnim }) {
+  const props = useAnimatedProps(() => ({ ry: 8.5 * Math.max(0.1, anim.eyeOpen.value) }));
+  return <AnimatedEllipse cx={cx} cy={110} rx={6.5} ry={8.5} fill={ink} animatedProps={props} />;
+}
 
-  // Idle float: slow, small, and only when motion is allowed.
-  useEffect(() => {
-    if (!animate) {
-      cancelAnimation(float);
-      float.value = 0;
-      return;
-    }
-    float.value = withRepeat(withTiming(-5, { duration: 1800, easing: Easing.inOut(Easing.sin) }), -1, true);
-    return () => cancelAnimation(float);
-  }, [animate, float]);
+function AnimShine({ cx, fill, anim }: { cx: number; fill: string; anim: FaceAnim }) {
+  const props = useAnimatedProps(() => ({ opacity: anim.eyeOpen.value > 0.55 ? 1 : 0 }));
+  return <AnimatedCircle cx={cx} cy={106.5} r={2.4} fill={fill} animatedProps={props} />;
+}
 
-  // Happy hop when a step is completed.
-  useEffect(() => {
-    if (!animate || hopKey === 0) return;
-    squish.value = withSequence(withTiming(0.92, { duration: 110 }), withSpring(1, { damping: 7, stiffness: 180 }));
-    hop.value = withSequence(withTiming(-16, { duration: 160, easing: Easing.out(Easing.quad) }), withSpring(0, { damping: 9, stiffness: 160 }));
-  }, [hopKey, animate, hop, squish]);
+function Ear({ cx, side, fill, stroke, anim }: { cx: number; side: -1 | 1; fill: string; stroke: string; anim?: FaceAnim }) {
+  if (!anim) return <Circle cx={cx} cy={60} r={17} fill={fill} stroke={stroke} strokeWidth={3} />;
+  return <AnimEar cx={cx} side={side} fill={fill} stroke={stroke} anim={anim} />;
+}
 
-  // Gentle blink every few seconds.
-  useEffect(() => {
-    if (!animate || mood !== 'idle') return;
-    let timer: ReturnType<typeof setTimeout>;
-    const schedule = () => {
-      timer = setTimeout(() => {
-        setBlink(true);
-        timer = setTimeout(() => {
-          setBlink(false);
-          schedule();
-        }, 140);
-      }, 3200 + Math.random() * 2400);
-    };
-    schedule();
-    return () => clearTimeout(timer);
-  }, [animate, mood]);
+/** Ear twitch: a tiny hop up-and-out. */
+function AnimEar({ cx, side, fill, stroke, anim }: { cx: number; side: -1 | 1; fill: string; stroke: string; anim: FaceAnim }) {
+  const props = useAnimatedProps(() => {
+    const v = side === -1 ? anim.earL.value : anim.earR.value;
+    return { cy: 60 - 5 * v, cx: cx + side * 2.5 * v };
+  });
+  return <AnimatedCircle cx={cx} cy={60} r={17} fill={fill} stroke={stroke} strokeWidth={3} animatedProps={props} />;
+}
 
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: float.value + hop.value }, { scaleY: squish.value }, { scaleX: 2 - squish.value }],
+function Blush({ cx, fill, base, anim }: { cx: number; fill: string; base: number; anim?: FaceAnim }) {
+  if (!anim) return <Ellipse cx={cx} cy={128} rx={12} ry={6.5} fill={fill} opacity={base} />;
+  return <AnimBlush cx={cx} fill={fill} base={base} anim={anim} />;
+}
+
+/** Happy blush: cheeks glow pinker and a little wider. */
+function AnimBlush({ cx, fill, base, anim }: { cx: number; fill: string; base: number; anim: FaceAnim }) {
+  const props = useAnimatedProps(() => ({
+    opacity: Math.min(1, base + 0.4 * anim.blush.value),
+    rx: 12 + 4 * anim.blush.value,
+    ry: 6.5 + 1.5 * anim.blush.value,
   }));
+  return <AnimatedEllipse cx={cx} cy={128} rx={12} ry={6.5} fill={fill} opacity={base} animatedProps={props} />;
+}
 
-  const showBlink = blink && animate && mood === 'idle';
-  const h = size * 0.95;
+function ClosedEyes({ ink, happy }: { ink: string; happy: boolean }) {
+  const d = happy ? ['M68 114 Q76 102 84 114', 'M116 114 Q124 102 132 114'] : ['M68 110 Q76 118 84 110', 'M116 110 Q124 118 132 110'];
   return (
-    <Animated.View
-      style={[{ width: size, height: h }, style]}
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={mood === 'sleepy' ? 'Your pet, cozy and sleepy' : mood === 'idle' ? 'Your pet, smiling' : 'Your pet, very happy'}
-    >
-      <PetSvg color={color} hat={hat} scarf={scarf} mood={mood} blink={showBlink} size={size} />
-    </Animated.View>
+    <G>
+      <Path d={d[0]!} stroke={ink} strokeWidth={4.5} strokeLinecap="round" fill="none" />
+      <Path d={d[1]!} stroke={ink} strokeWidth={4.5} strokeLinecap="round" fill="none" />
+    </G>
   );
 }
 
-
-/** The pet as a still drawing (no animation): used by <Pet> and by wardrobe thumbnails. */
+/** The pet as a drawing. Pass `anim` to let the face blink, twitch and blush on the UI thread. */
 export function PetSvg({
   color,
   hat,
   scarf,
   mood,
-  blink = false,
   size,
+  anim,
 }: {
   color: string;
   hat: string;
   scarf: string;
   mood: PetMood;
-  blink?: boolean;
   size: number;
+  anim?: FaceAnim;
 }) {
   const col = findColor(color);
+  const dark = col.id === 'sesame';
+  const ink = dark ? '#F4EDE4' : INK;
+  const shine = dark ? INK : '#FFFFFF';
   const h = size * 0.95;
+  const happy = mood === 'happy' || mood === 'proud' || mood === 'chew';
+  const blushBase = mood === 'idle' || mood === 'sleepy' ? 0.6 : 0.85;
   return (
     <Svg width={size} height={h} viewBox="0 0 200 190">
-        <Ellipse cx={100} cy={176} rx={60} ry={7} fill="#5C4632" opacity={0.12} />
-        <Circle cx={58} cy={60} r={17} fill={col.ear} stroke={col.outline} strokeWidth={3} />
-        <Circle cx={142} cy={60} r={17} fill={col.ear} stroke={col.outline} strokeWidth={3} />
-        <Path
-          d="M100 46 C152 46 180 82 180 120 C180 154 150 172 100 172 C50 172 20 154 20 120 C20 82 48 46 100 46 Z"
-          fill={col.body}
-          stroke={col.outline}
-          strokeWidth={3}
-        />
-        <Ellipse cx={74} cy={74} rx={16} ry={8} fill="#FFFFFF" opacity={col.id === 'sesame' ? 0.12 : 0.5} transform="rotate(-18 74 74)" />
-        <Ellipse cx={58} cy={128} rx={12} ry={6.5} fill={col.blush} opacity={mood === 'idle' ? 0.6 : 0.85} />
-        <Ellipse cx={142} cy={128} rx={12} ry={6.5} fill={col.blush} opacity={mood === 'idle' ? 0.6 : 0.85} />
-        <G>{col.id === 'sesame' ? <EyesLight mood={mood} blink={blink} /> : <Eyes mood={mood} blink={blink} />}</G>
-        {mood === 'happy' || mood === 'proud' ? (
-          <Path d="M90 124 Q100 140 110 124 Z" fill="#C9706B" stroke={col.id === 'sesame' ? '#F4EDE4' : INK} strokeWidth={2.5} strokeLinejoin="round" />
-        ) : (
-          <Path d="M93 126 Q100 132 107 126" stroke={col.id === 'sesame' ? '#F4EDE4' : INK} strokeWidth={3.5} strokeLinecap="round" fill="none" />
-        )}
-        <Scarf id={scarf} />
-        <Hat id={hat} />
-        {mood === 'sleepy' ? (
-          <G>
-            <Path d="M154 40 h10 l-10 10 h10" stroke="#9D8CC4" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <Path d="M170 22 h7 l-7 7 h7" stroke="#B6A6D8" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </G>
-        ) : null}
-        {mood === 'proud' ? (
-          <G>
-            <Path d="M28 44 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1 z" fill="#FBE29A" />
-            <Path d="M168 70 l2 5 5 .7 -3.6 3.5 .9 5 -4.3 -2.3 -4.3 2.3 .9 -5 -3.6 -3.5 5 -.7 z" fill="#F6B7C6" />
-          </G>
-        ) : null}
-      </Svg>
+      <Ellipse cx={100} cy={176} rx={60} ry={7} fill="#5C4632" opacity={0.12} />
+      <Ear cx={58} side={-1} fill={col.ear} stroke={col.outline} anim={anim} />
+      <Ear cx={142} side={1} fill={col.ear} stroke={col.outline} anim={anim} />
+      <Path
+        d="M100 46 C152 46 180 82 180 120 C180 154 150 172 100 172 C50 172 20 154 20 120 C20 82 48 46 100 46 Z"
+        fill={col.body}
+        stroke={col.outline}
+        strokeWidth={3}
+      />
+      <Ellipse cx={74} cy={74} rx={16} ry={8} fill="#FFFFFF" opacity={dark ? 0.12 : 0.5} transform="rotate(-18 74 74)" />
+      <Blush cx={58} fill={col.blush} base={blushBase} anim={anim} />
+      <Blush cx={142} fill={col.blush} base={blushBase} anim={anim} />
+      {mood === 'idle' ? <OpenEyes ink={ink} shine={shine} anim={anim} /> : <ClosedEyes ink={ink} happy={happy} />}
+      {mood === 'chew' ? (
+        <Ellipse cx={100} cy={129} rx={6} ry={4.5} fill="#C9706B" stroke={ink} strokeWidth={2.2} />
+      ) : happy ? (
+        <Path d="M90 124 Q100 140 110 124 Z" fill="#C9706B" stroke={ink} strokeWidth={2.5} strokeLinejoin="round" />
+      ) : (
+        <Path d="M93 126 Q100 132 107 126" stroke={ink} strokeWidth={3.5} strokeLinecap="round" fill="none" />
+      )}
+      <Scarf id={scarf} />
+      <Hat id={hat} />
+      {mood === 'proud' ? (
+        <G>
+          <Path d="M28 44 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1 z" fill="#FBE29A" />
+          <Path d="M168 70 l2 5 5 .7 -3.6 3.5 .9 5 -4.3 -2.3 -4.3 2.3 .9 -5 -3.6 -3.5 5 -.7 z" fill="#F6B7C6" />
+        </G>
+      ) : null}
+    </Svg>
   );
 }
 
-/** Eyes in a light ink for the dark "Black Sesame" coat. */
-function EyesLight({ mood, blink }: { mood: PetMood; blink: boolean }) {
-  const light = '#F4EDE4';
-  if (mood === 'happy' || mood === 'proud') {
-    return (
-      <G>
-        <Path d="M68 114 Q76 102 84 114" stroke={light} strokeWidth={4.5} strokeLinecap="round" fill="none" />
-        <Path d="M116 114 Q124 102 132 114" stroke={light} strokeWidth={4.5} strokeLinecap="round" fill="none" />
-      </G>
-    );
-  }
-  if (mood === 'sleepy' || blink) {
-    return (
-      <G>
-        <Path d="M68 110 Q76 118 84 110" stroke={light} strokeWidth={4.5} strokeLinecap="round" fill="none" />
-        <Path d="M116 110 Q124 118 132 110" stroke={light} strokeWidth={4.5} strokeLinecap="round" fill="none" />
-      </G>
-    );
-  }
+/** A soft quilted blanket that slides over the lower half of the pet when tucked in. */
+function Blanket({ size }: { size: number }) {
   return (
-    <G>
-      <Ellipse cx={76} cy={110} rx={6.5} ry={8.5} fill={light} />
-      <Ellipse cx={124} cy={110} rx={6.5} ry={8.5} fill={light} />
-      <Circle cx={78.5} cy={106.5} r={2.4} fill={INK} />
-      <Circle cx={126.5} cy={106.5} r={2.4} fill={INK} />
-    </G>
+    <Svg width={size} height={size * 0.42} viewBox="0 0 200 84">
+      <Path d="M14 30 Q100 6 186 30 L190 76 Q100 92 10 76 Z" fill="#CDBFE6" stroke="#9D8CC4" strokeWidth={3} strokeLinejoin="round" />
+      <Path d="M14 30 Q100 6 186 30 L186 40 Q100 18 14 40 Z" fill="#E9E1F6" stroke="#9D8CC4" strokeWidth={2} strokeLinejoin="round" />
+      <Line x1={70} y1={34} x2={66} y2={80} stroke="#B6A6D8" strokeWidth={2} strokeDasharray="4 5" />
+      <Line x1={130} y1={34} x2={134} y2={80} stroke="#B6A6D8" strokeWidth={2} strokeDasharray="4 5" />
+      <Rect x={92} y={50} width={16} height={16} rx={4} fill="#F6B7C6" opacity={0.8} transform="rotate(45 100 58)" />
+    </Svg>
   );
 }
+
+// ---------- the living pet ----------
+
+interface Props {
+  color: string;
+  hat: string;
+  scarf: string;
+  mood: PetMood;
+  size?: number;
+  /** still (Reduce motion) · calm · dopamine. */
+  level: MotionLevel;
+  /** Change the id to play a reaction. A new reaction interrupts the previous one. */
+  reaction?: PetReaction | null;
+  /** Blanket on, sleepy, z's floating. */
+  tucked?: boolean;
+  /** Body-double focus: gentle rhythmic bob. */
+  focus?: boolean;
+  /** Tap-to-squish (on by default). */
+  tappable?: boolean;
+  onTap?: () => void;
+}
+
+const BURST_FOR: Record<PetReactionType, BurstKind> = {
+  hop: 'sparkles',
+  bigHop: 'confetti',
+  pat: 'hearts',
+  snack: 'crumbs',
+  pop: 'sparkles',
+  squish: 'hearts',
+};
+
+export function Pet({ color, hat, scarf, mood, size = 200, level, reaction = null, tucked = false, focus = false, tappable = true, onTap }: Props) {
+  const t = level === 'still' ? null : TUNING[level];
+  const h = size * 0.95;
+
+  const breathe = useSharedValue(0);
+  const sx = useSharedValue(1);
+  const sy = useSharedValue(1);
+  const rot = useSharedValue(0);
+  const hopY = useSharedValue(0);
+  const bob = useSharedValue(0);
+  const blanket = useSharedValue(tucked ? 1 : 0);
+  const eyeOpen = useSharedValue(1);
+  const earL = useSharedValue(0);
+  const earR = useSharedValue(0);
+  const blush = useSharedValue(0);
+  const anim: FaceAnim = { eyeOpen, earL, earR, blush };
+  const [tap, setTap] = useState<PetReaction | null>(null);
+
+  // Breathing: a slow squash-and-stretch so the mochi feels alive.
+  useEffect(() => {
+    if (!t) {
+      cancelAnimation(breathe);
+      breathe.value = 0;
+      return;
+    }
+    breathe.value = 0;
+    breathe.value = withRepeat(withTiming(1, { duration: t.breatheMs / 2, easing: Easing.inOut(Easing.sin) }), -1, true);
+    return () => cancelAnimation(breathe);
+  }, [t, breathe]);
+
+  // Focus pose: a gentle rhythmic bob while working side by side.
+  useEffect(() => {
+    if (!t || !focus) {
+      cancelAnimation(bob);
+      bob.value = 0;
+      return;
+    }
+    bob.value = withRepeat(withTiming(-3, { duration: level === 'calm' ? 2400 : 1600, easing: Easing.inOut(Easing.sin) }), -1, true);
+    return () => cancelAnimation(bob);
+  }, [t, focus, level, bob]);
+
+  // Organic blinks every few seconds, plus the occasional ear twitch.
+  useEffect(() => {
+    if (!t) return;
+    let blinkTimer: ReturnType<typeof setTimeout>;
+    let earTimer: ReturnType<typeof setTimeout>;
+    const scheduleBlink = () => {
+      blinkTimer = setTimeout(() => {
+        eyeOpen.value = withSequence(withTiming(0.1, { duration: 70 }), withTiming(1, { duration: 130 }));
+        scheduleBlink();
+      }, t.blinkMinMs + Math.random() * (t.blinkMaxMs - t.blinkMinMs));
+    };
+    const scheduleEar = () => {
+      earTimer = setTimeout(() => {
+        const ear = Math.random() < 0.5 ? earL : earR;
+        ear.value = withSequence(withTiming(1, { duration: 90 }), withTiming(0, { duration: level === 'calm' ? 320 : 180 }));
+        scheduleEar();
+      }, 6000 + Math.random() * 6000);
+    };
+    scheduleBlink();
+    scheduleEar();
+    return () => {
+      clearTimeout(blinkTimer);
+      clearTimeout(earTimer);
+    };
+  }, [t, level, eyeOpen, earL, earR]);
+
+  // Tucked in: the blanket slides up and the body settles a little.
+  useEffect(() => {
+    if (!t) {
+      blanket.value = tucked ? 1 : 0;
+      return;
+    }
+    blanket.value = withTiming(tucked ? 1 : 0, { duration: level === 'calm' ? 900 : 600, easing: Easing.out(Easing.cubic) });
+  }, [tucked, t, level, blanket]);
+
+  /** Runs a reaction on the UI thread. Assigning new animations cancels running ones, so nothing queues up. */
+  const run = (type: PetReactionType) => {
+    if (!t || level === 'still') {
+      return;
+    }
+    const lv = level;
+    blush.value = withSequence(withTiming(1, { duration: 150 }), withDelay(type === 'pat' ? 1400 : 600, withTiming(0, { duration: 700 })));
+    switch (type) {
+      case 'squish':
+        sx.value = withSequence(press(t.squishX, lv), settle(1, lv));
+        sy.value = withSequence(press(t.squishY, lv), settle(1, lv));
+        break;
+      case 'pop':
+        sx.value = withSequence(press(1.1, lv, 90), settle(1, lv));
+        sy.value = withSequence(press(1.1, lv, 90), settle(1, lv));
+        hopY.value = withSequence(press(t.hop * 0.5, lv, 120), settle(0, lv));
+        break;
+      case 'hop':
+      case 'bigHop': {
+        const up = type === 'bigHop' ? t.hop * 1.4 : t.hop;
+        const air = lv === 'calm' ? 260 : 170;
+        // anticipation squash → jump → squash on landing → spring back
+        sy.value = withSequence(press(0.94, lv, 70), withTiming(1.04, { duration: air }), press(lv === 'calm' ? 0.93 : 0.86, lv, 80), settle(1, lv));
+        sx.value = withSequence(press(1.04, lv, 70), withTiming(0.97, { duration: air }), press(lv === 'calm' ? 1.05 : 1.12, lv, 80), settle(1, lv));
+        hopY.value = withSequence(
+          withTiming(0, { duration: 70 }),
+          withTiming(up, { duration: air, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: air * 0.9, easing: Easing.in(Easing.quad) }),
+          withTiming(0, { duration: 80 }),
+        );
+        break;
+      }
+      case 'pat':
+        rot.value = withSequence(
+          withTiming(-3, { duration: lv === 'calm' ? 320 : 180, easing: Easing.out(Easing.quad) }),
+          withTiming(2, { duration: lv === 'calm' ? 360 : 220, easing: Easing.inOut(Easing.quad) }),
+          settle(0, lv, 400),
+        );
+        sy.value = withSequence(press(0.96, lv, 160), settle(1, lv));
+        break;
+      case 'snack': {
+        // Wait for the snack to arrive, then three happy chews.
+        const chew = (n: number) =>
+          withSequence(withTiming(n, { duration: lv === 'calm' ? 220 : 140 }), withTiming(1, { duration: lv === 'calm' ? 220 : 140 }));
+        sy.value = withDelay(650, withSequence(chew(0.93), chew(0.95), chew(0.93), settle(1, lv)));
+        sx.value = withDelay(650, withSequence(chew(1.05), chew(1.04), chew(1.05), settle(1, lv)));
+        break;
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (reaction) run(reaction.type);
+    // Only a NEW reaction id should start an animation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reaction?.id]);
+
+  const onPress = () => {
+    run('squish');
+    setTap({ id: Date.now(), type: 'squish' });
+    onTap?.();
+  };
+
+  const bx = t?.breatheX ?? 0;
+  const by = t?.breatheY ?? 0;
+  const bodyStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: hopY.value + bob.value },
+      { rotate: `${rot.value}deg` },
+      { scaleX: (1 - breathe.value * bx) * sx.value },
+      { scaleY: (1 + breathe.value * by) * sy.value },
+    ],
+  }));
+  const blanketStyle = useAnimatedStyle(() => ({
+    opacity: blanket.value,
+    transform: [{ translateY: (1 - blanket.value) * 26 }],
+  }));
+
+  const body = (
+    <Animated.View style={[{ width: size, height: h, transformOrigin: '50% 100%' }, bodyStyle]}>
+      <PetSvg color={color} hat={hat} scarf={scarf} mood={tucked ? 'sleepy' : mood} size={size} anim={t ? anim : undefined} />
+    </Animated.View>
+  );
+
+  return (
+    <View style={{ width: size, height: h }}>
+      {tappable ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Squish your pet" accessibilityHint="A gentle squish. Just for fun." onPress={onPress}>
+          {body}
+        </Pressable>
+      ) : (
+        body
+      )}
+      <Animated.View pointerEvents="none" style={[styles.blanket, { top: h * 0.56, width: size, height: size * 0.42 }, blanketStyle]}>
+        <Blanket size={size} />
+      </Animated.View>
+      {tucked ? <Zzz level={level} size={size} /> : null}
+      {t && level !== 'still' && reaction ? (
+        <Burst
+          key={`r${reaction.id}`}
+          kind={BURST_FOR[reaction.type]}
+          level={level}
+          width={size}
+          height={h}
+          seed={reaction.id}
+          delay={reaction.type === 'snack' ? 650 : reaction.type === 'hop' || reaction.type === 'bigHop' ? 250 : 0}
+        />
+      ) : null}
+      {t && level !== 'still' && tap ? (
+        <Burst key={`t${tap.id}`} kind={level === 'dopamine' ? 'sparkles' : 'hearts'} level={level} width={size} height={h} seed={tap.id} count={level === 'dopamine' ? 3 : 1} />
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  blanket: { position: 'absolute', left: 0 },
+});

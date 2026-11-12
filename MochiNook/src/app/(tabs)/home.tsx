@@ -269,19 +269,18 @@ function CalmButton() {
   const { toggleCalm } = useApp();
   return (
     <Pressable
-      accessibilityRole="switch"
-      accessibilityState={{ checked: calm }}
-      accessibilityLabel="Calm Mode"
-      accessibilityHint="Stops animations, sounds and vibration, and softens colors"
+      accessibilityRole="button"
+      accessibilityLabel={calm ? 'Calm Mode is on' : 'Dopamine Mode is on'}
+      accessibilityHint="Switches between Calm (gentle and quiet) and Dopamine (bouncy, sparkly, with chimes)"
       onPress={() => toggleCalm()}
       style={({ pressed }) => [
         styles.calm,
         { backgroundColor: calm ? c.accent : c.surface, borderColor: calm ? c.accent : c.border, opacity: pressed ? 0.8 : 1 },
       ]}
     >
-      <Icon name="leaf" size={20} color={calm ? c.onAccent : c.accentInk} />
+      {calm ? <Icon name="leaf" size={20} color={c.onAccent} /> : <Glyph name="sparkle" size={22} />}
       <T variant="small" color={calm ? c.onAccent : c.ink} style={{ fontFamily: 'AtkinsonHyperlegible_700Bold' }}>
-        {calm ? 'Calm on' : 'Calm'}
+        {calm ? 'Calm' : 'Dopamine'}
       </T>
     </Pressable>
   );

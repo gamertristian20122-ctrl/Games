@@ -1,3 +1,4 @@
+import { usePathname } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -40,6 +41,7 @@ export function PebbleCount({ value }: { value: number }) {
  */
 export function PebblePop() {
   const { petEvent } = useApp();
+  const pathname = usePathname();
   const { c, motion } = useTheme();
   const insets = useSafeAreaInsets();
   const [hiddenId, setHiddenId] = useState(0);
@@ -62,7 +64,8 @@ export function PebblePop() {
   }, [id, amount, motion, lift, scale]);
 
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: lift.value }, { scale: scale.value }] }));
-  if (!petEvent || amount === 0 || id === hiddenId) return null;
+  // On Today the room card shows its own floating badges.
+  if (!petEvent || amount === 0 || id === hiddenId || pathname === '/home') return null;
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', paddingTop: insets.top + space.xxl }]}>

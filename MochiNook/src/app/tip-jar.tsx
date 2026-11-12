@@ -16,7 +16,7 @@ const TIPS: { size: TipSize; glyph: GlyphName; name: string; note: string }[] = 
 ];
 
 export default function TipJar() {
-  const { c, motion } = useTheme();
+  const { c, motionLevel } = useTheme();
   const { mockStore, settings, updateSettings } = useApp();
   const [prices, setPrices] = useState<Record<TipSize, string>>(DISPLAY_PRICES.tips);
   const [busy, setBusy] = useState<TipSize | null>(null);
@@ -54,7 +54,15 @@ export default function TipJar() {
         <IconButton icon="chevronLeft" label="Back" onPress={() => router.back()} />
       </Row>
       <View style={{ alignItems: 'center', marginTop: space.md }}>
-        <Pet color="butter" hat="party" scarf="none" mood={hop > 0 ? 'happy' : 'idle'} size={150} animate={motion} hopKey={hop} />
+        <Pet
+          color="butter"
+          hat="party"
+          scarf="none"
+          mood={hop > 0 ? 'happy' : 'idle'}
+          size={150}
+          level={motionLevel}
+          reaction={hop > 0 ? { id: hop, type: 'bigHop' } : null}
+        />
         <T variant="title" style={{ textAlign: 'center', marginTop: space.md }}>
           Support the 14-Year-Old Solo Dev
         </T>

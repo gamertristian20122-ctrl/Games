@@ -2,13 +2,16 @@ import React, { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import { useApp } from '../state/AppContext';
+import type { MotionLevel } from './motion';
 import { pickPalette, type Palette } from './tokens';
 
 interface Theme {
   c: Palette;
   scheme: 'light' | 'dark';
   calm: boolean;
-  /** False in Calm Mode or when the OS "reduce motion" setting is on. */
+  /** Still (OS reduce motion), calm (Calm Mode) or dopamine. */
+  motionLevel: MotionLevel;
+  /** False only when the phone's "Reduce motion" setting is on. Calm Mode still moves, gently. */
   motion: boolean;
 }
 
@@ -24,7 +27,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       c: pickPalette(scheme, settings.calmMode),
       scheme,
       calm: settings.calmMode,
-      motion: !settings.calmMode && !reduceMotion,
+      motionLevel: reduceMotion ? 'still' : settings.calmMode ? 'calm' : 'dopamine',
+      motion: !reduceMotion,
     }),
     [scheme, settings.calmMode, reduceMotion],
   );

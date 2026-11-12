@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { DecorThumb, TreatArt } from '../../components/art/DecorArt';
+import { DECOR, DecorThumb, TreatArt } from '../../components/art/DecorArt';
+import { Burst } from '../../components/art/Particles';
 import { Glyph } from '../../components/art/Glyph';
 import { Icon } from '../../components/Icon';
 import { PebbleCount, PebbleIcon } from '../../components/Pebble';
-import { Pet, PetSvg } from '../../components/Pet';
+import { Pet, PetSvg, type PetReaction } from '../../components/Pet';
 import { ProUpsell } from '../../components/QuestBits';
 import { Room } from '../../components/Room';
 import { Button, Row, Screen, Segmented, SectionTitle, T } from '../../components/ui';
@@ -30,10 +31,16 @@ const KIND_TITLE: Record<CosmeticKind, string> = { color: 'Colors', hat: 'Hats',
 
 export default function Nook() {
   const { pet, isPro, updatePet, tap, owned, buyItem, setDecorPlaced, canWear } = useApp();
-  const { c, motion, calm, scheme } = useTheme();
+  const { c, motionLevel, calm, scheme } = useTheme();
   const [tab, setTab] = useState<Tab>('decor');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [buying, setBuying] = useState(false);
+  // Celebration pops: on the pet when trying on / equipping, and sparkles where a room item lands.
+  const [petPop, setPetPop] = useState<PetReaction | null>(null);
+  const [decorFx, setDecorFx] = useState<{ id: number; item: string } | null>(null);
+  const [stageW, setStageW] = useState(0);
+  const pop = () => setPetPop((p) => ({ id: (p?.id ?? 0) + 1, type: 'pop' }));
+  const sparkleAt = (item: string) => setDecorFx((d) => ({ id: (d?.id ?? 0) + 1, item }));
   const season = seasonFor();
   const level = levelFromXp(pet.xp).level;
 
@@ -55,10 +62,13 @@ export default function Nook() {
     const have = owned.find((o) => o.item_id === item.id);
     if (have) {
       setPreview(null);
+      if (have.placed !== 1) sparkleAt(item.id);
       setDecorPlaced(item.id, have.placed !== 1).catch(() => undefined);
       return;
     }
     setPreview({ type: 'shop', id: item.id });
+    if (item.kind === 'decor') sparkleAt(item.id);
+    else pop();
   };
 
   const buyPreviewed = async () => {
@@ -66,7 +76,11 @@ export default function Nook() {
     setBuying(true);
     const r = await buyItem(previewItem.id);
     setBuying(false);
-    if (r.ok) setPreview(null);
+    if (r.ok) {
+      if (previewItem.kind === 'decor') sparkleAt(previewItem.id);
+      pop();
+      setPreview(null);
+    }
     else if (r.reason === 'pebbles') notice('Almost!', 'You need a few more pebbles for this one.');
   };
 
@@ -76,6 +90,7 @@ export default function Nook() {
 
   const wearTap = (kind: CosmeticKind, item: Cosmetic) => {
     tap();
+    pop();
     if (canWear(kind, item.id)) {
       setPreview(null);
       updatePet({ [kind]: item.id }).catch(() => undefined);
@@ -97,11 +112,12 @@ export default function Nook() {
       </Row>
 
       {/* Live viewport: stays put while the lists below scroll. */}
-      <View style={[styles.stage, { borderColor: c.border }]}>
+      <View style={[styles.stage, { borderColor: c.border }]} onLayout={(e) => setStageW(e.nativeEvent.layout.width)}>
         <Room room={look.room} muted={calm} dark={scheme === 'dark'} decor={decor} />
         <View style={styles.petSpot}>
-          <Pet color={look.color} hat={look.hat} scarf={look.scarf} mood={preview ? 'happy' : 'idle'} size={150} animate={motion} />
+          <Pet color={look.color} hat={look.hat} scarf={look.scarf} mood={preview ? 'happy' : 'idle'} size={150} level={motionLevel} reaction={petPop} />
         </View>
+        {decorFx && motionLevel !== 'still' && stageW > 0 ? <DecorSparkle key={decorFx.id} item={decorFx.item} stageW={stageW} seed={decorFx.id} level={motionLevel} /> : null}
         {previewItem?.kind === 'treat' ? (
           <View style={styles.treatSpot}>
             <TreatArt id={previewItem.id} size={50} />
@@ -286,9 +302,29 @@ export default function Nook() {
   );
 }
 
+const STAGE_H = 210;
+
+/** Sparkles exactly where a room item appears (maps the room's 360×240 "slice" viewBox onto the stage). */
+function DecorSparkle({ item, stageW, seed, level }: { item: string; stageW: number; seed: number; level: 'calm' | 'dopamine' }) {
+  const def = DECOR[item];
+  if (!def) return null;
+  const scale = Math.max(stageW / 360, STAGE_H / 240);
+  const offX = (stageW - 360 * scale) / 2;
+  const offY = (STAGE_H - 240 * scale) / 2;
+  const [x, y, w, h] = def.box;
+  const cx = (x + w / 2) * scale + offX;
+  const cy = (y + h / 2) * scale + offY;
+  const box = 90;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: cx - box / 2, top: cy - box / 2, width: box, height: box }}>
+      <Burst kind="sparkles" level={level} width={box} height={box} seed={seed} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   stage: {
-    height: 210,
+    height: STAGE_H,
     borderRadius: radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
