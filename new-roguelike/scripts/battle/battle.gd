@@ -53,7 +53,8 @@ var _cam_home := Vector3.ZERO
 var _t := 0.0
 var _tier := 0
 var _fx: Array = []                ## the look of the skill being shown now (battles.gd FX), [] = a plain blow
-var _shake := 0.0                  ## seconds of camera shake left
+var _trauma := 0.0                 ## how shaken the camera is, 0 to 1 (see _feel)
+var _shake_t := 0.0
 var _xp_bonus := 0                ## a battle of the story may give XP of its own on top
 
 
@@ -542,6 +543,9 @@ func _play(events: Array) -> void:
 				Sfx.play("hit", -4.0)
 				_show_fx(target)
 				_flash(target)
+				# how hard the hit FEELS: a plain blow is "medium", a crit, a kill or a boss's blow "large"
+				var big := bool(e["crit"]) or bool(e["dead"]) or bool(who.get("boss", false)) or (not _fx.is_empty() and float(_fx[2]) >= 2.0)
+				_feel(target, "large" if big else "medium")
 				_float(target, ("%d!" if bool(e["crit"]) else "%d") % int(e["amount"]), UI.C_GOLD if bool(e["crit"]) else UI.C_BONE)
 				_refresh()
 				await _wait(0.28)
@@ -587,7 +591,6 @@ func _show_fx(target: Dictionary) -> void:
 	var at: Vector3 = (target["home"] as Vector3) + Vector3(0.0, float(target["top"]) * 0.5, 0.15)
 	if _fx.is_empty():
 		stage.call("burst", at, Color(1.0, 0.97, 0.9), 0.8)
-		_shake = 0.12
 		return
 	var colour: Color = _fx[0]
 	var power := float(_fx[2])
@@ -605,7 +608,51 @@ func _show_fx(target: Dictionary) -> void:
 			stage.call("burst", (target["home"] as Vector3) + Vector3(0.0, 0.2, 0.15), colour, power, 1.6)
 		_:
 			stage.call("burst", at, colour, power)
-	_shake = 0.1 + 0.08 * power if String(_fx[1]) != "rise" else 0.0
+
+
+## GAME FEEL (v0.23.0): several small, brief answers to one hit, sized by a tier.
+##   medium  a normal blow: a little shake, a very short freeze, the one hit squashes
+##   large   a crit, a kill, a boss's blow, a big spell: more of each
+## The shake is "trauma" that decays in real time; the camera moves by trauma SQUARED along
+## smooth waves (never a random jitter). The freeze slows the whole game for a few hundredths of
+## a second; only the newest freeze may end it. Settings > Screen shake turns the shake off.
+const FEEL := {"medium": {"trauma": 0.32, "stop": 0.045}, "large": {"trauma": 0.7, "stop": 0.1}}
+
+func _feel(target: Dictionary, tier: String) -> void:
+	if _speed > 4.0:
+		return                             # the test bot plays without it
+	var f: Dictionary = FEEL[tier]
+	_trauma = clampf(_trauma + float(f["trauma"]), 0.0, 1.0)
+	_pop(target)
+	_hit_stop(float(f["stop"]))
+
+
+## Squash and spring back (the picture only; nothing in the fight changes).
+func _pop(unit: Dictionary) -> void:
+	var node: Node3D = unit["node"]
+	if not is_instance_valid(node):
+		return
+	if unit.get("pop") is Tween and (unit["pop"] as Tween).is_valid():
+		(unit["pop"] as Tween).kill()      # two tweens on one scale would fight
+	node.scale = Vector3(1.22, 0.8, 1.0)
+	var tw := create_tween()
+	tw.tween_property(node, "scale", Vector3.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	unit["pop"] = tw
+
+
+var _stop_id := 0
+func _hit_stop(duration: float, slow: float = 0.05) -> void:
+	_stop_id += 1
+	var mine := _stop_id
+	Engine.time_scale = slow
+	# (process_always, not physics, IGNORE the time scale: or the timer itself would crawl)
+	await get_tree().create_timer(duration, true, false, true).timeout
+	if mine == _stop_id:
+		Engine.time_scale = 1.0
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0                # never leave the game slowed when a battle is freed
 
 
 ## A fighter steps towards the other side and back.
@@ -779,8 +826,12 @@ func _take_shot() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	# the camera breathes a little from side to side: it shows the depth of the place
-	_shake = maxf(_shake - delta, 0.0)
-	var jolt := Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * _shake * 0.9
+	# the shake: decays in real time (also during a freeze), moves by trauma squared on smooth waves
+	var real := delta / maxf(Engine.time_scale, 0.0001)
+	_trauma = maxf(_trauma - 1.5 * real, 0.0)
+	_shake_t += real * 30.0
+	var shake := _trauma * _trauma * (1.0 if bool(Save.setting("shake")) else 0.0)
+	var jolt := Vector3(0.42 * sin(_shake_t * 1.7), 0.26 * sin(_shake_t * 2.3), 0.0) * shake
 	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + jolt
 	stage.cam.look_at(Stage.AIM, Vector3.UP)
 	for tag: Dictionary in _tags:

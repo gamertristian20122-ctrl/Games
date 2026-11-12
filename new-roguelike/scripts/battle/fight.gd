@@ -154,7 +154,10 @@ func _blow(who: Dictionary, target: Dictionary, power: float, sure: bool, events
 		events.append({"type": "miss", "who": who, "target": target})
 		return
 	var crit := rng.randf() < Battles.CRIT_CHANCE
-	var amount := float(who["atk"]) * power * rng.randf_range(1.0 - Battles.SPREAD, 1.0 + Battles.SPREAD) - float(target["def"]) * 0.5
+	# defence takes a SHARE of a blow (never all of it): DEF_HALF defence halves it, twice that
+	# takes two thirds. Nobody can ever be made immune by stacking defence.
+	var amount := float(who["atk"]) * power * rng.randf_range(1.0 - Battles.SPREAD, 1.0 + Battles.SPREAD) \
+		* Battles.DEF_HALF / (Battles.DEF_HALF + maxf(float(target["def"]), 0.0))
 	if crit:
 		amount *= Battles.CRIT_MULT
 	if bool(target["guard"]):

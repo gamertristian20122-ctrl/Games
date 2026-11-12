@@ -38,7 +38,14 @@ func build() -> void:
 	var look := _row("toggle", "3D look", "look3d")
 	look.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	switches.add_child(look)
-	list.add_child(_row("toggle", "Left-handed sticks", "swap_sticks"))
+	var more := UI.hbox(2)
+	list.add_child(more)
+	var lefty := _row("toggle", "Left-handed", "swap_sticks")
+	lefty.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	more.add_child(lefty)
+	var shake := _row("toggle", "Screen shake", "shake")       # the camera shake on a hit in a battle
+	shake.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	more.add_child(shake)
 	# Easy / Normal / Hard (the numbers are G.DIFFICULTY); it counts from the next level you enter
 	var hard := SettingRow.new()
 	hard.options = G.DIFFICULTY_NAMES

@@ -1132,6 +1132,39 @@ after each battle, the hilltop, the dawn, the open gate, the sisters). Each once
   beyond the one house kit, no bridges, ships or market stalls. Matching the reference further
   needs either more hand-made packs (the owner would choose or buy them) or lifting the no-AI rule.
 
+## v0.23.0 (12 Nov 2026): skills looked up, game feel, safer combat numbers
+The owner: "you can look for assets [or] /find-skills to find skills that can help you upgrade
+this game to the next level".
+- **Skills found** (`npx skills find ...`): the collection `gamedev-skills/awesome-gamedev-agent-skills`
+  (Apache 2.0, 11 to 13 thousand installs a skill) fits this game best: `rpg`, `game-feel`,
+  `game-ui-ux`, `level-design`, `camera-systems`, `dialogue-systems`, `create-game-assets`,
+  `audio-design`, `performance-optimization`, `save-systems`, `godot-shaders`,
+  `godot-3d-essentials`, `godot-animation`, `godot-ui-control`, `godot-audio`,
+  `godot-gdscript-headless-testing`. **Installing them was REFUSED by the session's safety
+  settings** (third-party code); do not copy them in by hand. The owner can install them
+  (`npx skills add gamedev-skills/awesome-gamedev-agent-skills@<name>`) or allow it. Their
+  advice was read as reference and applied:
+- **Game feel in battles** (`battle.gd _feel`): two tiers (a normal blow; a crit, kill, boss's
+  blow or big spell). Each hit adds "trauma" that decays in real time and moves the camera by
+  trauma squared along smooth waves (the old shake was a random jitter every frame, which reads
+  as static); a freeze of a few hundredths of a second (`_hit_stop`: only the newest freeze may
+  end it; `_exit_tree` always restores the time scale); the one hit squashes and springs back
+  (`_pop`). The test bot (speed above 4) plays without any of it. Settings > "Screen shake".
+- **Combat numbers** (`fight.gd _blow`, `battles.gd`): defence now takes a SHARE of a blow
+  (`DEF_HALF` 24 = halved) instead of being subtracted, so nothing can ever be made immune;
+  blows vary by 10%; crits 6%. `dev/battle_sim.tscn` prints a targets table: blows to fell a
+  common monster (aim 2 to 4) and blows the knight can take (aim 5 to 9), "!" where it misses.
+  **Finding for chapter three:** the rock land's monsters take 7 blows even at level 12: too
+  tanky; fix their `hp` rows (or `FOE_HP_TIER`) when the Cinder Mountains are written.
+- **Assets looked for:** the artist of the owner's packs (Anokolisa) has no Pixel Crawler TOWN
+  pack. Same artist, other series, free: "Legacy Adventure Pack - Village" (check the view: the
+  Legacy series may be side-on, which would not fit). Other artists: "Fantasy Town" (16x16
+  top-down, about 5 dollars), "Era of Fantasy: Village Props". Nothing was downloaded: itch.io
+  downloads need the owner, and any pack must be LOOKED at beside the Pixel Crawler art first
+  (the house rule: one art style).
+- **Checked:** `--uitour=tale` 16/16, `--uitour=flow --oldstory` 82/82, `check.sh`, one battle
+  at normal speed with the new feel.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

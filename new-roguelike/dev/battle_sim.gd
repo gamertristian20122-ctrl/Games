@@ -61,6 +61,22 @@ func _ready() -> void:
 			for kind: String in spots:
 				line += "  %s %s" % [kind, _line(fights, func() -> Array: return [Battles.party(), Battles.pack_for(int(spots[kind]), rng)])]
 			print(line)
+	# TARGETS (the rule of thumb for RPG numbers): at his own level the knight should fell a
+	# common monster in 2 to 4 blows and stand 5 to 9 of its blows. "!" marks a row outside that.
+	print("--- blows to fell a common monster / blows the knight can take, by level and land (tier)")
+	Save.hub_set("ally:sera", 0)
+	Save.hub_set("ally:thessaly", 0)
+	for level: int in [1, 3, 5, 8, 12]:
+		Save.hub_set("rpg:lvl", level)
+		var k := Battles.knight()
+		var line := "level %2d:" % level
+		for row: Array in [["thorn_elf", 0], ["bandit_cutter", 1], ["dust_mummy", 1], ["rubble_walker", 2]]:
+			var f := Battles.foe(String(row[0]), int(row[1]))
+			var to_fell := float(f["max_hp"]) / maxf(float(k["atk"]) * Battles.DEF_HALF / (Battles.DEF_HALF + float(f["def"])), 1.0)
+			var to_fall := float(k["max_hp"]) / maxf(float(f["atk"]) * Battles.DEF_HALF / (Battles.DEF_HALF + float(k["def"])), 1.0)
+			var odd := to_fell < 1.5 or to_fell > 4.5 or to_fall < 4.5 or to_fall > 10.0
+			line += "  tier%d %.1f/%.1f%s" % [int(row[1]), to_fell, to_fall, "!" if odd else ""]
+		print(line)
 	print("--- the story's battles")
 	for row: Array in [["glade", [1, 2, 3], []], ["deepwood", [1, 2, 3, 4], ["thessaly"]], ["giant", [2, 3, 4, 5, 6], ["thessaly"]]]:
 		var line := "%-9s" % String(row[0])

@@ -20,12 +20,13 @@ const Roamers = preload("res://scripts/data/roamers.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 
-const CRIT_CHANCE := 0.08          ## a blow lands half as hard again this often
+const DEF_HALF := 24.0             ## this much defence halves a blow (see fight.gd _blow)
+const CRIT_CHANCE := 0.06          ## a blow lands half as hard again this often
 const CRIT_MULT := 1.5
 const GUARD_TAKES := 0.45          ## a guarding fighter takes this share of a blow ...
 const GUARD_MANA := 3              ## ... and gets a little mana back
 const FLEE_CHANCE := 0.75          ## running away works this often (never from a boss)
-const SPREAD := 0.12               ## blows vary by this much up and down
+const SPREAD := 0.10               ## blows vary by this much up and down
 const LOOT_CHANCE := 0.10          ## a won battle leaves a piece of gear this often
 
 # ---- the knight
