@@ -41,6 +41,7 @@ const CardShader = preload("res://scripts/fx/card_shader.gd")
 const HdLight = preload("res://scripts/fx/hd_light.gd")
 const Build = preload("res://scripts/hub/view3d_build.gd")
 const Water = preload("res://scripts/hub/view3d_water.gd")
+const Hd = preload("res://scripts/fx/hd.gd")
 
 const PX := 1.0 / 16.0
 const PITCH := 35.0                 ## how steeply the camera looks down out of doors, in degrees (low, like a stage)
@@ -127,6 +128,9 @@ func rebuild() -> void:
 	var moving := {}
 	if is_instance_valid(hub._hero):
 		moving[hub._hero.get_instance_id()] = true
+	var mate: Variant = hub.get("_mate")
+	if mate is Node and is_instance_valid(mate):
+		moving[(mate as Node).get_instance_id()] = true
 	for p: Dictionary in hub._people:
 		moving[(p["node"] as Node).get_instance_id()] = true
 	for r: Dictionary in hub._roamers:
@@ -136,7 +140,7 @@ func rebuild() -> void:
 		if not (holder is Node2D):
 			continue
 		if moving.has(holder.get_instance_id()) or _has_animation(holder):
-			_live[holder.get_instance_id()] = {"node": holder, "cards": {}}
+			_live[holder.get_instance_id()] = {"node": holder, "cards": {}, "person": moving.has(holder.get_instance_id())}
 		else:
 			_still[holder.get_instance_id()] = true
 			_batch_holder(holder, ysort, batches)
@@ -153,6 +157,19 @@ func rebuild() -> void:
 		light.build_air(place)
 	light.sync_light()
 	_sync(0.0)
+
+
+## Is this holder somebody (the knight, the one who walks with him, a person, a roaming monster)?
+func _is_person(holder: Node) -> bool:
+	if holder == hub._hero or holder == hub.get("_mate"):
+		return true
+	for p: Dictionary in hub._people:
+		if p["node"] == holder:
+			return true
+	for r: Dictionary in hub._roamers:
+		if r["node"] == holder:
+			return true
+	return false
 
 
 ## The ground's height under a spot of the flat picture (scripts/hub/view3d_build.gd).
@@ -329,7 +346,7 @@ func _laid(v: Vector3) -> Vector3:
 func _flush(batches: Dictionary) -> void:
 	for key: String in batches:
 		var b: Dictionary = batches[key]
-		for pass_name: String in ["at", "shade"]:
+		for pass_name: String in (["at"] if Hd.on() else ["at", "shade"]):     # HD: real shadows instead of flat copies
 			var list: Array = b[pass_name]
 			var quad := _unit.duplicate() as QuadMesh
 			quad.material = CardShader.card(b["tex"], b["uv"], b["tint"]) if pass_name == "at" else CardShader.shade(build.ground_params, b["tex"], b["uv"])
@@ -343,16 +360,17 @@ func _flush(batches: Dictionary) -> void:
 				mm.set_instance_transform(i, list[i])
 			var node := MultiMeshInstance3D.new()
 			node.multimesh = mm
-			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			node.cast_shadow = CardShader.casts() if pass_name == "at" else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			_world.add_child(node)
 
 
 # ------------------------------------------------------------------ things that move
-func _new_card() -> Dictionary:
+## A card that follows a moving picture. `person`: somebody (HD keeps them readable: CardShader).
+func _new_card(person := false) -> Dictionary:
 	var body := MeshInstance3D.new()
 	body.mesh = _unit
-	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	body.material_override = CardShader.card(null, Vector4(0, 0, 1, 1), Color.WHITE)
+	body.cast_shadow = CardShader.casts()
+	body.material_override = CardShader.card(null, Vector4(0, 0, 1, 1), Color.WHITE, person)
 	_world.add_child(body)
 	var shade := MeshInstance3D.new()
 	shade.mesh = _unit
@@ -384,7 +402,7 @@ func _sync_holder(entry: Dictionary, ysort: Node2D, stamp: int) -> void:
 		var card: Dictionary = found[i]
 		var id: int = card["id"]
 		if not cards.has(id):
-			cards[id] = _new_card()
+			cards[id] = _new_card(bool(entry.get("person", false)))
 		var mine: Dictionary = cards[id]
 		mine["stamp"] = stamp
 		var body: MeshInstance3D = mine["body"]
@@ -392,7 +410,7 @@ func _sync_holder(entry: Dictionary, ysort: Node2D, stamp: int) -> void:
 		var tint: Color = card["tint"]
 		var show := bool(card["seen"]) and tint.a >= 0.4
 		body.visible = show
-		shade.visible = show
+		shade.visible = show and not Hd.on()
 		if not show:
 			continue
 		var tex: Texture2D = card["tex"]
@@ -466,7 +484,7 @@ func _sync(_delta: float) -> void:
 		_known = ysort.get_child_count()
 		for holder in ysort.get_children():
 			if holder is Node2D and not _live.has(holder.get_instance_id()) and not _still.has(holder.get_instance_id()):
-				_live[holder.get_instance_id()] = {"node": holder, "cards": {}}
+				_live[holder.get_instance_id()] = {"node": holder, "cards": {}, "person": _is_person(holder)}
 	var stamp := Engine.get_process_frames() + 1
 	for id: int in _live.keys():
 		var entry: Dictionary = _live[id]
@@ -491,5 +509,10 @@ func _sync(_delta: float) -> void:
 	var pitch := deg_to_rad(_pitch)
 	cam.position = target + Vector3(0.0, sin(pitch), cos(pitch)) * _dist
 	cam.look_at(target, Vector3.UP)
-	light.sync_view(_delta, _dist, target, centre, pool_at)
+	var people: Array = []
+	if Hd.on():
+		for id: int in _live:
+			if bool(_live[id].get("person", false)) and is_instance_valid(_live[id]["node"]):
+				people.append(_where(_live[id]["node"]))
+	light.sync_view(_delta, _dist, target, centre, pool_at, people)
 	_sync_words(zoom)

@@ -9,14 +9,34 @@ extends RefCounted
 ##   build_lamps(place) / build_air(place)   the place's lights; fireflies, beams and dust
 ##   sync_light()       every frame: the colour of the day, flicker, windows, beams
 ##   sync_view(...)     every frame, after the camera moved: the last pass and the patches of sun
+## HD (Forward+ on PC, `Hd.on()`): the same place lit for real: a sun with soft shadow maps
+## (everything standing throws its shadow, houses and trees shade people), warm lamps whose nearest
+## few throw shadows too, AgX tone, SSAO and SSIL, wide bloom over a hot threshold so flames BLAZE,
+## thin volumetric fog that the sun's beams and the lamps' halos really cut through, and the
+## camera's own depth of field: blur far behind the people and in front of them, never ON them
+## (the band in focus is stretched every frame to hold every person in view, `_focus_band`).
+## Without HD (the phone, `--nohd`) everything stays as it was: flat shadows and the blur pass.
 
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const WalkLight = preload("res://scripts/fx/walk_light.gd")
+const Hd = preload("res://scripts/fx/hd.gd")
 
 const PX := 1.0 / 16.0
 const LEAN := Vector2(-0.55, 0.5)   ## which way the sun throws shadows on the ground, per unit of height
 const LAMP_ENERGY := 9.0            ## a 2D lamp of energy 1 is this strong here
 const LAMP_REACH := 1.5             ## and reaches this many times as far as its 2D picture
+## HD numbers (all in one place to tune by eye)
+const HD_SHADOW_LAMPS := 4          ## this many lamps nearest the knight throw real shadows
+const HD_SUN_DAY := 4.2             ## the sun by day (it is the key light: warm and hard)
+const HD_SUN_NIGHT := 0.35          ## the moon
+const HD_AMBIENT_DAY := 0.22        ## the shade by day: deep, so the sun reads
+const HD_AMBIENT_NIGHT := 0.16
+const HD_LAMP := 2.2                ## lamps are this much stronger than in the flat look
+const HD_FOG_DAY := 0.010           ## volumetric fog: thin by day (beams), ...
+const HD_FOG_NIGHT := 0.018         ## ... a little thicker at night (halos round every lamp)
+const HD_DAPPLE := 2.3             ## how far apart sun and shade patches are (1 = as in the flat look)
+const HD_DOF := 0.16                ## how strong the depth of field is (0 = none)
+const HD_ROOM_DOF := 0.06
 
 static var _dot_tex: GradientTexture2D
 
@@ -34,6 +54,8 @@ var motes: CPUParticles3D
 var grade := {}
 var lift := 0.0                    ## how much the darks are lifted towards a warm haze (soft light)
 var day := 0.0                     ## 1 = out of doors by day (patches of golden sun), 0 = night or a room
+var attrs: CameraAttributesPractical  ## HD: the camera's depth of field
+var _band := Vector2.ZERO          ## HD: the distances in focus now (eased towards the wanted band)
 var _drift := 0.0
 var _stats_t := 0.0
 
@@ -91,6 +113,65 @@ func setup() -> void:
 	post.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	v.cam.add_child(post)
 	post.position = Vector3(0.0, 0.0, -1.0)
+	if Hd.on():
+		_setup_hd(mat)
+
+
+## HD: the real light of a PC (see the top of this file).
+func _setup_hd(post_mat: ShaderMaterial) -> void:
+	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	env.tonemap_exposure = 1.25
+	env.tonemap_agx_contrast = 1.35
+	env.tonemap_agx_white = 8.0
+	env.ssao_enabled = true
+	env.ssao_radius = 0.9
+	env.ssao_intensity = 1.8
+	env.ssao_power = 1.6
+	env.ssao_light_affect = 0.1
+	env.ssil_enabled = true
+	env.ssil_radius = 3.5
+	env.ssil_intensity = 0.9
+	# bloom: the cores of flames and lamps burn white and spill a wide soft glow, like a lens
+	env.glow_enabled = true
+	env.glow_normalized = false
+	for i in 7:
+		env.set_glow_level(i, [0.0, 0.25, 0.6, 0.9, 1.0, 0.9, 0.6][i])
+	env.glow_intensity = 0.42
+	env.glow_strength = 1.0
+	env.glow_bloom = 0.0
+	env.glow_hdr_threshold = 1.0
+	env.glow_hdr_scale = 2.4
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+	# the air: light that scatters forwards, so the low sun behind the place glows through it
+	env.fog_enabled = false
+	env.volumetric_fog_enabled = true
+	env.volumetric_fog_density = HD_FOG_DAY
+	env.volumetric_fog_anisotropy = 0.62
+	env.volumetric_fog_length = 80.0
+	env.volumetric_fog_detail_spread = 1.6
+	env.volumetric_fog_ambient_inject = 0.15
+	env.volumetric_fog_sky_affect = 0.0
+	sun.shadow_enabled = true
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	sun.directional_shadow_max_distance = 90.0
+	sun.directional_shadow_blend_splits = true
+	sun.shadow_bias = 0.04
+	sun.shadow_normal_bias = 0.6
+	sun.shadow_blur = 1.4
+	sun.light_angular_distance = 1.6            # soft edges that widen away from the thing that throws them
+	sun.light_volumetric_fog_energy = 1.6
+	RenderingServer.directional_shadow_atlas_set_size(4096, true)
+	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
+	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
+	attrs = CameraAttributesPractical.new()
+	attrs.dof_blur_far_enabled = true
+	attrs.dof_blur_near_enabled = true
+	attrs.dof_blur_amount = HD_DOF
+	v.cam.attributes = attrs
+	RenderingServer.camera_attributes_set_dof_blur_quality(RenderingServer.DOF_BLUR_QUALITY_HIGH, true)
+	RenderingServer.camera_attributes_set_dof_blur_bokeh_shape(RenderingServer.DOF_BOKEH_CIRCLE)
+	post_mat.set_shader_parameter("blur_on", 0.0)
+	post_mat.set_shader_parameter("linear_in", 1.0)
 
 
 func reset() -> void:
@@ -101,6 +182,7 @@ func reset() -> void:
 	motes = null
 	sky_fx = null
 	flies = null
+	_band = Vector2.ZERO
 
 
 ## Every lamp of the place is a real light, a pool of light on the ground and a soft glow.
@@ -124,6 +206,12 @@ func build_lamps(place: Dictionary) -> void:
 		three.omni_range = 64.0 * two.texture_scale * PX * LAMP_REACH
 		three.omni_attenuation = 1.4
 		three.shadow_enabled = false
+		if Hd.on():
+			three.light_volumetric_fog_energy = 1.3      # a halo of lit air round every lamp
+			three.light_size = 0.08
+			three.shadow_blur = 1.2
+			three.shadow_bias = 0.08
+			three.shadow_normal_bias = 1.0
 		v._world.add_child(three)
 		lamps.append([two, three])
 		var warm := two.color.r > two.color.b
@@ -234,8 +322,10 @@ func sync_light() -> void:
 		env.fog_enabled = false
 		lift = 0.02
 		day = 0.0
+	if Hd.on():
+		_sync_hd(sky, outdoor)
 	for mat: ShaderMaterial in v.build.window_mats:
-		mat.set_shader_parameter("shine", lerpf(1.25, 0.1, day))       # windows glow when it is dark
+		mat.set_shader_parameter("shine", lerpf(1.25, 0.1, day) * (2.2 if Hd.on() else 1.0))       # windows glow when it is dark
 	v.water.sync(day, sky)
 	grade = WalkLight.grade(hub.place_id, outdoor, day, lit())
 	var t := Time.get_ticks_msec() / 1000.0
@@ -247,16 +337,17 @@ func sync_light() -> void:
 		var two := pair[0] as PointLight2D
 		var g: Array = glows[i]
 		var f := WalkLight.flicker(t, float(g[4]), bool(g[3]))
-		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f
+		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f * (HD_LAMP if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.55, night) * f)
-		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.42, night) * f)
+		# (HD: the bloom and the lit fog make most of the glow; the painted halo only adds a little)
+		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.42, night) * f * (0.3 if Hd.on() else 1.0))
 	var dark_k := night if outdoor else 0.0
 	for i in windows.size():
 		var w: Array = windows[i]
 		var f2 := WalkLight.flicker(t * 0.5, float(i) * 1.9, true)
 		(w[0] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2)
-		(w[1] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2)
+		(w[1] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2 * (0.4 if Hd.on() else 1.0))
 	var beams := float(grade.get("shafts", 0.0)) * day
 	for mat: ShaderMaterial in shaft_mats:
 		mat.set_shader_parameter("strength", 0.17 * beams)
@@ -271,7 +362,7 @@ func sync_light() -> void:
 
 ## After the camera has moved: the last pass (blur round `dist`, the grade), the patches of sun
 ## round `pool_at`, the beams over `target`. `centre` is the flat camera's spot (px).
-func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool_at: Vector2) -> void:
+func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool_at: Vector2, people: Array = []) -> void:
 	var mat: ShaderMaterial = post.material_override
 	mat.set_shader_parameter("focus", dist)
 	mat.set_shader_parameter("sharp", dist * lerpf(0.24, 0.17, day))
@@ -295,15 +386,22 @@ func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool
 	if is_instance_valid(sky_fx):
 		sky_fx.position = Vector3(target.x, v.build.height(centre), target.z)
 	_drift += delta * 0.004
-	Sprite3.set_sun(day, 7.0, Vector2(_drift, _drift * 0.6), pool_at, dist * 0.8, 0.95)
+	# HD: the patches are pushed further apart (deep shade between pools of blazing sun); the pool
+	# round the knight keeps him in the light
+	if Hd.on():
+		Sprite3.set_sun(day * HD_DAPPLE, 6.0, Vector2(_drift, _drift * 0.6), pool_at, dist * 0.34, 0.9)
+	else:
+		Sprite3.set_sun(day, 7.0, Vector2(_drift, _drift * 0.6), pool_at, dist * 0.8, 0.95)
 	mat.set_shader_parameter("lift", lift)
 	mat.set_shader_parameter("haze", _vec(grade["haze"]) if not grade.is_empty() else Vector3(1.0, 0.85, 0.63))
+	if Hd.on():
+		_focus_band(delta, dist, target, people, mat)
 	if G.flag("lightstats"):
 		# test: what the 3D look costs (draw calls are what a phone feels most)
 		_stats_t += delta
 		if _stats_t > 2.0:
 			_stats_t = 0.0
-			print("[light] %s draws=%d objects=%d prims=%d fps=%d" % [v.hub.place_id,
+			print("[light] %s day=%.2f hd=%s draws=%d objects=%d prims=%d fps=%d" % [v.hub.place_id, day, Hd.on(),
 				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
 				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
 				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
@@ -312,3 +410,70 @@ func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool
 
 func _vec(c: Color) -> Vector3:
 	return Vector3(c.r, c.g, c.b)
+
+
+# ------------------------------------------------------------------ HD
+## HD, every frame: the sun, the shade, the air and which lamps throw shadows.
+func _sync_hd(sky: Color, outdoor: bool) -> void:
+	var night := 1.0 - day
+	if outdoor:
+		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY, day)
+		sun.light_color = sky.lerp(Color(1.0, 0.80, 0.52), 0.55).lerp(Color(0.62, 0.72, 1.0), night)
+		env.ambient_light_energy = lerpf(HD_AMBIENT_NIGHT, HD_AMBIENT_DAY, day)
+		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night)
+		var haze: Color = grade.get("haze", Color(1.0, 0.86, 0.62)) if not grade.is_empty() else Color(1.0, 0.86, 0.62)
+		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day)
+		env.volumetric_fog_albedo = haze.lerp(Color(0.55, 0.62, 0.80), night)
+		sun.light_volumetric_fog_energy = lerpf(0.25, 1.6, day)
+		env.tonemap_exposure = lerpf(1.45, 1.25, day)
+	else:
+		sun.light_energy = 0.9
+		env.ambient_light_energy = 0.42
+		env.volumetric_fog_density = 0.004
+		env.volumetric_fog_albedo = Color(0.9, 0.75, 0.6)
+		sun.light_volumetric_fog_energy = 0.2
+		env.tonemap_exposure = 1.3
+	# the nearest lamps throw real shadows (a shadow map each costs, so only a few)
+	var at: Vector3 = v.cam.global_position
+	var order: Array = []
+	for i in lamps.size():
+		var three: OmniLight3D = lamps[i][1]
+		if is_instance_valid(three):
+			order.append([three.global_position.distance_squared_to(at), three])
+	order.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	for i in order.size():
+		(order[i][1] as OmniLight3D).shadow_enabled = i < HD_SHADOW_LAMPS
+
+
+## HD: the depth of field. Everything between the nearest and the farthest person in view (and a
+## band round the knight) stays sharp; scenery further back melts away, and so does anything
+## standing between the camera and the people (the near blur). Eased, so it never jumps.
+func _focus_band(delta: float, dist: float, target: Vector3, people: Array, mat: ShaderMaterial) -> void:
+	var cam: Camera3D = v.cam
+	var to_view := cam.global_transform.affine_inverse()
+	var near := dist * 0.80
+	var far := dist * 1.22
+	for p: Vector3 in people:
+		for h: float in [0.0, 1.8]:
+			var q := p + Vector3(0.0, h, 0.0)
+			if not cam.is_position_in_frustum(q):
+				continue
+			var z := -(to_view * q).z
+			near = minf(near, z - 1.5)
+			far = maxf(far, z + 2.5)
+	var aim := -(to_view * target).z
+	near = minf(near, aim - dist * 0.2)
+	far = maxf(far, aim + dist * 0.2)
+	var want := Vector2(maxf(near, 1.0), far)
+	_band = want if _band == Vector2.ZERO else _band.lerp(want, clampf(delta * 3.0, 0.0, 1.0))
+	attrs.dof_blur_near_distance = _band.x
+	attrs.dof_blur_near_transition = dist * 0.22
+	attrs.dof_blur_far_distance = _band.y
+	attrs.dof_blur_far_transition = dist * lerpf(0.55, 0.40, day)
+	attrs.dof_blur_amount = HD_DOF if v._outdoor else HD_ROOM_DOF
+	# the haze of the last pass begins where the blur begins
+	var mid := (_band.x + _band.y) * 0.5
+	mat.set_shader_parameter("focus", mid)
+	mat.set_shader_parameter("sharp", (_band.y - _band.x) * 0.5)
+	mat.set_shader_parameter("falloff", dist * 0.5)
+	env.volumetric_fog_length = maxf(_band.y + dist, 40.0)

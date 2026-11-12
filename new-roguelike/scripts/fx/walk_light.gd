@@ -103,6 +103,8 @@ uniform float lift = 0.0;
 uniform vec3 haze : source_color = vec3(1.0, 0.85, 0.6);
 uniform float far = 0.3;          // how much the distance fades into the haze
 uniform float sky_glow = 0.0;     // a soft bright band at the top of the picture (the low sun)
+uniform float blur_on = 1.0;      // 0 = no blur here (HD: the camera's own depth of field does it)
+uniform float linear_in = 0.0;    // 1 = the picture is linear light (HD, Forward+): grade it as seen
 const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
@@ -125,7 +127,7 @@ void fragment() {
 	vec3 sum = texture(screen_tex, SCREEN_UV).rgb;
 	float n = 1.0;
 	vec3 bright = vec3(0.0);
-	for (int i = 1; i <= TAPS; i++) {
+	for (int i = 1; i <= TAPS && blur_on > 0.5; i++) {
 		float r = sqrt(float(i) / float(TAPS));
 		float a = float(i) * 2.39996;
 		vec2 uv = SCREEN_UV + vec2(cos(a), sin(a)) * r * r_max * px;
@@ -140,6 +142,7 @@ void fragment() {
 	}
 	vec3 col = sum / n;
 	col += bright * (0.9 / float(TAPS));
+	if (linear_in > 0.5) { col = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2)); }
 	col = pow(max(col, vec3(0.0)), vec3(punch));
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(l), col, rich);
@@ -153,6 +156,7 @@ void fragment() {
 	col += haze * sky_glow * pow(1.0 - SCREEN_UV.y, 3.0) * 0.35;
 	vec2 q = SCREEN_UV - 0.5;
 	col *= 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * rim;
+	if (linear_in > 0.5) { col = pow(max(col, vec3(0.0)), vec3(2.2)); }
 	ALBEDO = col;
 }
 "

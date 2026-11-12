@@ -13,6 +13,7 @@ const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const CardShader = preload("res://scripts/fx/card_shader.gd")
 const HdLight = preload("res://scripts/fx/hd_light.gd")
 const WalkLight = preload("res://scripts/fx/walk_light.gd")
+const Hd = preload("res://scripts/fx/hd.gd")
 
 const PX := 1.0 / 16.0
 const MARGIN := Vector2(336, 208)   ## how far past the edges of a place the ground is painted, px
@@ -271,9 +272,11 @@ func build_houses(place: Dictionary) -> void:
 		var node := MeshInstance3D.new()
 		node.mesh = (_surf[key][1] as SurfaceTool).commit()
 		node.material_override = mat
-		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		node.cast_shadow = CardShader.casts()            # HD: houses throw real shadows (on people too)
 		v._world.add_child(node)
 	_surf.clear()
+	if Hd.on():
+		return                                           # (no flat shadow copies then)
 	var white := Image.create(1, 1, false, Image.FORMAT_RGBA8)
 	white.fill(Color.WHITE)
 	var shadows := MeshInstance3D.new()
