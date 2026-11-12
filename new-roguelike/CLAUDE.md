@@ -1165,6 +1165,51 @@ this game to the next level".
 - **Checked:** `--uitour=tale` 16/16, `--uitour=flow --oldstory` 82/82, `check.sh`, one battle
   at normal speed with the new feel.
 
+## v0.24.0 (12 Nov 2026): the big polish pass (light, battles, chapter two, towns, UI, sound)
+The owner: "make the game fully polished ... revamp graphics and story and everything ... like an old
+top-down adventure game or a 2D RPG with really really good graphics, mainly the lighting. Use free
+assets and the pack I paid for. It still needs to pass the 'no AI' box on Steam." Six agents worked
+in parallel, one area each, then were merged.
+- **Steam "no AI":** all art is the purchased Pixel Crawler packs or human-made CC0/CC-BY packs; all
+  sound is human-made CC0/CC-BY (licence notes in assets_raw/licence_notes). Light and effects are code.
+  BUT the story words in tale.gd were written with AI help: tell the owner to rewrite them in their own
+  words before release, or disclose it. Code written with AI help is noted on the Credits screen.
+- **Lighting (walking places):** `scripts/fx/walk_light.gd` (new) holds `GRADES` (colours per place:
+  "<id>", "<id>:night", "<id>:lit" after its land's beacon, "default", "default:night", "indoors"), `LAND`
+  (place -> land for "lit"; the Sands are dustwatch and suncourt), `POST_CODE` (the walking last pass:
+  distance haze, bright spill, low-sun glow), and `pool()`, `halo()`, `shafts()`, `motes()`, `flicker()`.
+  In view3d.gd every lamp, fire and window gets its light, a warm pool on the ground and a glow in the air,
+  all flickering, faint by day; sprites are lit from the side the light is on; sun beams and dust by day.
+  A light 20-60 px north of a "torches" spot is moved onto the lamp's glass. Additive things need
+  render_priority above 0 (pool 4, beams 5, glow 6, specks 10). `--lightstats` prints draw calls and fps.
+  Limits: glows ignore depth (can show through a tree), no real shadow maps, phone speed not measured.
+- **Battles:** rim light on fighters (`stage.gd LOOKS[*]["key"]`, `sprite3.gd set_rim`), soft contact
+  shadows, lit ground under spells and the turn marker (`ground_glow`), pack FX art played lit
+  (`fx_anim`), a boss bar, health bars that drain, whose-turn arrow, enter fade and camera glide,
+  victory flash and hop / red defeat fade (`battle.gd _enter`, `_closing`). Rules and numbers unchanged.
+- **Story, chapter two BUILT** (steps 7-14 in tale.gd): Dustwatch (the Sands' town, fitted in places.gd
+  `_fit_sands()`), the Sunwell (place "suncourt", by the cistern stair) with the Dune Queen and the
+  second beacon, the Dune Gorgon boss (world-map ghost "site_dunes"), Seraphine joins after battle
+  "dustwall" (the Queen is her mother). Chapter one's lines were polished. A person who must be there
+  at an ENTER step needs tale_from = the step BEFORE it. `--uitour=tale` now prints 28 checks.
+  allies.gd still has Seraphine's OLD-story text (never shown in the tale). Balance only bot-checked.
+- **World dressing:** import_hub.py cuts more of the purchased Garden and Castle pieces (hedges, hedge
+  arch, pergola, walls, busts, banners, wall candles). Wickmere's extra dressing is in places.gd
+  `_dress_town()`; a hedge's blocking is a Rect2 in "blocks". Dustwatch is NOT dressed yet (bare sand).
+- **UI:** StoneBox (theme.gd) gained `trim`, `studs`, `top_light`; new boxes "talk", "plate",
+  "portrait"; colour C_BRASS. hub_talk.gd: name plate, `PAUSES` after punctuation, bobbing NextArrow,
+  whole-pixel portrait. title.gd: drifting light motes, vignette and name glow. Quick dialogue
+  picture: `-- --hub=village --nosave --hubtalk=hale --shots=<dir>`.
+- **Sound:** sfx.gd `PLACES` gives each walking place [music, ambience, ground]; a new place needs a row.
+  `Sfx.place(id)` (hub.gd enter), `Sfx.walking(...)` (footsteps), `Sfx.battle(boss)` (battles had NO music
+  before: "run" had no file), `Sfx.victory()`. New CC-BY footsteps (congusbongus) MUST stay credited.
+  Rebuild with assets_raw/audio/ambience_src/build_place_audio.sh (edit its /tmp paths first).
+- **Checked after the merge:** check.sh CHECK PASSED, `--uitour=tale` 28/28. Not run: `--uitour=flow
+  --oldstory`, APK build.
+- **Next, most useful first:** dress Dustwatch with the Desert pieces; move the lamp post that stands in
+  the middle of Wickmere's south path; the owner plays a build on the phone (speed with the new light);
+  chapter three (Cinder Mountains, Grukk; fix the rock monsters' hp, see v0.23.0).
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces

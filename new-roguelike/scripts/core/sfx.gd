@@ -32,6 +32,7 @@ const PLACES := {
 	"beacon": ["title", "wind", "grass"],      # the bare hilltop of the dark beacon
 	"world": ["world", "wind", "grass"],
 	"dustwatch": ["shop", "wind", "sand"],     # the desert camp: a market tune in the wind
+	"suncourt": ["title", "wind", "stone"],    # the Sunwell under Dustwatch: old stone, wind in the shafts
 	"emberfall": ["town", "fire", "stone"],
 	"_": ["town", "birds", "grass"],
 }

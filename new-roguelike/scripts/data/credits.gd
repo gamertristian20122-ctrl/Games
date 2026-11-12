@@ -259,4 +259,35 @@ const LIST := [
 		"licence": "CC-BY 4.0",
 		"url": "https://chierit.itch.io/boss-demon-slime",
 	},
+	# ---- place ambience and footsteps (assets_raw/licence_notes/place_ambience_and_footsteps.txt)
+	{
+		"what": "Sound effects: footsteps on different surfaces (from recordings by swuing on freesound.org)",
+		"author": "congusbongus",
+		"licence": "CC-BY 3.0",
+		"url": "https://opengameart.org/content/footsteps-on-different-surfaces",
+	},
+	{
+		"what": "Sound effects: gravel footsteps",
+		"author": "Ali_6868",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/footsteps-on-different-surfaces",
+	},
+	{
+		"what": "Ambience: forest ambience",
+		"author": "TinyWorlds",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/forest-ambience",
+	},
+	{
+		"what": "Ambience: ambient bird sounds",
+		"author": "isaiah658",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/ambient-bird-sounds",
+	},
+	{
+		"what": "Ambience: wind",
+		"author": "IgnasD",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/wind",
+	},
 ]

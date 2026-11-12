@@ -37,6 +37,11 @@ const GRADES := {
 	"deepwood:lit": {"warm": Vector3(1.09, 1.01, 0.86), "shade": Vector3(0.98, 0.94, 0.90), "haze": Color(0.96, 0.82, 0.58), "far": 0.32, "shafts": 1.0, "motes": 1.0},
 	"glade:lit": {"warm": Vector3(1.10, 1.01, 0.85), "haze": Color(1.0, 0.84, 0.58), "shafts": 1.0, "motes": 1.0},
 	"beacon:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
+	# the Sands: hot pale dust before the beacon, deep amber after it
+	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.96, 0.90, 0.96), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6},
+	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4},
+	"dustwatch:lit": {"warm": Vector3(1.12, 1.0, 0.82), "haze": Color(1.0, 0.78, 0.50), "shafts": 1.0, "motes": 1.0},
+	"suncourt:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the world map: a wide view, so the distance matters most
 	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.42, "rim": 0.40, "shafts": 0.55, "motes": 0.3},
 	"world:night": {"haze": Color(0.16, 0.22, 0.38), "far": 0.45},
@@ -46,7 +51,8 @@ const GRADES := {
 }
 
 ## Which land a place belongs to, for "lit" (Tale.lit(land)).
-const LAND := {"elfwood": "elfwood", "deepwood": "elfwood", "glade": "elfwood", "beacon": "elfwood"}
+const LAND := {"elfwood": "elfwood", "deepwood": "elfwood", "glade": "elfwood", "beacon": "elfwood",
+	"dustwatch": "sands", "suncourt": "sands"}
 
 
 ## The grade for a place: `day` 1 = full day, 0 = night (rows are blended by it).
