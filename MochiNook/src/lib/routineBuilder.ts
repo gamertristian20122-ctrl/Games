@@ -4,7 +4,7 @@ import type { BlockKind, BrainProfile, Energy } from './types';
  * Picks the starter routine (library quest ids) from the onboarding answers.
  * Kept small on purpose: a short list that feels doable beats a full one.
  */
-export function buildStarterRoutine(profile: BrainProfile, energy: Energy, blockKind: BlockKind): string[] {
+export function buildStarterRoutine(profiles: readonly BrainProfile[], energy: Energy, blockKind: BlockKind): string[] {
   const ids: string[] = [
     'morning-water',
     'morning-meds',
@@ -26,9 +26,10 @@ export function buildStarterRoutine(profile: BrainProfile, energy: Energy, block
     ids.push('bedroom-clean', 'grocery-run', 'money-peek', 'wiggle-stretch');
   }
 
-  if (profile === 'adhd' || profile === 'audhd') ids.push('morning-launch', 'focus-sprint');
-  if (profile === 'autism' || profile === 'audhd') ids.push('sensory-reset', 'bedtime-tomorrow');
-  if (profile === 'overwhelmed') ids.push('hard-day-kit', 'reply-messages');
+  const has = (p: BrainProfile) => profiles.includes(p);
+  if (has('adhd') || has('add') || has('audhd')) ids.push('morning-launch', 'focus-sprint');
+  if (has('autism') || has('audhd')) ids.push('sensory-reset', 'bedtime-tomorrow');
+  if (has('anxiety')) ids.push('hard-day-kit', 'step-outside');
 
   if (blockKind === 'school') ids.push('homework-start');
   if (blockKind === 'work') ids.push('work-start');

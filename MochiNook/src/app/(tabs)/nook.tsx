@@ -1,6 +1,9 @@
 import { router } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PebbleCount, PebbleIcon } from '../../components/Pebble';
+import { SHOP_ITEMS, type ShopItem } from '../../data/shop';
+import { confirmAction, notice } from '../../lib/dialogs';
 import { Icon } from '../../components/Icon';
 import { Pet } from '../../components/Pet';
 import { ProUpsell } from '../../components/QuestBits';
@@ -13,7 +16,32 @@ import { useTheme } from '../../theme/ThemeContext';
 import { radius, space } from '../../theme/tokens';
 
 export default function Nook() {
-  const { pet, isPro, updatePet, tap } = useApp();
+  const { pet, isPro, updatePet, tap, owned, buyItem, setDecorPlaced } = useApp();
+  const decor = owned.filter((o) => o.placed === 1).map((o) => o.item_id);
+
+  const shopTap = async (item: ShopItem) => {
+    tap();
+    const have = owned.find((o) => o.item_id === item.id);
+    if (have) {
+      await setDecorPlaced(item.id, have.placed !== 1);
+      return;
+    }
+    if (pet.pebbles < item.price) {
+      notice(
+        `${item.price - pet.pebbles} more pebbles`,
+        `Every tiny step you check off earns a pebble (and a finished quest earns 3 extra). ${item.name} will be right here waiting.`,
+      );
+      return;
+    }
+    const verb = item.kind === 'treat' ? 'Give' : 'Get';
+    confirmAction(`${verb} ${item.name}?`, `This uses ${item.price} of your ${pet.pebbles} pebbles.`, `${verb} it`, () => {
+      buyItem(item.id)
+        .then((r) => {
+          if (!r.ok && r.reason === 'pebbles') notice('Almost!', 'You need a few more pebbles for this one.');
+        })
+        .catch(() => undefined);
+    });
+  };
   const { c, motion, calm, scheme } = useTheme();
   const level = levelFromXp(pet.xp).level;
 
@@ -71,12 +99,62 @@ export default function Nook() {
   return (
     <Screen>
       <View style={{ paddingTop: space.lg }}>
-        <T variant="title">{pet.name}’s Nook</T>
-        <T variant="small">Level {level} · dress-up and cozy rooms</T>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <T variant="title" style={{ flex: 1 }}>
+            {pet.name}’s Nook
+          </T>
+          <PebbleCount value={pet.pebbles} />
+        </Row>
+        <T variant="small">Level {level} · dress-up, cozy rooms, and the Pebble shop</T>
       </View>
       <View style={[styles.stage, { borderColor: c.border }]}>
-        <Room room={pet.room} muted={calm} dark={scheme === 'dark'} />
+        <Room room={pet.room} muted={calm} dark={scheme === 'dark'} decor={decor} />
         <Pet color={pet.color} hat={pet.hat} scarf={pet.scarf} mood="idle" size={170} animate={motion} />
+      </View>
+
+      <SectionTitle right={<PebbleCount value={pet.pebbles} />}>Pebble shop</SectionTitle>
+      <T variant="small" style={{ marginBottom: space.md }}>
+        Earn 1 pebble for every tiny step and 3 extra for a finished quest. Free for everyone, forever. Tap a room item you own to show or hide it.
+      </T>
+      <View style={styles.grid}>
+        {SHOP_ITEMS.map((item) => {
+          const have = owned.find((o) => o.item_id === item.id);
+          const affordable = pet.pebbles >= item.price;
+          const status = have ? (have.placed === 1 ? 'In your room' : 'Stored away') : null;
+          return (
+            <Pressable
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.name}. ${status ?? `${item.price} pebbles`}. ${item.blurb}`}
+              onPress={() => shopTap(item)}
+              style={({ pressed }) => [
+                styles.tile,
+                {
+                  backgroundColor: have?.placed === 1 ? c.accentSoft : c.surface,
+                  borderColor: have?.placed === 1 ? c.accent : c.border,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+              <T variant="small" color={c.ink} numberOfLines={2} style={{ textAlign: 'center' }}>
+                {item.name}
+              </T>
+              {status ? (
+                <T variant="label" color={c.accentInk}>
+                  {status.toUpperCase()}
+                </T>
+              ) : (
+                <Row gap={4} style={{ opacity: affordable ? 1 : 0.55 }}>
+                  <PebbleIcon size={14} />
+                  <T variant="small" color={c.ink} style={{ fontFamily: 'AtkinsonHyperlegible_700Bold' }}>
+                    {item.price}
+                  </T>
+                </Row>
+              )}
+            </Pressable>
+          );
+        })}
       </View>
 
       {!isPro ? (
@@ -100,8 +178,7 @@ const styles = StyleSheet.create({
   stage: { height: 250, borderRadius: radius.xl, borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', marginTop: space.lg, paddingBottom: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tile: {
-    width: '31%',
-    flexGrow: 1,
+    width: '31.6%',
     minHeight: 84,
     borderRadius: radius.md,
     borderWidth: 1.5,

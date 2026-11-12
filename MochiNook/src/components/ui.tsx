@@ -213,6 +213,7 @@ export function Chip<T extends string>({
   onSelect,
   sublabel,
   emoji,
+  multi = false,
 }: {
   label: string;
   value: T;
@@ -220,13 +221,15 @@ export function Chip<T extends string>({
   onSelect: (v: T) => void;
   sublabel?: string;
   emoji?: string;
+  /** Checkbox look and behaviour (pick several) instead of a radio button. */
+  multi?: boolean;
 }) {
   const { c } = useTheme();
   const { tap } = useApp();
   return (
     <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
+      accessibilityRole={multi ? 'checkbox' : 'radio'}
+      accessibilityState={multi ? { checked: selected } : { selected }}
       accessibilityLabel={sublabel ? `${label}. ${sublabel}` : label}
       onPress={() => {
         tap();
@@ -247,7 +250,7 @@ export function Chip<T extends string>({
           <T variant="bodyBold">{label}</T>
           {sublabel ? <T variant="small">{sublabel}</T> : null}
         </View>
-        <View style={[styles.radio, { borderColor: selected ? c.accentInk : c.border, backgroundColor: selected ? c.accent : 'transparent' }]}>
+        <View style={[styles.radio, multi && { borderRadius: 8 }, { borderColor: selected ? c.accentInk : c.border, backgroundColor: selected ? c.accent : 'transparent' }]}>
           {selected ? <Icon name="check" size={16} color={c.onAccent} strokeWidth={2.6} /> : null}
         </View>
       </Row>

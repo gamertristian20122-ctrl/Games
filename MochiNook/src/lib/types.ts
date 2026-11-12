@@ -1,4 +1,4 @@
-export type BrainProfile = 'adhd' | 'autism' | 'audhd' | 'overwhelmed';
+export type BrainProfile = 'adhd' | 'add' | 'autism' | 'audhd' | 'anxiety' | 'other';
 export type Energy = 'low' | 'medium' | 'high';
 export type Anchor = 'morning' | 'daytime' | 'evening' | 'anytime';
 export type Cadence = 'daily' | 'weekly' | 'monthly' | 'once';
@@ -51,7 +51,8 @@ export interface Anchors {
 
 export interface Settings {
   onboarded: boolean;
-  brainProfile: BrainProfile;
+  /** Multi-select from onboarding question 1. */
+  brainProfiles: BrainProfile[];
   energy: Energy;
   anchors: Anchors;
   calmMode: boolean;
@@ -74,6 +75,8 @@ export interface Pet {
   hat: string;
   scarf: string;
   room: string;
+  /** Earned with every micro-step; spent in the Nook shop. */
+  pebbles: number;
 }
 
 export interface QuestRow {

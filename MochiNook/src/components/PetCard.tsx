@@ -6,12 +6,14 @@ import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, space } from '../theme/tokens';
 import { Icon } from './Icon';
+import { PebbleCount } from './Pebble';
 import { Pet, type PetMood } from './Pet';
 import { Room } from './Room';
 import { ProgressBar, Row, T } from './ui';
 
 export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boolean }) {
-  const { pet, petEvent } = useApp();
+  const { pet, petEvent, owned } = useApp();
+  const decor = owned.filter((o) => o.placed === 1).map((o) => o.item_id);
   const { c, motion, calm, scheme } = useTheme();
   // The latest celebration shows until its little moment has passed, then the pet settles back down.
   const [settledId, setSettledId] = useState(0);
@@ -30,7 +32,7 @@ export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boole
   return (
     <View style={[styles.card, { borderColor: c.border, backgroundColor: c.surface }]}>
       <View style={styles.stage}>
-        <Room room={pet.room} muted={calm} dark={scheme === 'dark'} />
+        <Room room={pet.room} muted={calm} dark={scheme === 'dark'} decor={decor} />
         <Animated.View
           key={speech}
           entering={motion ? FadeIn.duration(220) : undefined}
@@ -49,9 +51,12 @@ export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boole
       <View style={{ padding: space.lg, gap: space.sm }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <T variant="heading">{pet.name}</T>
-          <Row gap={6}>
-            <Icon name="heart" size={18} color={c.peach} strokeWidth={2.4} />
-            <T variant="small">Level {lvl.level}</T>
+          <Row gap={space.sm}>
+            <PebbleCount value={pet.pebbles} />
+            <Row gap={4}>
+              <Icon name="heart" size={18} color={c.peach} strokeWidth={2.4} />
+              <T variant="small">Level {lvl.level}</T>
+            </Row>
           </Row>
         </Row>
         <ProgressBar value={lvl.into / lvl.needed} color={c.peach} />

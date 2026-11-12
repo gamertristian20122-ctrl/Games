@@ -50,7 +50,7 @@ export default function QuestScreen() {
 
   const total = quest.steps.length;
   const finished = quest.completedToday || (total > 0 && quest.doneCount >= total);
-  const nextStep = quest.steps.find((s) => !s.done);
+  const splittable = quest.steps.find((s) => !s.done && assistant.canMakeSmaller(s.text, s.tiny));
 
   const toggle = async (step: StepWithState) => {
     if (step.done) await app.uncheckStep(quest, step);
@@ -58,7 +58,8 @@ export default function QuestScreen() {
   };
 
   const smaller = async (step: StepWithState) => {
-    const parts = await assistant.smaller(step.text, step.tiny);
+    const parts = assistant.smaller(step.text, step.tiny);
+    if (!parts) return;
     await repo.replaceStepWithSmaller(db, step, parts);
     app.touchData();
   };
@@ -69,19 +70,23 @@ export default function QuestScreen() {
   };
 
   const stepMenu = (step: StepWithState) => {
-    const options = ['Break into smaller steps', 'Remove this step', 'Never mind'];
-    const handle = (i: number) => {
-      if (i === 0) smaller(step).catch(() => undefined);
-      if (i === 1) removeStep(step);
-    };
+    const canSplit = !step.done && assistant.canMakeSmaller(step.text, step.tiny);
+    const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [];
+    if (canSplit) buttons.push({ text: 'Break into smaller steps', onPress: () => smaller(step).catch(() => undefined) });
+    if (total > 1) buttons.push({ text: 'Remove this step', style: 'destructive', onPress: () => removeStep(step) });
+    buttons.push({ text: 'Never mind', style: 'cancel' });
     if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions({ options, destructiveButtonIndex: 1, cancelButtonIndex: 2, title: step.text }, handle);
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: buttons.map((b) => b.text),
+          destructiveButtonIndex: buttons.findIndex((b) => b.style === 'destructive'),
+          cancelButtonIndex: buttons.length - 1,
+          title: step.text,
+        },
+        (i) => buttons[i]?.onPress?.(),
+      );
     } else {
-      Alert.alert(step.text, undefined, [
-        { text: options[0]!, onPress: () => handle(0) },
-        { text: options[1]!, style: 'destructive', onPress: () => handle(1) },
-        { text: options[2]!, style: 'cancel' },
-      ]);
+      Alert.alert(step.text, canSplit ? undefined : 'This step is already a single tiny action.', buttons);
     }
   };
 
@@ -139,9 +144,9 @@ export default function QuestScreen() {
             key={s.id}
             step={s}
             onToggle={() => toggle(s)}
-            onSmaller={() => smaller(s)}
+            onSmaller={assistant.canMakeSmaller(s.text, s.tiny) ? () => smaller(s) : undefined}
             onLongPress={() => stepMenu(s)}
-            disabled={assistant.busy || (finished && quest.cadence !== 'daily')}
+            disabled={finished && quest.cadence !== 'daily'}
           />
         ))}
       </View>
@@ -149,15 +154,14 @@ export default function QuestScreen() {
         Tip: press and hold a step for more options.
       </T>
 
-      {nextStep ? (
+      {splittable ? (
         <Button
-          label={assistant.busy ? 'Breaking it down...' : 'Break into smaller steps'}
+          label="Break into smaller steps"
           icon="scissors"
           kind="lavender"
-          disabled={assistant.busy}
           style={{ marginTop: space.xl }}
-          onPress={() => smaller(nextStep)}
-          accessibilityHint="Splits the next unchecked step into tinier pieces"
+          onPress={() => smaller(splittable)}
+          accessibilityHint={`Splits "${splittable.text}" into tinier pieces`}
         />
       ) : null}
       <Button

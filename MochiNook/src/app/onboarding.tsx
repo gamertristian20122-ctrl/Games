@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 import { Pet } from '../components/Pet';
@@ -13,25 +13,41 @@ import { space } from '../theme/tokens';
 
 const PROFILES: { value: BrainProfile; label: string; sub: string; emoji: string }[] = [
   { value: 'adhd', label: 'ADHD', sub: 'Starting is the hard part. Timers and tiny wins help.', emoji: '⚡' },
+  { value: 'add', label: 'ADD', sub: 'My focus drifts off quietly.', emoji: '☁️' },
   { value: 'autism', label: 'Autism', sub: 'I like things clear, literal, and predictable.', emoji: '🧩' },
   { value: 'audhd', label: 'Both (AuDHD)', sub: 'A little of each, depending on the day.', emoji: '🌈' },
-  { value: 'overwhelmed', label: 'Just overwhelmed', sub: "Life is a lot right now. That's reason enough.", emoji: '🫧' },
+  { value: 'anxiety', label: 'Anxiety / Overwhelmed', sub: 'Life feels like a lot right now.', emoji: '🫧' },
+  { value: 'other', label: 'Other', sub: 'Something else, or I would rather not say.', emoji: '💛' },
 ];
 
 const ENERGY: { value: Energy; label: string; sub: string; emoji: string }[] = [
   { value: 'low', label: 'Low', sub: 'Spoon-Saving Mode: only the essentials.', emoji: '🥄' },
-  { value: 'medium', label: 'Medium', sub: 'A gentle, steady routine.', emoji: '🥄🥄' },
+  { value: 'medium', label: 'Steady', sub: 'A gentle, steady routine.', emoji: '🥄🥄' },
   { value: 'high', label: 'High', sub: 'Ready for a few bonus quests.', emoji: '🥄🥄🥄' },
 ];
 
 const TOTAL_STEPS = 5;
+const STEP_NAMES = ['YOUR BRAIN', 'DAILY ENERGY', 'DAILY ANCHORS'] as const;
 
 export default function Onboarding() {
   const { c, motion } = useTheme();
-  const { finishOnboarding, enableReminders, updateSettings, settings } = useApp();
-  const [step, setStep] = useState(0);
-  const [petName, setPetName] = useState<string>(PET_NAMES[0]);
-  const [profile, setProfile] = useState<BrainProfile | null>(null);
+  const { finishOnboarding, enableReminders, updateSettings, settings, pet } = useApp();
+  const [step, setStepRaw] = useState(0);
+  // A quick double-tap must never skip a question: ignore step changes for a moment after each one.
+  const lastStepChange = useRef(0);
+  const setStep = (next: number | ((s: number) => number)) => {
+    const now = Date.now();
+    if (now - lastStepChange.current < 450) return;
+    lastStepChange.current = now;
+    setStepRaw(next);
+  };
+  // Retaking the quiz keeps the current name instead of resetting to "Mochi".
+  const [petName, setPetName] = useState<string>(settings.onboarded ? pet.name : PET_NAMES[0]);
+  const [profiles, setProfiles] = useState<BrainProfile[]>(settings.onboarded ? settings.brainProfiles : []);
+  const nameChoices = PET_NAMES.includes(petName as (typeof PET_NAMES)[number]) ? [...PET_NAMES] : [petName, ...PET_NAMES];
+
+  const toggleProfile = (p: BrainProfile) =>
+    setProfiles((list) => (list.includes(p) ? list.filter((x) => x !== p) : [...list, p]));
   const [energy, setEnergy] = useState<Energy | null>(null);
   const [anchors, setAnchors] = useState<Anchors>(DEFAULT_ANCHORS);
   const [saving, setSaving] = useState(false);
@@ -39,11 +55,11 @@ export default function Onboarding() {
   const setBlock = (blockKind: BlockKind) => setAnchors((a) => ({ ...a, blockKind }));
 
   const finish = async (wantsReminders: boolean) => {
-    if (!profile || !energy || saving) return;
+    if (profiles.length === 0 || !energy || saving) return;
     setSaving(true);
     try {
       if (!wantsReminders) await updateSettings({ reminders: false });
-      await finishOnboarding({ petName, brainProfile: profile, energy, anchors });
+      await finishOnboarding({ petName, brainProfiles: profiles, energy, anchors });
       if (wantsReminders) await enableReminders();
       router.replace('/home');
     } finally {
@@ -57,7 +73,9 @@ export default function Onboarding() {
     <Screen edges={['top', 'bottom']}>
       <View style={{ paddingTop: space.lg, gap: space.sm }}>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T variant="label">{step === 0 ? 'HELLO' : step <= 3 ? `QUESTION ${step} OF 3` : 'LAST BIT'}</T>
+          <T variant="label" accessibilityLiveRegion="polite">
+            {step === 0 ? 'HELLO' : step <= 3 ? `QUESTION ${step} OF 3 · ${STEP_NAMES[step - 1]}` : 'LAST BIT'}
+          </T>
           {step > 0 ? (
             <Button label="Back" kind="ghost" small onPress={() => setStep((s) => s - 1)} />
           ) : settings.onboarded ? (
@@ -79,7 +97,7 @@ export default function Onboarding() {
               I help with the stuff that’s hard to start, one tiny step at a time. No streaks, no guilt, ever. What should you call me?
             </T>
             <Row gap={space.sm} style={{ flexWrap: 'wrap', marginTop: space.sm }}>
-              {PET_NAMES.map((n) => (
+              {nameChoices.map((n) => (
                 <Pill key={n} label={n} selected={petName === n} onPress={() => setPetName(n)} />
               ))}
             </Row>
@@ -91,17 +109,26 @@ export default function Onboarding() {
         {step === 1 && (
           <>
             <T variant="title">Which of these sounds like your brain?</T>
-            <T variant="small">This only shapes your starter routine. You can change everything later.</T>
+            <T variant="small">Pick as many as fit. This only shapes your starter routine, and you can change it later.</T>
             {PROFILES.map((p) => (
-              <Chip key={p.value} value={p.value} label={p.label} sublabel={p.sub} emoji={p.emoji} selected={profile === p.value} onSelect={setProfile} />
+              <Chip
+                key={p.value}
+                multi
+                value={p.value}
+                label={p.label}
+                sublabel={p.sub}
+                emoji={p.emoji}
+                selected={profiles.includes(p.value)}
+                onSelect={toggleProfile}
+              />
             ))}
-            <Button label="Next" disabled={!profile} onPress={() => setStep(2)} />
+            <Button label={profiles.length > 1 ? `Next (${profiles.length} picked)` : 'Next'} disabled={profiles.length === 0} onPress={() => setStep(2)} />
           </>
         )}
 
         {step === 2 && (
           <>
-            <T variant="title">How many spoons do you have these days?</T>
+            <T variant="title">Daily energy: how many spoons do you usually have?</T>
             <T variant="small">Spoons = energy. Low is completely okay. You can switch any day from the home screen.</T>
             {ENERGY.map((e) => (
               <Chip key={e.value} value={e.value} label={e.label} sublabel={e.sub} emoji={e.emoji} selected={energy === e.value} onSelect={setEnergy} />

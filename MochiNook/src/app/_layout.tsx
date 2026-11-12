@@ -8,6 +8,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PebblePop } from '../components/Pebble';
 import { DATABASE_NAME, migrateDatabase } from '../db/schema';
 import { configureNotificationHandler, ensureChannels } from '../lib/notifications';
 import { AppProvider } from '../state/AppContext';
@@ -46,6 +47,7 @@ function Navigator() {
         <Stack.Screen name="tip-jar" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="share" options={{ animation: 'slide_from_right' }} />
       </Stack>
+      <PebblePop />
     </>
   );
 }

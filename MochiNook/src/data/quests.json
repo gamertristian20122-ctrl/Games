@@ -8,11 +8,31 @@
     "cadence": "daily",
     "essential": true,
     "invite": "Want to wake up our brains with a few sips of water together?",
-    "keywords": ["water", "drink", "hydrate", "thirsty", "sip"],
+    "keywords": [
+      "water",
+      "drink",
+      "hydrate",
+      "thirsty",
+      "sip"
+    ],
     "steps": [
-      { "text": "Find your cup or water bottle", "tiny": ["Look on your nightstand or desk first", "If you can't find it, any clean cup counts"] },
-      { "text": "Fill it with water from the tap or fridge" },
-      { "text": "Take 3 sips" }
+      {
+        "text": "Find your cup or water bottle",
+        "tiny": [
+          "Look on your nightstand or desk first",
+          "If you can't find it, any clean cup counts"
+        ]
+      },
+      {
+        "text": "Fill it with water from the tap or fridge",
+        "tiny": [
+          "Carry your cup to the tap or fridge",
+          "Fill it up most of the way"
+        ]
+      },
+      {
+        "text": "Take 3 sips"
+      }
     ]
   },
   {
@@ -24,12 +44,37 @@
     "cadence": "daily",
     "essential": true,
     "invite": "Want to grab your meds with me? It only takes a moment.",
-    "keywords": ["meds", "medication", "medicine", "pills", "vitamins", "adderall", "prescription"],
+    "keywords": [
+      "meds",
+      "medication",
+      "medicine",
+      "pills",
+      "vitamins",
+      "adderall",
+      "prescription"
+    ],
     "steps": [
-      { "text": "Walk to the spot where you keep your meds" },
-      { "text": "Get a glass of water ready" },
-      { "text": "Take today's meds with a sip of water" },
-      { "text": "Close the container and put it back in its spot" }
+      {
+        "text": "Walk to the spot where you keep your meds"
+      },
+      {
+        "text": "Get a glass of water ready",
+        "tiny": [
+          "Walk to the kitchen",
+          "Fill a glass with water"
+        ]
+      },
+      {
+        "text": "Take today's meds with a sip of water",
+        "tiny": [
+          "Open the container",
+          "Put today's meds in your hand",
+          "Swallow them with a sip of water"
+        ]
+      },
+      {
+        "text": "Close the container and put it back in its spot"
+      }
     ]
   },
   {
@@ -41,13 +86,49 @@
     "cadence": "daily",
     "essential": true,
     "invite": "Want to do a minty-fresh brush so we both feel sparkly?",
-    "keywords": ["teeth", "brush", "toothbrush", "floss", "mouth"],
+    "keywords": [
+      "teeth",
+      "brush",
+      "toothbrush",
+      "floss",
+      "mouth"
+    ],
     "steps": [
-      { "text": "Walk to the bathroom sink" },
-      { "text": "Squeeze a pea-sized dot of toothpaste onto your brush" },
-      { "text": "Brush your top teeth for about 1 minute", "tiny": ["Brush the outside of the top teeth", "Brush the inside of the top teeth", "Brush the chewing tops"] },
-      { "text": "Brush your bottom teeth for about 1 minute", "tiny": ["Brush the outside of the bottom teeth", "Brush the inside of the bottom teeth", "Brush the chewing tops"] },
-      { "text": "Spit, rinse the brush, and put it back" }
+      {
+        "text": "Walk to the bathroom sink"
+      },
+      {
+        "text": "Squeeze a pea-sized dot of toothpaste onto your brush",
+        "tiny": [
+          "Pick up your toothbrush",
+          "Open the toothpaste",
+          "Squeeze a pea-sized dot onto the bristles"
+        ]
+      },
+      {
+        "text": "Brush your top teeth for about 1 minute",
+        "tiny": [
+          "Brush the outside of the top teeth",
+          "Brush the inside of the top teeth",
+          "Brush the chewing tops"
+        ]
+      },
+      {
+        "text": "Brush your bottom teeth for about 1 minute",
+        "tiny": [
+          "Brush the outside of the bottom teeth",
+          "Brush the inside of the bottom teeth",
+          "Brush the chewing tops"
+        ]
+      },
+      {
+        "text": "Spit, rinse the brush, and put it back",
+        "tiny": [
+          "Spit into the sink",
+          "Rinse the brush under the tap",
+          "Put the brush back in its cup"
+        ]
+      }
     ]
   },
   {
@@ -59,12 +140,36 @@
     "cadence": "daily",
     "essential": false,
     "invite": "A cool splash can feel nice. Want to try one with me?",
-    "keywords": ["face", "wash face", "skincare", "splash", "moisturizer"],
+    "keywords": [
+      "face",
+      "wash face",
+      "skincare",
+      "splash",
+      "moisturizer"
+    ],
     "steps": [
-      { "text": "Turn on the tap and find a temperature that feels okay" },
-      { "text": "Splash your face with water two times" },
-      { "text": "Pat your face dry with a towel" },
-      { "text": "If you use lotion or moisturizer, rub in a small dot" }
+      {
+        "text": "Turn on the tap and find a temperature that feels okay",
+        "tiny": [
+          "Turn on the tap",
+          "Hold one finger in the water",
+          "Turn it warmer or cooler until it feels okay"
+        ]
+      },
+      {
+        "text": "Splash your face with water two times"
+      },
+      {
+        "text": "Pat your face dry with a towel"
+      },
+      {
+        "text": "If you use lotion or moisturizer, rub in a small dot",
+        "tiny": [
+          "Open the lotion",
+          "Put a small dot on your fingertip",
+          "Rub it into your cheeks"
+        ]
+      }
     ]
   },
   {
@@ -76,12 +181,41 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to pick some comfy clothes for today? Soft ones count.",
-    "keywords": ["dress", "clothes", "outfit", "get dressed", "change"],
+    "keywords": [
+      "dress",
+      "clothes",
+      "outfit",
+      "get dressed",
+      "change"
+    ],
     "steps": [
-      { "text": "Pick one top and one pair of bottoms", "tiny": ["Open the drawer or closet", "Take the first comfy top you see", "Take the first comfy bottoms you see"] },
-      { "text": "Grab clean socks and underwear" },
-      { "text": "Put them on, one piece at a time" },
-      { "text": "Put your pajamas on your pillow or in the hamper" }
+      {
+        "text": "Pick one top and one pair of bottoms",
+        "tiny": [
+          "Open the drawer or closet",
+          "Take the first comfy top you see",
+          "Take the first comfy bottoms you see"
+        ]
+      },
+      {
+        "text": "Grab clean socks and underwear",
+        "tiny": [
+          "Open your sock drawer and take one pair",
+          "Open your underwear drawer and take one pair"
+        ]
+      },
+      {
+        "text": "Put them on, one piece at a time",
+        "tiny": [
+          "Put on your underwear",
+          "Put on your bottoms",
+          "Put on your top",
+          "Put on your socks"
+        ]
+      },
+      {
+        "text": "Put your pajamas on your pillow or in the hamper"
+      }
     ]
   },
   {
@@ -93,12 +227,35 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to give your body some fuel? Anything easy counts.",
-    "keywords": ["breakfast", "eat", "food", "hungry", "toast", "cereal"],
+    "keywords": [
+      "breakfast",
+      "eat",
+      "food",
+      "hungry",
+      "toast",
+      "cereal"
+    ],
     "steps": [
-      { "text": "Pick one easy food: toast, yogurt, a banana, cereal, or a bar" },
-      { "text": "Get it ready on a plate or in a bowl" },
-      { "text": "Sit down and eat it" },
-      { "text": "Put the dish in the sink" }
+      {
+        "text": "Pick one easy food: toast, yogurt, a banana, cereal, or a bar",
+        "tiny": [
+          "Open the fridge or cupboard",
+          "Pick the first easy food you see"
+        ]
+      },
+      {
+        "text": "Get it ready on a plate or in a bowl",
+        "tiny": [
+          "Take out a plate or bowl",
+          "Put the food on it"
+        ]
+      },
+      {
+        "text": "Sit down and eat it"
+      },
+      {
+        "text": "Put the dish in the sink"
+      }
     ]
   },
   {
@@ -110,13 +267,39 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to pack our bag so future-you has everything?",
-    "keywords": ["bag", "backpack", "pack", "school bag", "purse"],
+    "keywords": [
+      "bag",
+      "backpack",
+      "pack",
+      "school bag",
+      "purse"
+    ],
     "steps": [
-      { "text": "Put your keys, phone, and wallet or ID in the bag" },
-      { "text": "Add your charger" },
-      { "text": "Add your water bottle" },
-      { "text": "Add anything today needs: homework, lunch, or work things" },
-      { "text": "Set the bag by the door" }
+      {
+        "text": "Put your keys, phone, and wallet or ID in the bag",
+        "tiny": [
+          "Put your keys in the bag",
+          "Put your phone in the bag",
+          "Put your wallet or ID in the bag"
+        ]
+      },
+      {
+        "text": "Add your charger"
+      },
+      {
+        "text": "Add your water bottle"
+      },
+      {
+        "text": "Add anything today needs: homework, lunch, or work things",
+        "tiny": [
+          "Think of one thing today needs",
+          "Put that one thing in the bag",
+          "Check for one more, or zip the bag"
+        ]
+      },
+      {
+        "text": "Set the bag by the door"
+      }
     ]
   },
   {
@@ -128,13 +311,30 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Quick pocket check before we head out? Keys, phone, wallet.",
-    "keywords": ["leave", "leaving", "keys", "wallet", "door", "launch"],
+    "keywords": [
+      "leave",
+      "leaving",
+      "keys",
+      "wallet",
+      "door",
+      "launch"
+    ],
     "steps": [
-      { "text": "Touch your keys" },
-      { "text": "Touch your phone" },
-      { "text": "Touch your wallet or ID" },
-      { "text": "Ask yourself: did I take my meds?" },
-      { "text": "Head out the door gently" }
+      {
+        "text": "Touch your keys"
+      },
+      {
+        "text": "Touch your phone"
+      },
+      {
+        "text": "Touch your wallet or ID"
+      },
+      {
+        "text": "Ask yourself: did I take my meds?"
+      },
+      {
+        "text": "Head out the door gently"
+      }
     ]
   },
   {
@@ -146,12 +346,40 @@
     "cadence": "daily",
     "essential": true,
     "invite": "Want to brush teeth together so I can get cozy for sleep?",
-    "keywords": ["teeth", "brush", "night", "bedtime", "floss"],
+    "keywords": [
+      "teeth",
+      "brush",
+      "night",
+      "bedtime",
+      "floss"
+    ],
     "steps": [
-      { "text": "Walk to the bathroom sink" },
-      { "text": "Squeeze a pea-sized dot of toothpaste onto your brush" },
-      { "text": "Brush all your teeth for about 2 minutes" },
-      { "text": "Spit, rinse the brush, and put it back" }
+      {
+        "text": "Walk to the bathroom sink"
+      },
+      {
+        "text": "Squeeze a pea-sized dot of toothpaste onto your brush",
+        "tiny": [
+          "Pick up your toothbrush",
+          "Open the toothpaste",
+          "Squeeze a pea-sized dot onto the bristles"
+        ]
+      },
+      {
+        "text": "Brush all your teeth for about 2 minutes",
+        "tiny": [
+          "Brush your top teeth for about 1 minute",
+          "Brush your bottom teeth for about 1 minute"
+        ]
+      },
+      {
+        "text": "Spit, rinse the brush, and put it back",
+        "tiny": [
+          "Spit into the sink",
+          "Rinse the brush under the tap",
+          "Put the brush back in its cup"
+        ]
+      }
     ]
   },
   {
@@ -163,12 +391,35 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to change into something soft and comfy?",
-    "keywords": ["pajamas", "pjs", "comfy", "change", "sleepwear"],
+    "keywords": [
+      "pajamas",
+      "pjs",
+      "comfy",
+      "change",
+      "sleepwear"
+    ],
     "steps": [
-      { "text": "Find your pajamas or soft clothes" },
-      { "text": "Take off today's clothes" },
-      { "text": "Put dirty clothes in the hamper" },
-      { "text": "Put on the soft clothes" }
+      {
+        "text": "Find your pajamas or soft clothes"
+      },
+      {
+        "text": "Take off today's clothes",
+        "tiny": [
+          "Take off your top",
+          "Take off your bottoms",
+          "Take off your socks"
+        ]
+      },
+      {
+        "text": "Put dirty clothes in the hamper"
+      },
+      {
+        "text": "Put on the soft clothes",
+        "tiny": [
+          "Put on the soft top",
+          "Put on the soft bottoms"
+        ]
+      }
     ]
   },
   {
@@ -180,12 +431,26 @@
     "cadence": "daily",
     "essential": true,
     "invite": "Want to tuck your phone in for the night, like I tuck in?",
-    "keywords": ["charge", "phone", "charger", "alarm", "plug"],
+    "keywords": [
+      "charge",
+      "phone",
+      "charger",
+      "alarm",
+      "plug"
+    ],
     "steps": [
-      { "text": "Find your charger" },
-      { "text": "Plug your phone in" },
-      { "text": "Check your alarm for tomorrow" },
-      { "text": "Put your phone face down" }
+      {
+        "text": "Find your charger"
+      },
+      {
+        "text": "Plug your phone in"
+      },
+      {
+        "text": "Check your alarm for tomorrow"
+      },
+      {
+        "text": "Put your phone face down"
+      }
     ]
   },
   {
@@ -197,12 +462,36 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to leave a little gift for tomorrow-you?",
-    "keywords": ["tomorrow", "plan", "prepare", "lay out", "schedule"],
+    "keywords": [
+      "tomorrow",
+      "plan",
+      "prepare",
+      "lay out",
+      "schedule"
+    ],
     "steps": [
-      { "text": "Look at tomorrow on your calendar or planner" },
-      { "text": "Lay out tomorrow's clothes" },
-      { "text": "Put your bag by the door" },
-      { "text": "Write one thing to remember on a sticky note" }
+      {
+        "text": "Look at tomorrow on your calendar or planner"
+      },
+      {
+        "text": "Lay out tomorrow's clothes",
+        "tiny": [
+          "Open your drawer or closet",
+          "Pick one top and one pair of bottoms",
+          "Put them on a chair"
+        ]
+      },
+      {
+        "text": "Put your bag by the door"
+      },
+      {
+        "text": "Write one thing to remember on a sticky note",
+        "tiny": [
+          "Grab a sticky note and a pen",
+          "Write one word to remind you",
+          "Stick it on your door or phone"
+        ]
+      }
     ]
   },
   {
@@ -214,12 +503,35 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to slow things down with me? I'll dim my room too.",
-    "keywords": ["sleep", "wind down", "relax", "bed", "insomnia", "night"],
+    "keywords": [
+      "sleep",
+      "wind down",
+      "relax",
+      "bed",
+      "insomnia",
+      "night"
+    ],
     "steps": [
-      { "text": "Turn off the big light and use a small lamp" },
-      { "text": "Turn your screen brightness down or switch on night mode" },
-      { "text": "Drink a little water" },
-      { "text": "Get into bed and take 5 slow breaths" }
+      {
+        "text": "Turn off the big light and use a small lamp",
+        "tiny": [
+          "Switch on the small lamp",
+          "Switch off the big light"
+        ]
+      },
+      {
+        "text": "Turn your screen brightness down or switch on night mode"
+      },
+      {
+        "text": "Drink a little water"
+      },
+      {
+        "text": "Get into bed and take 5 slow breaths",
+        "tiny": [
+          "Climb into bed",
+          "Breathe in slowly, then out slowly, 5 times"
+        ]
+      }
     ]
   },
   {
@@ -231,11 +543,28 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Any evening meds today? Want to take them together?",
-    "keywords": ["meds", "evening meds", "night meds", "pills", "medication"],
+    "keywords": [
+      "meds",
+      "evening meds",
+      "night meds",
+      "pills",
+      "medication"
+    ],
     "steps": [
-      { "text": "Walk to the spot where you keep your meds" },
-      { "text": "Take tonight's meds with a sip of water" },
-      { "text": "Close the container and put it back" }
+      {
+        "text": "Walk to the spot where you keep your meds"
+      },
+      {
+        "text": "Take tonight's meds with a sip of water",
+        "tiny": [
+          "Open the container",
+          "Put tonight's meds in your hand",
+          "Swallow them with a sip of water"
+        ]
+      },
+      {
+        "text": "Close the container and put it back"
+      }
     ]
   },
   {
@@ -247,14 +576,62 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want a warm, cozy rinse? We can go one tiny step at a time.",
-    "keywords": ["shower", "bath", "wash", "hygiene", "shampoo", "smell"],
+    "keywords": [
+      "shower",
+      "bath",
+      "wash",
+      "hygiene",
+      "shampoo",
+      "smell"
+    ],
     "steps": [
-      { "text": "Grab a towel and clean clothes and bring them to the bathroom" },
-      { "text": "Turn on the water and check that the temperature feels good" },
-      { "text": "Step in and get your hair and body wet" },
-      { "text": "Shampoo your hair, then rinse it", "tiny": ["Squeeze a coin-sized blob of shampoo into your hand", "Rub it into your hair for a few seconds", "Rinse until the bubbles are gone"] },
-      { "text": "Soap your body, then rinse" },
-      { "text": "Turn off the water, dry off, and get dressed" }
+      {
+        "text": "Grab a towel and clean clothes and bring them to the bathroom",
+        "tiny": [
+          "Grab a towel",
+          "Grab clean clothes",
+          "Carry them to the bathroom"
+        ]
+      },
+      {
+        "text": "Turn on the water and check that the temperature feels good",
+        "tiny": [
+          "Turn on the water",
+          "Hold your hand in it",
+          "Turn it warmer or cooler until it feels good"
+        ]
+      },
+      {
+        "text": "Step in and get your hair and body wet",
+        "tiny": [
+          "Step into the shower",
+          "Stand under the water until your hair and body are wet"
+        ]
+      },
+      {
+        "text": "Shampoo your hair, then rinse it",
+        "tiny": [
+          "Squeeze a coin-sized blob of shampoo into your hand",
+          "Rub it into your hair for a few seconds",
+          "Rinse until the bubbles are gone"
+        ]
+      },
+      {
+        "text": "Soap your body, then rinse",
+        "tiny": [
+          "Put soap on your hands or a cloth",
+          "Wash your arms and body",
+          "Rinse until the soap is gone"
+        ]
+      },
+      {
+        "text": "Turn off the water, dry off, and get dressed",
+        "tiny": [
+          "Turn off the water",
+          "Dry off with your towel",
+          "Put on your clean clothes"
+        ]
+      }
     ]
   },
   {
@@ -266,12 +643,47 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to tackle a few dishes together so I can power up?",
-    "keywords": ["dishes", "kitchen", "sink", "plates", "counter", "wash up", "clean kitchen"],
+    "keywords": [
+      "dishes",
+      "kitchen",
+      "sink",
+      "plates",
+      "counter",
+      "wash up",
+      "clean kitchen"
+    ],
     "steps": [
-      { "text": "Put any trash on the counter into the bin" },
-      { "text": "Rinse the plates" },
-      { "text": "Load or wash just 5 items", "tiny": ["Pick up one item", "Wash it or put it in the dishwasher", "Do that 4 more times"] },
-      { "text": "Wipe the counter with a cloth or paper towel" }
+      {
+        "text": "Put any trash on the counter into the bin",
+        "tiny": [
+          "Grab the first piece of trash",
+          "Drop it in the bin",
+          "Repeat until the counter is clear"
+        ]
+      },
+      {
+        "text": "Rinse the plates",
+        "tiny": [
+          "Turn on the tap",
+          "Hold one plate under the water",
+          "Set it down and do the next one"
+        ]
+      },
+      {
+        "text": "Load or wash just 5 items",
+        "tiny": [
+          "Pick up one item",
+          "Wash it or put it in the dishwasher",
+          "Do that 4 more times"
+        ]
+      },
+      {
+        "text": "Wipe the counter with a cloth or paper towel",
+        "tiny": [
+          "Grab a cloth or paper towel",
+          "Wipe from one end of the counter to the other"
+        ]
+      }
     ]
   },
   {
@@ -283,13 +695,44 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to put clean dishes away with me? Plates first.",
-    "keywords": ["dishwasher", "unload", "put away dishes", "clean dishes"],
+    "keywords": [
+      "dishwasher",
+      "unload",
+      "put away dishes",
+      "clean dishes"
+    ],
     "steps": [
-      { "text": "Open the dishwasher and pull out the bottom rack" },
-      { "text": "Put the plates and bowls away" },
-      { "text": "Put the cups and glasses away" },
-      { "text": "Put the forks, spoons, and knives away" },
-      { "text": "Close the dishwasher" }
+      {
+        "text": "Open the dishwasher and pull out the bottom rack"
+      },
+      {
+        "text": "Put the plates and bowls away",
+        "tiny": [
+          "Pick up all the plates",
+          "Put them in their cupboard",
+          "Do the same with the bowls"
+        ]
+      },
+      {
+        "text": "Put the cups and glasses away",
+        "tiny": [
+          "Pick up two cups",
+          "Put them in their cupboard",
+          "Repeat until the cups are gone"
+        ]
+      },
+      {
+        "text": "Put the forks, spoons, and knives away",
+        "tiny": [
+          "Lift out the cutlery basket",
+          "Put the forks away",
+          "Put the spoons away",
+          "Put the knives away"
+        ]
+      },
+      {
+        "text": "Close the dishwasher"
+      }
     ]
   },
   {
@@ -301,12 +744,41 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to peek in the fridge together and say bye to old food?",
-    "keywords": ["fridge", "refrigerator", "expired", "leftovers", "smell", "food"],
+    "keywords": [
+      "fridge",
+      "refrigerator",
+      "expired",
+      "leftovers",
+      "smell",
+      "food"
+    ],
     "steps": [
-      { "text": "Open the fridge and take out anything old or smelly" },
-      { "text": "Put the old food in the trash" },
-      { "text": "Wipe one shelf" },
-      { "text": "Write down 3 things you are out of" }
+      {
+        "text": "Open the fridge and take out anything old or smelly",
+        "tiny": [
+          "Open the fridge",
+          "Look at one shelf",
+          "Take out anything old or smelly from it"
+        ]
+      },
+      {
+        "text": "Put the old food in the trash"
+      },
+      {
+        "text": "Wipe one shelf",
+        "tiny": [
+          "Wet a cloth",
+          "Wipe the emptiest shelf"
+        ]
+      },
+      {
+        "text": "Write down 3 things you are out of",
+        "tiny": [
+          "Grab paper or your phone's notes",
+          "Write the first thing you're out of",
+          "Add two more"
+        ]
+      }
     ]
   },
   {
@@ -318,12 +790,31 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to walk the trash out with me? Fresh air bonus.",
-    "keywords": ["trash", "garbage", "rubbish", "bin", "recycling"],
+    "keywords": [
+      "trash",
+      "garbage",
+      "rubbish",
+      "bin",
+      "recycling"
+    ],
     "steps": [
-      { "text": "Tie the trash bag closed" },
-      { "text": "Lift the bag out of the bin" },
-      { "text": "Put a new bag in the bin" },
-      { "text": "Carry the full bag to the outside bin" }
+      {
+        "text": "Tie the trash bag closed"
+      },
+      {
+        "text": "Lift the bag out of the bin"
+      },
+      {
+        "text": "Put a new bag in the bin"
+      },
+      {
+        "text": "Carry the full bag to the outside bin",
+        "tiny": [
+          "Pick up the bag",
+          "Walk it outside",
+          "Drop it in the big bin"
+        ]
+      }
     ]
   },
   {
@@ -335,13 +826,45 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to make something easy to eat? Simple is perfect.",
-    "keywords": ["cook", "dinner", "lunch", "meal", "eat", "food", "hungry"],
+    "keywords": [
+      "cook",
+      "dinner",
+      "lunch",
+      "meal",
+      "eat",
+      "food",
+      "hungry"
+    ],
     "steps": [
-      { "text": "Pick one: pasta, a rice bowl, a sandwich, or a frozen meal" },
-      { "text": "Take out the ingredients you need" },
-      { "text": "Make it by following the package or your usual way" },
-      { "text": "Sit down and eat" },
-      { "text": "Put your dishes in the sink" }
+      {
+        "text": "Pick one: pasta, a rice bowl, a sandwich, or a frozen meal"
+      },
+      {
+        "text": "Take out the ingredients you need",
+        "tiny": [
+          "Open the fridge or cupboard",
+          "Take out the first ingredient",
+          "Take out the rest"
+        ]
+      },
+      {
+        "text": "Make it by following the package or your usual way",
+        "tiny": [
+          "Read the first instruction",
+          "Do just that instruction",
+          "Read and do the next one"
+        ]
+      },
+      {
+        "text": "Sit down and eat"
+      },
+      {
+        "text": "Put your dishes in the sink",
+        "tiny": [
+          "Pick up your plate",
+          "Carry it to the sink"
+        ]
+      }
     ]
   },
   {
@@ -353,14 +876,60 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to plan a little food adventure? A short list is plenty.",
-    "keywords": ["grocery", "groceries", "shopping", "store", "supermarket", "food shopping"],
+    "keywords": [
+      "grocery",
+      "groceries",
+      "shopping",
+      "store",
+      "supermarket",
+      "food shopping"
+    ],
     "steps": [
-      { "text": "Look in the fridge and cupboards" },
-      { "text": "Write a list of 5 to 10 things you need" },
-      { "text": "Grab bags, wallet, keys, and phone" },
-      { "text": "Go to the store" },
-      { "text": "Find the things on your list", "tiny": ["Find the first thing on the list", "Put it in the cart", "Cross it off and find the next one"] },
-      { "text": "At home, put cold things in the fridge first" }
+      {
+        "text": "Look in the fridge and cupboards",
+        "tiny": [
+          "Open the fridge and look inside",
+          "Open one cupboard and look inside"
+        ]
+      },
+      {
+        "text": "Write a list of 5 to 10 things you need",
+        "tiny": [
+          "Open a notes app or grab paper",
+          "Write the first thing you need",
+          "Add a few more"
+        ]
+      },
+      {
+        "text": "Grab bags, wallet, keys, and phone",
+        "tiny": [
+          "Grab your bags",
+          "Put your wallet, keys, and phone in your pocket"
+        ]
+      },
+      {
+        "text": "Go to the store",
+        "tiny": [
+          "Put on your shoes",
+          "Walk or drive to the store"
+        ]
+      },
+      {
+        "text": "Find the things on your list",
+        "tiny": [
+          "Find the first thing on the list",
+          "Put it in the cart",
+          "Cross it off and find the next one"
+        ]
+      },
+      {
+        "text": "At home, put cold things in the fridge first",
+        "tiny": [
+          "Put the cold things in the fridge",
+          "Put the frozen things in the freezer",
+          "Put everything else on the counter"
+        ]
+      }
     ]
   },
   {
@@ -372,14 +941,62 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to start a cozy laundry load with me? I'll remind you when it's ready.",
-    "keywords": ["laundry", "washing", "clothes", "washer", "dryer", "wash clothes"],
+    "keywords": [
+      "laundry",
+      "washing",
+      "clothes",
+      "washer",
+      "dryer",
+      "wash clothes"
+    ],
     "steps": [
-      { "text": "Gather your dirty clothes into a basket", "tiny": ["Pick up clothes from the floor", "Grab clothes from the hamper", "Put everything in one basket"] },
-      { "text": "Load the washer, add detergent, and press start", "timerMinutes": 45, "tiny": ["Put the clothes in the washer", "Pour in one cap of detergent", "Close the lid and press start"] },
-      { "text": "Move the wet clothes to the dryer" },
-      { "text": "Grab a dryer sheet and toss it in" },
-      { "text": "Clean the lint trap and start the dryer", "timerMinutes": 50 },
-      { "text": "Take the clothes out and fold or hang just 5 things" }
+      {
+        "text": "Gather your dirty clothes into a basket",
+        "tiny": [
+          "Pick up clothes from the floor",
+          "Grab clothes from the hamper",
+          "Put everything in one basket"
+        ]
+      },
+      {
+        "text": "Load the washer, add detergent, and press start",
+        "timerMinutes": 45,
+        "tiny": [
+          "Put the clothes in the washer",
+          "Pour in one cap of detergent",
+          "Close the lid and press start"
+        ]
+      },
+      {
+        "text": "Move the wet clothes to the dryer",
+        "tiny": [
+          "Open the washer",
+          "Grab an armful of wet clothes",
+          "Put them in the dryer",
+          "Repeat until the washer is empty"
+        ]
+      },
+      {
+        "text": "Grab a dryer sheet and toss it in"
+      },
+      {
+        "text": "Clean the lint trap and start the dryer",
+        "timerMinutes": 50,
+        "tiny": [
+          "Pull out the lint trap",
+          "Wipe the fluff off with your fingers",
+          "Push it back in",
+          "Close the door and press start"
+        ]
+      },
+      {
+        "text": "Take the clothes out and fold or hang just 5 things",
+        "tiny": [
+          "Open the dryer and pull the clothes into a basket",
+          "Fold or hang one thing",
+          "Do that 4 more times"
+        ]
+      }
     ]
   },
   {
@@ -391,12 +1008,40 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to give your clean clothes a home? Hangers first.",
-    "keywords": ["put away", "fold", "clean clothes", "closet", "drawer"],
+    "keywords": [
+      "put away",
+      "fold",
+      "clean clothes",
+      "closet",
+      "drawer"
+    ],
     "steps": [
-      { "text": "Carry the basket to your room" },
-      { "text": "Hang up anything that goes on a hanger" },
-      { "text": "Fold shirts and put them in a drawer" },
-      { "text": "Put socks and underwear in their drawer" }
+      {
+        "text": "Carry the basket to your room"
+      },
+      {
+        "text": "Hang up anything that goes on a hanger",
+        "tiny": [
+          "Find one thing that goes on a hanger",
+          "Put it on a hanger",
+          "Hang it in the closet"
+        ]
+      },
+      {
+        "text": "Fold shirts and put them in a drawer",
+        "tiny": [
+          "Fold one shirt in half",
+          "Put it in the drawer",
+          "Do the next shirt"
+        ]
+      },
+      {
+        "text": "Put socks and underwear in their drawer",
+        "tiny": [
+          "Put the socks in their drawer",
+          "Put the underwear in their drawer"
+        ]
+      }
     ]
   },
   {
@@ -408,13 +1053,43 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to make a fresh, crisp bed to flop into tonight?",
-    "keywords": ["sheets", "bed", "bedding", "pillowcase", "make bed"],
+    "keywords": [
+      "sheets",
+      "bed",
+      "bedding",
+      "pillowcase",
+      "make bed"
+    ],
     "steps": [
-      { "text": "Take the pillowcases off" },
-      { "text": "Pull off the sheet" },
-      { "text": "Carry the old sheets to the washer" },
-      { "text": "Put on a clean sheet" },
-      { "text": "Put clean pillowcases on" }
+      {
+        "text": "Take the pillowcases off"
+      },
+      {
+        "text": "Pull off the sheet",
+        "tiny": [
+          "Pull up one corner of the sheet",
+          "Pull up the other corners",
+          "Pull the sheet off the bed"
+        ]
+      },
+      {
+        "text": "Carry the old sheets to the washer"
+      },
+      {
+        "text": "Put on a clean sheet",
+        "tiny": [
+          "Hook one corner of the clean sheet over the mattress",
+          "Hook the other three corners"
+        ]
+      },
+      {
+        "text": "Put clean pillowcases on",
+        "tiny": [
+          "Shake open a clean pillowcase",
+          "Slide one pillow in",
+          "Do the other pillow"
+        ]
+      }
     ]
   },
   {
@@ -426,13 +1101,49 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to give your room a little glow-up? Trash first, then clothes, then surfaces.",
-    "keywords": ["room", "bedroom", "messy", "clean room", "tidy", "declutter"],
+    "keywords": [
+      "room",
+      "bedroom",
+      "messy",
+      "clean room",
+      "tidy",
+      "declutter"
+    ],
     "steps": [
-      { "text": "Grab a trash bag" },
-      { "text": "Pick up all the trash you can see", "tiny": ["Pick up trash on the floor", "Pick up trash on the bed", "Pick up trash on the desk and nightstand"] },
-      { "text": "Pick up clothes: dirty ones go in the hamper, clean ones go on a chair" },
-      { "text": "Clear one surface, like your desk or nightstand" },
-      { "text": "Wipe that surface with a cloth" }
+      {
+        "text": "Grab a trash bag"
+      },
+      {
+        "text": "Pick up all the trash you can see",
+        "tiny": [
+          "Pick up trash on the floor",
+          "Pick up trash on the bed",
+          "Pick up trash on the desk and nightstand"
+        ]
+      },
+      {
+        "text": "Pick up clothes: dirty ones go in the hamper, clean ones go on a chair",
+        "tiny": [
+          "Pick up one piece of clothing",
+          "Dirty? Into the hamper. Clean? Onto the chair.",
+          "Keep going until the floor is clear"
+        ]
+      },
+      {
+        "text": "Clear one surface, like your desk or nightstand",
+        "tiny": [
+          "Pick one surface",
+          "Put everything on it into a pile",
+          "Put back only what lives there"
+        ]
+      },
+      {
+        "text": "Wipe that surface with a cloth",
+        "tiny": [
+          "Grab a cloth",
+          "Wipe the surface from one side to the other"
+        ]
+      }
     ]
   },
   {
@@ -444,12 +1155,35 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to clear a little space for your brain to breathe?",
-    "keywords": ["desk", "workspace", "tidy", "papers", "clutter"],
+    "keywords": [
+      "desk",
+      "workspace",
+      "tidy",
+      "papers",
+      "clutter"
+    ],
     "steps": [
-      { "text": "Take any cups or dishes to the kitchen" },
-      { "text": "Put trash in the bin" },
-      { "text": "Stack loose papers into one pile" },
-      { "text": "Put pens and pencils in one cup" }
+      {
+        "text": "Take any cups or dishes to the kitchen",
+        "tiny": [
+          "Pick up the cups and dishes",
+          "Carry them to the kitchen sink"
+        ]
+      },
+      {
+        "text": "Put trash in the bin"
+      },
+      {
+        "text": "Stack loose papers into one pile",
+        "tiny": [
+          "Pick up one paper",
+          "Put it on the pile",
+          "Do the next one"
+        ]
+      },
+      {
+        "text": "Put pens and pencils in one cup"
+      }
     ]
   },
   {
@@ -461,12 +1195,34 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to give the bathroom a tiny sparkle with me?",
-    "keywords": ["bathroom", "toilet", "sink", "mirror", "clean bathroom"],
+    "keywords": [
+      "bathroom",
+      "toilet",
+      "sink",
+      "mirror",
+      "clean bathroom"
+    ],
     "steps": [
-      { "text": "Grab cleaning wipes or a spray and a cloth" },
-      { "text": "Wipe the sink" },
-      { "text": "Wipe the toilet seat and handle" },
-      { "text": "Hang your towel up straight" }
+      {
+        "text": "Grab cleaning wipes or a spray and a cloth",
+        "tiny": [
+          "Find the wipes or the spray",
+          "Grab a cloth"
+        ]
+      },
+      {
+        "text": "Wipe the sink"
+      },
+      {
+        "text": "Wipe the toilet seat and handle",
+        "tiny": [
+          "Wipe the toilet seat",
+          "Wipe the flush handle"
+        ]
+      },
+      {
+        "text": "Hang your towel up straight"
+      }
     ]
   },
   {
@@ -478,11 +1234,33 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to rescue 10 things from the floor? I'll count with you.",
-    "keywords": ["floor", "pick up", "mess", "stuff everywhere", "clutter"],
+    "keywords": [
+      "floor",
+      "pick up",
+      "mess",
+      "stuff everywhere",
+      "clutter"
+    ],
     "steps": [
-      { "text": "Pick up 10 things from the floor and put them on the bed" },
-      { "text": "Put away anything that has an obvious home" },
-      { "text": "Put everything else in one basket for later" }
+      {
+        "text": "Pick up 10 things from the floor and put them on the bed",
+        "tiny": [
+          "Pick up one thing",
+          "Put it on the bed",
+          "Count to 10 things"
+        ]
+      },
+      {
+        "text": "Put away anything that has an obvious home",
+        "tiny": [
+          "Pick one thing from the bed",
+          "Put it where it lives",
+          "Do the next one"
+        ]
+      },
+      {
+        "text": "Put everything else in one basket for later"
+      }
     ]
   },
   {
@@ -494,11 +1272,27 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to give your plant friends a drink?",
-    "keywords": ["plants", "water plants", "garden", "plant"],
+    "keywords": [
+      "plants",
+      "water plants",
+      "garden",
+      "plant"
+    ],
     "steps": [
-      { "text": "Fill a cup or watering can with water" },
-      { "text": "Touch the soil of each plant: if it's dry, give it water" },
-      { "text": "Put the watering can back" }
+      {
+        "text": "Fill a cup or watering can with water"
+      },
+      {
+        "text": "Touch the soil of each plant: if it's dry, give it water",
+        "tiny": [
+          "Push one finger into the soil",
+          "If it feels dry, pour in some water",
+          "Move on to the next plant"
+        ]
+      },
+      {
+        "text": "Put the watering can back"
+      }
     ]
   },
   {
@@ -510,12 +1304,27 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to feed your real-life buddy too? They'd love that.",
-    "keywords": ["pet", "dog", "cat", "feed", "animal", "fish"],
+    "keywords": [
+      "pet",
+      "dog",
+      "cat",
+      "feed",
+      "animal",
+      "fish"
+    ],
     "steps": [
-      { "text": "Check your pet's food bowl" },
-      { "text": "Add one scoop of food" },
-      { "text": "Give them fresh water" },
-      { "text": "Tell them they're a good friend" }
+      {
+        "text": "Check your pet's food bowl"
+      },
+      {
+        "text": "Add one scoop of food"
+      },
+      {
+        "text": "Give them fresh water"
+      },
+      {
+        "text": "Tell them they're a good friend"
+      }
     ]
   },
   {
@@ -527,10 +1336,19 @@
     "cadence": "daily",
     "essential": true,
     "invite": "Want to have a water break with me? I'm thirsty too.",
-    "keywords": ["water", "drink", "hydrate", "thirsty"],
+    "keywords": [
+      "water",
+      "drink",
+      "hydrate",
+      "thirsty"
+    ],
     "steps": [
-      { "text": "Fill a cup with water" },
-      { "text": "Drink half of it" }
+      {
+        "text": "Fill a cup with water"
+      },
+      {
+        "text": "Drink half of it"
+      }
     ]
   },
   {
@@ -542,12 +1360,27 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to do a silly little stretch? I'll wiggle too.",
-    "keywords": ["stretch", "move", "exercise", "stiff", "body", "wiggle"],
+    "keywords": [
+      "stretch",
+      "move",
+      "exercise",
+      "stiff",
+      "body",
+      "wiggle"
+    ],
     "steps": [
-      { "text": "Stand up" },
-      { "text": "Reach your arms up high for 5 seconds" },
-      { "text": "Roll your shoulders 5 times" },
-      { "text": "Shake out your hands" }
+      {
+        "text": "Stand up"
+      },
+      {
+        "text": "Reach your arms up high for 5 seconds"
+      },
+      {
+        "text": "Roll your shoulders 5 times"
+      },
+      {
+        "text": "Shake out your hands"
+      }
     ]
   },
   {
@@ -559,13 +1392,31 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Feeling like too much? Want to find a quiet corner with me?",
-    "keywords": ["overstimulated", "sensory", "meltdown", "loud", "quiet", "shutdown", "overwhelmed"],
+    "keywords": [
+      "overstimulated",
+      "sensory",
+      "meltdown",
+      "loud",
+      "quiet",
+      "shutdown",
+      "overwhelmed"
+    ],
     "steps": [
-      { "text": "Go to a quiet spot" },
-      { "text": "Put on headphones or earplugs if you have them" },
-      { "text": "Turn down the lights or close your eyes" },
-      { "text": "Take 10 slow breaths" },
-      { "text": "Choose what feels good: stim, rest, or a drink of water" }
+      {
+        "text": "Go to a quiet spot"
+      },
+      {
+        "text": "Put on headphones or earplugs if you have them"
+      },
+      {
+        "text": "Turn down the lights or close your eyes"
+      },
+      {
+        "text": "Take 10 slow breaths"
+      },
+      {
+        "text": "Choose what feels good: stim, rest, or a drink of water"
+      }
     ]
   },
   {
@@ -577,13 +1428,31 @@
     "cadence": "daily",
     "essential": true,
     "invite": "Low-spoon day? These are the only things that matter today.",
-    "keywords": ["hard day", "tired", "sad", "low energy", "exhausted", "burnout", "depressed"],
+    "keywords": [
+      "hard day",
+      "tired",
+      "sad",
+      "low energy",
+      "exhausted",
+      "burnout",
+      "depressed"
+    ],
     "steps": [
-      { "text": "Drink some water" },
-      { "text": "Eat anything (a snack totally counts)" },
-      { "text": "Take your meds if you have them" },
-      { "text": "Change into something comfy" },
-      { "text": "Rest. That's the whole quest." }
+      {
+        "text": "Drink some water"
+      },
+      {
+        "text": "Eat anything (a snack totally counts)"
+      },
+      {
+        "text": "Take your meds if you have them"
+      },
+      {
+        "text": "Change into something comfy"
+      },
+      {
+        "text": "Rest. That's the whole quest."
+      }
     ]
   },
   {
@@ -595,12 +1464,26 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to say hi to the sky with me for a minute?",
-    "keywords": ["outside", "walk", "fresh air", "sun", "sunlight"],
+    "keywords": [
+      "outside",
+      "walk",
+      "fresh air",
+      "sun",
+      "sunlight"
+    ],
     "steps": [
-      { "text": "Put on shoes" },
-      { "text": "Open the door and step outside" },
-      { "text": "Take 5 slow breaths" },
-      { "text": "Notice 3 things you can see" }
+      {
+        "text": "Put on shoes"
+      },
+      {
+        "text": "Open the door and step outside"
+      },
+      {
+        "text": "Take 5 slow breaths"
+      },
+      {
+        "text": "Notice 3 things you can see"
+      }
     ]
   },
   {
@@ -612,13 +1495,46 @@
     "cadence": "monthly",
     "essential": false,
     "invite": "Want to knock out one bill together? Just one is a real win.",
-    "keywords": ["bills", "pay", "rent", "money", "payment", "utilities", "invoice"],
+    "keywords": [
+      "bills",
+      "pay",
+      "rent",
+      "money",
+      "payment",
+      "utilities",
+      "invoice"
+    ],
     "steps": [
-      { "text": "Open your bank app or website" },
-      { "text": "Write a list of bills due this month: rent, phone, internet, and others" },
-      { "text": "Pay the first bill on the list" },
-      { "text": "Take a screenshot of the confirmation" },
-      { "text": "Pay the next one, or stop here for today" }
+      {
+        "text": "Open your bank app or website",
+        "tiny": [
+          "Unlock your phone or computer",
+          "Tap the bank app (or go to the bank's website)",
+          "Log in"
+        ]
+      },
+      {
+        "text": "Write a list of bills due this month: rent, phone, internet, and others",
+        "tiny": [
+          "Grab paper or open your notes",
+          "Write rent, phone, and internet",
+          "Add any others you remember"
+        ]
+      },
+      {
+        "text": "Pay the first bill on the list",
+        "tiny": [
+          "Find the pay button for the first bill",
+          "Check the amount",
+          "Press pay"
+        ]
+      },
+      {
+        "text": "Take a screenshot of the confirmation"
+      },
+      {
+        "text": "Pay the next one, or stop here for today"
+      }
     ]
   },
   {
@@ -630,13 +1546,45 @@
     "cadence": "once",
     "essential": false,
     "invite": "Want to start a tax folder together? Just gathering, no filling out yet.",
-    "keywords": ["taxes", "tax", "w2", "1099", "documents", "irs", "tax return"],
+    "keywords": [
+      "taxes",
+      "tax",
+      "w2",
+      "1099",
+      "documents",
+      "irs",
+      "tax return"
+    ],
     "steps": [
-      { "text": "Make a folder (paper or on your computer) called \"Taxes\" plus this year" },
-      { "text": "Search your email for the word \"tax\"" },
-      { "text": "Save any income forms (like a W-2 or 1099) into the folder" },
-      { "text": "Add receipts you might need" },
-      { "text": "Write down any questions for whoever helps you file" }
+      {
+        "text": "Make a folder (paper or on your computer) called \"Taxes\" plus this year",
+        "tiny": [
+          "Grab a folder or open your computer files",
+          "Name it \"Taxes\" plus this year"
+        ]
+      },
+      {
+        "text": "Search your email for the word \"tax\""
+      },
+      {
+        "text": "Save any income forms (like a W-2 or 1099) into the folder",
+        "tiny": [
+          "Open the first email with a tax form",
+          "Download or print the form",
+          "Put it in the folder"
+        ]
+      },
+      {
+        "text": "Add receipts you might need",
+        "tiny": [
+          "Think of one receipt you might need",
+          "Find it",
+          "Put it in the folder"
+        ]
+      },
+      {
+        "text": "Write down any questions for whoever helps you file"
+      }
     ]
   },
   {
@@ -648,13 +1596,48 @@
     "cadence": "once",
     "essential": false,
     "invite": "Want to book that appointment together? I have a script ready for you.",
-    "keywords": ["doctor", "appointment", "call", "dentist", "phone call", "book", "therapist"],
+    "keywords": [
+      "doctor",
+      "appointment",
+      "call",
+      "dentist",
+      "phone call",
+      "book",
+      "therapist"
+    ],
     "steps": [
-      { "text": "Find the clinic's phone number or online booking page" },
-      { "text": "Write down 2 or 3 days and times you are free" },
-      { "text": "Read this script out loud once: \"Hi, I'd like to book an appointment. My name is ___ and my birthday is ___.\"" },
-      { "text": "Make the call or use the online booking" },
-      { "text": "Add the appointment to your calendar" }
+      {
+        "text": "Find the clinic's phone number or online booking page",
+        "tiny": [
+          "Search the clinic's name on your phone",
+          "Find the phone number or booking button"
+        ]
+      },
+      {
+        "text": "Write down 2 or 3 days and times you are free",
+        "tiny": [
+          "Open your calendar",
+          "Write down 2 or 3 times you are free"
+        ]
+      },
+      {
+        "text": "Read this script out loud once: \"Hi, I'd like to book an appointment. My name is ___ and my birthday is ___.\""
+      },
+      {
+        "text": "Make the call or use the online booking",
+        "tiny": [
+          "Press call (or the booking button)",
+          "Read the script when they answer",
+          "Pick one of your free times"
+        ]
+      },
+      {
+        "text": "Add the appointment to your calendar",
+        "tiny": [
+          "Open your calendar",
+          "Add the date, time, and clinic name"
+        ]
+      }
     ]
   },
   {
@@ -666,12 +1649,31 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to send just one reply? One sentence is plenty.",
-    "keywords": ["messages", "texts", "reply", "text back", "dm", "friends"],
+    "keywords": [
+      "messages",
+      "texts",
+      "reply",
+      "text back",
+      "dm",
+      "friends"
+    ],
     "steps": [
-      { "text": "Open one messaging app" },
-      { "text": "Pick the easiest message to answer" },
-      { "text": "Type a one-sentence reply (that's enough)" },
-      { "text": "Press send" }
+      {
+        "text": "Open one messaging app"
+      },
+      {
+        "text": "Pick the easiest message to answer"
+      },
+      {
+        "text": "Type a one-sentence reply (that's enough)",
+        "tiny": [
+          "Tap the reply box",
+          "Type one short sentence"
+        ]
+      },
+      {
+        "text": "Press send"
+      }
     ]
   },
   {
@@ -683,12 +1685,34 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to peek at your inbox with me? No need to read everything.",
-    "keywords": ["email", "inbox", "mail", "emails"],
+    "keywords": [
+      "email",
+      "inbox",
+      "mail",
+      "emails"
+    ],
     "steps": [
-      { "text": "Open your email" },
-      { "text": "Delete or archive 5 obvious junk emails" },
-      { "text": "Star 1 important email" },
-      { "text": "Reply to one email, or leave it for later" }
+      {
+        "text": "Open your email"
+      },
+      {
+        "text": "Delete or archive 5 obvious junk emails",
+        "tiny": [
+          "Tap the first obvious junk email",
+          "Delete or archive it",
+          "Do that 4 more times"
+        ]
+      },
+      {
+        "text": "Star 1 important email"
+      },
+      {
+        "text": "Reply to one email, or leave it for later",
+        "tiny": [
+          "Open the starred email",
+          "Type a short reply, or close it for later"
+        ]
+      }
     ]
   },
   {
@@ -700,12 +1724,31 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to take a calm look at your money? Just looking, no judging.",
-    "keywords": ["budget", "money", "bank", "spending", "balance", "finances"],
+    "keywords": [
+      "budget",
+      "money",
+      "bank",
+      "spending",
+      "balance",
+      "finances"
+    ],
     "steps": [
-      { "text": "Open your bank app" },
-      { "text": "Look at your balance" },
-      { "text": "Read your last 5 purchases" },
-      { "text": "Write down anything that surprised you" }
+      {
+        "text": "Open your bank app"
+      },
+      {
+        "text": "Look at your balance"
+      },
+      {
+        "text": "Read your last 5 purchases"
+      },
+      {
+        "text": "Write down anything that surprised you",
+        "tiny": [
+          "Grab paper or your notes app",
+          "Write down one purchase that surprised you"
+        ]
+      }
     ]
   },
   {
@@ -717,12 +1760,34 @@
     "cadence": "weekly",
     "essential": false,
     "invite": "Want to peek at the week together so nothing sneaks up on us?",
-    "keywords": ["calendar", "week", "plan", "schedule", "appointments"],
+    "keywords": [
+      "calendar",
+      "week",
+      "plan",
+      "schedule",
+      "appointments"
+    ],
     "steps": [
-      { "text": "Open your calendar or planner" },
-      { "text": "Read each day of the coming week" },
-      { "text": "Add anything that's missing" },
-      { "text": "Pick the one day that needs the most energy and circle it" }
+      {
+        "text": "Open your calendar or planner"
+      },
+      {
+        "text": "Read each day of the coming week",
+        "tiny": [
+          "Look at tomorrow",
+          "Look at each day after it, one at a time"
+        ]
+      },
+      {
+        "text": "Add anything that's missing",
+        "tiny": [
+          "Think of one thing that's missing",
+          "Add it to the right day"
+        ]
+      },
+      {
+        "text": "Pick the one day that needs the most energy and circle it"
+      }
     ]
   },
   {
@@ -734,12 +1799,38 @@
     "cadence": "monthly",
     "essential": false,
     "invite": "Want to check your meds so you never run out?",
-    "keywords": ["refill", "prescription", "pharmacy", "meds running out"],
+    "keywords": [
+      "refill",
+      "prescription",
+      "pharmacy",
+      "meds running out"
+    ],
     "steps": [
-      { "text": "Count how many days of meds you have left" },
-      { "text": "Open your pharmacy app or find their phone number" },
-      { "text": "Request the refill" },
-      { "text": "Put the pickup day in your calendar" }
+      {
+        "text": "Count how many days of meds you have left",
+        "tiny": [
+          "Open your meds container",
+          "Count the pills left",
+          "Divide by how many you take each day"
+        ]
+      },
+      {
+        "text": "Open your pharmacy app or find their phone number",
+        "tiny": [
+          "Open the pharmacy app",
+          "Or search the pharmacy's phone number"
+        ]
+      },
+      {
+        "text": "Request the refill"
+      },
+      {
+        "text": "Put the pickup day in your calendar",
+        "tiny": [
+          "Open your calendar",
+          "Add \"Pick up meds\" on the pickup day"
+        ]
+      }
     ]
   },
   {
@@ -751,13 +1842,44 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to just open the homework with me? Opening it is the whole first step.",
-    "keywords": ["homework", "assignment", "study", "school", "essay", "project"],
+    "keywords": [
+      "homework",
+      "assignment",
+      "study",
+      "school",
+      "essay",
+      "project"
+    ],
     "steps": [
-      { "text": "Open the assignment" },
-      { "text": "Get a pen or your laptop ready" },
-      { "text": "Read only the first question" },
-      { "text": "Write anything for the first answer (messy is fine)" },
-      { "text": "Keep going for 10 minutes, or stop here", "timerMinutes": 10 }
+      {
+        "text": "Open the assignment",
+        "tiny": [
+          "Open your laptop, app, or backpack",
+          "Find the assignment",
+          "Open it"
+        ]
+      },
+      {
+        "text": "Get a pen or your laptop ready",
+        "tiny": [
+          "Grab a pen or open your laptop",
+          "Put it right in front of you"
+        ]
+      },
+      {
+        "text": "Read only the first question"
+      },
+      {
+        "text": "Write anything for the first answer (messy is fine)",
+        "tiny": [
+          "Pick up your pen or put your hands on the keys",
+          "Write the first few words that come to mind"
+        ]
+      },
+      {
+        "text": "Keep going for 10 minutes, or stop here",
+        "timerMinutes": 10
+      }
     ]
   },
   {
@@ -769,12 +1891,38 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to do one short focus sprint? I'll keep time and nudge you when it's done.",
-    "keywords": ["focus", "pomodoro", "concentrate", "work", "sprint", "procrastinating"],
+    "keywords": [
+      "focus",
+      "pomodoro",
+      "concentrate",
+      "work",
+      "sprint",
+      "procrastinating"
+    ],
     "steps": [
-      { "text": "Pick one task" },
-      { "text": "Put your phone face down or in another room" },
-      { "text": "Start working; I'll nudge you in 15 minutes", "timerMinutes": 15 },
-      { "text": "Stand up, stretch, and drink some water" }
+      {
+        "text": "Pick one task",
+        "tiny": [
+          "Look at your to-do list",
+          "Point at one task",
+          "That's the one"
+        ]
+      },
+      {
+        "text": "Put your phone face down or in another room"
+      },
+      {
+        "text": "Start working; I'll nudge you in 15 minutes",
+        "timerMinutes": 15
+      },
+      {
+        "text": "Stand up, stretch, and drink some water",
+        "tiny": [
+          "Stand up",
+          "Stretch your arms up high",
+          "Drink a little water"
+        ]
+      }
     ]
   },
   {
@@ -786,12 +1934,32 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to ease into the work block? Just five gentle minutes.",
-    "keywords": ["work", "job", "start work", "tasks", "to do", "office"],
+    "keywords": [
+      "work",
+      "job",
+      "start work",
+      "tasks",
+      "to do",
+      "office"
+    ],
     "steps": [
-      { "text": "Open your to-do list" },
-      { "text": "Pick the tiniest task on it" },
-      { "text": "Close any tabs you don't need" },
-      { "text": "Work on it for 5 minutes" }
+      {
+        "text": "Open your to-do list"
+      },
+      {
+        "text": "Pick the tiniest task on it"
+      },
+      {
+        "text": "Close any tabs you don't need",
+        "tiny": [
+          "Look at your open tabs",
+          "Close one you don't need",
+          "Close any others you don't need"
+        ]
+      },
+      {
+        "text": "Work on it for 5 minutes"
+      }
     ]
   },
   {
@@ -803,11 +1971,28 @@
     "cadence": "daily",
     "essential": false,
     "invite": "Want to make one corner feel cozy before bed?",
-    "keywords": ["couch", "living room", "blanket", "pillows", "cozy"],
+    "keywords": [
+      "couch",
+      "living room",
+      "blanket",
+      "pillows",
+      "cozy"
+    ],
     "steps": [
-      { "text": "Fold the blanket on the couch" },
-      { "text": "Put the pillows back where they go" },
-      { "text": "Take any cups to the kitchen" }
+      {
+        "text": "Fold the blanket on the couch",
+        "tiny": [
+          "Pick up the blanket",
+          "Fold it in half, then in half again",
+          "Lay it on the couch"
+        ]
+      },
+      {
+        "text": "Put the pillows back where they go"
+      },
+      {
+        "text": "Take any cups to the kitchen"
+      }
     ]
   }
 ]

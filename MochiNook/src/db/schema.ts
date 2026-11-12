@@ -5,9 +5,9 @@ import type { LibraryQuest } from '../lib/types';
 export const DATABASE_NAME = 'mochinook.db';
 export const LIBRARY: readonly LibraryQuest[] = libraryJson as LibraryQuest[];
 
-/** Bump when quests are added to quests.json; new ones are inserted, user edits are kept. */
-const LIBRARY_VERSION = 1;
-const SCHEMA_VERSION = 1;
+/** Bump when quests.json changes; new quests are inserted and new micro-steps filled in, user edits are kept. */
+const LIBRARY_VERSION = 2;
+const SCHEMA_VERSION = 2;
 
 const SCHEMA_V1 = `
 CREATE TABLE IF NOT EXISTS settings (
@@ -67,6 +67,31 @@ CREATE TABLE IF NOT EXISTS quest_completions (
 CREATE INDEX IF NOT EXISTS idx_quest_completions ON quest_completions (quest_id, day);
 `;
 
+// v2: Pebbles (earned per micro-step) and the Nook shop.
+const SCHEMA_V2 = `
+ALTER TABLE pet ADD COLUMN pebbles INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS owned_items (
+  item_id TEXT PRIMARY KEY NOT NULL,
+  placed INTEGER NOT NULL DEFAULT 1,
+  acquired_at INTEGER NOT NULL
+);
+`;
+
+/** Adds hand-written micro-steps to library steps the user hasn't edited. */
+async function backfillMicroSteps(db: SQLiteDatabase, library: readonly LibraryQuest[]): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    for (const q of library) {
+      for (const s of q.steps) {
+        if (!s.tiny) continue;
+        await db.runAsync(
+          "UPDATE quest_steps SET tiny = ? WHERE quest_id = ? AND text = ? AND tiny IS NULL",
+          JSON.stringify(s.tiny), q.id, s.text,
+        );
+      }
+    }
+  });
+}
+
 export async function seedLibrary(db: SQLiteDatabase, library: readonly LibraryQuest[] = LIBRARY): Promise<void> {
   const now = Date.now();
   await db.withTransactionAsync(async () => {
@@ -95,11 +120,16 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   const current = row?.user_version ?? 0;
   if (current < 1) {
     await db.execAsync(SCHEMA_V1);
+    await db.execAsync('PRAGMA user_version = 1');
+  }
+  if (current < 2) {
+    await db.execAsync(SCHEMA_V2);
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }
   const lib = await db.getFirstAsync<{ value: string }>("SELECT value FROM settings WHERE key = 'library_version'");
   if (Number(lib?.value ?? 0) < LIBRARY_VERSION) {
     await seedLibrary(db);
+    await backfillMicroSteps(db, LIBRARY);
     await db.runAsync(
       "INSERT INTO settings (key, value) VALUES ('library_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
       String(LIBRARY_VERSION),

@@ -76,7 +76,8 @@ export default function Home() {
   };
 
   const makeSmaller = async (step: StepWithState) => {
-    const parts = await assistant.smaller(step.text, step.tiny);
+    const parts = assistant.smaller(step.text, step.tiny);
+    if (!parts) return;
     await repo.replaceStepWithSmaller(db, step, parts);
     app.touchData();
   };
@@ -117,17 +118,16 @@ export default function Home() {
             </T>
             <Button label="I did it!" icon="check" onPress={() => app.checkStep(next.quest, next.step)} />
             <Row gap={space.sm}>
-              <Button
-                label={assistant.busy ? 'Thinking...' : 'Make it smaller'}
-                icon="scissors"
-                kind="soft"
-                small
-                disabled={assistant.busy}
-                style={{ flex: 1 }}
-                onPress={() => makeSmaller(next.step)}
-              />
+              {assistant.canMakeSmaller(next.step.text, next.step.tiny) ? (
+                <Button label="Make it smaller" icon="scissors" kind="soft" small style={{ flex: 1 }} onPress={() => makeSmaller(next.step)} />
+              ) : null}
               <Button label="Not this one" kind="soft" small style={{ flex: 1 }} onPress={() => setSkip((s) => s + 1)} />
             </Row>
+            {!assistant.canMakeSmaller(next.step.text, next.step.tiny) ? (
+              <T variant="small" color={c.accentInk}>
+                This one is already a single tiny action. ✨
+              </T>
+            ) : null}
           </Card>
         </Animated.View>
       ) : (
@@ -145,7 +145,7 @@ export default function Home() {
       <SectionTitle>Spoons today</SectionTitle>
       <Row gap={space.sm}>
         <Pill label="🥄 Low" selected={settings.energy === 'low'} onPress={() => setEnergy('low')} />
-        <Pill label="Medium" selected={settings.energy === 'medium'} onPress={() => setEnergy('medium')} />
+        <Pill label="Steady" selected={settings.energy === 'medium'} onPress={() => setEnergy('medium')} />
         <Pill label="High" selected={settings.energy === 'high'} onPress={() => setEnergy('high')} />
       </Row>
       {spoonSaving ? (

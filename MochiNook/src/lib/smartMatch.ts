@@ -82,24 +82,66 @@ export function smartBreakdown(task: string, library: readonly LibraryQuest[]): 
   return { steps: genericSteps(task), matchedTitle: null };
 }
 
-/** Breaks one step into smaller pieces without AI. */
-export function smallerSteps(stepText: string, authoredTiny?: readonly string[] | null): string[] {
-  if (authoredTiny && authoredTiny.length > 0) return [...authoredTiny];
-  const base = stepText.replace(/[.!]+$/, '');
-  const andParts = base
-    .split(/,\s*(?:and\s+|then\s+)?|\s+and then\s+|\s+then\s+|\s+and\s+/i)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 2);
-  if (andParts.length >= 2 && andParts.length <= 5) {
-    return andParts.map((p) => p.charAt(0).toUpperCase() + p.slice(1));
+// Action words that can safely start a micro-step. Ambiguous words that are often
+// adjectives too ("clean clothes", "dry socks") are left out on purpose.
+const ACTION_VERBS = new Set([
+  'add', 'apply', 'ask', 'book', 'breathe', 'brush', 'call', 'carry', 'charge', 'check', 'choose', 'close', 'comb', 'cook',
+  'count', 'drink', 'drop', 'dust', 'eat', 'email', 'empty', 'feed', 'fill', 'find', 'finish', 'floss', 'fold', 'get', 'give',
+  'go', 'grab', 'hang', 'hold', 'lay', 'lift', 'load', 'lock', 'look', 'make', 'mop', 'move', 'open', 'pack', 'pay', 'pick',
+  'plug', 'pour', 'press', 'print', 'pull', 'push', 'put', 'read', 'reply', 'rest', 'rinse', 'roll', 'run', 'save', 'scrub',
+  'search', 'send', 'set', 'shake', 'sit', 'soap', 'sort', 'spit', 'spray', 'squeeze', 'stack', 'stand', 'start', 'step',
+  'stretch', 'sweep', 'swallow', 'take', 'tap', 'tell', 'text', 'throw', 'tie', 'toss', 'touch', 'turn', 'type', 'unload',
+  'unlock', 'unpack', 'vacuum', 'walk', 'wash', 'wear', 'wipe', 'write',
+]);
+
+const SEPARATOR = /(,\s*(?:and\s+|then\s+)?|\s+and then\s+|\s+then\s+|\s+and\s+)/i;
+
+function capitalize(t: string): string {
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** Splits "Do A, then B and C" only where a real action word starts the next part. */
+function splitOnActions(text: string): string[] | null {
+  const pieces = text.replace(/[.!]+$/, '').split(SEPARATOR);
+  const parts: string[] = [pieces[0] ?? ''];
+  for (let i = 1; i < pieces.length; i += 2) {
+    const sep = pieces[i] ?? '';
+    const next = (pieces[i + 1] ?? '').trim();
+    const firstWord = next.split(/\s+/)[0]?.toLowerCase() ?? '';
+    if (ACTION_VERBS.has(firstWord)) parts.push(next);
+    else parts[parts.length - 1] += sep + next;
   }
-  const lowered = base.charAt(0).toLowerCase() + base.slice(1);
-  return [
-    `Stand up and go to where you'll ${lowered}`,
-    'Touch the first thing you need',
-    `Do just the first 30 seconds of it`,
-    'Check: done? If not, do one more tiny bit',
-  ];
+  const clean = parts.map((p) => p.trim()).filter((p) => p.length > 2);
+  return clean.length >= 2 && clean.length <= 5 ? clean.map(capitalize) : null;
+}
+
+function parseTiny(tiny: string | readonly string[] | null | undefined): string[] | null {
+  if (!tiny) return null;
+  if (Array.isArray(tiny)) return tiny.length > 0 ? [...tiny] : null;
+  try {
+    const parsed: unknown = JSON.parse(tiny as string);
+    if (Array.isArray(parsed)) {
+      const list = parsed.filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
+      return list.length > 0 ? list : null;
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
+/**
+ * Smaller pieces for one step, or null when the step is already one simple action.
+ * Uses hand-written micro-steps first, then a careful split on "and"/"then".
+ * Never invents wording around the step, so it can't produce broken sentences.
+ */
+export function smallerSteps(stepText: string, tiny?: string | readonly string[] | null): string[] | null {
+  return parseTiny(tiny) ?? splitOnActions(stepText);
+}
+
+/** True when "Make it smaller" has something real to offer for this step. */
+export function canMakeSmaller(stepText: string, tiny?: string | readonly string[] | null): boolean {
+  return smallerSteps(stepText, tiny) !== null;
 }
 
 /** Rule-based gentle rewrite: turns a demand into an invitation. */

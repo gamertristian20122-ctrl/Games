@@ -1,4 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { findShopItem } from '../data/shop';
 import { LIBRARY } from './schema';
 import { daysBetween } from '../lib/time';
 import type {
@@ -27,7 +28,7 @@ export const DEFAULT_ANCHORS: Anchors = {
 
 export const DEFAULT_SETTINGS: Settings = {
   onboarded: false,
-  brainProfile: 'adhd',
+  brainProfiles: [],
   energy: 'medium',
   anchors: DEFAULT_ANCHORS,
   calmMode: false,
@@ -63,6 +64,7 @@ export async function getSettings(db: SQLiteDatabase): Promise<Settings> {
     }
   }
   merged.anchors = { ...DEFAULT_ANCHORS, ...merged.anchors };
+  merged.brainProfiles = Array.isArray(merged.brainProfiles) ? merged.brainProfiles.filter((p) => typeof p === 'string') : [];
   return merged;
 }
 
@@ -83,11 +85,11 @@ export async function saveSettings(db: SQLiteDatabase, patch: Partial<Settings>)
 // ---------- pet ----------
 
 export async function getPet(db: SQLiteDatabase): Promise<Pet> {
-  const row = await db.getFirstAsync<Pet>('SELECT name, xp, affection, color, hat, scarf, room FROM pet WHERE id = 1');
-  return row ?? { name: 'Mochi', xp: 0, affection: 0, color: 'cream', hat: 'none', scarf: 'none', room: 'sunny' };
+  const row = await db.getFirstAsync<Pet>('SELECT name, xp, affection, color, hat, scarf, room, pebbles FROM pet WHERE id = 1');
+  return row ?? { name: 'Mochi', xp: 0, affection: 0, color: 'cream', hat: 'none', scarf: 'none', room: 'sunny', pebbles: 0 };
 }
 
-export async function updatePet(db: SQLiteDatabase, patch: Partial<Omit<Pet, 'xp' | 'affection'>>): Promise<void> {
+export async function updatePet(db: SQLiteDatabase, patch: Partial<Omit<Pet, 'xp' | 'affection' | 'pebbles'>>): Promise<void> {
   const allowed = ['name', 'color', 'hat', 'scarf', 'room'] as const;
   for (const key of allowed) {
     const value = patch[key];
@@ -97,10 +99,64 @@ export async function updatePet(db: SQLiteDatabase, patch: Partial<Omit<Pet, 'xp
   }
 }
 
-export async function addXp(db: SQLiteDatabase, xp: number, affection: number): Promise<{ before: number; after: number }> {
+/** XP, affection and Pebbles only ever go up from progress. */
+export async function addProgress(
+  db: SQLiteDatabase,
+  xp: number,
+  affection: number,
+  pebbles: number,
+): Promise<{ before: number; after: number }> {
   const before = (await getPet(db)).xp;
-  await db.runAsync('UPDATE pet SET xp = xp + ?, affection = affection + ? WHERE id = 1', Math.max(0, xp), Math.max(0, affection));
+  await db.runAsync(
+    'UPDATE pet SET xp = xp + ?, affection = affection + ?, pebbles = pebbles + ? WHERE id = 1',
+    Math.max(0, xp), Math.max(0, affection), Math.max(0, pebbles),
+  );
   return { before, after: before + Math.max(0, xp) };
+}
+
+// ---------- Pebble shop ----------
+
+export interface OwnedItem {
+  item_id: string;
+  placed: number;
+}
+
+export async function getOwnedItems(db: SQLiteDatabase): Promise<OwnedItem[]> {
+  return db.getAllAsync<OwnedItem>('SELECT item_id, placed FROM owned_items ORDER BY acquired_at');
+}
+
+export type BuyResult = { ok: true; kind: 'decor' | 'treat' } | { ok: false; reason: 'unknown' | 'owned' | 'pebbles' };
+
+/** Spends Pebbles. Decor is kept (and shown in the room); treats are enjoyed right away. */
+export async function buyShopItem(db: SQLiteDatabase, itemId: string): Promise<BuyResult> {
+  const item = findShopItem(itemId);
+  if (!item) return { ok: false, reason: 'unknown' };
+  let result: BuyResult = { ok: false, reason: 'pebbles' };
+  await db.withTransactionAsync(async () => {
+    if (item.kind === 'decor') {
+      const owned = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM owned_items WHERE item_id = ?', itemId);
+      if ((owned?.n ?? 0) > 0) {
+        result = { ok: false, reason: 'owned' };
+        return;
+      }
+    }
+    const spent = await db.runAsync('UPDATE pet SET pebbles = pebbles - ? WHERE id = 1 AND pebbles >= ?', item.price, item.price);
+    if (spent.changes === 0) {
+      result = { ok: false, reason: 'pebbles' };
+      return;
+    }
+    if (item.kind === 'decor') {
+      await db.runAsync('INSERT INTO owned_items (item_id, placed, acquired_at) VALUES (?, 1, ?)', itemId, Date.now());
+    } else {
+      await db.runAsync('UPDATE pet SET affection = affection + 5 WHERE id = 1');
+    }
+    result = { ok: true, kind: item.kind };
+  });
+  return result;
+}
+
+export async function setItemPlaced(db: SQLiteDatabase, itemId: string, placed: boolean): Promise<void> {
+  await db.runAsync('UPDATE owned_items SET placed = ? WHERE item_id = ?', placed ? 1 : 0, itemId);
 }
 
 // ---------- quests & routine ----------

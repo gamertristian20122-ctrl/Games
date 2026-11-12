@@ -37,7 +37,7 @@ export default function CustomQuest() {
   const breakDown = async () => {
     const text = task.trim();
     if (text.length < 3) return;
-    const result = await assistant.breakDownTask(text);
+    const result = assistant.breakDownTask(text);
     setSteps(result.steps);
     if (!title) setTitle(text.length > 40 ? `${text.slice(0, 38)}…` : text.charAt(0).toUpperCase() + text.slice(1));
     if (result.matchedTitle) setNote(`Smart Match borrowed steps from "${result.matchedTitle}". Edit anything you like.`);
@@ -45,7 +45,7 @@ export default function CustomQuest() {
   };
 
   const soften = async () => {
-    const out = await assistant.soften(title || task);
+    const out = assistant.soften(title || task);
     if (out) setInvite(out);
   };
 
@@ -98,9 +98,9 @@ export default function CustomQuest() {
         Smart Match will find tiny steps from the quest library.
       </T>
       <Button
-        label={assistant.busy ? 'Teaching your pet to think...' : 'Break it into tiny steps'}
+        label="Break it into tiny steps"
         icon="scissors"
-        disabled={assistant.busy || task.trim().length < 3}
+        disabled={task.trim().length < 3}
         style={{ marginTop: space.md }}
         onPress={breakDown}
       />
@@ -162,7 +162,7 @@ export default function CustomQuest() {
             icon="heart"
             kind="soft"
             small
-            disabled={assistant.busy || (title || task).trim().length === 0}
+            disabled={(title || task).trim().length === 0}
             style={{ marginTop: space.md, alignSelf: 'flex-start' }}
             onPress={soften}
           />

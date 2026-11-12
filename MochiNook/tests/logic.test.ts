@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import library from '../src/data/quests.json';
 import { HATS, PET_COLORS, ROOMS, SCARVES } from '../src/data/cosmetics';
+import { SHOP_ITEMS } from '../src/data/shop';
 import { levelFromXp, xpForNextLevel } from '../src/lib/progression';
 import { buildStarterRoutine } from '../src/lib/routineBuilder';
 import { decodeShareCode, encodeShareCode } from '../src/lib/shareCode';
-import { bestLibraryMatch, genericSteps, smallerSteps, smartBreakdown, softenText } from '../src/lib/smartMatch';
+import { bestLibraryMatch, canMakeSmaller, genericSteps, smallerSteps, smartBreakdown, softenText } from '../src/lib/smartMatch';
 import { currentAnchor, daysBetween, formatClock } from '../src/lib/time';
 import type { LibraryQuest } from '../src/lib/types';
 
@@ -50,19 +51,22 @@ test('the required starter quests exist', () => {
 });
 
 test('starter routine only references real quests, without duplicates', () => {
-  for (const profile of ['adhd', 'autism', 'audhd', 'overwhelmed'] as const) {
+  for (const profile of ['adhd', 'add', 'autism', 'audhd', 'anxiety', 'other'] as const) {
     for (const energy of ['low', 'medium', 'high'] as const) {
       for (const block of ['school', 'work', 'none'] as const) {
-        const ids = buildStarterRoutine(profile, energy, block);
+        const ids = buildStarterRoutine([profile, 'other'], energy, block);
         assert.equal(new Set(ids).size, ids.length);
         for (const id of ids) assert.ok(LIB.some((q) => q.id === id), `${id} missing`);
       }
     }
   }
-  assert.ok(buildStarterRoutine('overwhelmed', 'low', 'none').includes('hard-day-kit'));
-  assert.ok(buildStarterRoutine('adhd', 'medium', 'school').includes('homework-start'));
-  assert.ok(buildStarterRoutine('autism', 'high', 'work').includes('sensory-reset'));
-  assert.ok(buildStarterRoutine('adhd', 'low', 'none').length < buildStarterRoutine('adhd', 'high', 'none').length);
+  assert.ok(buildStarterRoutine(['anxiety'], 'low', 'none').includes('hard-day-kit'));
+  assert.ok(buildStarterRoutine(['add'], 'medium', 'school').includes('focus-sprint'));
+  assert.ok(buildStarterRoutine(['adhd'], 'medium', 'school').includes('homework-start'));
+  assert.ok(buildStarterRoutine(['autism'], 'high', 'work').includes('sensory-reset'));
+  const combo = buildStarterRoutine(['adhd', 'autism', 'anxiety'], 'medium', 'none');
+  for (const id of ['focus-sprint', 'sensory-reset', 'step-outside']) assert.ok(combo.includes(id), id);
+  assert.ok(buildStarterRoutine(['adhd'], 'low', 'none').length < buildStarterRoutine(['adhd'], 'high', 'none').length);
 });
 
 test('progression only goes up and levels gently', () => {
@@ -118,10 +122,34 @@ test('Smart Match falls back to a literal, gentle starter plan', () => {
   for (const s of genericSteps('I really need to finish my essay!!')) assert.doesNotMatch(s, DEMANDING);
 });
 
-test('smaller steps prefer authored micro-steps, then split on "and"', () => {
+test('smaller steps: hand-written first, careful splits second, never invented text', () => {
   assert.deepEqual(smallerSteps('x', ['a', 'b']), ['a', 'b']);
-  assert.deepEqual(smallerSteps('Grab a towel and clean clothes, then walk to the bathroom'), ['Grab a towel', 'Clean clothes', 'Walk to the bathroom']);
-  assert.equal(smallerSteps('Vacuum the hallway').length, 4);
+  assert.deepEqual(smallerSteps('x', JSON.stringify(['a', 'b'])), ['a', 'b']);
+  assert.deepEqual(smallerSteps('Grab a towel and clean clothes, then walk to the bathroom'), ['Grab a towel and clean clothes', 'Walk to the bathroom']);
+  assert.deepEqual(smallerSteps('Spit, rinse the brush, and put it back'), ['Spit', 'Rinse the brush', 'Put it back']);
+  // Your bug report: a single action has nothing smaller to offer.
+  assert.equal(smallerSteps('Walk to the bathroom sink'), null);
+  assert.equal(canMakeSmaller('Walk to the bathroom sink'), false);
+  assert.equal(smallerSteps('Vacuum the hallway'), null);
+  assert.equal(smallerSteps('Pick one: pasta, a rice bowl, a sandwich, or a frozen meal'), null);
+});
+
+test('every library step is either one simple action or has natural micro-steps', () => {
+  let withTiny = 0;
+  for (const q of LIB) {
+    for (const s of q.steps) {
+      const parts = smallerSteps(s.text, s.tiny);
+      if (s.tiny) withTiny += 1;
+      if (!parts) continue;
+      assert.ok(parts.length >= 2 && parts.length <= 5, `${q.id}: ${s.text}`);
+      for (const p of parts) {
+        assert.ok(p.length > 2 && p.length <= 80, `${q.id}: "${p}"`);
+        assert.doesNotMatch(p, /where you'll|go to where/i, `${q.id}: template text leaked: "${p}"`);
+        assert.notEqual(p.toLowerCase(), s.text.toLowerCase(), `${q.id}: micro-step repeats the step`);
+      }
+    }
+  }
+  assert.ok(withTiny >= 100, `only ${withTiny} steps have micro-steps`);
 });
 
 test('softenText turns demands into invitations', () => {
@@ -141,6 +169,13 @@ test('time helpers', () => {
   assert.equal(currentAnchor(a, 600), 'daytime');
   assert.equal(currentAnchor(a, 1200), 'evening');
   assert.equal(currentAnchor(a, 120), 'evening');
+});
+
+test('Pebble shop has 8–10 starter items, all earnable', () => {
+  assert.ok(SHOP_ITEMS.length >= 8 && SHOP_ITEMS.length <= 10);
+  assert.equal(new Set(SHOP_ITEMS.map((i) => i.id)).size, SHOP_ITEMS.length);
+  for (const i of SHOP_ITEMS) assert.ok(i.price > 0 && i.price <= 40, i.id);
+  assert.ok(SHOP_ITEMS.some((i) => i.kind === 'treat'));
 });
 
 test('free tier has a starter look; everything else is Pro', () => {

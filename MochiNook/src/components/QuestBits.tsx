@@ -77,7 +77,8 @@ export function StepItem({
 }: {
   step: StepWithState;
   onToggle: () => void;
-  onSmaller: () => void;
+  /** Omit when the step is already a single action: the scissors button hides. */
+  onSmaller?: () => void;
   onLongPress?: () => void;
   disabled?: boolean;
 }) {
@@ -109,7 +110,7 @@ export function StepItem({
           ) : null}
         </View>
       </Pressable>
-      {!step.done ? <IconButton icon="scissors" label={`Break "${step.text}" into smaller steps`} onPress={onSmaller} tone="clear" size={40} /> : null}
+      {!step.done && onSmaller ? <IconButton icon="scissors" label={`Break "${step.text}" into smaller steps`} onPress={onSmaller} tone="clear" size={40} /> : null}
     </View>
   );
 }

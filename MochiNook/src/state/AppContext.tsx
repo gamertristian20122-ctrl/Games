@@ -11,6 +11,7 @@ import {
   scheduleStepTimer,
   setQuietNotifications,
 } from '../lib/notifications';
+import { PEBBLES_PER_STEP, PEBBLES_QUEST_BONUS, findShopItem } from '../data/shop';
 import { XP_PER_STEP, XP_QUEST_BONUS, levelFromXp } from '../lib/progression';
 import { initPurchases, isMockStore } from '../lib/purchases';
 import { buildStarterRoutine } from '../lib/routineBuilder';
@@ -18,15 +19,16 @@ import { dayKey, daysBetween } from '../lib/time';
 import type { Anchors, BrainProfile, Energy, Pet, QuestRow, Settings, StepRow } from '../lib/types';
 
 export type PetEvent =
-  | { id: number; kind: 'step'; line: string }
-  | { id: number; kind: 'quest'; line: string }
-  | { id: number; kind: 'level'; line: string; level: number };
+  | { id: number; kind: 'step'; line: string; pebbles: number }
+  | { id: number; kind: 'quest'; line: string; pebbles: number }
+  | { id: number; kind: 'level'; line: string; level: number; pebbles: number }
+  | { id: number; kind: 'treat'; line: string; pebbles: 0 };
 
 type PetEventInput = PetEvent extends infer E ? (E extends PetEvent ? Omit<E, 'id'> : never) : never;
 
 export interface OnboardingAnswers {
   petName: string;
-  brainProfile: BrainProfile;
+  brainProfiles: BrainProfile[];
   energy: Energy;
   anchors: Anchors;
 }
@@ -43,7 +45,11 @@ interface AppState {
   petEvent: PetEvent | null;
   feedbackPrefs: FeedbackPrefs;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
-  updatePet: (patch: Partial<Omit<Pet, 'xp' | 'affection'>>) => Promise<void>;
+  updatePet: (patch: Partial<Omit<Pet, 'xp' | 'affection' | 'pebbles'>>) => Promise<void>;
+  /** Owned Pebble-shop decor, with whether each is shown in the room. */
+  owned: repo.OwnedItem[];
+  buyItem: (itemId: string) => Promise<repo.BuyResult>;
+  setDecorPlaced: (itemId: string, placed: boolean) => Promise<void>;
   finishOnboarding: (answers: OnboardingAnswers) => Promise<void>;
   toggleCalm: () => Promise<void>;
   enableReminders: () => Promise<boolean>;
@@ -127,12 +133,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updatePet = useCallback(
-    async (patch: Partial<Omit<Pet, 'xp' | 'affection'>>) => {
+    async (patch: Partial<Omit<Pet, 'xp' | 'affection' | 'pebbles'>>) => {
+      const before = await repo.getPet(db);
       await repo.updatePet(db, patch);
-      setPet(await repo.getPet(db));
+      const after = await repo.getPet(db);
+      setPet(after);
+      // Reminders carry the pet's name, so reschedule them after a rename.
+      if (after.name !== before.name) {
+        const s = await repo.getSettings(db);
+        if (s.onboarded && s.reminders) await scheduleAnchorReminders(s.anchors, after.name).catch(() => undefined);
+      }
     },
     [db],
   );
+
+  const [owned, setOwned] = useState<repo.OwnedItem[]>([]);
+  useEffect(() => {
+    repo.getOwnedItems(db).then(setOwned).catch(() => undefined);
+  }, [db]);
 
   const enableReminders = useCallback(async () => {
     const granted = await requestPermission().catch(() => false);
@@ -149,10 +167,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const finishOnboarding = useCallback(
     async (a: OnboardingAnswers) => {
       await repo.updatePet(db, { name: a.petName });
-      await repo.setRoutine(db, buildStarterRoutine(a.brainProfile, a.energy, a.anchors.blockKind));
+      await repo.setRoutine(db, buildStarterRoutine(a.brainProfiles, a.energy, a.anchors.blockKind));
       const patch: Partial<Settings> = {
         onboarded: true,
-        brainProfile: a.brainProfile,
+        brainProfiles: a.brainProfiles,
         energy: a.energy,
         anchors: a.anchors,
       };
@@ -193,23 +211,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       const { questCompleted } = await repo.completeStep(db, quest, step.id, today, notificationId);
       const gained = XP_PER_STEP + (questCompleted ? XP_QUEST_BONUS : 0);
-      const { before, after } = await repo.addXp(db, gained, questCompleted ? 3 : 1);
+      const pebbles = PEBBLES_PER_STEP + (questCompleted ? PEBBLES_QUEST_BONUS : 0);
+      const { before, after } = await repo.addProgress(db, gained, questCompleted ? 3 : 1, pebbles);
       const levelBefore = levelFromXp(before).level;
       const levelAfter = levelFromXp(after).level;
       setPet(await repo.getPet(db));
       setDataVersion((v) => v + 1);
       if (levelAfter > levelBefore) {
         celebrateFeedback(feedbackPrefs);
-        emit({ kind: 'level', line: levelUpLine(current.name, levelAfter), level: levelAfter });
+        emit({ kind: 'level', line: levelUpLine(current.name, levelAfter), level: levelAfter, pebbles });
       } else if (questCompleted) {
         celebrateFeedback(feedbackPrefs);
-        emit({ kind: 'quest', line: questDoneLine(after) });
+        emit({ kind: 'quest', line: questDoneLine(after), pebbles });
       } else {
         stepFeedback(feedbackPrefs);
-        emit({ kind: 'step', line: happyLine(after) });
+        emit({ kind: 'step', line: happyLine(after), pebbles });
       }
     },
     [db, emit, feedbackPrefs],
+  );
+
+  const buyItem = useCallback(
+    async (itemId: string) => {
+      const result = await repo.buyShopItem(db, itemId);
+      if (result.ok) {
+        const [p, items] = await Promise.all([repo.getPet(db), repo.getOwnedItems(db)]);
+        setPet(p);
+        setOwned(items);
+        celebrateFeedback(feedbackPrefs);
+        if (result.kind === 'treat') {
+          const name = findShopItem(itemId)?.name.toLowerCase() ?? 'treat';
+          emit({ kind: 'treat', line: `Yum! Thank you for the ${name}! 💕`, pebbles: 0 });
+        }
+      }
+      return result;
+    },
+    [db, emit, feedbackPrefs],
+  );
+
+  const setDecorPlaced = useCallback(
+    async (itemId: string, placed: boolean) => {
+      await repo.setItemPlaced(db, itemId, placed);
+      setOwned(await repo.getOwnedItems(db));
+    },
+    [db],
   );
 
   const uncheckStep = useCallback(
@@ -254,6 +299,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       feedbackPrefs,
       updateSettings,
       updatePet,
+      owned,
+      buyItem,
+      setDecorPlaced,
       finishOnboarding,
       toggleCalm,
       enableReminders,
@@ -264,7 +312,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tap: () => tapFeedback(feedbackPrefs),
     };
   }, [
-    settings, pet, storePro, dataVersion, welcomeBackLine, petEvent, feedbackPrefs, updateSettings, updatePet,
+    settings, pet, storePro, dataVersion, welcomeBackLine, petEvent, feedbackPrefs, updateSettings, updatePet, owned, buyItem, setDecorPlaced,
     finishOnboarding, toggleCalm, enableReminders, checkStep, uncheckStep, touchData,
   ]);
 
