@@ -26,6 +26,7 @@ const C_CURSE_DARK := Color("2a1634")
 const C_GREEN := Color("4ba747")
 const C_BLUE := Color("5698cc")
 const C_ICE := Color("72d6ce")
+const C_BRASS := Color("a8823c")        ## warm metal: panel corners, frames, the talk box edge
 
 # ------------------------------------------------------------------ fonts
 ## Drop pixel fonts into this folder under exactly these two names and they are used automatically.
@@ -82,6 +83,11 @@ class StoneBox extends StyleBox:
 	var inner_top := Color(0, 0, 0, 0)      ## line just under the top edge
 	var inner_bottom := Color(0, 0, 0, 0)   ## line just above the bottom edge
 	var draw_fill := true
+	## v0.24 polish, all optional (a=0 = off): a thin inset trim line, little corner studs, and a
+	## soft light from the top (the fill fades a few bands lighter upward, like lamp light on a board)
+	var trim := Color(0, 0, 0, 0)
+	var studs := Color(0, 0, 0, 0)
+	var top_light := Color(0, 0, 0, 0)
 
 	func _draw(ci: RID, rect: Rect2) -> void:
 		var r := Rect2(rect.position.round(), rect.size.round())
@@ -102,6 +108,24 @@ class StoneBox extends StyleBox:
 				rs.canvas_item_add_rect(ci, Rect2(p.x + 2, p.y + 2, s.x - 4, 1), inner_top)
 			if inner_bottom.a > 0.0:
 				rs.canvas_item_add_rect(ci, Rect2(p.x + 2, p.y + s.y - 3, s.x - 4, 1), inner_bottom)
+			if top_light.a > 0.0 and s.y > 12:
+				# four soft bands, brightest at the top: reads as light falling on the panel
+				var band := floorf((s.y - 6.0) / 2.0 / 4.0)
+				for i in 4:
+					var c := top_light
+					c.a = top_light.a * (1.0 - float(i) / 4.0)
+					rs.canvas_item_add_rect(ci, Rect2(p.x + 2, p.y + 3 + band * i, s.x - 4, band), c)
+			if trim.a > 0.0 and s.x > 14 and s.y > 14:
+				rs.canvas_item_add_rect(ci, Rect2(p.x + 4, p.y + 3, s.x - 8, 1), trim)
+				var tb := trim
+				tb.a *= 0.55
+				rs.canvas_item_add_rect(ci, Rect2(p.x + 4, p.y + s.y - 4, s.x - 8, 1), tb)
+				rs.canvas_item_add_rect(ci, Rect2(p.x + 3, p.y + 4, 1, s.y - 8), tb)
+				rs.canvas_item_add_rect(ci, Rect2(p.x + s.x - 4, p.y + 4, 1, s.y - 8), tb)
+			if studs.a > 0.0 and s.x > 14 and s.y > 14:
+				for corner: Vector2 in [Vector2(p.x + 1, p.y + 1), Vector2(p.x + s.x - 3, p.y + 1), Vector2(p.x + 1, p.y + s.y - 3), Vector2(p.x + s.x - 3, p.y + s.y - 3)]:
+					rs.canvas_item_add_rect(ci, Rect2(corner, Vector2(2, 2)), studs)
+					rs.canvas_item_add_rect(ci, Rect2(corner, Vector2(1, 1)), studs.lightened(0.45))
 		else:
 			rs.canvas_item_add_rect(ci, Rect2(p.x + 1, p.y + 1, s.x - 2, 1), edge)
 			rs.canvas_item_add_rect(ci, Rect2(p.x + 1, p.y + s.y - 2, s.x - 2, 1), edge)
@@ -149,8 +173,25 @@ static func box(kind: String) -> StyleBox:
 			sb = _stone(C_PANEL_LOW, Color("353d4c"), 2, 2, C_SHADE)
 		"slot_focus":
 			sb = _stone(Color("2b2a22"), C_GOLD, 2, 2, C_SHADE)
+		"talk":
+			# the dialogue box: deep night-blue board, brass edge, a gold trim, lit from above
+			sb = _stone(Color(0.075, 0.075, 0.12, 0.94), C_BRASS, 7, 5, Color(0, 0, 0, 0))
+			sb.trim = Color(C_GOLD, 0.30)
+			sb.studs = C_GOLD
+			sb.top_light = Color(0.55, 0.62, 0.85, 0.07)
+		"plate":
+			# a name plate: warm brass tab on the dialogue box's top edge
+			sb = _stone(Color("3a2a16"), C_GOLD, 6, 2, Color("6a4e22"), Color("221709"))
+		"portrait":
+			# the picture well: dark, gold-rimmed, lit from above
+			sb = _stone(Color("10121a"), C_BRASS, 2, 2, C_SHADE)
+			sb.trim = Color(C_GOLD, 0.22)
+			sb.top_light = Color(1.0, 0.85, 0.55, 0.06)
 		_:
 			sb = _stone(C_PANEL, C_EDGE, 6, 5, C_SHADE)
+			sb.trim = Color(C_EDGE_HI, 0.16)
+			sb.studs = C_BRASS
+			sb.top_light = Color(0.6, 0.66, 0.85, 0.05)
 	_boxes[kind] = sb
 	return sb
 
@@ -191,6 +232,12 @@ static func theme() -> Theme:
 	pressed.content_margin_top = 4
 	pressed.content_margin_bottom = 2
 	var disabled := _stone(Color("1d1d26"), Color("333946"), 7, 3)
+	# light falls on the slabs from above, and brass corner pins hold them (gold under the finger)
+	normal.top_light = Color(0.75, 0.8, 1.0, 0.05)
+	normal.studs = Color("7d6232")
+	hover.top_light = Color(1.0, 0.9, 0.7, 0.08)
+	hover.studs = C_BRASS
+	pressed.studs = C_GOLD
 	var focus := _stone(C_PANEL_HI, C_GOLD, 7, 3)
 	focus.draw_fill = false
 	focus.outline = Color(0, 0, 0, 0)

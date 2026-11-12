@@ -10,6 +10,68 @@ const TAGLINE := "Four seals are breaking under the hill."
 var _name_label: Label
 var _tag_label: Label
 var _column: VBoxContainer
+var _glow: Control
+var _t := 0.0
+
+
+## A see-through picture that fades from `inner` at the middle to `outer` at the edges.
+func _radial(inner: Color, outer: Color, start: float) -> TextureRect:
+	var g := Gradient.new()
+	g.set_color(0, inner)
+	g.set_color(1, outer)
+	if start > 0.0:
+		g.add_point(start, inner)
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill = GradientTexture2D.FILL_RADIAL
+	t.fill_from = Vector2(0.5, 0.5)
+	t.fill_to = Vector2(1.0, 0.5)
+	t.width = 64
+	t.height = 64
+	var r := TextureRect.new()
+	r.texture = t
+	r.stretch_mode = TextureRect.STRETCH_SCALE
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+## Motes of warm light drifting up through the title picture, twinkling. Squares only, added
+## light; about forty of them, so it costs nothing on a phone.
+class Motes extends Control:
+	const COUNT := 40
+	var _p: Array[Vector4] = []        ## x, y, speed, phase
+	var _t := 0.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var m := CanvasItemMaterial.new()
+		m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		material = m
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 7
+		for i in COUNT:
+			_p.append(Vector4(rng.randf(), rng.randf(), rng.randf_range(3.0, 9.0), rng.randf() * TAU))
+
+	func _process(delta: float) -> void:
+		_t += delta
+		if is_visible_in_tree():
+			queue_redraw()
+
+	func _draw() -> void:
+		if size.x < 4.0:
+			return
+		for m: Vector4 in _p:
+			var y := fposmod(m.y * size.y - _t * m.z, size.y + 8.0) - 4.0
+			var x := fposmod(m.x * size.x + sin(_t * 0.5 + m.w) * 6.0 + _t * 1.5, size.x)
+			var tw := 0.5 + 0.5 * sin(_t * 1.7 + m.w * 3.0)
+			# brighter near the bottom (where the light pools), fading as they rise
+			var a := (0.25 + 0.75 * tw) * clampf(y / size.y + 0.2, 0.0, 1.0)
+			var warm := Color(1.0, 0.82, 0.48)
+			var p := Vector2(roundf(x), roundf(y))
+			draw_rect(Rect2(p - Vector2(2, 2), Vector2(5, 5)), Color(warm, a * 0.07))
+			draw_rect(Rect2(p - Vector2(1, 1), Vector2(3, 3)), Color(warm, a * 0.16))
+			draw_rect(Rect2(p, Vector2(1, 1)) if m.z < 6.0 else Rect2(p, Vector2(2, 2)) , Color(warm, a * 0.7))
 
 
 ## The game's name comes from the project settings, so renaming the game renames the title.
@@ -24,6 +86,27 @@ func build() -> void:
 	var area := Control.new()
 	area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	safe.add_child(area)
+	# the lit look over the living picture: a soft vignette, a warm glow behind the name, and
+	# motes of light drifting up through it (all drawn in code: no art made here)
+	var vignette := _radial(Color(0, 0, 0, 0), Color(0.01, 0.01, 0.04, 0.58), 0.35)
+	vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(vignette)
+	move_child(vignette, 0)
+	_glow = _radial(Color(1.0, 0.76, 0.36, 0.42), Color(1.0, 0.55, 0.18, 0.0), 0.0)
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_glow.material = add
+	_glow.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_glow.offset_left = -150
+	_glow.offset_right = 150
+	_glow.offset_top = -34
+	_glow.offset_bottom = 66
+	add_child(_glow)
+	move_child(_glow, 1)
+	var motes := Motes.new()
+	motes.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(motes)
+	move_child(motes, 2)
 
 	_name_label = UI.label(game_name(), "Title")
 	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -83,6 +166,13 @@ func refresh() -> void:
 	if bool(hero.get("locked", false)) and not Save.is_unlocked("hero:" + String(hero["id"])):
 		hero = Heroes.LIST[0]
 	backdrop.call("set_hero", hero, false)
+
+
+func _process(delta: float) -> void:
+	_t += delta
+	if is_instance_valid(_glow):
+		# the glow behind the name breathes slowly, like a lamp
+		_glow.modulate.a = 0.78 + 0.22 * sin(_t * 1.3)
 
 
 func _fit() -> void:
