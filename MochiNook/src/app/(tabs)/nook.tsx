@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PebbleCount, PebbleIcon } from '../../components/Pebble';
 import { SHOP_ITEMS, type ShopItem } from '../../data/shop';
 import { confirmAction, notice } from '../../lib/dialogs';
+import { SEASON_INFO, seasonFor } from '../../lib/season';
 import { Icon } from '../../components/Icon';
 import { Pet } from '../../components/Pet';
 import { ProUpsell } from '../../components/QuestBits';
@@ -16,7 +17,8 @@ import { useTheme } from '../../theme/ThemeContext';
 import { radius, space } from '../../theme/tokens';
 
 export default function Nook() {
-  const { pet, isPro, updatePet, tap, owned, buyItem, setDecorPlaced } = useApp();
+  const { pet, isPro, updatePet, tap, owned, buyItem, setDecorPlaced, canWear } = useApp();
+  const season = seasonFor();
   const decor = owned.filter((o) => o.placed === 1).map((o) => o.item_id);
 
   const shopTap = async (item: ShopItem) => {
@@ -47,8 +49,13 @@ export default function Nook() {
 
   const choose = (kind: CosmeticKind, item: Cosmetic) => {
     tap();
-    if (!item.free && !isPro) {
-      router.push('/pro');
+    if (!canWear(kind, item.id)) {
+      if (item.season) {
+        notice(`${SEASON_INFO[item.season].emoji} Sprint reward`, `${item.name} is earned in ${SEASON_INFO[item.season].name} Mochi Sprints. Check the Week tab to see how close you are!`);
+        router.push('/week');
+      } else {
+        router.push('/pro');
+      }
       return;
     }
     const key = kind === 'color' ? 'color' : kind;
@@ -61,15 +68,18 @@ export default function Nook() {
     <>
       <SectionTitle>{title}</SectionTitle>
       <View style={styles.grid}>
-        {items.map((item) => {
+        {items
+          // Seasonal items appear during their season, or once earned.
+          .filter((item) => !item.season || item.season === season || canWear(kind, item.id))
+          .map((item) => {
           const selected = selectedId(kind) === item.id;
-          const locked = !item.free && !isPro;
+          const locked = !canWear(kind, item.id);
           return (
             <Pressable
               key={item.id}
               accessibilityRole="button"
               accessibilityState={{ selected }}
-              accessibilityLabel={`${item.name}${locked ? ', Pro' : ''}${selected ? ', wearing' : ''}`}
+              accessibilityLabel={`${item.name}${locked ? (item.season ? ', Sprint reward' : ', Pro') : ''}${selected ? ', wearing' : ''}`}
               onPress={() => choose(kind, item)}
               style={({ pressed }) => [
                 styles.tile,
@@ -84,7 +94,11 @@ export default function Nook() {
               <T variant="small" color={c.ink} numberOfLines={2} style={{ textAlign: 'center' }}>
                 {item.name}
               </T>
-              {locked ? (
+              {locked && item.season ? (
+                <View style={[styles.lock, { backgroundColor: c.butter }]}>
+                  <Text style={{ fontSize: 11 }}>{SEASON_INFO[item.season].emoji}</Text>
+                </View>
+              ) : locked ? (
                 <View style={[styles.lock, { backgroundColor: c.lavender }]}>
                   <Icon name="lock" size={12} color={c.ink} strokeWidth={2.4} />
                 </View>

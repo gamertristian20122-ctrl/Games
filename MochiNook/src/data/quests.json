@@ -1994,5 +1994,727 @@
         "text": "Take any cups to the kitchen"
       }
     ]
+  },
+  {
+    "id": "study-test",
+    "title": "Study for a Test",
+    "emoji": "📝",
+    "category": "school",
+    "anchor": "daytime",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to study a little together? Just one page counts.",
+    "keywords": [
+      "test",
+      "exam",
+      "quiz",
+      "study",
+      "revise",
+      "revision"
+    ],
+    "steps": [
+      {
+        "text": "Find out what the test covers",
+        "tiny": [
+          "Open your class page or notes",
+          "Find the list of topics"
+        ]
+      },
+      {
+        "text": "Pick the one topic you know least"
+      },
+      {
+        "text": "Read your notes on it for 10 minutes",
+        "timerMinutes": 10
+      },
+      {
+        "text": "Write 3 questions about it and answer them",
+        "tiny": [
+          "Write one question",
+          "Answer it without looking",
+          "Do two more"
+        ]
+      },
+      {
+        "text": "Put a star next to anything still confusing"
+      }
+    ]
+  },
+  {
+    "id": "school-bag-reset",
+    "title": "School Bag Reset",
+    "emoji": "🎒",
+    "category": "school",
+    "anchor": "evening",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to give your school bag a fresh start?",
+    "keywords": [
+      "school bag",
+      "backpack",
+      "binder",
+      "papers",
+      "clean bag"
+    ],
+    "steps": [
+      {
+        "text": "Empty everything onto the floor or bed",
+        "tiny": [
+          "Unzip every pocket",
+          "Tip the bag upside down"
+        ]
+      },
+      {
+        "text": "Throw away trash and old wrappers"
+      },
+      {
+        "text": "Put loose papers in the right folders",
+        "tiny": [
+          "Pick up one paper",
+          "Put it in its folder or the recycling",
+          "Do the next one"
+        ]
+      },
+      {
+        "text": "Put back only what tomorrow needs"
+      }
+    ]
+  },
+  {
+    "id": "ask-teacher",
+    "title": "Ask a Teacher for Help",
+    "emoji": "🙋",
+    "category": "school",
+    "anchor": "daytime",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to send your teacher a quick question? I have words ready for you.",
+    "keywords": [
+      "teacher",
+      "help",
+      "email teacher",
+      "question",
+      "extension"
+    ],
+    "steps": [
+      {
+        "text": "Open your school email or messages"
+      },
+      {
+        "text": "Type: \"Hi, I'm stuck on ___. Could you help me with it?\""
+      },
+      {
+        "text": "Fill in the blank with the assignment name"
+      },
+      {
+        "text": "Press send"
+      }
+    ]
+  },
+  {
+    "id": "read-pages",
+    "title": "Read 5 Pages",
+    "emoji": "📖",
+    "category": "school",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to read just 5 pages with me? Stopping after is totally fine.",
+    "keywords": [
+      "read",
+      "reading",
+      "book",
+      "pages",
+      "novel"
+    ],
+    "steps": [
+      {
+        "text": "Find your book and a comfy spot"
+      },
+      {
+        "text": "Open to your bookmark"
+      },
+      {
+        "text": "Read 5 pages"
+      },
+      {
+        "text": "Put the bookmark back in"
+      }
+    ]
+  },
+  {
+    "id": "skincare",
+    "title": "Simple Skincare",
+    "emoji": "🧴",
+    "category": "body",
+    "anchor": "evening",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to do a gentle face routine together?",
+    "keywords": [
+      "skincare",
+      "face wash",
+      "moisturizer",
+      "acne",
+      "skin"
+    ],
+    "steps": [
+      {
+        "text": "Wash your face with cleanser",
+        "tiny": [
+          "Wet your face",
+          "Rub a small dot of cleanser on",
+          "Rinse it off"
+        ]
+      },
+      {
+        "text": "Pat your face dry"
+      },
+      {
+        "text": "Put on moisturizer",
+        "tiny": [
+          "Squeeze a small dot onto your fingers",
+          "Rub it into your cheeks and forehead"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "nails",
+    "title": "Trim Your Nails",
+    "emoji": "💅",
+    "category": "body",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to do a quick nail trim? Fingers first, toes are optional.",
+    "keywords": [
+      "nails",
+      "nail",
+      "clippers",
+      "toenails"
+    ],
+    "steps": [
+      {
+        "text": "Grab nail clippers and sit near a trash bin"
+      },
+      {
+        "text": "Trim the nails on one hand",
+        "tiny": [
+          "Trim the thumb nail",
+          "Trim the next nail",
+          "Keep going to the pinky"
+        ]
+      },
+      {
+        "text": "Trim the nails on the other hand"
+      },
+      {
+        "text": "Throw the clippings in the trash"
+      }
+    ]
+  },
+  {
+    "id": "hair-wash-day",
+    "title": "Hair Wash Day",
+    "emoji": "🫧",
+    "category": "body",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to do a cozy hair wash? We can go slow.",
+    "keywords": [
+      "hair",
+      "wash hair",
+      "conditioner",
+      "shampoo"
+    ],
+    "steps": [
+      {
+        "text": "Grab shampoo, conditioner and a towel"
+      },
+      {
+        "text": "Shampoo your hair and rinse",
+        "tiny": [
+          "Wet your hair",
+          "Rub in shampoo",
+          "Rinse until the bubbles are gone"
+        ]
+      },
+      {
+        "text": "Put conditioner on the ends and rinse",
+        "tiny": [
+          "Squeeze a coin-sized blob",
+          "Smooth it on the ends of your hair",
+          "Rinse it out"
+        ]
+      },
+      {
+        "text": "Wrap your hair in the towel"
+      }
+    ]
+  },
+  {
+    "id": "comfort-break",
+    "title": "Comfort Break",
+    "emoji": "🛋️",
+    "category": "care",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Want to take a real break with me? No phone needed.",
+    "keywords": [
+      "break",
+      "rest",
+      "burnout",
+      "tired",
+      "relax"
+    ],
+    "steps": [
+      {
+        "text": "Set a timer for 10 minutes"
+      },
+      {
+        "text": "Lie down or sit somewhere soft"
+      },
+      {
+        "text": "Close your eyes or look out a window"
+      },
+      {
+        "text": "When the timer rings, stretch and stand up slowly"
+      }
+    ]
+  },
+  {
+    "id": "vacuum-room",
+    "title": "Vacuum One Room",
+    "emoji": "🧹",
+    "category": "home",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to give one floor a fresh vacuum? Just one room.",
+    "keywords": [
+      "vacuum",
+      "hoover",
+      "floor",
+      "carpet",
+      "crumbs"
+    ],
+    "steps": [
+      {
+        "text": "Pick up things from the floor first"
+      },
+      {
+        "text": "Plug in the vacuum",
+        "tiny": [
+          "Find the vacuum",
+          "Carry it to the room",
+          "Plug it in"
+        ]
+      },
+      {
+        "text": "Vacuum from the far corner toward the door"
+      },
+      {
+        "text": "Put the vacuum away"
+      }
+    ]
+  },
+  {
+    "id": "bathroom-deep",
+    "title": "Bathroom Deep Clean",
+    "emoji": "🛁",
+    "category": "home",
+    "anchor": "anytime",
+    "cadence": "monthly",
+    "essential": false,
+    "invite": "Want to make the bathroom sparkle? We'll go one spot at a time.",
+    "keywords": [
+      "deep clean",
+      "bathroom",
+      "shower",
+      "tub",
+      "scrub",
+      "mold"
+    ],
+    "steps": [
+      {
+        "text": "Take everything off the counter"
+      },
+      {
+        "text": "Spray and wipe the counter and sink",
+        "tiny": [
+          "Spray the counter",
+          "Wait one minute",
+          "Wipe it clean"
+        ]
+      },
+      {
+        "text": "Scrub the toilet",
+        "tiny": [
+          "Squirt cleaner under the rim",
+          "Scrub with the brush",
+          "Flush"
+        ]
+      },
+      {
+        "text": "Wipe the shower or tub",
+        "tiny": [
+          "Spray the walls and tub",
+          "Wipe from top to bottom",
+          "Rinse with water"
+        ]
+      },
+      {
+        "text": "Put the counter things back"
+      }
+    ]
+  },
+  {
+    "id": "fridge-deep",
+    "title": "Fridge Deep Clean",
+    "emoji": "🧽",
+    "category": "kitchen",
+    "anchor": "anytime",
+    "cadence": "monthly",
+    "essential": false,
+    "invite": "Want to give the fridge a full refresh? Leftovers, beware.",
+    "keywords": [
+      "deep clean fridge",
+      "fridge",
+      "refrigerator",
+      "spill"
+    ],
+    "steps": [
+      {
+        "text": "Take everything out of one shelf"
+      },
+      {
+        "text": "Throw away anything old"
+      },
+      {
+        "text": "Wipe the shelf with warm soapy water",
+        "tiny": [
+          "Fill a bowl with warm soapy water",
+          "Dip a cloth and squeeze it",
+          "Wipe the whole shelf"
+        ]
+      },
+      {
+        "text": "Put the good food back"
+      },
+      {
+        "text": "Do the next shelf, or stop here"
+      }
+    ]
+  },
+  {
+    "id": "closet-clear",
+    "title": "Closet Clear-Out",
+    "emoji": "👗",
+    "category": "home",
+    "anchor": "anytime",
+    "cadence": "monthly",
+    "essential": false,
+    "invite": "Want to make your closet easier? Just 5 clothes to decide on.",
+    "keywords": [
+      "closet",
+      "declutter",
+      "donate",
+      "wardrobe",
+      "clothes pile"
+    ],
+    "steps": [
+      {
+        "text": "Grab a bag for donations"
+      },
+      {
+        "text": "Pick 5 clothes you haven't worn in a while",
+        "tiny": [
+          "Pick one",
+          "Decide: keep or donate?",
+          "Do 4 more"
+        ]
+      },
+      {
+        "text": "Put the donate pile in the bag"
+      },
+      {
+        "text": "Put the bag by the door"
+      }
+    ]
+  },
+  {
+    "id": "scrambled-eggs",
+    "title": "Make Scrambled Eggs",
+    "emoji": "🍳",
+    "category": "kitchen",
+    "anchor": "morning",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to make cozy scrambled eggs? Wobbly is fine.",
+    "keywords": [
+      "eggs",
+      "scrambled eggs",
+      "breakfast",
+      "cook eggs"
+    ],
+    "steps": [
+      {
+        "text": "Crack 2 eggs into a bowl",
+        "tiny": [
+          "Tap an egg on the bowl's edge",
+          "Pull it open over the bowl",
+          "Do the second egg"
+        ]
+      },
+      {
+        "text": "Stir them with a fork"
+      },
+      {
+        "text": "Put a pan on medium heat with a little butter or oil"
+      },
+      {
+        "text": "Pour in the eggs"
+      },
+      {
+        "text": "Stir slowly until they're not runny",
+        "timerMinutes": 3
+      },
+      {
+        "text": "Turn off the heat and slide them onto a plate"
+      }
+    ]
+  },
+  {
+    "id": "pasta-night",
+    "title": "Easy Pasta Night",
+    "emoji": "🍝",
+    "category": "kitchen",
+    "anchor": "evening",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to make an easy pasta dinner together?",
+    "keywords": [
+      "pasta",
+      "spaghetti",
+      "noodles",
+      "dinner"
+    ],
+    "steps": [
+      {
+        "text": "Boil a pot of water",
+        "tiny": [
+          "Fill a pot halfway with water",
+          "Put it on the stove",
+          "Turn the heat to high"
+        ]
+      },
+      {
+        "text": "Add pasta and set a timer",
+        "timerMinutes": 10
+      },
+      {
+        "text": "Warm up a jar of sauce in a small pot"
+      },
+      {
+        "text": "Drain the pasta",
+        "tiny": [
+          "Put a colander in the sink",
+          "Pour the pasta in carefully"
+        ]
+      },
+      {
+        "text": "Mix with sauce and eat!"
+      }
+    ]
+  },
+  {
+    "id": "meal-prep",
+    "title": "Mini Meal Prep",
+    "emoji": "🥗",
+    "category": "kitchen",
+    "anchor": "daytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to make tomorrow-you a little lunch? Just one container.",
+    "keywords": [
+      "meal prep",
+      "lunch",
+      "prep",
+      "packed lunch"
+    ],
+    "steps": [
+      {
+        "text": "Get one container with a lid"
+      },
+      {
+        "text": "Add a main thing (sandwich, leftovers, or rice)"
+      },
+      {
+        "text": "Add a snack (fruit, crackers, or a bar)"
+      },
+      {
+        "text": "Put the lid on and put it in the fridge"
+      }
+    ]
+  },
+  {
+    "id": "snack-plate",
+    "title": "Make a Snack Plate",
+    "emoji": "🧀",
+    "category": "kitchen",
+    "anchor": "anytime",
+    "cadence": "daily",
+    "essential": false,
+    "invite": "Hungry? Want to make a little snack plate with me?",
+    "keywords": [
+      "snack",
+      "hungry",
+      "cheese",
+      "fruit"
+    ],
+    "steps": [
+      {
+        "text": "Get a plate"
+      },
+      {
+        "text": "Add something crunchy"
+      },
+      {
+        "text": "Add something fruity or veggie"
+      },
+      {
+        "text": "Sit down and enjoy it"
+      }
+    ]
+  },
+  {
+    "id": "dentist",
+    "title": "Book a Dentist Visit",
+    "emoji": "🦷",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to book a dentist checkup? I have the words ready.",
+    "keywords": [
+      "dentist",
+      "teeth cleaning",
+      "checkup",
+      "dental"
+    ],
+    "steps": [
+      {
+        "text": "Find your dentist's phone number or booking page"
+      },
+      {
+        "text": "Write down 2 or 3 times you are free"
+      },
+      {
+        "text": "Say: \"Hi, I'd like to book a checkup. My name is ___ and my birthday is ___.\""
+      },
+      {
+        "text": "Add the appointment to your calendar"
+      }
+    ]
+  },
+  {
+    "id": "haircut",
+    "title": "Book a Haircut",
+    "emoji": "💇",
+    "category": "adulting",
+    "anchor": "daytime",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Want to book a haircut? Online booking counts too.",
+    "keywords": [
+      "haircut",
+      "hair cut",
+      "barber",
+      "salon",
+      "hairdresser"
+    ],
+    "steps": [
+      {
+        "text": "Search for a barber or salon nearby"
+      },
+      {
+        "text": "Open their booking page or phone number"
+      },
+      {
+        "text": "Pick a time that works"
+      },
+      {
+        "text": "Add it to your calendar"
+      }
+    ]
+  },
+  {
+    "id": "appointment-prep",
+    "title": "Get Ready for an Appointment",
+    "emoji": "📋",
+    "category": "adulting",
+    "anchor": "anytime",
+    "cadence": "once",
+    "essential": false,
+    "invite": "Have an appointment coming up? Want to get ready together so it feels easier?",
+    "keywords": [
+      "appointment",
+      "doctor visit",
+      "therapy",
+      "prepare",
+      "nervous"
+    ],
+    "steps": [
+      {
+        "text": "Check the date, time and address"
+      },
+      {
+        "text": "Write down what you want to say",
+        "tiny": [
+          "Write the main reason you're going",
+          "Add any questions you have"
+        ]
+      },
+      {
+        "text": "Pack your ID, insurance card and phone"
+      },
+      {
+        "text": "Set a reminder to leave 15 minutes early"
+      }
+    ]
+  },
+  {
+    "id": "therapy-notes",
+    "title": "Therapy Session Notes",
+    "emoji": "💬",
+    "category": "care",
+    "anchor": "anytime",
+    "cadence": "weekly",
+    "essential": false,
+    "invite": "Want to jot a few things for your next session?",
+    "keywords": [
+      "therapy",
+      "therapist",
+      "counselor",
+      "notes",
+      "session"
+    ],
+    "steps": [
+      {
+        "text": "Open your notes app or a notebook"
+      },
+      {
+        "text": "Write one thing that went well this week"
+      },
+      {
+        "text": "Write one thing that was hard"
+      },
+      {
+        "text": "Write one question to bring up"
+      }
+    ]
   }
 ]

@@ -3,14 +3,14 @@
     "name": "MochiNook",
     "slug": "mochinook",
     "scheme": "mochinook",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#FBF5EC",
     "ios": {
       "bundleIdentifier": "com.mochinook.app",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "supportsTablet": true,
       "deploymentTarget": "17.0",
       "config": {
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.mochinook.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#CFE0C8",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -96,7 +96,8 @@
           }
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "./plugins/withReleaseSigning"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,7 +1,7 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
-import { happyLine, levelUpLine, questDoneLine, welcomeBack } from '../lib/copy';
+import { happyLine, levelUpLine, petCareLines, questDoneLine, welcomeBack } from '../lib/copy';
 import { celebrateFeedback, stepFeedback, tapFeedback, type FeedbackPrefs } from '../lib/feedback';
 import { migrateDatabase } from '../db/schema';
 import {
@@ -13,7 +13,9 @@ import {
   scheduleStepTimer,
   setQuietNotifications,
 } from '../lib/notifications';
+import { cosmeticKey, isCosmeticFree, isSeasonal, type CosmeticKind } from '../data/cosmetics';
 import { PEBBLES_PER_STEP, PEBBLES_QUEST_BONUS, findShopItem } from '../data/shop';
+import { SEASON_INFO, seasonFor, sprintTiers, weekStart } from '../lib/season';
 import { XP_PER_STEP, XP_QUEST_BONUS, levelFromXp } from '../lib/progression';
 import { TEST_TOOLS_ALLOWED, initPurchases, isMockStore } from '../lib/purchases';
 import { buildStarterRoutine } from '../lib/routineBuilder';
@@ -24,7 +26,11 @@ export type PetEvent =
   | { id: number; kind: 'step'; line: string; pebbles: number }
   | { id: number; kind: 'quest'; line: string; pebbles: number }
   | { id: number; kind: 'level'; line: string; level: number; pebbles: number }
-  | { id: number; kind: 'treat'; line: string; pebbles: 0 };
+  | { id: number; kind: 'treat'; line: string; pebbles: 0 }
+  | { id: number; kind: 'care'; line: string; pebbles: 0 }
+  | { id: number; kind: 'reward'; line: string; pebbles: number };
+
+export type CareKind = 'pat' | 'snack' | 'tuck';
 
 type PetEventInput = PetEvent extends infer E ? (E extends PetEvent ? Omit<E, 'id'> : never) : never;
 
@@ -58,6 +64,16 @@ interface AppState {
   checkStep: (quest: Pick<QuestRow, 'id' | 'cadence' | 'title'>, step: StepRow) => Promise<void>;
   uncheckStep: (quest: Pick<QuestRow, 'id' | 'cadence'>, step: StepRow) => Promise<void>;
   touchData: () => void;
+  /** Earned seasonal cosmetics, as "kind:id" keys. */
+  ownedCosmetics: string[];
+  /** Whether the pet may wear an item: free, earned, or (non-seasonal) Pro. */
+  canWear: (kind: CosmeticKind, id: string) => boolean;
+  petCare: (kind: CareKind) => Promise<boolean>;
+  saveCheckin: (mood: number, energy: Energy) => Promise<void>;
+  completeFocus: (sessionId: number, completed: boolean) => Promise<void>;
+  completeRace: (raceId: number) => Promise<number>;
+  /** Re-checks this week's Sprint Stars and grants any newly reached seasonal rewards. */
+  syncSprint: () => Promise<void>;
   /** Erases every bit of local data and starts fresh at onboarding. */
   deleteAllData: () => Promise<void>;
   dismissWelcome: () => void;
@@ -82,6 +98,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [petEvent, setPetEvent] = useState<PetEvent | null>(null);
   const eventId = useRef(0);
   const settingsRef = useRef<Settings | null>(null);
+  // checkStep is defined before syncSprint; this ref lets it trigger a sprint check after a quest.
+  const syncSprintRef = useRef<() => Promise<void>>(async () => undefined);
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
@@ -227,6 +245,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else if (questCompleted) {
         celebrateFeedback(feedbackPrefs);
         emit({ kind: 'quest', line: questDoneLine(after), pebbles });
+        setTimeout(() => {
+          syncSprintRef.current().catch(() => undefined);
+        }, 2600);
       } else {
         stepFeedback(feedbackPrefs);
         emit({ kind: 'step', line: happyLine(after), pebbles });
@@ -261,6 +282,98 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [db],
   );
 
+  const [ownedCosmetics, setOwnedCosmetics] = useState<string[]>([]);
+  useEffect(() => {
+    repo.getOwnedCosmetics(db).then(setOwnedCosmetics).catch(() => undefined);
+  }, [db]);
+
+  const syncSprint = useCallback(async () => {
+    const s = await repo.getSettings(db);
+    const today = dayKey();
+    const stats = await repo.getSprintStats(db, weekStart(today));
+    const earned = await repo.syncSeasonRewards(db, seasonFor(), stats.stars, sprintTiers(s.energy));
+    if (earned.length > 0) {
+      setOwnedCosmetics(await repo.getOwnedCosmetics(db));
+      const last = earned[earned.length - 1]!;
+      celebrateFeedback(feedbackPrefs);
+      emit({ kind: 'reward', line: `Sprint reward unlocked: ${last.name}! ${SEASON_INFO[seasonFor()].emoji} It’s yours to keep.`, pebbles: 0 });
+    }
+  }, [db, emit, feedbackPrefs]);
+
+  useEffect(() => {
+    syncSprintRef.current = syncSprint;
+  }, [syncSprint]);
+
+  const award = useCallback(
+    async (pebbles: number, xp: number, line: string) => {
+      await repo.addProgress(db, xp, 1, pebbles);
+      setPet(await repo.getPet(db));
+      celebrateFeedback(feedbackPrefs);
+      emit({ kind: 'reward', line, pebbles });
+      await syncSprint();
+    },
+    [db, emit, feedbackPrefs, syncSprint],
+  );
+
+  const completeFocus = useCallback(
+    async (sessionId: number, completed: boolean) => {
+      await repo.finishFocus(db, sessionId, completed);
+      await award(completed ? 3 : 1, completed ? 10 : 3, completed ? 'Focus sprint done! We did that side by side. 📚' : 'Stopping early still counts. Nice work showing up. 💛');
+    },
+    [db, award],
+  );
+
+  const completeRace = useCallback(
+    async (raceId: number) => {
+      const steps = await repo.finishRace(db, raceId);
+      await award(2, 5, steps > 0 ? `Race finished with ${steps} tiny ${steps === 1 ? 'step' : 'steps'}! 🏁` : 'Race finished! Showing up is the whole point. 🏁');
+      return steps;
+    },
+    [db, award],
+  );
+
+  const saveCheckin = useCallback(
+    async (mood: number, energy: Energy) => {
+      await repo.saveCheckin(db, dayKey(), mood, energy);
+      await repo.saveSettings(db, { energy });
+      setSettings(await repo.getSettings(db));
+      setDataVersion((v) => v + 1);
+    },
+    [db],
+  );
+
+  /** Gentle limits keep care moments special. There is no hunger meter and nothing to neglect. */
+  const petCare = useCallback(
+    async (kind: CareKind) => {
+      const s = await repo.getSettings(db);
+      const today = dayKey();
+      const now = Date.now();
+      const pick = (list: readonly string[]) => list[now % list.length]!;
+      let allowed = false;
+      if (kind === 'pat' && now - s.lastPatAt > 60 * 60 * 1000) {
+        allowed = true;
+        await repo.saveSettings(db, { lastPatAt: now });
+      } else if (kind === 'snack' && s.lastSnackDay !== today) {
+        allowed = true;
+        await repo.saveSettings(db, { lastSnackDay: today });
+      } else if (kind === 'tuck' && s.lastTuckDay !== today) {
+        allowed = true;
+        await repo.saveSettings(db, { lastTuckDay: today });
+      }
+      setSettings(await repo.getSettings(db));
+      if (allowed) {
+        await repo.addProgress(db, 0, 1, 0);
+        setPet(await repo.getPet(db));
+        stepFeedback(feedbackPrefs);
+        emit({ kind: 'care', line: pick(petCareLines[kind]), pebbles: 0 });
+      } else {
+        emit({ kind: 'care', line: petCareLines.rested, pebbles: 0 });
+      }
+      return allowed;
+    },
+    [db, emit, feedbackPrefs],
+  );
+
   const deleteAllData = useCallback(async () => {
     await cancelAllReminders();
     await repo.deleteAllData(db);
@@ -269,6 +382,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSettings(s);
     setPet(p);
     setOwned(items);
+    setOwnedCosmetics([]);
     setWelcomeBackLine(null);
     setPetEvent(null);
     setDataVersion((v) => v + 1);
@@ -325,6 +439,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       checkStep,
       uncheckStep,
       touchData,
+      ownedCosmetics,
+      canWear: (kind: CosmeticKind, id: string) => {
+        if (isCosmeticFree(kind, id) || ownedCosmetics.includes(cosmeticKey(kind, id))) return true;
+        return isPro && !isSeasonal(kind, id);
+      },
+      petCare,
+      saveCheckin,
+      completeFocus,
+      completeRace,
+      syncSprint,
       deleteAllData,
       dismissWelcome: () => setWelcomeBackLine(null),
       tap: () => tapFeedback(feedbackPrefs),
@@ -332,6 +456,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [
     settings, pet, storePro, dataVersion, welcomeBackLine, petEvent, feedbackPrefs, updateSettings, updatePet, owned, buyItem, setDecorPlaced,
     finishOnboarding, toggleCalm, enableReminders, checkStep, uncheckStep, touchData, deleteAllData,
+    ownedCosmetics, petCare, saveCheckin, completeFocus, completeRace, syncSprint,
   ]);
 
   // Render nothing until settings and pet are loaded from SQLite (a few milliseconds).

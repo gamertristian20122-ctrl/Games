@@ -6,8 +6,8 @@ export const DATABASE_NAME = 'mochinook.db';
 export const LIBRARY: readonly LibraryQuest[] = libraryJson as LibraryQuest[];
 
 /** Bump when quests.json changes; new quests are inserted and new micro-steps filled in, user edits are kept. */
-const LIBRARY_VERSION = 2;
-const SCHEMA_VERSION = 2;
+const LIBRARY_VERSION = 3;
+const SCHEMA_VERSION = 3;
 
 const SCHEMA_V1 = `
 CREATE TABLE IF NOT EXISTS settings (
@@ -77,6 +77,35 @@ CREATE TABLE IF NOT EXISTS owned_items (
 );
 `;
 
+// v3: focus timer, daily check-ins, friend races, and earned (seasonal) cosmetics.
+const SCHEMA_V3 = `
+CREATE TABLE IF NOT EXISTS focus_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  day TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  minutes INTEGER NOT NULL,
+  completed INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS checkins (
+  day TEXT PRIMARY KEY NOT NULL,
+  mood INTEGER NOT NULL,
+  energy TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS races (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  day TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  minutes INTEGER NOT NULL,
+  steps INTEGER
+);
+CREATE TABLE IF NOT EXISTS owned_cosmetics (
+  cosmetic_key TEXT PRIMARY KEY NOT NULL,
+  source TEXT NOT NULL,
+  acquired_at INTEGER NOT NULL
+);
+`;
+
 /** Adds hand-written micro-steps to library steps the user hasn't edited. */
 async function backfillMicroSteps(db: SQLiteDatabase, library: readonly LibraryQuest[]): Promise<void> {
   await db.withTransactionAsync(async () => {
@@ -124,6 +153,10 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   }
   if (current < 2) {
     await db.execAsync(SCHEMA_V2);
+    await db.execAsync('PRAGMA user_version = 2');
+  }
+  if (current < 3) {
+    await db.execAsync(SCHEMA_V3);
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }
   const lib = await db.getFirstAsync<{ value: string }>("SELECT value FROM settings WHERE key = 'library_version'");

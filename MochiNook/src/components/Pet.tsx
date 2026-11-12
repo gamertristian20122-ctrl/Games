@@ -108,6 +108,43 @@ function Hat({ id }: { id: string }) {
           <Circle cx={132} cy={55} r={5} fill="#F9CCD7" stroke="#D98EA0" strokeWidth={2} />
         </G>
       );
+    case 'acorn':
+      return (
+        <G>
+          <Path d="M52 70 C52 34 148 34 148 70 Z" fill="#B88456" stroke="#8C5E36" strokeWidth={2.5} />
+          <Path d="M60 62 h80 M66 52 h68 M76 43 h48" stroke="#9C6B42" strokeWidth={2} strokeLinecap="round" />
+          <Path d="M100 38 C100 28 104 22 110 20" stroke="#6E4A2A" strokeWidth={4} strokeLinecap="round" fill="none" />
+        </G>
+      );
+    case 'earmuffs':
+      return (
+        <G>
+          <Path d="M50 62 C50 22 150 22 150 62" stroke="#A6CBCF" strokeWidth={6} fill="none" strokeLinecap="round" />
+          <Circle cx={50} cy={66} r={17} fill="#FFFDF8" stroke="#A6CBCF" strokeWidth={3} />
+          <Circle cx={150} cy={66} r={17} fill="#FFFDF8" stroke="#A6CBCF" strokeWidth={3} />
+          <Circle cx={50} cy={66} r={7} fill="#E6F3F4" />
+          <Circle cx={150} cy={66} r={7} fill="#E6F3F4" />
+        </G>
+      );
+    case 'blossom':
+      return (
+        <G>
+          {[0, 72, 144, 216, 288].map((a) => {
+            const r = (a * Math.PI) / 180;
+            return <Circle key={a} cx={134 + Math.cos(r) * 8} cy={50 + Math.sin(r) * 8} r={7} fill="#F9C5D5" stroke="#E4A3B8" strokeWidth={1.5} />;
+          })}
+          <Circle cx={134} cy={50} r={4.5} fill="#F4D06F" />
+          <Path d="M116 44 q-6 -10 -2 -16" stroke="#8DB07F" strokeWidth={3} strokeLinecap="round" fill="none" />
+        </G>
+      );
+    case 'sunhat':
+      return (
+        <G>
+          <Ellipse cx={100} cy={58} rx={70} ry={13} fill="#F1D9A4" stroke="#C9A762" strokeWidth={2.5} />
+          <Path d="M66 58 C66 26 134 26 134 58 Z" fill="#F6E3B4" stroke="#C9A762" strokeWidth={2.5} />
+          <Path d="M67 52 Q100 60 133 52" stroke="#F6B7C6" strokeWidth={6} fill="none" />
+        </G>
+      );
     default:
       return null;
   }
@@ -120,13 +157,17 @@ function Scarf({ id }: { id: string }) {
     peach: ['#F6C6A8', '#D99F7F'],
     stripes: ['#CDBFE6', '#9D8CC4'],
     butter: ['#F3DE9C', '#C9B15F'],
+    maple: ['#E9A06A', '#B9703F'],
+    snowy: ['#F4F8FA', '#A6CBCF'],
+    petal: ['#F9C5D5', '#D98EA0'],
+    sunny: ['#FBE29A', '#D9BE62'],
   };
   const [fill, stroke] = palette[id] ?? palette.sage!;
   return (
     <G>
       <Path d="M30 138 Q100 162 170 138 L172 154 Q100 178 28 154 Z" fill={fill} stroke={stroke} strokeWidth={2.5} strokeLinejoin="round" />
       <Path d="M128 156 L140 186 L124 188 L116 160 Z" fill={fill} stroke={stroke} strokeWidth={2.5} strokeLinejoin="round" />
-      {id === 'stripes' ? (
+      {id === 'stripes' || id === 'sunny' ? (
         <G>
           <Path d="M56 146 L58 162 M84 151 L85 168 M116 151 L115 168 M144 146 L142 162" stroke="#FFFDF8" strokeWidth={4} strokeLinecap="round" />
         </G>

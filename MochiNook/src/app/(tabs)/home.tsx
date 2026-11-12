@@ -8,7 +8,7 @@ import { PetCard } from '../../components/PetCard';
 import { ANCHOR_LABEL, QuestListItem, SponsorCard } from '../../components/QuestBits';
 import { Button, Card, Pill, Row, Screen, SectionTitle, T } from '../../components/ui';
 import * as repo from '../../db/repo';
-import { allClearLine, idleLine, spoonSavingLines } from '../../lib/copy';
+import { MOODS, allClearLine, idleLine, spoonSavingLines } from '../../lib/copy';
 import { currentAnchor, dayKey, greeting, minutesNow } from '../../lib/time';
 import type { Anchor, Energy, QuestWithProgress, StepWithState } from '../../lib/types';
 import { useAssistant } from '../../lib/useAssistant';
@@ -33,6 +33,9 @@ export default function Home() {
   const { settings, isPro, dataVersion, welcomeBackLine } = app;
   const assistant = useAssistant();
   const [quests, setQuests] = useState<QuestWithProgress[]>([]);
+  const [checkedIn, setCheckedIn] = useState<boolean | null>(null);
+  const [raceMinutesLeft, setRaceMinutesLeft] = useState<number | null>(null);
+  const [mood, setMood] = useState<number | null>(null);
   const [skip, setSkip] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const now = minutesNow();
@@ -43,6 +46,12 @@ export default function Home() {
       let alive = true;
       repo.getTodayQuests(db, today).then((q) => {
         if (alive) setQuests(q);
+      });
+      repo.getCheckins(db, today, today).then((rows) => {
+        if (alive) setCheckedIn(rows.length > 0);
+      });
+      repo.getOpenRace(db).then((r) => {
+        if (alive) setRaceMinutesLeft(r ? Math.max(0, Math.ceil((r.started_at + r.minutes * 60_000 - Date.now()) / 60_000)) : null);
       });
       return () => {
         alive = false;
@@ -95,6 +104,66 @@ export default function Home() {
       <PetCard line={line} sleepy={welcomeBackLine !== null} />
       {welcomeBackLine ? (
         <Button label="Hi! Let's do one tiny thing" kind="soft" small style={{ marginTop: space.md }} onPress={app.dismissWelcome} />
+      ) : null}
+
+      {raceMinutesLeft !== null ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/race')}
+          style={[styles.note, { backgroundColor: c.peachSoft, borderColor: c.border }]}
+        >
+          <T variant="bodyBold">🏁 Friend race in progress</T>
+          <T variant="small" color={c.ink}>
+            {raceMinutesLeft > 0 ? `About ${raceMinutesLeft} min left. Every step you check off counts!` : 'Time’s up! Tap to see your result.'}
+          </T>
+        </Pressable>
+      ) : null}
+
+      {checkedIn === false ? (
+        <Card tone="lavender" style={{ marginTop: space.lg, gap: space.md }}>
+          <T variant="heading">How are you arriving today?</T>
+          <Row gap={space.xs} style={{ justifyContent: 'space-between' }}>
+            {MOODS.map((m) => (
+              <Pressable
+                key={m.value}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: mood === m.value }}
+                accessibilityLabel={m.word}
+                onPress={() => setMood(m.value)}
+                style={[styles.mood, { backgroundColor: mood === m.value ? c.surface : 'transparent', borderColor: mood === m.value ? c.lavender : 'transparent' }]}
+              >
+                <Text style={{ fontSize: 26 }}>{m.face}</Text>
+                <T variant="small" color={c.ink}>
+                  {m.word}
+                </T>
+              </Pressable>
+            ))}
+          </Row>
+          <T variant="small" color={c.ink}>
+            Spoons today
+          </T>
+          <Row gap={space.sm}>
+            <Pill label="🥄 Low" selected={settings.energy === 'low'} onPress={() => setEnergy('low')} />
+            <Pill label="Steady" selected={settings.energy === 'medium'} onPress={() => setEnergy('medium')} />
+            <Pill label="High" selected={settings.energy === 'high'} onPress={() => setEnergy('high')} />
+          </Row>
+          <Button
+            label="Save check-in"
+            kind="lavender"
+            small
+            disabled={mood === null}
+            onPress={() => {
+              if (mood === null) return;
+              app.saveCheckin(mood, settings.energy).catch(() => undefined);
+              setCheckedIn(true);
+            }}
+          />
+          <Pressable accessibilityRole="button" onPress={() => setCheckedIn(true)} hitSlop={8}>
+            <T variant="small" color={c.accentInk}>
+              Skip today (totally fine)
+            </T>
+          </Pressable>
+        </Card>
       ) : null}
 
       <SectionTitle>Today’s single next step</SectionTitle>
@@ -224,4 +293,5 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   note: { borderRadius: radius.md, borderWidth: 1, padding: space.md, marginTop: space.md },
+  mood: { alignItems: 'center', borderRadius: radius.md, borderWidth: 1.5, paddingVertical: space.sm, flex: 1, minHeight: 64 },
 });

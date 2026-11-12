@@ -117,3 +117,17 @@ export async function cancelNotification(id: string | null): Promise<void> {
 export async function cancelAllReminders(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync().catch(() => undefined);
 }
+
+/** End-of-timer nudge for focus sprints and races, in case the app is in the background. */
+export async function scheduleTimerEnd(minutes: number, title: string, body: string): Promise<string | null> {
+  if (minutes <= 0 || !(await hasPermission())) return null;
+  return Notifications.scheduleNotificationAsync({
+    content: { title, body, sound: quiet ? undefined : 'default', data: { kind: 'timer-end' } },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.round(minutes * 60),
+      repeats: false,
+      channelId: channel(),
+    },
+  });
+}

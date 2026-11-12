@@ -133,3 +133,40 @@ export function decodeShareCode(raw: string): SharePayload {
   }
   return payload;
 }
+
+// ---------- friend race result codes ----------
+
+const RACE_PREFIX = 'MNR1-';
+
+export interface RaceResult {
+  v: 1;
+  /** The pet's name (never the person's), so no personal info travels in the code. */
+  pet: string;
+  steps: number;
+  minutes: number;
+  day: string;
+}
+
+export function encodeRaceResult(r: RaceResult): string {
+  return RACE_PREFIX + toBase64Url(utf8Encode(JSON.stringify(r)));
+}
+
+export function decodeRaceResult(raw: string): RaceResult {
+  const code = raw.trim().replace(/\s+/g, '');
+  if (!code.startsWith(RACE_PREFIX)) throw new Error("That doesn't look like a race code. It should start with MNR1-.");
+  let data: unknown;
+  try {
+    data = JSON.parse(utf8Decode(fromBase64Url(code.slice(RACE_PREFIX.length))));
+  } catch {
+    throw new Error('Part of that race code seems to be missing. Could you copy it again?');
+  }
+  const d = data as Partial<RaceResult>;
+  if (d.v !== 1 || typeof d.steps !== 'number' || typeof d.pet !== 'string') throw new Error('That race code is from a different version of MochiNook.');
+  return {
+    v: 1,
+    pet: d.pet.replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, 20) || 'A friend',
+    steps: Math.max(0, Math.min(500, Math.round(d.steps))),
+    minutes: typeof d.minutes === 'number' ? Math.max(1, Math.min(60, Math.round(d.minutes))) : 15,
+    day: typeof d.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.day) ? d.day : '',
+  };
+}

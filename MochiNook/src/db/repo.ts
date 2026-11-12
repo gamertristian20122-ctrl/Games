@@ -1,5 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { cosmeticKey, seasonalRewards, type CosmeticKind, type SeasonalReward } from '../data/cosmetics';
 import { findShopItem } from '../data/shop';
+import { weekDays, type Season } from '../lib/season';
 import { LIBRARY } from './schema';
 import { daysBetween } from '../lib/time';
 import type {
@@ -41,6 +43,9 @@ export const DEFAULT_SETTINGS: Settings = {
   mockPro: false,
   lastOpenDay: null,
   tipsGiven: 0,
+  lastPatAt: 0,
+  lastSnackDay: null,
+  lastTuckDay: null,
 };
 
 type SettingKey = keyof Settings;
@@ -493,8 +498,137 @@ export async function importShared(db: SQLiteDatabase, payload: SharePayload): P
 /** Erases everything MochiNook stored. Run migrateDatabase afterwards to re-seed the library. */
 export async function deleteAllData(db: SQLiteDatabase): Promise<void> {
   await db.withTransactionAsync(async () => {
-    for (const table of ['step_completions', 'quest_completions', 'routine', 'quest_steps', 'quests', 'owned_items', 'pet', 'settings']) {
+    for (const table of [
+      'step_completions', 'quest_completions', 'routine', 'quest_steps', 'quests', 'owned_items', 'pet', 'settings',
+      'focus_sessions', 'checkins', 'races', 'owned_cosmetics',
+    ]) {
       await db.runAsync(`DELETE FROM ${table}`);
     }
   });
+}
+
+// ---------- focus timer (body doubling) ----------
+
+export async function startFocus(db: SQLiteDatabase, minutes: number, day: string): Promise<number> {
+  const r = await db.runAsync('INSERT INTO focus_sessions (day, started_at, minutes, completed) VALUES (?, ?, ?, 0)', day, Date.now(), minutes);
+  return r.lastInsertRowId;
+}
+
+export async function finishFocus(db: SQLiteDatabase, id: number, completed: boolean): Promise<void> {
+  await db.runAsync('UPDATE focus_sessions SET completed = ? WHERE id = ?', completed ? 1 : 0, id);
+}
+
+// ---------- daily check-in ----------
+
+export interface Checkin {
+  day: string;
+  mood: number;
+  energy: string;
+}
+
+export async function saveCheckin(db: SQLiteDatabase, day: string, mood: number, energy: string): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO checkins (day, mood, energy, created_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(day) DO UPDATE SET mood = excluded.mood, energy = excluded.energy`,
+    day, Math.max(1, Math.min(5, Math.round(mood))), energy, Date.now(),
+  );
+}
+
+export async function getCheckins(db: SQLiteDatabase, fromDay: string, toDay: string): Promise<Checkin[]> {
+  return db.getAllAsync<Checkin>('SELECT day, mood, energy FROM checkins WHERE day >= ? AND day <= ? ORDER BY day', fromDay, toDay);
+}
+
+// ---------- friend race (15 minutes, async via codes) ----------
+
+export async function startRace(db: SQLiteDatabase, minutes: number, day: string): Promise<{ id: number; startedAt: number }> {
+  const startedAt = Date.now();
+  const r = await db.runAsync('INSERT INTO races (day, started_at, minutes) VALUES (?, ?, ?)', day, startedAt, minutes);
+  return { id: r.lastInsertRowId, startedAt };
+}
+
+/** Counts the micro-steps checked off during the race window and records the result. */
+export async function finishRace(db: SQLiteDatabase, id: number, now: number = Date.now()): Promise<number> {
+  const race = await db.getFirstAsync<{ started_at: number; minutes: number }>('SELECT started_at, minutes FROM races WHERE id = ?', id);
+  if (!race) return 0;
+  const end = Math.min(now, race.started_at + race.minutes * 60_000);
+  const row = await db.getFirstAsync<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM step_completions WHERE completed_at >= ? AND completed_at <= ?',
+    race.started_at, end,
+  );
+  const steps = row?.n ?? 0;
+  await db.runAsync('UPDATE races SET steps = ? WHERE id = ?', steps, id);
+  return steps;
+}
+
+export async function getOpenRace(db: SQLiteDatabase): Promise<{ id: number; started_at: number; minutes: number } | null> {
+  return db.getFirstAsync<{ id: number; started_at: number; minutes: number }>(
+    'SELECT id, started_at, minutes FROM races WHERE steps IS NULL ORDER BY id DESC LIMIT 1',
+  );
+}
+
+// ---------- weekly Mochi Sprint ----------
+
+export interface SprintStats {
+  stars: number;
+  quests: number;
+  focus: number;
+  races: number;
+  /** Stars per day of the week, Monday first. */
+  perDay: number[];
+}
+
+/** Sprint Stars: 1 per finished quest, focus session, or friend race this week. Nothing is ever taken away. */
+export async function getSprintStats(db: SQLiteDatabase, start: string): Promise<SprintStats> {
+  const days = weekDays(start);
+  const end = days[6]!;
+  const perDay = days.map(() => 0);
+  const bump = (rows: { day: string; n: number }[]) => {
+    for (const r of rows) {
+      const i = days.indexOf(r.day);
+      if (i >= 0) perDay[i] = (perDay[i] ?? 0) + r.n;
+    }
+  };
+  const q = await db.getAllAsync<{ day: string; n: number }>(
+    'SELECT day, COUNT(*) AS n FROM quest_completions WHERE day >= ? AND day <= ? GROUP BY day', start, end,
+  );
+  const f = await db.getAllAsync<{ day: string; n: number }>(
+    'SELECT day, COUNT(*) AS n FROM focus_sessions WHERE completed = 1 AND day >= ? AND day <= ? GROUP BY day', start, end,
+  );
+  const r = await db.getAllAsync<{ day: string; n: number }>(
+    'SELECT day, COUNT(*) AS n FROM races WHERE steps IS NOT NULL AND day >= ? AND day <= ? GROUP BY day', start, end,
+  );
+  bump(q);
+  bump(f);
+  bump(r);
+  const sum = (rows: { n: number }[]) => rows.reduce((a, b) => a + b.n, 0);
+  return { stars: perDay.reduce((a, b) => a + b, 0), quests: sum(q), focus: sum(f), races: sum(r), perDay };
+}
+
+export async function getOwnedCosmetics(db: SQLiteDatabase): Promise<string[]> {
+  const rows = await db.getAllAsync<{ cosmetic_key: string }>('SELECT cosmetic_key FROM owned_cosmetics');
+  return rows.map((r) => r.cosmetic_key);
+}
+
+export async function grantCosmetic(db: SQLiteDatabase, kind: CosmeticKind, id: string, source: string): Promise<boolean> {
+  const r = await db.runAsync(
+    'INSERT OR IGNORE INTO owned_cosmetics (cosmetic_key, source, acquired_at) VALUES (?, ?, ?)',
+    cosmeticKey(kind, id), source, Date.now(),
+  );
+  return r.changes > 0;
+}
+
+/** Grants this season's rewards for every tier reached. Returns the newly earned ones. */
+export async function syncSeasonRewards(
+  db: SQLiteDatabase,
+  season: Season,
+  stars: number,
+  tiers: readonly [number, number, number],
+): Promise<SeasonalReward[]> {
+  const earned: SeasonalReward[] = [];
+  for (const reward of seasonalRewards(season)) {
+    if (stars >= tiers[reward.tier - 1]!) {
+      if (await grantCosmetic(db, reward.kind, reward.id, `sprint-${season}`)) earned.push(reward);
+    }
+  }
+  return earned;
 }

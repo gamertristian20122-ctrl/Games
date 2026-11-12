@@ -88,3 +88,42 @@ export const notificationCopy = {
       : "Your timer's done. Want to see what's next together?",
   }),
 };
+
+/**
+ * Cheers: the ONLY things friends can send each other. Preset phrases mean there is
+ * no free typing, so nothing unsafe can be written and nothing needs moderating.
+ */
+export const CHEERS = [
+  'Proud of you! 🌱',
+  'You’ve got this. One tiny step at a time.',
+  'Rest counts too. 💛',
+  'Sending you a cozy blanket of good vibes 🧶',
+  'Small wins are real wins! ✨',
+  'Want to do a focus sprint together later?',
+  'Thinking of you today 🫶',
+  'Drink some water for me! 💧',
+  'Your pace is the right pace.',
+  'Whatever today looks like, you’re doing enough.',
+  'Race you tomorrow? 🏁',
+  'Thank you for being my friend 🌸',
+] as const;
+
+export function cheerMessage(cheer: string, petName: string): string {
+  return `${cheer}\n\n(A MochiNook cheer from ${petName} 🍡)`;
+}
+
+export const petCareLines = {
+  pat: ['That tickles! 💕', 'Ahh, pats are the best.', 'Hehe, thank you!', 'I feel so loved right now.'],
+  snack: ['Yum! A tiny snack, just what I needed.', 'Crunch crunch… delicious! 🍪', 'Thank you for sharing!'],
+  tuck: ['Goodnight… thanks for tucking me in 🌙', 'So cozy. Sweet dreams to you too.', 'Zzz… see you tomorrow 💤'],
+  rested: 'I’m all cozy right now. Thank you for checking on me! 💛',
+};
+
+/** Daily check-in moods: gentle words, no "bad" option. */
+export const MOODS = [
+  { value: 1, face: '😣', word: 'Rough' },
+  { value: 2, face: '😕', word: 'Low' },
+  { value: 3, face: '😐', word: 'Okay' },
+  { value: 4, face: '🙂', word: 'Good' },
+  { value: 5, face: '😄', word: 'Great' },
+] as const;

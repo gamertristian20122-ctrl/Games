@@ -65,6 +65,10 @@ export interface Settings {
   mockPro: boolean;
   lastOpenDay: string | null;
   tipsGiven: number;
+  /** Pet care moments (never a hunger meter; just gentle limits so pats stay special). */
+  lastPatAt: number;
+  lastSnackDay: string | null;
+  lastTuckDay: string | null;
 }
 
 export interface Pet {

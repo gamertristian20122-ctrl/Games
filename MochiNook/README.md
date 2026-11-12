@@ -29,7 +29,7 @@ npx expo start --dev-client
 ```bash
 npm run typecheck   # TypeScript, strict
 npm run lint        # Expo ESLint config (incl. React Compiler rules)
-npm test            # 29 tests: quest library, share codes, Smart Match, and every SQLite query
+npm test            # 36 tests: quest library, share codes, Smart Match, and every SQLite query
 npx expo-doctor     # dependency + config checks
 ```
 
@@ -40,7 +40,9 @@ src/app/              screens (Expo Router)
   onboarding.tsx      name the pet + 3-question quiz + reminder opt-in
   (tabs)/home.tsx     pet card, "Today's single next step", spoons, today's plan, sponsor card
   (tabs)/quests.tsx   my routine + the 47-quest library
-  (tabs)/nook.tsx     wardrobe & rooms (Pro items locked on Free)
+  (tabs)/week.tsx     weekly Mochi Sprint, seasonal rewards, check-in pattern, cheers
+  (tabs)/nook.tsx     wardrobe & rooms (Pro items locked on Free), Pebble shop
+  focus.tsx, race.tsx body-double focus timer, 15-minute friend race (codes)
   (tabs)/settings.tsx Calm Mode, sounds, times, Pro, tip jar, share code, dev toggle
   quest/[id].tsx      check off steps, "Break into smaller steps"
   custom-quest.tsx    messy task -> tiny steps (Smart Match)
@@ -102,12 +104,19 @@ The code side is ready. These steps need you (and a parent or guardian as the ac
 
 1. **Google Play developer account** (owner must be 18+), then create the app with package `com.mochinook.app`.
 2. **RevenueCat keys:** follow "Setting up real payments" above. Until the keys are in, the app shows a **TEST BUILD** banner in Settings and purchases are free test unlocks.
-3. **Release build (AAB + your own key):** Play needs an Android App Bundle signed with your upload key. The easiest way is Expo's cloud build, which creates and safely stores the key for you:
+3. **Release build (AAB + your own key):** Play needs an Android App Bundle signed with your upload key.
+   Your key (`mochinook-upload.jks`) was made in a Claude session and handed to you; it is **never** stored in this repo.
+   `plugins/withReleaseSigning.js` signs release builds with it when these are set:
    ```bash
-   npx eas-cli@latest login
-   npx eas-cli@latest build --platform android --profile production   # makes the .aab
+   export ORG_GRADLE_PROJECT_MOCHINOOK_UPLOAD_STORE_FILE=/path/to/mochinook-upload.jks
+   export ORG_GRADLE_PROJECT_MOCHINOOK_UPLOAD_KEY_ALIAS=mochinook-upload
+   export ORG_GRADLE_PROJECT_MOCHINOOK_UPLOAD_STORE_PASSWORD=...   # from your key instructions file
+   export ORG_GRADLE_PROJECT_MOCHINOOK_UPLOAD_KEY_PASSWORD=...
+   npx expo prebuild --platform android
+   cd android && ./gradlew bundleRelease   # -> app/build/outputs/bundle/release/app-release.aab
    ```
-   Turn on **Play App Signing** when you upload. Never lose the upload key: updates must be signed with the same one.
+   Without them, release builds fall back to the shared debug key (fine for testing, not for Play).
+   Turn on **Play App Signing** when you upload.
 4. **Privacy policy URL:** run `npm run legal`, then host `docs/privacy-policy.html` publicly (for example with GitHub Pages) and paste its URL into Play Console. The same text is in the app under Settings → Privacy policy & terms.
 5. **Data safety form** (matches what the app really does):
    - Data collected: **Purchase history** and **Device or other IDs** (RevenueCat's anonymous app user ID), used for app functionality (verifying purchases). Not shared with third parties for their own use. Encrypted in transit: yes.

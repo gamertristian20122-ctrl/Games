@@ -5,8 +5,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { ANCHOR_LABEL, CADENCE_LABEL } from '../../components/QuestBits';
 import { Button, Pill, Row, Screen, SectionTitle, T } from '../../components/ui';
+import { DayTimeline } from '../../components/DayTimeline';
 import * as repo from '../../db/repo';
-import type { QuestCategory, QuestRow } from '../../lib/types';
+import { dayKey } from '../../lib/time';
+import type { QuestCategory, QuestRow, QuestWithProgress } from '../../lib/types';
 import { useApp } from '../../state/AppContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { radius, space } from '../../theme/tokens';
@@ -30,15 +32,19 @@ const CATEGORY_ORDER: QuestCategory[] = ['morning', 'evening', 'kitchen', 'laund
 
 export default function Quests() {
   const db = useSQLiteContext();
-  const { dataVersion, touchData } = useApp();
-  const [tab, setTab] = useState<'mine' | 'library'>('mine');
+  const { dataVersion, touchData, settings } = useApp();
+  const [tab, setTab] = useState<'day' | 'mine' | 'library'>('day');
   const [items, setItems] = useState<Item[]>([]);
+  const [today, setToday] = useState<QuestWithProgress[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       let alive = true;
       repo.getAllQuests(db).then((rows) => {
         if (alive) setItems(rows);
+      });
+      repo.getTodayQuests(db, dayKey()).then((rows) => {
+        if (alive) setToday(rows);
       });
       return () => {
         alive = false;
@@ -68,12 +74,18 @@ export default function Quests() {
         <T variant="small">Pick what belongs in your days. Add or remove anything, any time.</T>
       </View>
       <Row gap={space.sm} style={{ marginTop: space.lg }}>
-        <Pill label={`My routine (${mine.length})`} selected={tab === 'mine'} onPress={() => setTab('mine')} />
-        <Pill label="Quest library" selected={tab === 'library'} onPress={() => setTab('library')} />
+        <Pill label="My day" selected={tab === 'day'} onPress={() => setTab('day')} />
+        <Pill label={`Routine (${mine.length})`} selected={tab === 'mine'} onPress={() => setTab('mine')} />
+        <Pill label="Library" selected={tab === 'library'} onPress={() => setTab('library')} />
       </Row>
       <Button label="Make my own quest" icon="wand" kind="lavender" style={{ marginTop: space.lg }} onPress={() => router.push('/custom-quest')} />
 
-      {tab === 'mine' ? (
+      {tab === 'day' ? (
+        <View style={{ marginTop: space.xl }}>
+          {today.length === 0 ? <T variant="small">Nothing planned today. Add a quest from the library whenever you like.</T> : null}
+          <DayTimeline anchors={settings.anchors} quests={today} />
+        </View>
+      ) : tab === 'mine' ? (
         <>
           <SectionTitle>In my routine</SectionTitle>
           {mine.length === 0 ? <T variant="small">Nothing here yet. The library has lots of tiny-step quests to borrow.</T> : null}

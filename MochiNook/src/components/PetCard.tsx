@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { levelFromXp } from '../lib/progression';
 import { useApp } from '../state/AppContext';
@@ -12,7 +12,7 @@ import { Room } from './Room';
 import { ProgressBar, Row, T } from './ui';
 
 export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boolean }) {
-  const { pet, petEvent, owned } = useApp();
+  const { pet, petEvent, owned, petCare } = useApp();
   const decor = owned.filter((o) => o.placed === 1).map((o) => o.item_id);
   const { c, motion, calm, scheme } = useTheme();
   // The latest celebration shows until its little moment has passed, then the pet settles back down.
@@ -27,7 +27,15 @@ export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boole
 
   const active = petEvent && petEvent.id !== settledId ? petEvent : null;
   const speech = active ? active.line : line;
-  const mood: PetMood = active ? (active.kind === 'level' ? 'proud' : 'happy') : sleepy ? 'sleepy' : 'idle';
+  const mood: PetMood = active
+    ? active.kind === 'level' || active.kind === 'reward'
+      ? 'proud'
+      : active.kind === 'care' && active.line.includes('night')
+        ? 'sleepy'
+        : 'happy'
+    : sleepy
+      ? 'sleepy'
+      : 'idle';
 
   return (
     <View style={[styles.card, { borderColor: c.border, backgroundColor: c.surface }]}>
@@ -63,12 +71,35 @@ export function PetCard({ line, sleepy = false }: { line: string; sleepy?: boole
         <T variant="small">
           {lvl.needed - lvl.into} cozy points until level {lvl.level + 1}
         </T>
+        <Row gap={space.sm} style={{ marginTop: space.xs }}>
+          <CareButton emoji="🫳" label="Pat" onPress={() => petCare('pat')} />
+          <CareButton emoji="🍪" label="Snack" onPress={() => petCare('snack')} />
+          <CareButton emoji="🌙" label="Tuck in" onPress={() => petCare('tuck')} />
+        </Row>
       </View>
     </View>
   );
 }
 
+function CareButton({ emoji, label, onPress }: { emoji: string; label: string; onPress: () => void }) {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label} your pet`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.care, { backgroundColor: c.surfaceAlt, opacity: pressed ? 0.75 : 1 }]}
+    >
+      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <T variant="small" color={c.ink}>
+        {label}
+      </T>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  care: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: radius.pill, minHeight: 44 },
   card: { borderRadius: radius.xl, borderWidth: 1, overflow: 'hidden' },
   stage: { height: 232, justifyContent: 'flex-end', alignItems: 'center' },
   petSpot: { marginBottom: 6 },

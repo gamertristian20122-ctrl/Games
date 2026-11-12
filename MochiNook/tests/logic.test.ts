@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import library from '../src/data/quests.json';
-import { HATS, PET_COLORS, ROOMS, SCARVES } from '../src/data/cosmetics';
+import { HATS, PET_COLORS, ROOMS, SCARVES, seasonalRewards } from '../src/data/cosmetics';
 import { SHOP_ITEMS } from '../src/data/shop';
 import { PRIVACY_POLICY, TERMS_OF_USE } from '../src/data/legal';
 import { levelFromXp, xpForNextLevel } from '../src/lib/progression';
 import { buildStarterRoutine } from '../src/lib/routineBuilder';
-import { decodeShareCode, encodeShareCode } from '../src/lib/shareCode';
+import { decodeRaceResult, decodeShareCode, encodeRaceResult, encodeShareCode } from '../src/lib/shareCode';
+import { seasonFor, sprintTiers, weekDays, weekStart } from '../src/lib/season';
+import { CHEERS } from '../src/lib/copy';
 import { bestLibraryMatch, canMakeSmaller, genericSteps, smallerSteps, smartBreakdown, softenText } from '../src/lib/smartMatch';
 import { currentAnchor, daysBetween, formatClock } from '../src/lib/time';
 import type { LibraryQuest } from '../src/lib/types';
@@ -193,4 +195,38 @@ test('privacy policy and terms cover what Google Play asks for', () => {
   for (const must of ['RevenueCat', 'Delete all my data', 'children', 'Notifications', 'contact']) assert.match(privacy, new RegExp(must, 'i'), must);
   const terms = all(TERMS_OF_USE);
   for (const must of ['5.99', 'cancel', 'not medical advice']) assert.match(terms, new RegExp(must, 'i'), must);
+});
+
+test('seasons, weeks and sprint goals', () => {
+  assert.equal(seasonFor(new Date(2026, 10, 12)), 'autumn');
+  assert.equal(seasonFor(new Date(2026, 0, 5)), 'winter');
+  assert.equal(seasonFor(new Date(2026, 3, 5)), 'spring');
+  assert.equal(seasonFor(new Date(2026, 6, 5)), 'summer');
+  assert.equal(weekStart('2026-11-12'), '2026-11-09');
+  assert.equal(weekStart('2026-11-09'), '2026-11-09');
+  assert.equal(weekStart('2026-11-15'), '2026-11-09');
+  assert.equal(weekDays('2026-12-28')[6], '2027-01-03');
+  const [a, b, c] = sprintTiers('low');
+  assert.ok(a < b && b < c && c < sprintTiers('high')[2]);
+  for (const s of ['autumn', 'winter', 'spring', 'summer'] as const) {
+    assert.deepEqual(seasonalRewards(s).map((r) => r.tier), [1, 2, 3], s);
+  }
+});
+
+test('race codes round-trip and are sanitized', () => {
+  const code = encodeRaceResult({ v: 1, pet: 'Pip', steps: 9, minutes: 15, day: '2026-11-12' });
+  assert.deepEqual(decodeRaceResult(code), { v: 1, pet: 'Pip', steps: 9, minutes: 15, day: '2026-11-12' });
+  const nasty = decodeRaceResult(encodeRaceResult({ v: 1, pet: '<b>http://x.y</b>', steps: 99999, minutes: 0, day: 'nope' }));
+  assert.equal(nasty.steps, 500);
+  assert.doesNotMatch(nasty.pet, /[<>:/.]/);
+  assert.equal(nasty.day, '');
+  assert.throws(() => decodeRaceResult('MN1-abc'), /race code/);
+});
+
+test('cheers are preset, short and kind', () => {
+  assert.ok(CHEERS.length >= 10);
+  for (const c of CHEERS) {
+    assert.ok(c.length <= 60, c);
+    assert.doesNotMatch(c, /https?:|www\.|@/i);
+  }
 });

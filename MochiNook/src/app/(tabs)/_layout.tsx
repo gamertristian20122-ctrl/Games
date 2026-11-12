@@ -7,6 +7,7 @@ import { fonts } from '../../theme/tokens';
 const TABS: { name: string; title: string; icon: IconName }[] = [
   { name: 'home', title: 'Today', icon: 'home' },
   { name: 'quests', title: 'Quests', icon: 'list' },
+  { name: 'week', title: 'Week', icon: 'sparkle' },
   { name: 'nook', title: 'Nook', icon: 'shirt' },
   { name: 'settings', title: 'Settings', icon: 'gear' },
 ];

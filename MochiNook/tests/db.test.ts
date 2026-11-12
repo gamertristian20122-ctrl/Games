@@ -221,3 +221,51 @@ test('delete all my data erases everything and starts fresh', async () => {
   assert.equal((await db.getFirstAsync<{ n: number }>("SELECT COUNT(*) AS n FROM quests WHERE source != 'library'"))?.n, 0);
   assert.equal((await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM quests'))?.n, LIBRARY.length, 'library re-seeded');
 });
+
+test('Sprint Stars count quests, focus sessions and races this week only', async () => {
+  const db = await freshDb();
+  const water = (await repo.getQuest(db, 'morning-water', '2026-11-10'))!;
+  for (const s of water.steps) await repo.completeStep(db, water, s.id, '2026-11-10', null);
+  const f = await repo.startFocus(db, 15, '2026-11-11');
+  await repo.finishFocus(db, f, true);
+  const early = await repo.startFocus(db, 15, '2026-11-11');
+  await repo.finishFocus(db, early, false);
+  const race = await repo.startRace(db, 15, '2026-11-12');
+  await repo.finishRace(db, race.id);
+  await repo.startFocus(db, 5, '2026-11-03').then((id) => repo.finishFocus(db, id, true)); // last week
+  const stats = await repo.getSprintStats(db, '2026-11-09');
+  assert.deepEqual([stats.stars, stats.quests, stats.focus, stats.races], [3, 1, 1, 1]);
+  assert.deepEqual(stats.perDay, [0, 1, 1, 1, 0, 0, 0]);
+});
+
+test('season rewards unlock per tier, once, and are kept', async () => {
+  const db = await freshDb();
+  assert.deepEqual(await repo.syncSeasonRewards(db, 'autumn', 4, [5, 12, 20]), []);
+  const t1 = await repo.syncSeasonRewards(db, 'autumn', 12, [5, 12, 20]);
+  assert.deepEqual(t1.map((r) => r.id), ['pumpkin', 'maple']);
+  assert.deepEqual(await repo.syncSeasonRewards(db, 'autumn', 12, [5, 12, 20]), [], 'no double grants');
+  assert.deepEqual((await repo.getOwnedCosmetics(db)).sort(), ['color:pumpkin', 'scarf:maple']);
+});
+
+test('a race counts only the steps checked during its window', async () => {
+  const db = await freshDb();
+  const race = await repo.startRace(db, 15, '2026-11-12');
+  const q = (await repo.getQuest(db, 'dishes-reset', '2026-11-12'))!;
+  await repo.completeStep(db, q, q.steps[0]!.id, '2026-11-12', null);
+  await repo.completeStep(db, q, q.steps[1]!.id, '2026-11-12', null);
+  assert.ok(await repo.getOpenRace(db));
+  assert.equal(await repo.finishRace(db, race.id), 2);
+  assert.equal(await repo.getOpenRace(db), null);
+});
+
+test('check-ins: one per day, updatable, clamped', async () => {
+  const db = await freshDb();
+  await repo.saveCheckin(db, '2026-11-12', 9, 'low');
+  await repo.saveCheckin(db, '2026-11-12', 2, 'medium');
+  await repo.saveCheckin(db, '2026-11-13', 4, 'high');
+  const rows = (await repo.getCheckins(db, '2026-11-09', '2026-11-15')).map((r) => ({ ...r }));
+  assert.deepEqual(rows, [
+    { day: '2026-11-12', mood: 2, energy: 'medium' },
+    { day: '2026-11-13', mood: 4, energy: 'high' },
+  ]);
+});

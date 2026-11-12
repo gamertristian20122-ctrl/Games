@@ -48,6 +48,8 @@ function Navigator() {
         <Stack.Screen name="tip-jar" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="share" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="legal" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="focus" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="race" options={{ animation: 'slide_from_right' }} />
       </Stack>
       <PebblePop />
     </>
