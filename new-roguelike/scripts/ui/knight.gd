@@ -9,7 +9,8 @@ extends "res://scripts/ui/screen.gd"
 ##          (scripts/data/gear.gd). Tap a piece to wear it, tap it again to take it off.
 ##   Skills the sword moves and spells he has learned (scripts/data/skills.gd) and which two
 ##          sit on the skill buttons. Tap a skill, then "On button 1" or "On button 2".
-## The party will get its own page here in a later step.
+##   Party  the companion who travels with him (scripts/data/allies.gd): who she is, and (in a
+##          camp) whether she comes along or waits.
 
 const Rpg = preload("res://scripts/data/rpg.gd")
 const Looks = preload("res://scripts/data/looks.gd")
@@ -19,6 +20,8 @@ const Gear = preload("res://scripts/data/gear.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
 const Icon = preload("res://scripts/ui/icon.gd")
 const Skills = preload("res://scripts/data/skills.gd")
+const Allies = preload("res://scripts/data/allies.gd")
+const Hands = preload("res://scripts/entities/hands.gd")
 
 var _stage: Control
 var _level: Label
@@ -37,6 +40,7 @@ var _gear_text: Label
 var _skill_list: VBoxContainer
 var _skill_name: Label
 var _skill_text: Label
+var _party_box: VBoxContainer
 var _skill_sel := ""             ## the skill tapped last
 
 
@@ -45,14 +49,14 @@ func build() -> void:
 	add_child(safe)
 	var col := UI.vbox(3)
 	safe.add_child(col)
-	var bar := top_bar(Looks.hero_name())
+	var bar := top_bar("")           # four page buttons need the room: his name stands under his picture
 	col.add_child(bar)
 	# the two pages, as buttons on the right of the top bar
 	var tabs := UI.hbox(2)
 	tabs.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	tabs.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	bar.add_child(tabs)
-	for t: Array in [["stats", "Stats"], ["gear", "Gear"], ["skills", "Skills"]]:
+	for t: Array in [["stats", "Stats"], ["gear", "Gear"], ["skills", "Skills"], ["party", "Party"]]:
 		var tb := UI.button(String(t[1]), _show_page.bind(String(t[0])))
 		tb.name = "tab_" + String(t[0])
 		tb.custom_minimum_size = Vector2(38, 19)
@@ -112,6 +116,10 @@ func build() -> void:
 	_say("Tap a stat to put a point into it. Monsters give XP; each level gives %d points." % Rpg.POINTS_PER_LEVEL)
 	cols.add_child(_build_gear_page())
 	cols.add_child(_build_skills_page())
+	_party_box = UI.vbox(3)
+	_party_box.custom_minimum_size = Vector2(214, 126)
+	_pages["party"] = _party_box
+	cols.add_child(_party_box)
 	_show_page(page)
 	refresh()
 	_show.call_deferred()
@@ -195,6 +203,8 @@ func _show_page(which: String) -> void:
 		_fill_gear()
 	elif page == "skills":
 		_fill_skills()
+	elif page == "party":
+		_fill_party()
 
 
 func _gear_say(title: String, text: String, colour: Color = UI.C_GOLD) -> void:
@@ -405,6 +415,82 @@ func _put_skill(slot: int) -> void:
 	_skill_say(String(r["name"]), "It is on skill button %d now." % (slot + 1), UI.C_GOLD)
 
 
+# ------------------------------------------------------------------ the Party page
+func _fill_party() -> void:
+	for c in _party_box.get_children():
+		_party_box.remove_child(c)
+		c.queue_free()
+	var mate := Allies.with()
+	var known: Array = []
+	for r: Dictionary in Allies.LIST:
+		if Allies.joined(String(r["id"])):
+			known.append(r)
+	if known.is_empty():
+		var none := UI.label("Nobody travels with you yet.", "Gold")
+		_party_box.add_child(none)
+		var hint := UI.label("Companions join as the story moves on. Mend the first seal under the hill, then look for a newcomer by the fire in Hollow Hill village.", "Small", 206.0)
+		hint.add_theme_color_override("font_color", UI.C_DIM)
+		_party_box.add_child(hint)
+		return
+	for r: Dictionary in known:
+		var id := String(r["id"])
+		var here := String(mate.get("id", "")) == id
+		var card := UI.panel("well")
+		_party_box.add_child(card)
+		var row := UI.hbox(6)
+		card.add_child(row)
+		var stage := Control.new()
+		stage.custom_minimum_size = Vector2(44, 64)
+		stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(stage)
+		var holder := Node2D.new()
+		holder.scale = Vector2(2, 2)
+		holder.position = Vector2(22, 60)
+		stage.add_child(holder)
+		var body := Art.sprite(String(r["sprite"]))
+		holder.add_child(body)
+		if String(r.get("hands", "")) != "":
+			var m := Art.meta(String(r["sprite"]))
+			var hands := Hands.new()
+			hands.build(holder, body, String(r["hands"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)))
+			hands.update(0.0, false, 1.0)
+		var words := UI.vbox(1)
+		words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(words)
+		words.add_child(UI.label(String(r["name"]), "Gold"))
+		var title := UI.label(String(r["title"]), "Small")
+		title.add_theme_color_override("font_color", UI.C_DIM)
+		words.add_child(title)
+		words.add_child(UI.label(String(r["about"]), "Small", 150.0))
+		var hearts := UI.label("%s hearts, bolts at %d%% of your blow" % [str(Allies.max_hp(r) / 2.0).trim_suffix(".0"), roundi(float(r["damage"]) * 100.0)], "Small")
+		hearts.add_theme_color_override("font_color", UI.C_DIM)
+		words.add_child(hearts)
+		var state := UI.label("She travels with you." if here else "She waits in Hollow Hill village.", "Small")
+		state.add_theme_color_override("font_color", UI.C_GREEN if here else UI.C_DIM)
+		_party_box.add_child(state)
+		var b := UI.button("Ask her to wait in the village" if here else "Ask her to come with you", _party_toggle.bind(id, here))
+		b.name = "party_" + id
+		b.custom_minimum_size = Vector2(0, 20)
+		_party_box.add_child(b)
+		var why := UI.label("", "Small", 206.0)
+		why.name = "party_why"
+		why.add_theme_color_override("font_color", UI.C_ORANGE)
+		_party_box.add_child(why)
+
+
+## The button always answers: inside a level it says why nothing changes.
+func _party_toggle(id: String, here: bool) -> void:
+	if is_instance_valid(G.run):
+		Sfx.play("ui_back")
+		var why := _party_box.get_node_or_null("party_why")
+		if why is Label:
+			(why as Label).text = "Not inside a level. Who travels with you can only be changed in a camp."
+		return
+	Sfx.play("ui_start")
+	send("party_set", "" if here else id)
+	_fill_party()
+
+
 # ------------------------------------------------------------------ the Stats page
 func _spend(id: String) -> void:
 	var why := Rpg.why_not(id)
@@ -443,7 +529,7 @@ func refresh() -> void:
 	if _points == null:
 		return
 	var lvl := Rpg.level()
-	_level.text = "Level %d" % lvl
+	_level.text = "%s  Lv %d" % [Looks.hero_name(), lvl]
 	_xp_text.text = "Highest level" if Rpg.at_max() else "%d / %d XP" % [Rpg.xp(), Rpg.need(lvl)]
 	_xp_bar.queue_redraw()
 	var pts := Rpg.points()

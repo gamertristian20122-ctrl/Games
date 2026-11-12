@@ -46,7 +46,8 @@ The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It st
   pictures to choose from BEFORE wiring her in. Tasteful, adult, never AI-made.
 - **Gear = all three ways**: monster drops, chests and bosses, shops; Common / Rare / Epic.
 - **Size: medium.** Build in steps, an APK after each: 1 levels and XP (DONE, v0.11.0), 2 gear and an
-  inventory screen (DONE, v0.12.0), 3 skills and mana (DONE, v0.13.0), 4 the companion, 5 roaming monsters and the Zelda-style
+  inventory screen (DONE, v0.12.0), 3 skills and mana (DONE, v0.13.0), 4 the companion (DONE, v0.14.0: the owner picked the blonde mage of
+  the Library pack, ranged, "gets back up"), 4 the companion, 5 roaming monsters and the Zelda-style
   dungeons (keys, boss key), then a balance pass.
 - The owner's standing rules: few agents, one light tester, no re-checking what already passed; small
   64-bit APK sent in a message BY ITSELF, screenshots in a separate message; never a greyed-out
@@ -727,6 +728,31 @@ you can travel faster." What was built:
 - The bot presses a ready skill about once a second when a monster is close. Flow test: **70 checks**.
 - **Guesses to check by playing:** every cost, rest and damage number; whether two more buttons
   crowd the right thumb; whether 20 mana is too little before any Spirit.
+
+## v0.14.0 (12 Nov 2026): RPG step 4, the companion
+The owner was shown five women from the purchased packs and picked **C, the blonde mage**
+(`pc_scholar_censor`); she fights **from range**; out of health she **gets back up** when the room is clear.
+- **`scripts/data/allies.gd`**: one row per companion (today one: Seraphine, "Sun-mage of the
+  Archive"; name, title and her three pages of talk are placeholders). `"from"` = the chapter she
+  turns up at (1: after the first level), `"place"` / `"pos"` = her post (the village, by the fire).
+  Save: `ally:<id>` (joined), `ally:with` (who travels with him; one at a time).
+- **`scripts/entities/ally.gd`**: what she does in a level. Follows the knight, keeps `"keep"` px from
+  the nearest monster, shoots the nearest one in `"range"` (`"damage"` 0.55 x the knight's own blow,
+  one `sunbolt` a second), loses half a heart to a monster's body or shot (monsters do not hunt
+  her), is knocked down at 0 and gets up whole when the room is clear. Her hearts are pips over
+  her head. `player.ally` holds her; `run.gd` moves her between rooms like the familiars.
+- **In the camps:** `hub.gd enter()` puts her at her post (role "ally", a gold "!" until she has
+  joined); "Travel with me" -> main.gd `hub_ally`. While she travels she walks behind the knight in
+  every camp and on the world map (`_build_follower`, `_move_follower`: a look only).
+- **Party page** of the Knight screen (4th button): who she is, her numbers, and a button to send
+  her back or call her along (`party_set`); inside a level the button says why it changes nothing.
+  The Knight screen's top bar has no title any more (four buttons); his name is under his picture.
+- **The monster "Censor"** of the Pit / Archive wears the same body, so it is washed violet now.
+- **Test flag:** `--ally=sera` (she comes along without having joined). Flow test: **75 checks**.
+- **Measured:** bot fights were about a third shorter with her (6.6 s against 10.3 s). If she makes
+  the game too easy, lower `"damage"` or `"rate"` in her row.
+- **Not built:** she does not come to the training yard; she has no skills of her own, no gear, no
+  lines during levels or after bosses; there is only one companion.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

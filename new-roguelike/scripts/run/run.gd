@@ -254,6 +254,8 @@ func restart(new_seed: int) -> void:
 	for f in player.familiars:
 		if is_instance_valid(f):
 			f.free()
+	if is_instance_valid(player.ally):
+		player.ally.free()
 	player.free()
 	player = null
 	shots.clear()
@@ -453,6 +455,8 @@ func _leave_room() -> void:
 	for f in player.familiars:
 		if is_instance_valid(f) and f.get_parent() != null:
 			f.get_parent().remove_child(f)
+	if is_instance_valid(player.ally) and player.ally.get_parent() != null:
+		player.ally.get_parent().remove_child(player.ally)
 	world.remove_child(room)
 	room.queue_free()
 	room = null
@@ -479,6 +483,9 @@ func _enter_room(coord: Vector2i, from_dir: Vector2i) -> void:
 		if is_instance_valid(f):
 			room.ysort.add_child(f)
 			f.entered_room()
+	if is_instance_valid(player.ally):
+		room.ysort.add_child(player.ally)
+		player.ally.entered_room()
 	var first: bool = not rs["visited"]
 	rs["visited"] = true
 	rs["seen"] = true

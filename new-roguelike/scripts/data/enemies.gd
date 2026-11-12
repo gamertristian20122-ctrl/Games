@@ -129,7 +129,7 @@ const ALL := {
 		"ai": "shooter", "params": {"keep": 85.0, "cooldown": 1.5, "shot_speed": 108.0}, "touch": 1, "flying": false, "floors": [4], "cost": 2.5, "coin": 0.20, "heart": 0.04, "shot": "enemy"},
 	"waking_statue": {"name": "Waking Statue", "sprite": "pc_statue_masculine", "hands": "pc_hand_garden_72", "hp": 20.0, "speed": 30.0,
 		"ai": "charger", "params": {"windup": 0.45, "dash_speed": 235.0, "cooldown": 1.1}, "touch": 1, "flying": false, "floors": [4], "cost": 3.0, "coin": 0.25, "heart": 0.04},
-	"censor": {"name": "Censor", "sprite": "pc_scholar_censor", "hands": "pc_hand_library_6", "hp": 15.0, "speed": 32.0,
+	"censor": {"name": "Censor", "sprite": "pc_scholar_censor", "hands": "pc_hand_library_6", "hp": 15.0, "speed": 32.0, "tint": Color(0.72, 0.62, 0.92),      # washed violet: the companion Seraphine wears this body in its own colours
 		"ai": "spreader", "params": {"cooldown": 2.0, "shots": 5, "arc": 0.8, "shot_speed": 78.0}, "touch": 1, "flying": false, "floors": [4], "cost": 3.5, "coin": 0.25, "heart": 0.04, "shot": "hex_enemy"},
 	"pit_warden": {"name": "Pit Warden", "sprite": "pc_royal_knight", "hands": "pc_hand_castle_17", "hp": 40.0, "speed": 26.0,
 		"ai": "brute", "params": {"slam_range": 36.0, "slam_radius": 30.0, "slam_shots": 10}, "touch": 1, "flying": false, "floors": [4], "cost": 4.0, "coin": 0.35, "heart": 0.06, "shot": "enemy", "big": true},

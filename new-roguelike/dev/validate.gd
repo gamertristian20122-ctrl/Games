@@ -8,6 +8,8 @@ const Layouts = preload("res://scripts/data/room_layouts.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Gear = preload("res://scripts/data/gear.gd")
 const Skills = preload("res://scripts/data/skills.gd")
+const Allies = preload("res://scripts/data/allies.gd")
+const Places = preload("res://scripts/data/places.gd")
 const ItemEffects = preload("res://scripts/run/item_effects.gd")
 const Unlocks = preload("res://scripts/data/unlocks.gd")
 ## Every item pool must hold at least this many items on a brand-new save (locked ones not counted),
@@ -116,6 +118,14 @@ static func all() -> Array[String]:
 			out.append("skill %s: picture '%s' is missing (EXTRA in tools/import_icons.py)" % [sk["id"], String(sk.get("icon", ""))])
 		if not cast_src.contains('"%s": _' % String(sk["id"])):
 			out.append("skill %s: scripts/entities/hero_skills.gd _cast() does not know it" % sk["id"])
+	# ---- companions (scripts/data/allies.gd): art, a real place, a shot type
+	for al: Dictionary in Allies.LIST:
+		if not Art.has_anim(String(al.get("sprite", "")), "idle"):
+			out.append("ally %s: sprite '%s' has no idle animation" % [al["id"], String(al.get("sprite", ""))])
+		if Places.get_place(String(al.get("place", ""))).is_empty():
+			out.append("ally %s: unknown place '%s'" % [al["id"], String(al.get("place", ""))])
+		if not ShotTypes.ALL.has(String(al.get("shot", ""))):
+			out.append("ally %s: unknown shot type '%s'" % [al["id"], String(al.get("shot", ""))])
 	for rarity in 2:
 		if Gear.roll(0, rarity) == "":
 			out.append("gear: the first tier has no piece of rarity %d" % rarity)

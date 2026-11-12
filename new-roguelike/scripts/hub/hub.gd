@@ -20,6 +20,7 @@ const Heroes = preload("res://scripts/data/heroes.gd")
 const Floors = preload("res://scripts/data/floors.gd")
 const Quests = preload("res://scripts/data/quests.gd")
 const Gear = preload("res://scripts/data/gear.gd")
+const Allies = preload("res://scripts/data/allies.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Places = preload("res://scripts/data/places.gd")
 const Shop = preload("res://scripts/data/shop.gd")
@@ -241,10 +242,17 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	for row: Dictionary in place.get("people", []):
 		if Story.chapter() >= int(row.get("from", 0)):        # some people only come once the story has moved on
 			_add_person(row)
+	# companions (scripts/data/allies.gd): one who has arrived stands at her post until she travels
+	# with the knight; then she walks behind him wherever he goes
+	for mate: Dictionary in Allies.LIST:
+		if String(mate.get("place", "")) == id and Allies.arrived(mate) and String(Allies.with().get("id", "")) != String(mate["id"]):
+			_add_person({"id": "ally_" + String(mate["id"]), "ally": String(mate["id"]), "name": mate["name"], "title": mate["title"], "sprite": mate["sprite"],
+				"hands": mate.get("hands", ""), "pos": mate["pos"], "face": mate.get("face", 1), "role": "ally", "text": ""})
 	_build_hero()
 	_hero.position = at if at != Vector2.INF else place["spawn"]
 	_hero.scale = Vector2(_k, _k)
 	refresh_heroes()
+	_build_follower()
 	if int(place.get("camp", -1)) >= 0 and Save.hub_get("camp") != int(place["camp"]):
 		Save.hub_set("camp", int(place["camp"]))      # the next Play opens here
 	_build_signs()
@@ -734,6 +742,52 @@ func _add_person(row: Dictionary) -> Dictionary:
 	return person
 
 
+## The companion who travels with the knight walks a few steps behind him in every camp and on
+## the world map (only a look: you talk to her on the Party page of the Knight screen).
+var _mate: Node2D
+var _mate_body: AnimatedSprite2D
+var _mate_hands: RefCounted
+var _mate_face := 1.0
+func _build_follower() -> void:
+	_mate = null
+	var mate := Allies.with()
+	if mate.is_empty():
+		return
+	_mate = Node2D.new()
+	_mate.position = _hero.position + Vector2(-16, 4) * _k
+	_mate.scale = Vector2(_k, _k)
+	_ysort.add_child(_mate)
+	var sprite_id := String(mate["sprite"])
+	var m := Art.meta(sprite_id)
+	_mate.add_child(EnemyScript.make_shadow(clampf(float(m.get("body_width", 16.0)) * 0.85, 11.0, 18.0)))
+	_mate_body = Art.sprite(sprite_id)
+	_mate_body.position = Vector2(0, 2)
+	_mate.add_child(_mate_body)
+	_mate_hands = null
+	if String(mate.get("hands", "")) != "":
+		_mate_hands = Hands.new()
+		_mate_hands.build(_mate, _mate_body, String(mate["hands"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)))
+
+
+func _move_follower(delta: float) -> void:
+	if not is_instance_valid(_mate):
+		return
+	var to: Vector2 = _hero.position - _mate.position
+	var gap := 22.0 * _k
+	var walking := to.length() > gap
+	if walking:
+		var before := _mate.position
+		_mate.position += to.normalized() * minf((to.length() - gap) * 6.0, SPEED * float(place.get("speed", 1.0)) * 1.2) * delta
+		if absf(_mate.position.x - before.x) > 0.02:
+			_mate_face = signf(_mate.position.x - before.x)
+	_mate_body.flip_h = _mate_face < 0.0
+	var anim := "run" if walking and Art.has_anim(String(Allies.with().get("sprite", "")), "run") else "idle"
+	if _mate_body.animation != anim:
+		_mate_body.play(anim)
+	if _mate_hands != null:
+		_mate_hands.update(delta, walking, _mate_face)
+
+
 func _build_hero() -> void:
 	_hero = Node2D.new()
 	_ysort.add_child(_hero)
@@ -763,6 +817,7 @@ func refresh_heroes() -> void:
 # ------------------------------------------------------------------ every frame
 func _physics_process(delta: float) -> void:
 	_time += delta
+	_move_follower(delta)
 	var move := Vector2.ZERO
 	if not frozen and not _changing:
 		move = Controls.move
@@ -854,7 +909,7 @@ func _update_people(delta: float) -> void:
 			best_d = d
 			best = i
 		var mark: Label = p["mark"]
-		mark.visible = (news and String(p["row"].get("role", "")) == "quests") or bool(p.get("news", false))
+		mark.visible = (news and String(p["row"].get("role", "")) == "quests") or bool(p.get("news", false)) or (String(p["row"].get("role", "")) == "ally" and not Allies.joined(String(p["row"].get("ally", ""))))
 		mark.position.y = -float(p["top"]) - 16.0 + roundf(sin(_time * 5.0) * 1.5)
 	_near = best
 	_quests.visible = not frozen and bool(place.get("outdoor", false))
@@ -995,6 +1050,19 @@ func _talk(index: int) -> void:
 					info["options"].append({"text": "%s: take %s" % [sq["name"], pay], "what": "hub_claim", "arg": sq["id"]})
 				else:
 					info["lines"].append("%s: %s  %d/%d  (pays %s)" % [sq["name"], sq["text"], Quests.progress(sq), int(sq["need"]), pay])
+		"ally":
+			# a companion at her post (scripts/data/allies.gd): the first time she tells her story and
+			# asks to come; later she can be asked along again
+			var mate := Allies.row(String(row.get("ally", "")))
+			info["heard"] = ""
+			info["lines"].append([String(mate.get("about", "")), UI.C_DIM])
+			if Allies.joined(String(mate["id"])):
+				info["pages"] = ["Ready when you are, Aldous."]
+				info["options"].append({"text": "Come with me", "what": "hub_ally", "arg": String(mate["id"])})
+			else:
+				info["pages"] = (mate.get("pages", []) as Array).duplicate()
+				info["options"].append({"text": "Travel with me, %s" % String(mate["name"]), "what": "hub_ally", "arg": String(mate["id"])})
+			info["lines"].append(["To send her back here later: tap Lv, then Party.", UI.C_FAINT])
 		"train":
 			info["options"].append({"text": "Train in the yard", "what": "hub_train"})
 		"bed":
@@ -1062,6 +1130,11 @@ func _talk(index: int) -> void:
 		info["pages"] = []
 	_talked[id] = true
 	action.emit("talk", info)
+
+
+## Who travels with the knight changed (main.gd): build the place again around him, where he stands.
+func refresh_party() -> void:
+	enter(place_id, _hero.position)
 
 
 ## The smith's shelf of gear: the cheapest few pieces he can make here that the knight does not

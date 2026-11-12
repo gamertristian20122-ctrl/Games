@@ -29,6 +29,9 @@ const ALL := {
 		"sprite": "weapon_knife", "points": "up", "anchor": Vector2(3, 5)},
 	# the Fire Bolt skill (scripts/entities/hero_skills.gd): a warm, code-drawn bolt with a long trail
 	"firebolt": {"color": Color(1.0, 0.92, 0.55), "edge": Color(0.95, 0.35, 0.10), "radius": 3.6, "trail": 4, "sprite": ""},
+	# the companion's bolt of sunlight (scripts/entities/ally.gd): the hex bolt's art washed gold
+	"sunbolt": {"color": Color(1.0, 0.96, 0.70), "edge": Color(0.90, 0.60, 0.15), "radius": 2.6, "trail": 2, "gap": 5.0,
+		"sprite": "fx_bolt_hex", "points": "right", "anchor": Vector2(12, 7), "tint": Color(1.45, 1.2, 0.55), "fps": 14.0},
 	# --- familiars and item effects
 	"wisp": {"color": Color(0.80, 1.0, 0.95), "edge": Color(0.15, 0.60, 0.55), "radius": 2.0, "trail": 2, "sprite": ""},
 	"shard": {"color": Color(1.0, 1.0, 0.92), "edge": Color(0.45, 0.42, 0.36), "radius": 2.0, "trail": 1, "gap": 3.0,

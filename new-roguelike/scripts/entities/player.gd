@@ -24,6 +24,8 @@ const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
 const Gear = preload("res://scripts/data/gear.gd")
 const HeroSkills = preload("res://scripts/entities/hero_skills.gd")
+const Allies = preload("res://scripts/data/allies.gd")
+const AllyScript = preload("res://scripts/entities/ally.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -141,6 +143,11 @@ func setup(the_run: Node, hero_id: String) -> void:
 		block_left = block_max
 		_block_cool = maxf(BLOCK_COOLDOWN + Upgrades.block_cooldown(), 1.5)
 		apply_rpg(true)
+		# the companion who travels with him (scripts/data/allies.gd); not into the training yard
+		var mate := Allies.with() if G.arg("ally") == "" else Allies.row(G.arg("ally"))      # --ally=<id>: a test
+		if not mate.is_empty() and run.get("training") != true:
+			ally = AllyScript.new()
+			ally.setup(run, self, mate)
 	stats.changed.connect(_stats_changed)
 	_stats_changed()
 	_hook_bomb_button()
@@ -153,6 +160,7 @@ func setup(the_run: Node, hero_id: String) -> void:
 ## Vitality gives health at once (the new half heart comes filled).
 ## The gear he wears (scripts/data/gear.gd) goes through here too: its stats layer "gear", its
 ## hearts, the chance that a blow glances off, and (at the start of a level) its blue hearts.
+var ally: Node2D                 ## the companion travelling with him (scripts/entities/ally.gd), or null
 var skills: RefCounted           ## his mana and skills (scripts/entities/hero_skills.gd); null for the old heroes
 var _rpg_hp := 0
 var glance := 0.0                ## chance that a blow glances off his armour (Gear.ward())

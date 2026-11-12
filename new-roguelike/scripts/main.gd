@@ -43,6 +43,7 @@ const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Shop = preload("res://scripts/data/shop.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
 const Gear = preload("res://scripts/data/gear.gd")
+const Allies = preload("res://scripts/data/allies.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
@@ -362,6 +363,18 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("retalk")
+		"hub_ally":
+			# a companion joins (the first time) or comes along again
+			Allies.join(String(arg))
+			Sfx.play("ui_start")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("refresh_party")
+		"party_set":
+			# the Party page of the Knight screen: who travels with him ("" = nobody). Camps only.
+			Allies.set_with(String(arg))
+			if is_instance_valid(hub):
+				hub.call("refresh_party")
 		"hub_shelf":
 			close_top()
 			if is_instance_valid(hub):
