@@ -27,6 +27,8 @@ const ALL := {
 		"sprite": "fx_bolt_hex", "points": "right", "anchor": Vector2(12, 7), "tint": Color(1.25, 1.1, 1.35), "fps": 14.0},
 	"knife": {"color": Color(1.0, 0.98, 0.80), "edge": Color(0.55, 0.50, 0.25), "radius": 2.4, "trail": 2, "gap": 4.0,
 		"sprite": "weapon_knife", "points": "up", "anchor": Vector2(3, 5)},
+	# the Fire Bolt skill (scripts/entities/hero_skills.gd): a warm, code-drawn bolt with a long trail
+	"firebolt": {"color": Color(1.0, 0.92, 0.55), "edge": Color(0.95, 0.35, 0.10), "radius": 3.6, "trail": 4, "sprite": ""},
 	# --- familiars and item effects
 	"wisp": {"color": Color(0.80, 1.0, 0.95), "edge": Color(0.15, 0.60, 0.55), "radius": 2.0, "trail": 2, "sprite": ""},
 	"shard": {"color": Color(1.0, 1.0, 0.92), "edge": Color(0.45, 0.42, 0.36), "radius": 2.0, "trail": 1, "gap": 3.0,

@@ -21,6 +21,7 @@ const Bosses = preload("res://scripts/data/bosses.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
 const Gear = preload("res://scripts/data/gear.gd")
+const Skills = preload("res://scripts/data/skills.gd")
 const FloorGen = preload("res://scripts/run/floor_gen.gd")
 const RoomScript = preload("res://scripts/run/room.gd")
 const ShotsScript = preload("res://scripts/run/shots.gd")
@@ -568,6 +569,7 @@ func gain_xp(amount: int) -> void:
 		return
 	amount = roundi(float(amount) * Gear.xp_mult())      # a ring may raise it
 	xp_earned += amount
+	var before := Rpg.level()
 	var levels := Rpg.add_xp(amount)
 	G.xp_gained.emit(amount)
 	if levels <= 0:
@@ -583,6 +585,12 @@ func gain_xp(amount: int) -> void:
 	if G.flag("autotest"):
 		print("[rpg] level %d at %.0f s (kills %d, xp so far %d)" % [Rpg.level(), time_s, kills, xp_earned])
 	G.toast.emit("Level %d" % Rpg.level(), "%d points to spend: tap Lv" % Rpg.points() if Rpg.points() > 0 else "Hearts refilled")
+	# skills learned on the way (scripts/data/skills.gd): each drops into an empty skill button
+	for lvl in range(before + 1, Rpg.level() + 1):
+		for sk: Dictionary in Skills.learn_at(lvl):
+			var slot := Skills.button_of(String(sk["id"]))
+			G.toast.emit("New skill: %s" % String(sk["name"]), "It is on skill button %d." % (slot + 1) if slot >= 0 else "Tap Lv, then Skills, to carry it.")
+	G.hud_changed.emit()
 	Save.flush()
 
 

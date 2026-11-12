@@ -7,6 +7,7 @@ extends RefCounted
 const Layouts = preload("res://scripts/data/room_layouts.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Gear = preload("res://scripts/data/gear.gd")
+const Skills = preload("res://scripts/data/skills.gd")
 const ItemEffects = preload("res://scripts/run/item_effects.gd")
 const Unlocks = preload("res://scripts/data/unlocks.gd")
 ## Every item pool must hold at least this many items on a brand-new save (locked ones not counted),
@@ -108,6 +109,13 @@ static func all() -> Array[String]:
 			out.append("gear %s: picture '%s' is missing (add it to EXTRA in tools/import_icons.py, run it, then the Godot import)" % [gid, String(g.get("icon", ""))])
 		if Gear.text(g) == "":
 			out.append("gear %s: it does nothing" % gid)
+	# ---- skills (scripts/data/skills.gd): a picture and a cast function each
+	var cast_src := FileAccess.get_file_as_string("res://scripts/entities/hero_skills.gd")
+	for sk: Dictionary in Skills.LIST:
+		if not Art.has(String(sk.get("icon", ""))):
+			out.append("skill %s: picture '%s' is missing (EXTRA in tools/import_icons.py)" % [sk["id"], String(sk.get("icon", ""))])
+		if not cast_src.contains('"%s": _' % String(sk["id"])):
+			out.append("skill %s: scripts/entities/hero_skills.gd _cast() does not know it" % sk["id"])
 	for rarity in 2:
 		if Gear.roll(0, rarity) == "":
 			out.append("gear: the first tier has no piece of rarity %d" % rarity)

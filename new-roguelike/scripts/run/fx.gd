@@ -142,6 +142,7 @@ func clear() -> void:
 	p_count = 0
 	s_count = 0
 	rings.clear()
+	bolts.clear()
 	warns.clear()
 	hazards.clear()
 	zones.clear()
@@ -173,6 +174,18 @@ func burst(at: Vector2, colors: Array, amount: int, speed: float = 60.0, life: f
 
 func ring(at: Vector2, r_from: float, r_to: float, dur: float, color: Color, width: float = 1.5, on_ground: bool = false) -> void:
 	rings.append([at, r_from, r_to, 0.0, dur, color, width, on_ground])
+
+
+## A jagged line of light from a to b that fades (the Chain Lightning skill). Code-drawn.
+var bolts: Array = []            ## [points, seconds left, seconds in all, colour]
+func bolt(a: Vector2, b: Vector2, color: Color = Color(1.0, 0.95, 0.55), dur: float = 0.22) -> void:
+	var pts := PackedVector2Array([a])
+	var steps := maxi(int(a.distance_to(b) / 9.0), 2)
+	var side := (b - a).normalized().orthogonal()
+	for k in range(1, steps):
+		pts.append(a.lerp(b, float(k) / float(steps)) + side * randf_range(-4.0, 4.0))
+	pts.append(b)
+	bolts.append([pts, dur, dur, color])
 
 
 ## The tell before an area attack: a circle on the floor that fills up over `dur` seconds.
@@ -486,6 +499,10 @@ func _physics_process(delta: float) -> void:
 			burst(z[0] + Vector2.RIGHT.rotated(randf() * TAU) * randf() * float(z[1]) * 0.85, [zc, zc.lightened(0.4), Color(1.0, 0.85, 0.35)], 2, 10.0, 0.55, 2.0, Vector2.UP, -45.0)
 	if _flash_t > 0.0:
 		_flash_t -= delta
+	for k in range(bolts.size() - 1, -1, -1):
+		bolts[k][1] -= delta
+		if bolts[k][1] <= 0.0:
+			bolts.remove_at(k)
 	_step_motes(delta)
 	_twinkle_cd -= delta
 	if _twinkle_cd <= 0.0:
@@ -561,6 +578,11 @@ func _draw() -> void:
 		if r[7]:
 			continue
 		_ring(self, r)
+	for b: Array in bolts:
+		var bc: Color = b[3]
+		bc.a *= clampf(float(b[1]) / float(b[2]), 0.0, 1.0)
+		draw_polyline(b[0], Color(1, 1, 1, bc.a), 3.0)
+		draw_polyline(b[0], bc, 1.5)
 	if _flash_t > 0.0:
 		var c := _flash_color
 		c.a *= clampf(_flash_t / _flash_dur, 0.0, 1.0)

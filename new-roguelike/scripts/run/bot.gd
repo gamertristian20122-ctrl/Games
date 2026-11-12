@@ -224,6 +224,7 @@ func _finish() -> void:
 	G.quit(0)
 
 
+var _skill_t := 0.0
 func _physics_process(delta: float) -> void:
 	if _done:
 		return
@@ -254,6 +255,20 @@ func _physics_process(delta: float) -> void:
 			var out := _fight(p, room, delta)
 			move = out[0]
 			aim = out[1]
+			# skills (scripts/entities/hero_skills.gd): about once a second it presses a skill button
+			# that would work, when a monster is close or it is hurt
+			_skill_t -= delta
+			if _skill_t <= 0.0 and p.get("skills") != null:
+				_skill_t = 1.0
+				var close := false
+				for e in room.enemies:
+					if is_instance_valid(e) and (e.position as Vector2).distance_to(p.position) < 60.0:
+						close = true
+						break
+				if close:
+					var slot := randi() % 2
+					if String(p.skills.why_not(slot)) == "":
+						Controls.press_skill(slot)
 		else:
 			move = _explore(p, room, delta)
 		move = _unstick(p, move, delta)

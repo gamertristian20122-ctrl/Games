@@ -127,6 +127,8 @@ signal stat(key: String, amount: int)
 ## RPG (scripts/data/rpg.gd): the knight earned XP / reached a new level. The HUD shows both.
 signal xp_gained(amount: int)
 signal level_up(level: int)
+## A skill button did nothing; the words say why ("Not enough mana for Whirlwind"). The HUD shows them.
+signal skill_refused(why: String)
 ## The world asks for a short vibration (the touch layer does it if the setting allows).
 signal buzz(msec: int)
 

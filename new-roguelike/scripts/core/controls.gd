@@ -8,6 +8,7 @@ extends Node
 signal bomb_pressed
 signal action_pressed        ## the second button (reserved for the game's twist)
 signal pause_pressed
+signal skill_pressed(slot: int)   ## skill button 1 or 2 (0 or 1): the touch buttons, keys 1 / 2 or F / R, gamepad X / B
 signal menu_pressed          ## open the Knight screen (level, stats): the "Lv" touch button, C or Tab, gamepad Y
 ## The player switched between the touch screen and a keyboard / gamepad.
 signal device_changed(touch: bool)
@@ -81,6 +82,10 @@ func press_pause() -> void:
 	pause_pressed.emit()
 
 
+func press_skill(slot: int) -> void:
+	skill_pressed.emit(slot)
+
+
 func press_menu() -> void:
 	menu_pressed.emit()
 
@@ -123,9 +128,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_Q, KEY_SHIFT: press_action()
 			KEY_ESCAPE: press_pause()
 			KEY_C, KEY_TAB: press_menu()
+			KEY_1, KEY_F: press_skill(0)
+			KEY_2, KEY_R: press_skill(1)
 	elif event is InputEventJoypadButton and event.pressed:
 		match event.button_index:
 			JOY_BUTTON_RIGHT_SHOULDER: press_bomb()
 			JOY_BUTTON_LEFT_SHOULDER: press_action()
 			JOY_BUTTON_START: press_pause()
 			JOY_BUTTON_Y: press_menu()
+			JOY_BUTTON_X: press_skill(0)
+			JOY_BUTTON_B: press_skill(1)

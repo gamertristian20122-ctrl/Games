@@ -7,7 +7,9 @@ extends "res://scripts/ui/screen.gd"
 ##   Stats  the four stats and the points
 ##   Gear   what he owns and wears: weapons (scripts/data/weapons.gd) and helmets, armour, rings
 ##          (scripts/data/gear.gd). Tap a piece to wear it, tap it again to take it off.
-## Skills and the party will get their own pages here in later steps.
+##   Skills the sword moves and spells he has learned (scripts/data/skills.gd) and which two
+##          sit on the skill buttons. Tap a skill, then "On button 1" or "On button 2".
+## The party will get its own page here in a later step.
 
 const Rpg = preload("res://scripts/data/rpg.gd")
 const Looks = preload("res://scripts/data/looks.gd")
@@ -16,6 +18,7 @@ const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Gear = preload("res://scripts/data/gear.gd")
 const Weapons = preload("res://scripts/data/weapons.gd")
 const Icon = preload("res://scripts/ui/icon.gd")
+const Skills = preload("res://scripts/data/skills.gd")
 
 var _stage: Control
 var _level: Label
@@ -31,6 +34,10 @@ var _pages := {}                 ## page -> its column
 var _gear_list: VBoxContainer
 var _gear_name: Label
 var _gear_text: Label
+var _skill_list: VBoxContainer
+var _skill_name: Label
+var _skill_text: Label
+var _skill_sel := ""             ## the skill tapped last
 
 
 func build() -> void:
@@ -45,10 +52,10 @@ func build() -> void:
 	tabs.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	tabs.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	bar.add_child(tabs)
-	for t: Array in [["stats", "Stats"], ["gear", "Gear"]]:
+	for t: Array in [["stats", "Stats"], ["gear", "Gear"], ["skills", "Skills"]]:
 		var tb := UI.button(String(t[1]), _show_page.bind(String(t[0])))
 		tb.name = "tab_" + String(t[0])
-		tb.custom_minimum_size = Vector2(42, 19)
+		tb.custom_minimum_size = Vector2(38, 19)
 		tabs.add_child(tb)
 		_tabs[t[0]] = tb
 	var centre := CenterContainer.new()
@@ -104,6 +111,7 @@ func build() -> void:
 	foot.add_child(_hint)
 	_say("Tap a stat to put a point into it. Monsters give XP; each level gives %d points." % Rpg.POINTS_PER_LEVEL)
 	cols.add_child(_build_gear_page())
+	cols.add_child(_build_skills_page())
 	_show_page(page)
 	refresh()
 	_show.call_deferred()
@@ -185,6 +193,8 @@ func _show_page(which: String) -> void:
 		(_tabs[key] as Button).add_theme_color_override("font_color", UI.C_GOLD if key == page else UI.C_DIM)
 	if page == "gear":
 		_fill_gear()
+	elif page == "skills":
+		_fill_skills()
 
 
 func _gear_say(title: String, text: String, colour: Color = UI.C_GOLD) -> void:
@@ -230,7 +240,7 @@ func _gear_head(text: String) -> Control:
 
 
 ## One line: picture, name in its rarity's colour, and WORN when it is on.
-func _line(row_name: String, icon_id: String, title: String, colour: Color, on: bool, tag: String) -> Button:
+func _line(row_name: String, icon_id: String, title: String, colour: Color, on: bool, tag: String, tag_colour: Color = UI.C_GOLD) -> Button:
 	var b := Button.new()
 	b.name = row_name
 	b.theme_type_variation = "Flat"
@@ -255,6 +265,7 @@ func _line(row_name: String, icon_id: String, title: String, colour: Color, on: 
 	name_label.clip_text = true
 	row.add_child(name_label)
 	var worn := UI.label(tag if on else "", "Gold")
+	worn.add_theme_color_override("font_color", tag_colour)
 	row.add_child(worn)
 	return b
 
@@ -304,6 +315,94 @@ func _gear_changed() -> void:
 	if is_instance_valid(G.run) and is_instance_valid(G.run.get("player")):
 		G.run.get("player").call("apply_rpg")
 	_fill_gear()
+
+
+# ------------------------------------------------------------------ the Skills page
+func _build_skills_page() -> Control:
+	var right := UI.vbox(2)
+	right.custom_minimum_size = Vector2(214, 126)
+	_pages["skills"] = right
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	right.add_child(scroll)
+	_skill_list = UI.vbox(1)
+	_skill_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_skill_list)
+	var foot := UI.panel("well")
+	right.add_child(foot)
+	var foot_col := UI.vbox(0)
+	foot.add_child(foot_col)
+	_skill_name = UI.label("", "Gold")
+	_skill_name.clip_text = true
+	foot_col.add_child(_skill_name)
+	_skill_text = UI.label("", "Small", 200.0)
+	_skill_text.custom_minimum_size.y = 2.0 * UI.font_body.get_height(UI.size_body)
+	_skill_text.max_lines_visible = 2
+	foot_col.add_child(_skill_text)
+	var pick := UI.hbox(3)
+	right.add_child(pick)
+	for slot in Skills.SLOTS:
+		var b := UI.button("On button %d" % (slot + 1), _put_skill.bind(slot), "", "")
+		b.name = "put_%d" % slot
+		b.custom_minimum_size = Vector2(0, 18)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pick.add_child(b)
+	_skill_say("Skills", "Learned as you level up. Tap one, then choose its button. Skills cost mana (the blue bar).", UI.C_GOLD)
+	return right
+
+
+func _skill_say(title: String, text: String, colour: Color = UI.C_GOLD) -> void:
+	_skill_name.text = title
+	_skill_name.add_theme_color_override("font_color", colour)
+	_skill_text.text = text
+
+
+func _fill_skills() -> void:
+	for c in _skill_list.get_children():
+		_skill_list.remove_child(c)
+		c.queue_free()
+	for r: Dictionary in Skills.LIST:
+		var id := String(r["id"])
+		var known := Skills.known(id)
+		var slot := Skills.button_of(id)
+		var tag := "BUTTON %d" % (slot + 1) if slot >= 0 else ("" if known else "Level %d" % int(r["level"]))
+		var b := _line("skill_" + id, String(r["icon"]), String(r["name"]), UI.C_BONE if known else UI.C_FAINT, tag != "", tag, UI.C_GOLD if slot >= 0 else UI.C_FAINT)
+		if not known:
+			b.modulate = Color(1, 1, 1, 0.6)
+		b.focus_entered.connect(_about_skill.bind(id))
+		b.pressed.connect(func() -> void:
+			_skill_sel = id
+			Sfx.play("ui_click")
+			_about_skill(id))
+		_skill_list.add_child(b)
+
+
+func _about_skill(id: String) -> void:
+	var r := Skills.row(id)
+	var head := "%s  (%s, %d mana, rests %s s)" % [String(r["name"]), String(r["kind"]), int(r["mana"]), str(float(r["cd"])).trim_suffix(".0")]
+	if Skills.known(id):
+		_skill_say(head, String(r["text"]), UI.C_GOLD)
+	else:
+		_skill_say(head, "Learned at level %d. %s" % [int(r["level"]), String(r["text"])], UI.C_DIM)
+
+
+## "On button 1 / 2": puts the tapped skill there. It always answers: when it cannot, it says why.
+func _put_skill(slot: int) -> void:
+	if _skill_sel == "":
+		Sfx.play("ui_back")
+		_skill_say("Tap a skill first", "Then choose the button it goes on.", UI.C_ORANGE)
+		return
+	var r := Skills.row(_skill_sel)
+	if not Skills.known(_skill_sel):
+		Sfx.play("ui_back")
+		_skill_say(String(r["name"]), "Not learned yet: it comes at level %d. You are level %d." % [int(r["level"]), Rpg.level()], UI.C_ORANGE)
+		return
+	Skills.assign(_skill_sel, slot)
+	Sfx.play("ui_start")
+	_fill_skills()
+	_skill_say(String(r["name"]), "It is on skill button %d now." % (slot + 1), UI.C_GOLD)
 
 
 # ------------------------------------------------------------------ the Stats page

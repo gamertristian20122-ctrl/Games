@@ -46,7 +46,7 @@ The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It st
   pictures to choose from BEFORE wiring her in. Tasteful, adult, never AI-made.
 - **Gear = all three ways**: monster drops, chests and bosses, shops; Common / Rare / Epic.
 - **Size: medium.** Build in steps, an APK after each: 1 levels and XP (DONE, v0.11.0), 2 gear and an
-  inventory screen (DONE, v0.12.0), 3 skills and mana, 4 the companion, 5 roaming monsters and the Zelda-style
+  inventory screen (DONE, v0.12.0), 3 skills and mana (DONE, v0.13.0), 4 the companion, 5 roaming monsters and the Zelda-style
   dungeons (keys, boss key), then a balance pass.
 - The owner's standing rules: few agents, one light tester, no re-checking what already passed; small
   64-bit APK sent in a message BY ITSELF, screenshots in a separate message; never a greyed-out
@@ -703,6 +703,30 @@ you can travel faster." What was built:
 - The flow test has **64 checks** now. `dev/validate.gd` checks every gear row (slot, picture, effect).
 - **Guesses to check by playing:** drop rates (the bot found about one piece per level plus the
   boss's), prices against how many coins a level pays, how strong `ward` feels.
+
+## v0.13.0 (12 Nov 2026): RPG step 3, skills, magic and mana
+- **`scripts/data/skills.gd`**: the 8 skills (4 sword moves, 4 spells), the level each is learned at
+  (2, 3, 5, 7, 9, 11, 13, 15), mana cost, rest ("cd") and the numbers each uses ("p"). Two are carried,
+  on skill button 1 and 2 (`skill:0`, `skill:1` in the save's hub section). A newly learned skill
+  drops into an empty button by itself (`learn_at`, called from `run.gd gain_xp()`).
+- **`scripts/entities/hero_skills.gd`**: mana and what each skill does (one function per id, named
+  in `_cast()`). `player.skills` holds it; `player._on_skill()` casts on `Controls.skill_pressed`.
+  Sword skills use the blow's damage and respect a boss's guard; spells also grow with Spirit and
+  pass a guard. Stuns on bosses are cut to a flinch. Effects are code-drawn: `fx.ring`, `fx.burst`,
+  and the new `fx.bolt()` (a jagged line). Fire Bolt is a shot of the new type `firebolt`.
+- **Mana:** 20 + 4 per Spirit point, refills 1.2 a second (+0.08 per Spirit); spells +6% per Spirit
+  (`Skills.MANA_*`, `REGEN_*`, `SPELL_PER_SPIRIT`). Spirit still shortens the guard's rest.
+- **Buttons:** touch: two round buttons left of BLOCK and the bomb (`touch.gd`, roles `skill0` /
+  `skill1`; a button with no skill is NOT drawn). Keys 1 / 2 (also F / R), gamepad X / B.
+  A press that does nothing says why in orange near the bottom (`G.skill_refused` -> `hud.gd _note`).
+- **HUD:** a blue mana bar under the hearts once the first skill is known, with a tick at each
+  carried skill's cost (`hud.gd _stack_left()` places hearts, mana, counters, quests).
+- **Skills page** of the Knight screen: tap a skill, then "On button 1 / 2". A skill not learned
+  yet says at which level it comes.
+- **Pictures:** `skill_*.png`, Raven Fantasy Icons, in `EXTRA` of `tools/import_icons.py`.
+- The bot presses a ready skill about once a second when a monster is close. Flow test: **70 checks**.
+- **Guesses to check by playing:** every cost, rest and damage number; whether two more buttons
+  crowd the right thumb; whether 20 mana is too little before any Spirit.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:

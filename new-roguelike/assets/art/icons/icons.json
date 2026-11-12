@@ -92,6 +92,38 @@
   "gear_vest_padded": {
    "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa2049.png",
    "shows": "grey vest"
+  },
+  "skill_cry": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa987.png",
+   "shows": "golden rings"
+  },
+  "skill_firebolt": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1002.png",
+   "shows": "a bolt of fire"
+  },
+  "skill_frost": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1014.png",
+   "shows": "ice spikes"
+  },
+  "skill_lunge": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa839.png",
+   "shows": "a burning strike downward"
+  },
+  "skill_mend": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1042.png",
+   "shows": "a golden heart"
+  },
+  "skill_slam": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1044.png",
+   "shows": "a golden hammer"
+  },
+  "skill_storm": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1029.png",
+   "shows": "forked lightning"
+  },
+  "skill_whirl": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa725.png",
+   "shows": "a pale swirl"
   }
  },
  "icons": {

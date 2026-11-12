@@ -23,6 +23,7 @@ const Hands = preload("res://scripts/entities/hands.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
 const Gear = preload("res://scripts/data/gear.gd")
+const HeroSkills = preload("res://scripts/entities/hero_skills.gd")
 
 const ACCEL := 950.0
 const DECEL := 1500.0
@@ -152,6 +153,7 @@ func setup(the_run: Node, hero_id: String) -> void:
 ## Vitality gives health at once (the new half heart comes filled).
 ## The gear he wears (scripts/data/gear.gd) goes through here too: its stats layer "gear", its
 ## hearts, the chance that a blow glances off, and (at the start of a level) its blue hearts.
+var skills: RefCounted           ## his mana and skills (scripts/entities/hero_skills.gd); null for the old heroes
 var _rpg_hp := 0
 var glance := 0.0                ## chance that a blow glances off his armour (Gear.ward())
 func apply_rpg(fresh: bool = false) -> void:
@@ -159,6 +161,11 @@ func apply_rpg(fresh: bool = false) -> void:
 		return
 	stats.set_layer("rpg", Rpg.mods())
 	stats.set_layer("gear", Gear.mods())
+	if skills == null:
+		skills = HeroSkills.new()
+		skills.setup(self)
+	else:
+		skills.refresh()
 	glance = Gear.ward()
 	if fresh:
 		armor = mini(armor + Gear.shield(), MAX_ARMOR)
@@ -191,6 +198,8 @@ func _hook_bomb_button() -> void:
 		Controls.bomb_pressed.connect(place_bomb)
 	if not Controls.action_pressed.is_connected(_on_block_tap):
 		Controls.action_pressed.connect(_on_block_tap)
+	if not Controls.skill_pressed.is_connected(_on_skill):
+		Controls.skill_pressed.connect(_on_skill)
 
 
 func _exit_tree() -> void:
@@ -198,6 +207,16 @@ func _exit_tree() -> void:
 		Controls.bomb_pressed.disconnect(place_bomb)
 	if Controls.action_pressed.is_connected(_on_block_tap):
 		Controls.action_pressed.disconnect(_on_block_tap)
+	if Controls.skill_pressed.is_connected(_on_skill):
+		Controls.skill_pressed.disconnect(_on_skill)
+
+
+## A skill button was pressed (not while the game is paused or the guard is up).
+func _on_skill(slot: int) -> void:
+	if skills == null or dead or blocking or get_tree().paused:
+		return
+	if not skills.use(slot) and String(skills.said) != "":
+		G.skill_refused.emit(String(skills.said))
 
 
 func _stats_changed() -> void:
@@ -345,6 +364,8 @@ func _physics_process(delta: float) -> void:
 		_fire_cd = 1.0 / (swing_rate() if hero.has("melee") else stats.v("rate"))
 	if not _cuts.is_empty():
 		_tick_cuts(delta)
+	if skills != null:
+		skills.tick(delta)
 	run.effects.fire("on_tick", [delta])
 	_update_look(delta)
 

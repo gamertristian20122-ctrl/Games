@@ -22,7 +22,7 @@ const STAT_CAP := 20               ## the most points one stat can hold
 const STATS := [
 	{"id": "str", "name": "Strength", "each": "blows hit 5% harder", "color": Color("d9573b")},
 	{"id": "vit", "name": "Vitality", "each": "half a heart more health", "color": Color("6fbf5a")},
-	{"id": "spi", "name": "Spirit", "each": "guard is back 4% sooner (and mana, when magic arrives)", "color": Color("5aa7d9")},
+	{"id": "spi", "name": "Spirit", "each": "4 more mana, spells 6% stronger, guard back 4% sooner", "color": Color("5aa7d9")},
 	{"id": "agi", "name": "Agility", "each": "walk 2% and swing 3% faster", "color": Color("e3c15a")},
 ]
 const STR_DAMAGE := 0.05           ## damage per Strength point (5%)
@@ -192,7 +192,7 @@ static func total_text(id: String) -> String:
 		"vit":
 			return "+%s hearts" % _halves(VIT_HP * n)
 		"spi":
-			return "guard %d%% sooner" % roundi((1.0 - guard_mult()) * 100.0)
+			return "+%d mana, +%d%% spells" % [4 * n, 6 * n]
 		"agi":
 			return "+%d%% walk, +%d%% swing" % [roundi(AGI_SPEED * n * 100.0), roundi(AGI_RATE * n * 100.0)]
 	return ""

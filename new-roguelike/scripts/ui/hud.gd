@@ -22,6 +22,7 @@ const CurseMeter = preload("res://scripts/ui/curse_meter.gd")
 const QuestList = preload("res://scripts/ui/quest_list.gd")
 const Story = preload("res://scripts/data/story.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
+const Skills = preload("res://scripts/data/skills.gd")
 
 const CARD_TIME := 2.5           ## seconds an item card stays up
 const PAUSE_GAP := 29.0          ## room kept free in the top right corner for the pause button
@@ -40,6 +41,11 @@ var _curse_meter: Control
 var _level_label: Label          ## "Lv 3" and the XP bar beside it (scripts/data/rpg.gd)
 var _xp_bar: Control
 var _xp_flash := 0.0
+var _mana_bar: Control           ## the blue mana bar under the hearts (shown once a skill is known)
+var _mana := 0.0
+var _mana_max := 1.0
+var _note: Label                 ## a short line near the bottom: why a skill button did nothing
+var _note_t := 0.0
 var _quests: Control             ## the quest list under the hearts (scripts/ui/quest_list.gd)
 var _coins_shown := 0
 var _coins_target := 0
@@ -126,6 +132,27 @@ func _ready() -> void:
 		if _boss_box != null:
 			_place_boss_bar())
 
+	_mana_bar = Control.new()
+	_mana_bar.custom_minimum_size = Vector2(64, 6)
+	_mana_bar.size = Vector2(64, 6)
+	_mana_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mana_bar.draw.connect(_draw_mana)
+	_mana_bar.visible = false
+	_root.add_child(_mana_bar)
+	_note = UI.label("", "Hud")
+	_note.add_theme_color_override("font_color", UI.C_ORANGE)
+	_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_note.visible = false
+	_root.add_child(_note)
+	G.skill_refused.connect(func(why: String) -> void:
+		_note.text = why
+		_note.visible = true
+		_note.modulate.a = 1.0
+		_note_t = 1.4
+		_note.reset_size()
+		var sz := UI.screen_size(self)
+		_note.position = Vector2(roundf((sz.x - _note.size.x) / 2.0), sz.y - 44.0))
+
 	_quests = QuestList.new()
 	_root.add_child(_quests)
 
@@ -189,6 +216,8 @@ func clear_popups() -> void:
 		_card_tween.kill()
 		_card_tween = null
 	_banner.visible = false
+	_note.visible = false
+	_note_t = 0.0
 	if is_instance_valid(_card):
 		_card.queue_free()
 	_card = null
@@ -212,10 +241,13 @@ func _layout() -> void:
 	_hearts.set("per_row", 8 if narrow else 10)
 	_hearts.position = Vector2(left, top)
 	_hearts.modulate.a = alpha
-	_counters.position = Vector2(left + 1.0, top + _hearts.size.y + 1.0)
+	_counters.position.x = left + 1.0
 	_counters.modulate.a = alpha
-	_quests.position = Vector2(left - 1.0, _counters.position.y + _counters.size.y + 2.0)
+	_mana_bar.position.x = left + 1.0
+	_mana_bar.modulate.a = alpha
+	_quests.position.x = left - 1.0
 	_quests.modulate.a = 0.9
+	_stack_left()
 	var gap := PAUSE_GAP if Controls.using_touch else 0.0
 	_minimap.position = Vector2(right - _minimap.size.x - gap, top - 1.0)
 	_minimap.modulate.a = alpha
@@ -245,6 +277,33 @@ func _place_boss_bar() -> void:
 	_boss_bar.queue_redraw()
 
 
+## Top-left, from the top: hearts, the mana bar (once a skill is known), the counters, the quest list.
+func _stack_left() -> void:
+	var y := _hearts.position.y + _hearts.size.y + 1.0
+	if _mana_bar.visible:
+		_mana_bar.position.y = y
+		y += _mana_bar.size.y + 1.0
+	_counters.position.y = y
+	_quests.position.y = y + _counters.size.y + 2.0
+
+
+## The mana bar: blue, with a tick where each skill button's cost lies.
+func _draw_mana() -> void:
+	var w := _mana_bar.size.x
+	var h := _mana_bar.size.y
+	_mana_bar.draw_rect(Rect2(0, 0, w, h), Color(UI.C_INK, 0.85))
+	var k := clampf(_mana / maxf(_mana_max, 1.0), 0.0, 1.0)
+	if k > 0.0:
+		_mana_bar.draw_rect(Rect2(1, 1, maxf(roundf((w - 2.0) * k), 1.0), h - 2.0), Color("3f8fe0"))
+		_mana_bar.draw_rect(Rect2(1, 1, maxf(roundf((w - 2.0) * k), 1.0), 1.0), Color("9fd0ff"))
+	for slot in Skills.SLOTS:
+		var r := Skills.on_button(slot)
+		if not r.is_empty():
+			var x := 1.0 + roundf((w - 2.0) * clampf(float(r["mana"]) / maxf(_mana_max, 1.0), 0.0, 1.0))
+			_mana_bar.draw_rect(Rect2(x, 0, 1, h), Color(UI.C_INK, 0.9))
+	_mana_bar.draw_rect(Rect2(0.5, 0.5, w - 1.0, h - 1.0), Color(UI.C_BONE, 0.55), false, 1.0)
+
+
 ## The XP bar: a dark groove, a blue fill, a bright flash each time XP comes in.
 func _draw_xp() -> void:
 	var w := _xp_bar.size.x
@@ -263,6 +322,18 @@ func _process(delta: float) -> void:
 	if _xp_flash > 0.0:
 		_xp_flash = maxf(_xp_flash - delta * 3.0, 0.0)
 		_xp_bar.queue_redraw()
+	if _mana_bar.visible:
+		var hero: Variant = run.get("player")
+		var book: Variant = hero.get("skills") if is_instance_valid(hero) else null
+		if book != null and (not is_equal_approx(float(book.get("mana")), _mana) or not is_equal_approx(float(book.get("max_mana")), _mana_max)):
+			_mana = float(book.get("mana"))
+			_mana_max = float(book.get("max_mana"))
+			_mana_bar.queue_redraw()
+	if _note_t > 0.0:
+		_note_t -= delta
+		_note.modulate.a = clampf(_note_t * 3.0, 0.0, 1.0)
+		if _note_t <= 0.0:
+			_note.visible = false
 	if _dirty:
 		_dirty = false
 		_fresh = false
@@ -288,9 +359,10 @@ func _refresh() -> void:
 	var p: Variant = run.get("player")
 	if not is_instance_valid(p):
 		return
-	if _hearts.call("set_values", _num(p, "hp"), _num(p, "max_hp"), _num(p, "armor")):
-		_counters.position.y = _hearts.position.y + _hearts.size.y + 1.0
-		_quests.position.y = _counters.position.y + _counters.size.y + 2.0
+	var show_mana: bool = p.get("skills") != null and Skills.any_known()
+	if _hearts.call("set_values", _num(p, "hp"), _num(p, "max_hp"), _num(p, "armor")) or show_mana != _mana_bar.visible:
+		_mana_bar.visible = show_mana
+		_stack_left()
 		_place_boss_bar()
 	_coins_target = _num(p, "coins")
 	if _coins_shown < 0:

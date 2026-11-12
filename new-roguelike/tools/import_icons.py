@@ -118,6 +118,15 @@ EXTRA = {
     "gear_ring_sapphire": (1847, "ring, blue stone"),
     "gear_ring_jade": (2062, "iron ring, big green stone"),
     "gear_ring_ember": (2186, "ring of red and gold"),
+    # SKILLS (scripts/data/skills.gd, v0.13.0). The key is the row's "icon".
+    "skill_whirl": (725, "a pale swirl"),
+    "skill_firebolt": (1002, "a bolt of fire"),
+    "skill_lunge": (839, "a burning strike downward"),
+    "skill_mend": (1042, "a golden heart"),
+    "skill_cry": (987, "golden rings"),
+    "skill_frost": (1014, "ice spikes"),
+    "skill_slam": (1044, "a golden hammer"),
+    "skill_storm": (1029, "forked lightning"),
 }
 
 

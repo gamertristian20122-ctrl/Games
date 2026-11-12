@@ -14,6 +14,7 @@ extends CanvasLayer
 
 const UI = preload("res://scripts/ui/theme.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
+const Skills = preload("res://scripts/data/skills.gd")
 
 const RADIUS := 22.0            ## stick size: full tilt is this far from where the thumb landed
 const DEADZONE := 0.16          ## tiny wobbles around the centre do nothing
@@ -47,7 +48,10 @@ var _call_fill := 1.0           ## 0..1: how far the CALL cooldown has recovered
 var _call_ready := false        ## pressing CALL would work right now
 var _call_pulse := false        ## the first-run lesson points at the button
 var _pulse_t := 0.0
-var _pressed_flash := {"bomb": 0.0, "action": 0.0, "pause": 0.0, "menu": 0.0}
+var _pressed_flash := {"bomb": 0.0, "action": 0.0, "pause": 0.0, "menu": 0.0, "skill0": 0.0, "skill1": 0.0}
+var _skill_ids := ["", ""]      ## the skill on each skill button ("" = none: the button is not drawn)
+var _skill_fill := [1.0, 1.0]   ## 0..1: how far its rest is over
+var _skill_ok := [true, true]   ## enough mana
 var _lv_text := ""              ## what the Lv button says, and whether points wait to be spent
 var _lv_points := false
 var _lv_t := 0.0
@@ -122,6 +126,7 @@ func _process(delta: float) -> void:
 		_lv_text = lv_text
 		_lv_points = lv_points
 		_canvas.queue_redraw()
+	_read_skills()
 	if Controls.action_enabled != _action_shown:
 		_action_shown = Controls.action_enabled
 		_canvas.queue_redraw()
@@ -130,6 +135,29 @@ func _process(delta: float) -> void:
 	for key: String in _pressed_flash:
 		if _pressed_flash[key] > 0.0:
 			_pressed_flash[key] = maxf(_pressed_flash[key] - delta * 5.0, 0.0)
+			_canvas.queue_redraw()
+
+
+## The two skill buttons: which skill each carries, its rest and whether the mana is there
+## (scripts/data/skills.gd, scripts/entities/hero_skills.gd). Only in a level, only for the knight.
+func _read_skills() -> void:
+	var book: Variant = null
+	if not hub_mode and is_instance_valid(G.run) and is_instance_valid(G.run.get("player")):
+		book = G.run.get("player").get("skills")
+	for slot in Skills.SLOTS:
+		var id := ""
+		var fill := 1.0
+		var ok := true
+		if book != null:
+			var r := Skills.on_button(slot)
+			if not r.is_empty():
+				id = String(r["id"])
+				fill = float(book.call("fill", slot))
+				ok = float(book.get("mana")) >= float(r["mana"])
+		if id != _skill_ids[slot] or ok != _skill_ok[slot] or not is_equal_approx(fill, _skill_fill[slot]):
+			_skill_ids[slot] = id
+			_skill_fill[slot] = fill
+			_skill_ok[slot] = ok
 			_canvas.queue_redraw()
 
 
@@ -187,6 +215,12 @@ func _button_centre(which: String) -> Vector2:
 		return Vector2(s.x - ins.z - 3.0 - PAUSE_SIZE / 2.0, ins.y + 3.0 + PAUSE_SIZE / 2.0)
 	if which == "menu":
 		return Vector2(s.x - ins.z - 3.0 - LV_SIZE.x / 2.0, ins.y + 3.0 + PAUSE_SIZE + 4.0 + LV_SIZE.y / 2.0)
+	if which.begins_with("skill"):
+		# the two skill buttons stand one column further in, beside BLOCK and the bomb
+		var sy := 72.0 if which == "skill0" else 106.0
+		if _swapped:
+			return Vector2(ins.x + 6.0 + BUTTON_R * 3.0 + 6.0, sy)
+		return Vector2(s.x - ins.z - 6.0 - BUTTON_R * 3.0 - 6.0, sy)
 	var y := 106.0 if which == "bomb" else 72.0        # (6 px lower since v0.11: the Lv button sits above)
 	if _swapped:
 		return Vector2(ins.x + 6.0 + BUTTON_R, y)
@@ -204,6 +238,9 @@ func _button_at(pos: Vector2) -> String:
 		return "bomb"
 	if Controls.action_enabled and pos.distance_to(_button_centre("action")) <= BUTTON_R + HIT_PAD:
 		return "action"
+	for slot in Skills.SLOTS:
+		if _skill_ids[slot] != "" and pos.distance_to(_button_centre("skill%d" % slot)) <= BUTTON_R + 4.0:
+			return "skill%d" % slot
 	return ""
 
 
@@ -236,6 +273,12 @@ func _press(finger: int, pos: Vector2) -> void:
 				Controls.press_pause()
 			"menu":
 				Controls.press_menu()
+			"skill0":
+				_buzz(20)
+				Controls.press_skill(0)
+			"skill1":
+				_buzz(20)
+				Controls.press_skill(1)
 			"bomb":
 				if _bombs > 0:
 					_buzz(40)
@@ -376,6 +419,27 @@ func _draw_controls() -> void:
 	_canvas.draw_rect(Rect2(pc.x - 4, pc.y - 5, 3, 10), Color(1, 1, 1, a))
 	_canvas.draw_rect(Rect2(pc.x + 1, pc.y - 5, 3, 10), Color(1, 1, 1, a))
 
+
+	# the skill buttons: the skill's picture, dim while it rests or the mana is short, a ring that refills
+	for slot in Skills.SLOTS:
+		if _skill_ids[slot] == "":
+			continue
+		var sc := _button_centre("skill%d" % slot)
+		var ready: bool = _skill_ok[slot] and _skill_fill[slot] >= 1.0
+		var lit := 1.0 if ready else 0.45
+		_round_button(sc, _pressed_flash["skill%d" % slot], lit)
+		var icon_id := String(Skills.row(_skill_ids[slot]).get("icon", ""))
+		if Art.has(icon_id):
+			var tex: Texture2D = Art.tex(icon_id)
+			_canvas.draw_texture(tex, (sc - tex.get_size() / 2.0).round(), Color(1, 1, 1, 0.95 * lit))
+		if _skill_fill[slot] < 1.0:
+			_canvas.draw_arc(sc, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _skill_fill[slot], 32, Color(0.45, 0.75, 1.0, 0.9), 2.0, true)
+		elif ready:
+			_canvas.draw_arc(sc, BUTTON_R - 2.5, 0.0, TAU, 32, Color(0.45, 0.75, 1.0, 0.85), 1.5, true)
+		var num := str(slot + 1)
+		var np := sc + Vector2(-BUTTON_R + 1.0, -BUTTON_R + 7.0)
+		_canvas.draw_string_outline(font, np, num, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))
+		_canvas.draw_string(font, np, num, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(UI.C_BONE, lit))
 
 	# Lv: the knight's level in a small plate under the pause button; it glows while points wait
 	var mc := _button_centre("menu")
