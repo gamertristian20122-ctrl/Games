@@ -507,7 +507,7 @@ func _sync_hud(delta: float, moving: bool) -> void:
 			_walk_t = 0.0
 	var outdoor := bool(place.get("outdoor", false))
 	_quests.visible = not frozen and outdoor
-	var want := 0.5 if _still_t < 1.0 and _walk_t > 0.0 else 1.0
+	var want := 0.7 if _still_t < 1.0 and _walk_t > 0.0 else 1.0
 	_quests.modulate.a = move_toward(_quests.modulate.a, want, delta * 2.0)
 	_coins.visible = not frozen
 	_coins.set("value", Upgrades.coins())

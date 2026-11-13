@@ -129,10 +129,11 @@ func _draw() -> void:
 		back.set_corner_radius_all(int(ceilf(r.size.y * 0.5 + 2.0)))
 		back.border_color = Color(UI.C_BRASS_DIM, 0.9)
 		back.set_border_width_all(1)
-		back.expand_margin_left = 7
-		back.expand_margin_right = 7
-		back.expand_margin_top = 2
-		back.expand_margin_bottom = 2
+		var ph := UI.is_phone()
+		back.expand_margin_left = 6 if ph else 7
+		back.expand_margin_right = 6 if ph else 7
+		back.expand_margin_top = 1 if ph else 2
+		back.expand_margin_bottom = 1 if ph else 2
 		back.shadow_color = Color(0, 0, 0, 0.35)
 		back.shadow_size = 2
 		back.anti_aliasing = true

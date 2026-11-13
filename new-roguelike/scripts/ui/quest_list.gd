@@ -226,8 +226,8 @@ class StoryLine extends Control:
 		var ol: int = s["outline"]
 		if head != "":
 			var hs := int(s["head"])
-			draw_string_outline(UI.font_head, Vector2(x, s["head_y"]), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, 2, Color(UI.C_INK, 0.7))
-			draw_string(UI.font_head, Vector2(x, s["head_y"]), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, Color(UI.C_BRASS, 0.95))
+			draw_string_outline(UI.font_head, Vector2(x, s["head_y"]), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, 3, Color(UI.C_INK, 0.85))
+			draw_string(UI.font_head, Vector2(x, s["head_y"]), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, UI.C_GOLD.lerp(UI.C_BRASS, 0.35))
 			var ry: float = s["rule_y"]
 			UI.rs_rule(ci, Vector2(x, ry + 0.5), Vector2(x + float(s["rule_w"]), ry + 0.5), Color(UI.C_BRASS, 0.6), Color(UI.C_BRASS, 0.0))
 		var y: float = s["text_y"]
