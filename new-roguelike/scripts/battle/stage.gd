@@ -1037,10 +1037,10 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0,
 	hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, 2.8, height * 0.95, radius, fighter, 1.25, element)
 	hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.75, 0.35)     # (its wide reach would light a veil of air in front of him)
 	hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.9, 0.95, 0.0)     # (the ground before him: a hot pool; no glowing air in front of him)
-	ground_glow(Vector3(at.x, 0.0, at.z + 0.9), Color(flood.r, flood.g, flood.b, 0.6), 4.8, 1.25)
+	ground_glow(Vector3(at.x, 0.0, at.z + 0.9), Color(flood.r, flood.g, flood.b, 0.6 * k), 4.8, 1.25)
 	var white_hot := colour.lerp(Color.WHITE, 0.3)
 	ground_glow(Vector3(at.x, 0.0, at.z - 0.6), Color(white_hot.r * 1.3, white_hot.g * 1.3, white_hot.b * 1.3, 0.85), 1.7, 0.9)     # (the white-hot foot of the column, behind his feet)
-	ground_glow(Vector3(at.x, 0.0, at.z + 0.4), Color(flood.r, flood.g, flood.b, 0.45), 8.5, 1.5)      # (the spell floods the ground round him)
+	ground_glow(Vector3(at.x, 0.0, at.z + 0.4), Color(flood.r, flood.g, flood.b, 0.45 * k), 8.5, 1.5)      # (the spell floods the ground round him)
 	ground_glow(Vector3(at.x, 0.0, at.z), Color(colour.r * 1.3, colour.g * 1.3, colour.b * 1.3, 0.8), 2.6, 0.7, true)     # (a splash ring where it lands)
 	ground_glow(Vector3(at.x, 0.0, at.z), Color(colour.r, colour.g, colour.b, 0.6), 4.2, 1.0, true)
 

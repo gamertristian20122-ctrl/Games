@@ -184,10 +184,10 @@ func _frost(at: Vector3, power: float, hold: Vector4) -> void:
 	for i in count:
 		var a := lerpf(-0.15, PI + 0.15, randf()) if randf() < 0.85 else randf() * TAU
 		var r := randf_range(0.45, 1.25)
-		var where := g + Vector3(cos(a) * r, 0.0, -absf(sin(a)) * r * 0.7 + 0.15)
+		var where := g + Vector3(cos(a) * r, 0.0, -absf(sin(a)) * r * 0.7 - 0.12)
 		crystal(where, randf_range(0.5, 1.1) * (0.8 + 0.2 * power), Vector3(cos(a) * 0.5, 1.0, -0.2).normalized(), randf() * 0.12)
 	# cold mist that rolls out low over the ground
-	mist(g + Vector3(0.0, 0.25, -0.2), Color(0.62, 0.82, 1.0, 0.26), power)
+	mist(g + Vector3(0.0, 0.08, -0.5), Color(0.62, 0.82, 1.0, 0.2), power)
 	# glints: slow white-blue sparkles that drift down
 	var n := int((30.0 + 18.0 * power) * (1.0 if hd() else 0.5))
 	var sp := _streaks(at, 4.0, Color(0.55, 0.85, 1.0), Color(0.9, 0.97, 1.0))
@@ -225,8 +225,8 @@ func _storm(at: Vector3, power: float, hold: Vector4) -> void:
 	var n := int((30.0 + 20.0 * power) * (1.0 if hd() else 0.5))
 	var sp := _streaks(at, 6.0, Color(0.45, 0.7, 1.0), Color(0.92, 0.96, 1.0))
 	sp.grav = Vector3(0.0, -6.0, 0.0)
-	sp.drag = 5.0
-	sp.trail = 0.03
+	sp.drag = 3.0
+	sp.trail = 0.035
 	sp.width = 0.04
 	sp.floor_y = g.y + 0.02
 	sp.bounce = 0.4
@@ -235,7 +235,7 @@ func _storm(at: Vector3, power: float, hold: Vector4) -> void:
 	sp.start(n, sp.get_meta("mat"))
 	for i in n:
 		var dir := Vector3(randf_range(-1.0, 1.0), randf_range(-0.3, 1.0), randf_range(-0.7, 0.4)).normalized()
-		sp.add(i, at + Vector3(randf_range(-0.4, 0.4), randf_range(-0.7, 0.5), 0.0), dir * randf_range(6.0, 14.0), randf() * 0.35, randf_range(0.12, 0.35), Color(0.5, 0.75, 1.0).lerp(Color(0.9, 0.95, 1.0), randf()))
+		sp.add(i, at + Vector3(randf_range(-0.4, 0.4), randf_range(-0.7, 0.5), 0.0), dir * randf_range(6.0, 14.0), randf() * 0.45, randf_range(0.2, 0.55), Color(0.5, 0.75, 1.0).lerp(Color(0.9, 0.95, 1.0), randf()))
 	s.add_child(sp)
 	_light(at + Vector3(0.0, 0.6, 1.0), Color(0.6, 0.78, 1.0), 9.0 + 3.0 * power, 10.0 + 3.0 * power, 0.45, power >= 2.0, 0.5)
 	s.mark(g, "scorch", 0.75 + 0.25 * power, 2.6, Color(0.35, 0.6, 1.0))
@@ -710,18 +710,18 @@ func smoke(at: Vector3, colour: Color, power: float = 1.0) -> void:
 
 ## MIST: soft cold puffs that roll out low over the ground.
 func mist(at: Vector3, colour: Color, power: float = 1.0) -> void:
-	_puffs(at, colour, int(10 + 5 * power), 1.6, 0.9, 3.0, func(p: CPUParticles3D) -> void:
+	_puffs(at, colour, int(10 + 5 * power), 1.6, 0.6, 2.4, func(p: CPUParticles3D) -> void:
 		p.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
 		p.emission_ring_axis = Vector3.UP
 		p.emission_ring_radius = 0.6
 		p.emission_ring_inner_radius = 0.1
-		p.emission_ring_height = 0.1
+		p.emission_ring_height = 0.05
 		p.direction = Vector3(1.0, 0.0, 0.0)
 		p.spread = 180.0
-		p.flatness = 0.9
-		p.gravity = Vector3.ZERO
-		p.initial_velocity_min = 1.0
-		p.initial_velocity_max = 2.4 + power * 0.4
+		p.flatness = 0.95
+		p.gravity = Vector3(0.0, -0.3, 0.0)
+		p.initial_velocity_min = 0.8
+		p.initial_velocity_max = 1.8 + power * 0.3
 		p.damping_min = 1.5
 		p.damping_max = 2.5)
 

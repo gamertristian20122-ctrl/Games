@@ -43,7 +43,7 @@ const LOOK := {
 	"forest": {"sun": Color("ffbe68"), "sun_energy": 2.5, "ambient": Color("6e5034"), "ambient_energy": 0.17,
 		"fog": Color("ffc488"), "fog_density": 0.0016, "fog_sun": 0.5, "fog_aniso": 0.2, "exposure": 1.42,
 		"sky_top": Color("3a4a78"), "sky_low": Color("ffa848"), "clouds": Color("b07040"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 1.0, "tame": 0.8, "beam": 0.07,
+		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.72, "tame": 0.8, "beam": 0.07,
 		"pool": [Color("ffb860"), 2.6], "earth": 1.0, "earth_gain": 3.0, "earth_tint": Color(1.0, 0.86, 0.66),
 		"gold": 0.55, "punch": 1.16},
 	"forest_night": {"sun": Color("9fb6ff"), "sun_energy": 1.25, "ambient": Color("38487a"), "ambient_energy": 0.30,
@@ -767,10 +767,11 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 		tw.tween_method(func(v: float) -> void: m.set_shader_parameter("alpha", v), 1.0, 0.0, life * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.tween_callback(node.queue_free)
 	# sparks that wind up the whirl, and a spray of them from its foot
-	_streaks(at + Vector3(0.0, 0.2, 0.0), colour, power, height, radius, true, hold)
-	_streaks(at + Vector3(0.0, 0.3, 0.0), colour, power, height, radius, false, hold)
-	motes(at, colour, power, height, radius, hold)
-	motes(at, colour, power * 0.9, height * 1.3, radius * 1.8, hold)       # (a second, wider cloud: the glitter all round the blaze)
+	var near: Node3D = others[0] if others.size() > 0 else null
+	_streaks(at + Vector3(0.0, 0.2, 0.0), colour, power, height, radius, true, hold, near)
+	_streaks(at + Vector3(0.0, 0.3, 0.0), colour, power, height, radius, false, hold, near)
+	motes(at, colour, power, height, radius, hold, near)
+	motes(at, colour, power * 0.9, height * 1.3, radius * 1.8, hold, near)       # (a second, wider cloud: the glitter all round the blaze)
 	if style == "storm":
 		# lightning out of the sky into the column, forking as it comes
 		for i in 3:
@@ -787,7 +788,7 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 
 
 ## Crisp streaks of light: `up` = climbing the whirl in a spiral; else a spray out of its foot.
-func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: float, up: bool, hold := Vector4(-1.0, -1.0, -1.0, -1.0)) -> void:
+func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: float, up: bool, hold := Vector4(-1.0, -1.0, -1.0, -1.0), near: Node3D = null) -> void:
 	var sp := FxKit.Streaks.new()
 	var n := int(clampf((120.0 if up else 90.0) * power, 60.0, 380.0))
 	sp.centre = at
@@ -801,15 +802,16 @@ func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: f
 		sp.spin = 3.0
 		sp.pull = 4.0
 		sp.grav = Vector3(0.0, -9.0, 0.0)
-		sp.drag = 2.2
+		sp.drag = 1.4
 		sp.trail = 0.05
 		sp.floor_y = at.y - 0.25
 		sp.bounce = 0.3
-	sp.width = 0.06
-	sp.max_len = 1.3
-	var sm := FxKit.streak_material(3.0 * num("spell") + 1.0, Color(1.0, 0.95, 0.85), 0.8)
+	sp.width = 0.075
+	sp.max_len = 1.4
+	var sm := FxKit.streak_material(5.0 * num("spell") + 1.5, Color(1.0, 0.97, 0.9), 0.9)
 	sm.set_shader_parameter("hold", hold)
 	sm.set_shader_parameter("hold_z", at.z)
+	_hold_near(sm, near)
 	sp.start(n, sm)
 	var tip := colour.lerp(Color.WHITE, 0.45)
 	for i in n:
@@ -822,8 +824,8 @@ func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: f
 		if up:
 			v = Vector3(0.0, height * randf_range(0.6, 1.3), 0.0) + tangent * randf_range(2.0, 4.0)
 		else:
-			v = (out * randf_range(0.6, 1.0) + Vector3(0.0, randf_range(0.5, 1.4), 0.0)).normalized() * randf_range(4.0, 9.0 + 2.0 * power)
-		sp.add(i, p, v, randf() * (0.5 if up else 0.08), randf_range(0.45, 0.85) if up else randf_range(0.35, 0.65), colour.lerp(tip, randf() * 0.6))
+			v = (out * randf_range(0.6, 1.0) + Vector3(0.0, randf_range(0.5, 1.4), 0.0)).normalized() * randf_range(5.0, 11.0 + 2.0 * power)
+		sp.add(i, p, v, randf() * (0.5 if up else 0.25), randf_range(0.5, 0.95) if up else randf_range(0.45, 0.9), colour.lerp(tip, randf() * 0.6))
 	s.add_child(sp)
 
 
@@ -922,21 +924,29 @@ func shards(at: Vector3, colour: Color, height: float, radius: float, count: int
 
 ## MOTES: a cloud of small hot specks that hang round a spell and drift up slowly after it has
 ## blazed (the glittering dots all round the column in the night-battle picture).
-func motes(at: Vector3, colour: Color, power: float, height: float, radius: float, hold := Vector4(-1.0, -1.0, -1.0, -1.0)) -> void:
+## A neighbour kept clear of a spark system's streaks (see FxKit STREAK_CODE hold2).
+func _hold_near(sm: ShaderMaterial, near: Node3D) -> void:
+	if near != null and is_instance_valid(near):
+		sm.set_shader_parameter("hold2", screen_box(near))
+		sm.set_shader_parameter("hold2_z", near.global_position.z)
+
+
+func motes(at: Vector3, colour: Color, power: float, height: float, radius: float, hold := Vector4(-1.0, -1.0, -1.0, -1.0), near: Node3D = null) -> void:
 	var sp := FxKit.Streaks.new()
 	var n := int(clampf(120.0 * power, 80.0, 340.0))
 	sp.centre = at
 	sp.grav = Vector3(0.0, 0.5, 0.0)
 	sp.drag = 1.1
 	sp.trail = 0.05
-	sp.width = 0.05
-	sp.min_len = 0.06
-	sp.max_len = 0.35
+	sp.width = 0.065
+	sp.min_len = 0.08
+	sp.max_len = 0.45
 	sp.wobble = 1.2
 	sp.flicker = 0.35
-	var sm := FxKit.streak_material(3.0 * num("spell") + 1.0, Color(1.0, 0.97, 0.9), 0.9)
+	var sm := FxKit.streak_material(5.0 * num("spell") + 1.5, Color(1.0, 0.97, 0.9), 0.9)
 	sm.set_shader_parameter("hold", hold)
 	sm.set_shader_parameter("hold_z", at.z)
+	_hold_near(sm, near)
 	sp.start(n, sm)
 	var tip := colour.lerp(Color.WHITE, 0.5)
 	var mid := at + Vector3(0.0, height * 0.3, 0.0)
@@ -944,7 +954,7 @@ func motes(at: Vector3, colour: Color, power: float, height: float, radius: floa
 		var d := Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), randf_range(-1.0, 1.0))
 		if d.length() > 1.0:
 			d = d.normalized() * randf()
-		var p := mid + Vector3(d.x * radius * 2.4, d.y * height * 0.35, d.z * radius * 1.6)
+		var p := mid + Vector3(d.x * radius * 3.4, d.y * height * 0.45, d.z * radius * 1.8)
 		var v := Vector3(randf_range(-0.6, 0.6), randf_range(0.4, 2.6), randf_range(-0.4, 0.4))
 		sp.add(i, p, v, randf() * 0.25, randf_range(0.9, 1.9), colour.lerp(tip, randf()))
 	s.add_child(sp)
