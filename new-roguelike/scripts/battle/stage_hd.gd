@@ -686,6 +686,10 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 	if fighter != null and is_instance_valid(fighter) and fighter.has_method("spell_hold"):
 		fighter.call("spell_hold", colour.lerp(Color.WHITE, 0.4), 1.6, life)
 		hold_glow(fighter, life + 0.25)
+	# (anybody else standing inside the whirl keeps his own shape too)
+	for p: Node3D in s._people:
+		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 3.0:
+			hold_glow(p, life + 0.25)
 
 
 ## Crisp streaks of light: `up` = climbing the whirl in a spiral; else a spray out of its foot.
