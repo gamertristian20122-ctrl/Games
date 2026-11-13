@@ -313,8 +313,8 @@ static func _base_place(id: String) -> Dictionary:
 					["hub_plant_3", 182, 178, 0, 1], ["hub_plant_4", 120, 232, 0, 1], ["hub_plant_1", 352, 168, 0, 1], ["hub_plant_5", 548, 222, 0, 1],
 					["hub_plant_0", 236, 236, 0, 1], ["hub_plant_6", 470, 214, 0, 1], ["hub_shroom_3", 330, 250, 0, 1], ["hub_shroom_4", 344, 258, 0, 1],
 					["hub_shroom_2", 584, 280, 0, 1], ["hub_shroom_0", 92, 160, 0, 1], ["hub_rock_moss_0", 62, 254, 12, 3], ["hub_stone_1", 556, 136, 10, 3],
-					["hub_rock_1", 476, 318, 12, 3], ["hub_bush_orange_1", 560, 150, 9, 4], ["hub_bush_green_0", 96, 136, 10, 4],
-					["hub_bloom_1", 556, 330, 0, 2], ["hub_bloom_7", 80, 320, 0, 2],
+					["hub_rock_1", 600, 300, 12, 3], ["hub_bush_orange_1", 560, 150, 9, 4], ["hub_bush_green_0", 96, 136, 10, 4],
+					["hub_bloom_7", 80, 320, 0, 2],
 					# two rune stones mark the way on to the glade
 					["hub_rune_0", 592, 172, 9, 3], ["hub_rune_2", 592, 236, 5, 2],
 					# flowers in clumps beside the road
@@ -328,7 +328,7 @@ static func _base_place(id: String) -> Dictionary:
 					["hub_vplant_0", 206, 296, 0, 1], ["hub_vplant_7", 158, 268, 0, 1], ["hub_vplant_8", 168, 274, 0, 1], ["hub_vplant_9", 376, 302, 0, 1],
 					["hub_vplant_7", 500, 286, 0, 1], ["hub_vplant_1", 112, 186, 0, 1],
 					["hub_vbushm_0", 226, 126, 8, 2], ["hub_vbushl_2", 610, 120, 0, 2], ["hub_vbushs_0", 46, 120, 0, 2],
-					["hub_vbushm_3", 520, 330, 8, 2], ["hub_vbush_4", 412, 334, 8, 2], ["hub_vbushl_0", 52, 332, 0, 2],
+					["hub_bush_deep_1", 524, 336, 8, 2], ["hub_bush_deep_2", 408, 338, 8, 2], ["hub_vbushl_0", 52, 332, 0, 2],
 					["hub_vdead_0", 560, 116, 0, 2], ["hub_vdead_2", 140, 252, 0, 1], ["hub_vdead_2", 470, 120, 0, 1],
 					# THE CAMP IN THE CLEARING (round two, like the forest-campfire picture): the fire (see "fire")
 					# with logs and a sawn round to sit on, bedrolls (see "decals"), packs, the cook's pot, a crate,
@@ -368,8 +368,15 @@ static func _base_place(id: String) -> Dictionary:
 				"name": "The Rune Glade", "size": Vector2(480, 330), "outdoor": true, "walk": Rect2(30, 108, 420, 190), "spawn": Vector2(50, 196),
 				"tint": Color(0.66, 0.80, 0.92),
 				"props": [["hub_rune_1", 300, 170, 12, 3], ["hub_rune_0", 250, 214, 9, 3], ["hub_rune_0", 352, 214, 9, 3], ["hub_rune_2", 276, 244, 5, 2],
-					["hub_rune_2", 328, 244, 5, 2], ["hub_bloom_0", 210, 176, 0, 2], ["hub_bloom_5", 392, 180, 0, 2], ["hub_bloom_1", 300, 270, 0, 2],
-					["hub_shroom_0", 400, 262, 0, 1], ["hub_shroom_2", 190, 258, 0, 1], ["hub_rock_moss_1", 420, 150, 14, 3], ["hub_vine_1", 150, 150, 0, 2]],
+					["hub_rune_2", 328, 244, 5, 2], ["hub_bloom_0", 120, 150, 0, 2], ["hub_bloom_5", 440, 136, 0, 2],
+					["hub_rock_moss_1", 420, 150, 14, 3], ["hub_vine_1", 150, 150, 0, 2],
+					# (round two) a fairy ring of toadstools round the stones, ferns and foxgloves behind them,
+					# old giants' roots at the back of the clearing (nobody walks behind them)
+					["hub_shroom_0", 396, 214, 0, 1], ["hub_shroom_3", 392, 228, 0, 1], ["hub_shroom_2", 381, 240, 0, 1], ["hub_shroom_4", 363, 250, 0, 1], ["hub_shroom_1", 340, 258, 0, 1], ["hub_shroom_3", 314, 262, 0, 1],
+					["hub_shroom_2", 286, 262, 0, 1], ["hub_shroom_4", 260, 258, 0, 1], ["hub_shroom_0", 237, 250, 0, 1], ["hub_shroom_3", 219, 240, 0, 1], ["hub_shroom_2", 208, 228, 0, 1], ["hub_shroom_2", 237, 178, 0, 1],
+					["hub_shroom_4", 260, 170, 0, 1], ["hub_shroom_2", 340, 170, 0, 1], ["hub_shroom_4", 363, 178, 0, 1], ["hub_shroom_1", 381, 188, 0, 1], ["hub_shroom_3", 392, 200, 0, 1],
+					["hub_vplant_7", 226, 160, 0, 1], ["hub_vplant_8", 236, 164, 0, 1], ["hub_vplant_1", 370, 158, 0, 1], ["hub_plant_3", 384, 162, 0, 1],
+					["hub_froots_2", 300, 116, 24, 2], ["hub_ftrunk_2", 300, 116, 0, -102], ["hub_fleaf_g_3", 214, 118, 0, 2], ["hub_fleaf_o_2", 392, 120, 0, 2]],
 				"paths": [[Vector2(-10, 196), Vector2(160, 200), Vector2(270, 206)]],
 				"scatter": {"hub_tuft": [24, 60], "hub_flower": [26, 50], "hub_pebble": [20, 8], "hub_twig": [10, 8]},
 				"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 140, 70, 120)]},
