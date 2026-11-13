@@ -467,27 +467,26 @@ static func town() -> Dictionary:
 		# the sealed gate of Hollow Hill in the rocks, north: nobody goes in until four beacons burn
 		["hub_rock_2", 438, 104, 0, 2], ["hub_rock_moss_2", 524, 105, 0, 2], ["hub_rock_moss_1", 408, 108, 0, 2], ["hub_rock_1", 554, 108, 0, 2],
 		["hub_gate_0", 480, 108, 0, 0], ["hub_statue_1", 436, 134, 9, 2], ["hub_statue_0", 526, 134, 7, 2],
-		["hub_bench_long", 206, 168, 10, 2],
+		["hub_bench_long", 262, 171, 10, 2],
 		# the square: cobbles (see "floor"), the fountain in the middle, benches, the watch-fire in its
 		# north-east corner (see "fire"). Pieces from the Garden and Castle packs (ids hub_g*, hub_c*).
 		["hub_gfountain", 480, 338, 36, 0], ["hub_gbench", 400, 372, 12, 1], ["hub_gbench", 560, 372, 12, 1],
 		["hub_stonebench", 404, 252, 8, 1], ["hub_planter", 384, 300, 6, 1], ["hub_planter", 576, 326, 6, 1],
 		["hub_gurn_0", 372, 372, 5, 1], ["hub_gurn_1", 590, 372, 5, 1],
 		# cypresses by the gate and between the houses, potted trees at the doors, flower beds under the windows
-		["hub_gcypress_0", 436, 152, 6, 0], ["hub_gcypress_0", 524, 152, 6, 0], ["hub_gcypress_1", 228, 178, 6, 0], ["hub_gcypress_1", 734, 180, 6, 0],
-		["hub_gcypress_0", 566, 168, 6, 0], ["hub_gcypress_1", 394, 170, 6, 0], ["hub_gcypress_0", 124, 512, 6, 0], ["hub_gcypress_1", 690, 520, 6, 0],
+		["hub_gcypress_0", 436, 152, 6, 0], ["hub_gcypress_0", 524, 152, 6, 0], ["hub_gcypress_0", 124, 512, 6, 0], ["hub_gcypress_1", 690, 520, 6, 0],
 		["hub_cpot_1", 98, 162, 4, 0], ["hub_cpot_2", 150, 162, 4, 0], ["hub_cpot_1", 636, 170, 4, 0], ["hub_cpot_2", 684, 170, 4, 0],
-		["hub_gbed_0", 270, 174, 0, 0], ["hub_gbed_5", 330, 174, 0, 0], ["hub_gbed_2", 806, 186, 0, 0], ["hub_gbed_7", 866, 186, 0, 0],
+		["hub_gbed_0", 236, 172, 0, 0], ["hub_gbed_5", 340, 172, 0, 0], ["hub_gbed_2", 806, 174, 0, 0], ["hub_gbed_7", 870, 174, 0, 0],
 		["hub_gbed_4", 74, 414, 0, 0], ["hub_gbed_1", 134, 414, 0, 0], ["hub_gbed_6", 826, 494, 0, 0], ["hub_gbed_3", 886, 494, 0, 0],
 		["hub_gbed_1", 444, 392, 0, 0], ["hub_gbed_4", 516, 392, 0, 0],
 		# the smithy's yard, east of the square
 		["hub_anvil_0", 716, 258, 16, 4], ["hub_bench_1", 752, 236, 12, 3], ["hub_stone_0", 684, 240, 8, 2],
-		# garden fences and green
-		["hub_fence_a", 296, 196, 6, 0], ["hub_fence_a", 336, 196, 6, 0], ["hub_stonebench", 250, 444, 8, 1], ["hub_planter", 330, 446, 6, 1],
-		["hub_fence_a", 740, 500, 6, 0], ["hub_fence_a", 780, 500, 6, 0], ["hub_fence_b", 860, 208, 6, 0], ["hub_fence_b", 820, 208, 6, 0],
-		["hub_bush_green_1", 232, 236, 10, 4], ["hub_bush_orange_2", 618, 220, 9, 4], ["hub_bush_deep_1", 150, 470, 10, 4],
+		# gardens in the south half (the north street is paved: round two)
+		["hub_stonebench", 250, 444, 8, 1], ["hub_planter", 330, 446, 6, 1],
+		["hub_fence_a", 740, 500, 6, 0], ["hub_fence_a", 780, 500, 6, 0],
+		["hub_bush_deep_1", 150, 470, 10, 4],
 		["hub_bush_rust_2", 646, 372, 9, 4], ["hub_tree_green_3", 64, 300, 6, 6], ["hub_tree_teal_3", 900, 392, 6, 6],
-		["hub_tree_pink_4", 430, 452, 4, 5], ["hub_tree_teal_4", 596, 502, 4, 5], ["hub_bloom_1", 250, 300, 0, 2], ["hub_bloom_5", 720, 330, 0, 2],
+		["hub_tree_pink_4", 430, 452, 4, 5], ["hub_tree_teal_4", 596, 502, 4, 5],
 		# lamp posts: the town keeps them lit from dusk to dawn (each has a light, see "lights")
 		["hub_post", 360, 250, 3, 0], ["hub_post", 600, 250, 3, 0], ["hub_post", 360, 400, 3, 0], ["hub_post", 600, 400, 3, 0],
 		["hub_post", 210, 300, 3, 0], ["hub_post", 760, 310, 3, 0], ["hub_post", 480, 470, 3, 0], ["hub_post", 880, 250, 3, 0],
@@ -498,15 +497,31 @@ static func town() -> Dictionary:
 	# none stands in the middle of the town, and the ground behind each is in "blocks".
 	#   "gable": true = the pointed end faces the street     "rise" = how high the roof stands, px
 	#   "roof" = the 3D roof's cover (hub_roof_planks / hub_roof_tiles); "flat_roof" = the old look's drawn roof
+	# ROUND TWO: the north side is ONE frontage of nine houses from the west edge to the gate and on
+	# to the east gate (narrow shops fill what were garden gaps), all standing on a raised terrace of
+	# flagstones ("terraces") with steps down to a cobbled street: awnings, hanging signs, flower boxes.
 	var houses: Array = [
 		{"at": Vector2(124, 152), "wide": 128.0, "deep": 60.0, "wall": "hub_wall_plaster", "wall_h": 56.0, "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood",
-			"rise": 40.0, "gable": true, "door": "hub_doorway", "windows": "hub_window", "win_dx": 38.0, "win_up": 14.0, "chimney": true},
+			"rise": 40.0, "gable": true, "door": "hub_doorway", "windows": "hub_window", "win_dx": 38.0, "win_up": 14.0, "chimney": true,
+			"sign": "hub_sjug", "sign_side": -1.0, "boxes": true},
+		{"at": Vector2(220, 155), "wide": 64.0, "deep": 50.0, "wall": "hub_wall_white", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 26.0, "floors": 3,
+			"door": "hub_door_wood", "door_dx": -14.0, "windows": "hub_win_tall", "win_xs": [16.0], "up_xs": [-14.0, 14.0], "shop": "wide", "sign": "hub_ssack_0"},
 		{"at": Vector2(300, 160), "wall": "hub_wall_brick", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 30.0, "floors": 3,
-			"door": "hub_door_arch", "windows": "hub_win_arch"},
+			"door": "hub_door_arch", "windows": "hub_win_arch", "boxes": true},
+		{"at": Vector2(382, 156), "wide": 66.0, "deep": 50.0, "wall": "hub_wall_plank", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 24.0,
+			"door": "hub_door_arch", "door_dx": 14.0, "windows": "hub_win_shut", "win_xs": [-15.0], "up_xs": [-16.0, 16.0], "shop": "wide",
+			"shop_roof": "hub_roof_planks", "sign": "hub_spot", "sign_side": -1.0},
+		{"at": Vector2(579, 156), "wide": 66.0, "deep": 50.0, "wall": "hub_wall_brick", "upper": "hub_wall_white", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal",
+			"rise": 24.0, "door": "hub_door_iron", "door_dx": -14.0, "windows": "hub_win_arch", "win_xs": [15.0], "up_xs": [-15.0, 15.0], "boxes": true,
+			"sign": "hub_cbanner_1"},
 		{"at": Vector2(660, 160), "wall": "hub_wall_dark", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 34.0, "gable": true, "floors": 3,
-			"door": "hub_door_iron", "windows": "hub_win_tall", "chimney": true},
-		{"at": Vector2(836, 172), "wall": "hub_wall_log", "wall_h": 56.0, "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 30.0,
-			"door": "hub_door_wood", "windows": "hub_win_shut"},
+			"door": "hub_door_iron", "windows": "hub_win_tall", "chimney": true, "sign": "hub_cshield", "sign_side": -1.0},
+		{"at": Vector2(748, 158), "wide": 80.0, "deep": 52.0, "wall": "hub_wall_white", "upper": "hub_wall_plaster", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal",
+			"rise": 26.0, "door": "hub_door_wood", "windows": "hub_win_closed", "win_dx": 26.0, "shop": "wide", "shop_roof": "hub_roof_planks", "boxes": true},
+		{"at": Vector2(836, 162), "wall": "hub_wall_log", "wall_h": 56.0, "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 30.0,
+			"door": "hub_door_wood", "windows": "hub_win_shut", "boxes": true},
+		{"at": Vector2(916, 160), "wide": 64.0, "deep": 50.0, "wall": "hub_wall_brick", "upper": "hub_wall_plaster", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood",
+			"rise": 26.0, "floors": 3, "door": "hub_door_arch", "door_dx": -13.0, "windows": "hub_win_tall", "win_xs": [16.0], "up_xs": [-14.0, 14.0]},
 		{"at": Vector2(104, 400), "wall": "hub_wall_white", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 32.0, "gable": true,
 			"door": "hub_door_wood", "windows": "hub_win_shut", "chimney": true},
 		{"at": Vector2(856, 480), "wall": "hub_wall_plank", "wall_h": 54.0, "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 30.0,
@@ -516,13 +531,19 @@ static func town() -> Dictionary:
 	var lights: Array = [[Vector2(552, 258), Color(1.0, 0.72, 0.42), 2.3, 0.8]]
 	for at: Vector2 in [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)]:
 		lights.append([at - Vector2(0, 40), lamp, 1.0, 0.55])
-	for at: Vector2 in [Vector2(124, 150), Vector2(300, 158), Vector2(660, 158), Vector2(836, 170), Vector2(104, 398), Vector2(856, 478)]:
+	for at: Vector2 in [Vector2(124, 150), Vector2(300, 158), Vector2(660, 158), Vector2(836, 160), Vector2(104, 398), Vector2(856, 478)]:
 		lights.append([at + Vector2(0, 8), lamp, 0.8, 0.4])           # the glow of a house's windows on its doorstep
 	lights.append([Vector2(480, 96), Color(0.6, 0.55, 1.0), 1.2, 0.4])    # the cold of the sealed gate
 	return {
 		"name": "Wickmere", "camp": 0, "size": size, "outdoor": true, "walk": Rect2(40, 150, 880, 380), "spawn": Vector2(480, 404),
 		"props": props, "houses": houses,
-		"tour": [Vector2(480, 200), Vector2(300, 436), Vector2(480, 404), Vector2(720, 270), Vector2(170, 210)],     # test pictures (--hub=village --shots)
+		"tour": [Vector2(250, 200), Vector2(480, 404), Vector2(720, 270), Vector2(480, 518), Vector2(660, 196)],     # test pictures (--hub=village --shots)
+		# the raised pavement along the north frontage, with steps down where the paths come up
+		"terraces": [{"rect": Rect2(40, 150, 376, 28), "high": 7.0, "steps": [[140.0, 26.0], [322.0, 24.0]]},
+			{"rect": Rect2(544, 150, 404, 28), "high": 7.0, "steps": [[650.0, 26.0], [842.0, 24.0]]}],
+		# the near edge: a stone balustrade between the camera and the town, gate piers either side of
+		# the south road (scripts/hub/arch/sites.gd "near")
+		"near": [{"z": 566.0, "runs": [[30.0, 245.0], [279.0, 432.0], [528.0, 936.0]], "piers": [[436.0, 30.0], [524.0, 30.0]]}],
 		# Hollow Hill: behind the north row the ground climbs, and the hill itself swells out of
 		# the slope behind the sealed gate (only in the 3D look; nobody walks up there)
 		"rise": {"from": 100.0, "over": 96.0, "height": 52.0, "mound": {"at": Vector2(480, 6), "radius": 210.0, "height": 70.0}},
@@ -531,12 +552,13 @@ static func town() -> Dictionary:
 			"lilies": [["hub_glily_0", 222, 478], ["hub_glily_1", 306, 494], ["hub_glily_2", 190, 496], ["hub_glily_2", 336, 474]]}],
 		# cobbles: the square, and a street to the gate, the south road, the east gate and the west side
 		"floor": [["hub_gcobble", Rect2(368, 232, 224, 144)], ["hub_gcobble", Rect2(464, 136, 32, 96)], ["hub_gcobble", Rect2(464, 376, 32, 168)],
-			["hub_gcobble", Rect2(592, 268, 352, 48)], ["hub_gcobble", Rect2(144, 268, 224, 48)]],
+			["hub_gcobble", Rect2(592, 268, 352, 48)], ["hub_gcobble", Rect2(144, 268, 224, 48)],
+			["hub_gcobble", Rect2(40, 176, 880, 56)], ["hub_gcobble", Rect2(40, 232, 328, 36)], ["hub_gcobble", Rect2(592, 232, 328, 36)]],
 		"paths": [[Vector2(160, 268), Vector2(130, 176)],
 			[Vector2(300, 176), Vector2(330, 262)], [Vector2(660, 176), Vector2(640, 262)], [Vector2(120, 416), Vector2(360, 412)],
 			[Vector2(840, 496), Vector2(610, 420)], [Vector2(836, 186), Vector2(850, 270)]],
 		"scatter": {"hub_tuft": [24, 150], "hub_flower": [26, 70], "hub_pebble": [20, 26], "hub_twig": [10, 10]},
-		"scatter_rect": Rect2(8, 180, 944, 372),
+		"scatter_rect": Rect2(8, 316, 944, 236),
 		"fire": Vector2(552, 270),
 		# things that move: [id, x, y, frames a second, solid radius, turned round]: the statues that pour into the mere
 		"anims": [["hub_gspout", 398, 478, 6.0, 7.0, false], ["hub_gspout", 126, 478, 6.0, 7.0, true]],
@@ -544,8 +566,9 @@ static func town() -> Dictionary:
 		"torches": [Vector2(360, 250), Vector2(600, 250), Vector2(360, 400), Vector2(600, 400), Vector2(210, 300), Vector2(760, 310), Vector2(480, 470), Vector2(880, 250)],
 		"forest": {"top_gaps": [[416.0, 544.0], [40.0, 250.0], [236.0, 364.0], [596.0, 724.0], [772.0, 900.0]],
 			"behind": [["hub_tree_pink_2", 480, 60], ["hub_tree_green_2", 416, 80], ["hub_tree_teal_2", 546, 80]],
-			"open": [Rect2(930, 220, 60, 130), Rect2(420, 520, 120, 90), Rect2(130, 500, 270, 110)]},     # (the last: no hedge in front of the mere)
-		"blocks": [Rect2(60, 96, 128, 56), Rect2(252, 108, 96, 52), Rect2(612, 108, 96, 52), Rect2(788, 116, 96, 56),
+			"open": [Rect2(930, 220, 60, 130), Rect2(60, 520, 840, 140)]},     # (the near edge is the balustrade: no hedge in front of it)
+		"blocks": [Rect2(60, 96, 128, 56), Rect2(188, 104, 64, 51), Rect2(252, 108, 96, 52), Rect2(349, 104, 66, 52), Rect2(546, 104, 66, 52),
+			Rect2(612, 108, 96, 52), Rect2(708, 104, 80, 54), Rect2(788, 106, 96, 56), Rect2(884, 108, 64, 52),
 			Rect2(40, 262, 128, 138), Rect2(792, 340, 128, 140), Rect2(384, 96, 192, 34)],
 		"exits": [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)},
 			{"rect": Rect2(912, 240, 10, 80), "to": "elfwood", "at": Vector2(52, 204), "tale": 1, "why": "Nobody takes the east road without the Captain's word."},

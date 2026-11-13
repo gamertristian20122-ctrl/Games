@@ -12,6 +12,14 @@ extends RefCounted
 ##   stalls       any place's "stalls": market stalls (four posts, a sloping roof with a fringe, a
 ##                plank counter); the goods on the counter are ordinary props of the place
 ##   bunting      any place's "bunting": a rope of little pennants strung between two posts
+##   terraces     any place's "terraces": a raised pavement of flagstones with a coping along its
+##                edge and flights of steps down to the street (people walk up onto it: see
+##                scripts/hub/view3d_build.gd terrace_px)
+##   bridges      any place's "bridges": {"x", "z0", "z1", "wide", "wood"} an arched footbridge
+##                (stone, or planks on posts with a timber rail) over water, front to back
+##   near         any place's "near": {"z", "runs": [[x0, x1], ...], "piers": [[x, tall], ...]}: a
+##                stone balustrade between the camera and the play, tall gate piers with a ball on
+##                top (it frames the view; the near blur and shade of the HD look melt it)
 ## NOTHING HERE BLOCKS WALKING: walking is hub.gd's flat 2D, so everything stands where nobody
 ## walks (behind a place's "walk" top, on water, past its near edge) or is low (kerbs, the gate steps).
 ## Positions are art pixels of the flat picture (x, y) as in scripts/data/; heights are px too.
@@ -59,6 +67,14 @@ func build(place_id: String, place: Dictionary, the_shade: SurfaceTool) -> void:
 		_stall(row)
 	for row: Array in place.get("bunting", []):
 		_bunting(row[0], row[1], float(row[2]), float(row[3]) if row.size() > 3 else 8.0)
+	for row: Dictionary in place.get("terraces", []):
+		_terrace(row)
+	for row: Dictionary in place.get("bridges", []):
+		_bridge(float(row["x"]), float(row["z0"]), float(row["z1"]), float(row.get("wide", 22.0)), bool(row.get("wood", false)))
+	for row: Dictionary in place.get("near", []):
+		_balustrade(float(row["z"]), row.get("runs", []))
+		for pier: Array in row.get("piers", []):
+			_pier(float(pier[0]), float(row["z"]) + 2.0, float(pier[1]))
 	match place_id:
 		"village":
 			_wickmere(place)
@@ -130,8 +146,8 @@ func _kerb(s: Vector2, e: Vector2, out: Vector2, tex: Texture2D) -> void:
 
 # ------------------------------------------------------------------ Wickmere
 func _wickmere(place: Dictionary) -> void:
-	# garden walls with piers in the gaps between the north houses (nobody walks up there)
-	for seg: Array in [[188.0, 252.0, 132.0], [348.0, 392.0, 136.0], [568.0, 612.0, 136.0], [708.0, 788.0, 140.0], [884.0, 952.0, 146.0]]:
+	# (round two: the gaps between the north houses are houses now, so the garden walls are gone)
+	for seg: Array in place.get("garden_walls", []):
 		_garden_wall(seg[0], seg[1], seg[2])
 	# steps up to the sealed gate of Hollow Hill
 	for i in 3:
@@ -147,7 +163,6 @@ func _wickmere(place: Dictionary) -> void:
 		_mere_edge(pond["at"], pond["radius"], 262.0, 18.0)
 	_shadow()
 	_bridge(262.0, 434.0, 540.0, 26.0)
-	_balustrade(556.0, [[150.0, 245.0], [279.0, 374.0]])     # only in front of the water, where nobody stands
 
 
 ## A garden wall from x0 to x1 with its face at z, a pier at each end.
@@ -186,8 +201,12 @@ func _mere_edge(c: Vector2, r: Vector2, gap_x: float, gap: float) -> void:
 		kit.poly(stone, [p(i0.x, h, i0.y), p(i1.x, h, i1.y), p(i1.x, -1, i1.y), p(i0.x, -1, i0.y)], -out_n)
 
 
-## An arched stone footbridge running from z0 to z1 (front to back) at x, `wide` px across.
-func _bridge(x: float, z0: float, z1: float, wide: float) -> void:
+## An arched footbridge running from z0 to z1 (front to back) at x, `wide` px across: stone with a
+## balustrade, or (`wood`) a plank deck with timber sides, posts and a rail.
+func _bridge(x: float, z0: float, z1: float, wide: float, wood := false) -> void:
+	if wood:
+		_footbridge(x, z0, z1, wide)
+		return
 	var rail := Art.tex("hub_brail")
 	var rh := rail.get_size().y
 	var xl := x - wide * 0.5
@@ -226,6 +245,80 @@ func _bridge(x: float, z0: float, z1: float, wide: float) -> void:
 			blk(stone, Vector3(px_ - 3, 0, z - 3), Vector3(px_ + 3, y + rh + 4, z + 3))
 			blk(stone, Vector3(px_ - 4, y + rh + 4, z - 4), Vector3(px_ + 4, y + rh + 6, z + 4), 0)
 	_shadow()
+
+
+func _footbridge(x: float, z0: float, z1: float, wide: float) -> void:
+	var plank := Art.tex("hub_bplank")
+	var beam := Art.tex("hub_bbeam")
+	var post := Art.tex("hub_bpost")
+	var xl := x - wide * 0.5
+	var xr := x + wide * 0.5
+	var steps := 12
+	var span := z1 - z0
+	var deck := func(z: float) -> float: return 2.0 + 7.0 * sin(PI * clampf((z - z0) / span, 0.0, 1.0))
+	for i in steps:
+		var za := z0 + span * i / steps
+		var zb := z0 + span * (i + 1) / steps
+		var ya: float = deck.call(za)
+		var yb: float = deck.call(zb)
+		var n_top := Vector3(0, zb - za, (ya - yb) * vs).normalized()
+		kit.poly(plank, [p(xl, ya, za), p(xr, ya, za), p(xr, yb, zb), p(xl, yb, zb)], n_top, "solid", Vector3(1, 0, 0))
+		kit.poly(plank, [p(xl, ya - 1.5, za), p(xr, ya - 1.5, za), p(xr, yb - 1.5, zb), p(xl, yb - 1.5, zb)], -n_top, "solid", Vector3(1, 0, 0))
+		for side: float in [-1.0, 1.0]:
+			var sx := x + side * wide * 0.5
+			kit.poly(beam, [p(sx, ya + 0.5, za), p(sx, yb + 0.5, zb), p(sx, yb - 2.5, zb), p(sx, ya - 2.5, za)], Vector3(side, 0, 0), "solid", Vector3(0, 0, 1))
+			# the hand rail, 9 px over the deck
+			var rx := sx - side * 1.0
+			kit.poly(beam, [p(rx, ya + 10.0, za), p(rx, yb + 10.0, zb), p(rx, yb + 8.5, zb), p(rx, ya + 8.5, za)], Vector3(side, 0, 0), "solid", Vector3(0, 0, 1))
+			kit.poly(beam, [p(rx - 0.8, ya + 10.0, za), p(rx + 0.8, ya + 10.0, za), p(rx + 0.8, yb + 10.0, zb), p(rx - 0.8, yb + 10.0, zb)], Vector3.UP, "solid", Vector3(0, 0, 1))
+	# posts along both sides, the end ones down into the water and the bank
+	var k := 0
+	while k <= 4:
+		var z := z0 + 2.0 + (span - 4.0) * k / 4.0
+		var y: float = deck.call(z)
+		for side: float in [-1.0, 1.0]:
+			var px_ := x + side * (wide * 0.5 - 1.0)
+			blk(post, Vector3(px_ - 1.3, (-2.0 if k == 0 or k == 4 else y - 3.0), z - 1.3), Vector3(px_ + 1.3, y + 11.5, z + 1.3))
+		k += 1
+	_shadow()
+
+
+## Tall gate piers at the near edge, stone with a cap and a ball on top (the post tops that frame
+## the reference street's view).
+func _pier(x: float, z: float, tall: float) -> void:
+	blk(stone, Vector3(x - 6, 0, z - 12), Vector3(x + 6, tall, z))
+	blk(stone, Vector3(x - 7.5, tall, z - 13.5), Vector3(x + 7.5, tall + 3, z + 1.5), 0)
+	blk(stone, Vector3(x - 4, tall + 3, z - 10), Vector3(x + 4, tall + 5, z - 2), 0)
+	blk(stone, Vector3(x - 3, tall + 5, z - 9), Vector3(x + 3, tall + 11, z - 3), 0)
+	_shadow()
+
+
+## A raised terrace of flagstones (see the header): the block, a coping along its open edges that
+## stands a little proud, and flights of steps down to the street.
+func _terrace(t: Dictionary) -> void:
+	var r: Rect2 = t["rect"]
+	var high := float(t.get("high", 7.0))
+	var face := Art.tex(String(t.get("face", "hub_bstone")))
+	var top := Art.tex(String(t.get("top", "hub_bstone")))
+	var x0 := r.position.x
+	var x1 := r.end.x
+	var zb := r.position.y
+	var zf := r.end.y
+	blk(face, Vector3(x0, -1.0, zb), Vector3(x1, high - 0.5, zf), Kit.BOTTOM | Kit.BACK, top)
+	blk(face, Vector3(x0 - 0.5, high - 2.0, zf - 2.5), Vector3(x1 + 0.5, high + 0.4, zf + 1.0), Kit.BOTTOM | Kit.BACK)     # the coping
+	for xs: float in [x0, x1]:
+		blk(face, Vector3(xs - 1.0, high - 2.0, zb), Vector3(xs + 1.0, high + 0.4, zf), Kit.BOTTOM | Kit.BACK)
+	for st: Array in t.get("steps", []):
+		var sx := float(st[0])
+		var w := float(st[1]) * 0.5
+		var n := int(ceil(high / 3.5))
+		for i in n:
+			blk(face, Vector3(sx - w, -1.0, zf - 2.0), Vector3(sx + w, high * float(n - i) / n - 0.3, zf + 4.0 * (i + 1)), Kit.BOTTOM | Kit.BACK, top)
+		# a low cheek wall either side of the flight
+		for side: float in [-1.0, 1.0]:
+			var cx := sx + side * (w + 1.5)
+			blk(face, Vector3(cx - 1.5, -1.0, zf - 2.0), Vector3(cx + 1.5, high + 1.5, zf + 4.0 * n), Kit.BOTTOM | Kit.BACK)
+	kit.take_corners()                                  # (too low for a flat shadow)
 
 
 ## A stone balustrade on a low plinth along the near edge (z), in the given [x0, x1] runs.

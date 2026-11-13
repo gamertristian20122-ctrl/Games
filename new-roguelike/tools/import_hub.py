@@ -71,6 +71,13 @@ ISLANDS = [
     ("vdead", FREE, "Props/Static/Vegetation.png", (160, 296, 252, 337), 1, 30),
     ("sbarrel", HIDE, "Tiles.png", (182, 306, 290, 400), 1, 200),
     ("sripple", DESERT, "Sand.png", (0, 0, 288, 160), 2, 40),
+    # ROUND TWO (places like the reference pictures): the Fairy Forest's giant trunk in three lights (its
+    # top and middle pieces stack on the root piece) and its leaf masses in six shades, the darkest near
+    # black: dark leaves and trunks frame the near edge of the woods, lit ones crown the clearing's trees
+    ("ftrunk", FOREST, "Tree.png", (720, 1370, 1210, 1540), 1, 400),
+    ("froots", FOREST, "Tree.png", (670, 1545, 1248, 1664), 1, 400),
+    ("fleaf_g", FOREST, "Tree.png", (240, 1340, 720, 1420), 1, 200),
+    ("fleaf_o", FOREST, "Tree.png", (240, 1500, 640, 1580), 1, 200),
 ]
 # (name, pack, file ending, x, y, w, h): plain rectangles (ground tiles are opaque, islands cannot find them)
 RECTS = [
@@ -222,6 +229,13 @@ TRIMMED = [
     ("vbushm_2", FREE, "Props/Static/Vegetation.png", 96, 33, 48, 31), ("vbushm_3", FREE, "Props/Static/Vegetation.png", 144, 33, 48, 31),
     ("vbushl_0", FREE, "Props/Static/Vegetation.png", 0, 65, 48, 31), ("vbushl_1", FREE, "Props/Static/Vegetation.png", 48, 65, 48, 31),
     ("vbushl_2", FREE, "Props/Static/Vegetation.png", 96, 65, 48, 31), ("vbushl_3", FREE, "Props/Static/Vegetation.png", 144, 65, 48, 31),
+    # ROUND TWO: a camp fire's ring of stones with its logs laid in, a log to sit on, a sawn round, a
+    # short log (the Free Pack's bonfire sheet); a painted shield for a shop's hanging sign (Castle)
+    ("sfirering", FREE, "Structures/Stations/Bonfire/Bonfire.png", 0, 62, 32, 36),
+    ("slog", FREE, "Structures/Stations/Bonfire/Bonfire.png", 0, 118, 32, 20),
+    ("sround", FREE, "Structures/Stations/Bonfire/Bonfire.png", 0, 164, 32, 26),
+    ("slog_s", FREE, "Structures/Stations/Bonfire/Bonfire.png", 0, 264, 32, 16),
+    ("cshield", CASTLE, "Tiles.png", 336, 190, 16, 18),
 ]
 
 

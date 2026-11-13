@@ -5,6 +5,7 @@ extends RefCounted
 ## everything of the current place goes. One world unit is 16 art pixels.
 ##   paint_ground(stage, ysort, place)  the floor (and the far ground round it)
 ##   height(at) / slope(at)             the ground under a spot of the flat picture (px in, units out)
+##   terrace_px(at)                     how high a terrace lifts a spot (px of the mesh kit)
 ##   shadow_ok(at, tall)                may a thing standing here throw its flat shadow?
 ##   build_houses(place)                every row of the place's "houses"
 
@@ -103,6 +104,7 @@ var ground_params := {}            ## the floor's shader settings (flat shadows 
 var rise_row := {}                 ## the place's "rise" (the ground climbs behind it), or {}
 var hills: Array = []              ## the place's "hills"
 var has_height := false
+var terraces: Array = []           ## the place's "terraces" (raised paving you walk up onto)
 var window_mats: Array = []        ## window materials: they glow at night
 var _floor_shader: Shader
 var _solid_shader: Shader
@@ -123,6 +125,7 @@ func reset(place: Dictionary) -> void:
 	rise_row = place.get("rise", {})
 	hills = place.get("hills", [])
 	has_height = not rise_row.is_empty() or not hills.is_empty()
+	terraces = place.get("terraces", [])
 	window_mats.clear()
 
 
@@ -209,6 +212,42 @@ func paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 ##            round top) that falls away to nothing at "radius". People WALK on hills: they are
 ##            drawn as high as the ground they stand on (walking itself is still flat).
 func height(at: Vector2) -> float:
+	if terraces.is_empty():
+		return _ground(at)
+	return _ground(at) + terrace_px(at) * PX / cos(deg_to_rad(v._pitch))
+
+
+## TERRACES (round two, the raised pavement of the reference street): a place's "terraces" rows
+## {"rect": Rect2, "high": px, "steps": [[x, wide], ...]} are blocks of paving (built by
+## scripts/hub/arch/sites.gd) that people walk up onto. Walking is flat 2D, so a person is lifted
+## by how far inside the edge they stand (over RAMP px, so the face hides their feet as they step
+## up), and over a flight of steps by how far up the steps they are.
+const RAMP := 6.0
+const STEP_DEEP := 4.0             ## px: how deep one step is
+const STEP_RISE := 3.5             ## px: how high (at most)
+func terrace_px(at: Vector2) -> float:
+	var best := 0.0
+	for t: Dictionary in terraces:
+		var r: Rect2 = t["rect"]
+		var high := float(t.get("high", 7.0))
+		var on_steps := false
+		for st: Array in t.get("steps", []):
+			if absf(at.x - float(st[0])) <= float(st[1]) * 0.5:
+				on_steps = true
+				var deep := ceilf(high / STEP_RISE) * STEP_DEEP
+				if at.y >= r.end.y and at.y < r.end.y + deep:
+					best = maxf(best, high * (1.0 - (at.y - r.end.y) / deep))
+		if not r.has_point(at):
+			continue
+		var d := minf(minf(at.x - r.position.x, r.end.x - at.x), at.y - r.position.y)
+		if not on_steps:
+			d = minf(d, r.end.y - at.y)
+		best = maxf(best, high * clampf(d / RAMP, 0.0, 1.0))
+	return best
+
+
+## The bare ground under a spot (the floor mesh follows this; terraces are built on top of it).
+func _ground(at: Vector2) -> float:
 	if not has_height:
 		return 0.0
 	var h := 0.0
@@ -254,7 +293,7 @@ func grid(rect: Rect2, cell: float, lift: float) -> ArrayMesh:
 		var row := PackedVector3Array()
 		for i in nx + 1:
 			var p := rect.position + Vector2(i, j) * cell
-			row.append(Vector3(p.x * PX, height(p) + lift, p.y * PX))
+			row.append(Vector3(p.x * PX, _ground(p) + lift, p.y * PX))
 		rows.append(row)
 	st.set_normal(Vector3.UP)
 	for j in ny:

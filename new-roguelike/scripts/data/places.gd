@@ -96,28 +96,26 @@ static func get_place(id: String) -> Dictionary:
 ## WICKMERE'S DRESSING (v0.24.0): more of the owner's Garden and Castle pieces laid over the town of
 ## tale.gd town() (that file keeps the story's houses, people and roads; this only adds things that
 ## stand or lie about). Every row is a prop as in "props": [id, x, y, solid radius, px below base].
-##   the south gate   a clipped hedge arch over the road out, a hedge each side of it
+##   the south gate   (round two) two stone gate piers in the near balustrade (tale.gd "near"),
+##                    the lamps either side of the road
 ##   the kings' walk  stone busts of the old kings either side of the street to the sealed gate
 ##   the herb garden  a hedged plot in the open ground south-east of the square
 ##   flowers          single garden flowers in clumps by doors, fences, benches and the mere
 static func _dress_town(t: Dictionary) -> Dictionary:
 	var props: Array = (t["props"] as Array).duplicate()
 	var blocks: Array = (t["blocks"] as Array).duplicate()
-	# the south gate: the road to the wide world goes under a hedge arch
-	props.append_array([["hub_ghedge_arch", 480, 530, 0, 0], ["hub_ghedge", 404, 530, 0, 0], ["hub_ghedge", 556, 530, 0, 0]])
-	blocks.append_array([Rect2(372, 520, 68, 12), Rect2(520, 520, 68, 12)])
 	# the kings' walk: busts of the old kings on the street up to the sealed gate
 	props.append_array([["hub_cbust_0", 448, 220, 5, 1], ["hub_cbust_2", 512, 220, 5, 1], ["hub_cbust_4", 448, 186, 5, 1], ["hub_cbust_5", 512, 186, 5, 1]])
-	# the herb garden south-east of the square: a hedge behind, beds in rows, a bench and an urn
-	props.append_array([["hub_ghedge", 682, 356, 0, 0], ["hub_ghedge", 746, 356, 0, 0],
+	# the herb garden south-east of the square: a picket fence behind (round two: it was a clipped
+	# hedge that read as a flat yellow slab across the foot of the picture), beds in rows, an urn
+	props.append_array([["hub_fence_b", 666, 357, 0, 0], ["hub_fence_b", 706, 357, 0, 0], ["hub_fence_b", 746, 357, 0, 0],
 		["hub_gbed_0", 668, 392, 0, 0], ["hub_gbed_5", 692, 392, 0, 0], ["hub_gbed_2", 716, 392, 0, 0], ["hub_gbed_7", 740, 392, 0, 0], ["hub_gbed_3", 764, 392, 0, 0],
 		["hub_gbed_1", 680, 418, 0, 0], ["hub_gbed_6", 704, 418, 0, 0], ["hub_gbed_4", 728, 418, 0, 0], ["hub_gbed_0", 752, 418, 0, 0],
 		["hub_gurn_1", 780, 376, 5, 1], ["hub_planter", 676, 444, 6, 1]])
 	blocks.append(Rect2(650, 346, 128, 10))
 	# flowers: clumps of single garden flowers (cut one by one from the Garden pack)
-	var clumps: Array = [Vector2(186, 178), Vector2(356, 196), Vector2(612, 196), Vector2(780, 206), Vector2(160, 420), Vector2(96, 432),
-		Vector2(344, 452), Vector2(170, 452), Vector2(400, 394), Vector2(560, 394), Vector2(300, 228), Vector2(822, 512), Vector2(892, 512),
-		Vector2(620, 470), Vector2(232, 316), Vector2(780, 440), Vector2(640, 330), Vector2(56, 220), Vector2(420, 210), Vector2(540, 210)]
+	var clumps: Array = [Vector2(160, 420), Vector2(96, 432), Vector2(344, 452), Vector2(170, 452), Vector2(400, 394), Vector2(560, 394),
+		Vector2(822, 512), Vector2(892, 512), Vector2(620, 470), Vector2(232, 330), Vector2(780, 440), Vector2(640, 330)]
 	var tints: Array = [[0, 1, 2, 4, 5], [6, 8, 9, 12, 13], [16, 17, 18, 19, 20], [23, 24, 25, 28, 29]]
 	for i in clumps.size():
 		var at: Vector2 = clumps[i]
@@ -194,13 +192,43 @@ static func _market_town(t: Dictionary) -> void:
 	t["bunting"] = [[Vector2(210, 300), Vector2(360, 250), 44.0], [Vector2(360, 250), Vector2(600, 250), 44.0, 12.0],
 		[Vector2(600, 250), Vector2(880, 250), 44.0, 14.0]]
 	# round bushes in the garden corners, ferns and reeds at the mere's edge
-	props.append_array([["hub_vbushl_0", 196, 236, 8, 2], ["hub_vbushm_2", 352, 336, 7, 2],
-		["hub_vbush_6", 60, 452, 8, 2], ["hub_vbushm_0", 584, 204, 7, 2],
+	props.append_array([["hub_vbushm_2", 352, 336, 7, 2], ["hub_vbush_6", 60, 452, 8, 2],
 		["hub_vplant_4", 160, 466, 0, 1], ["hub_vplant_5", 372, 462, 0, 1], ["hub_vplant_6", 386, 470, 0, 1],
 		["hub_vplant_7", 340, 392, 0, 1]])
-	# the near edge: dark shrubs and a cypress past the south edge, nearer the camera than anyone
-	props.append_array([["hub_vbig_0", 60, 572, 0, 2], ["hub_gcypress_1", 404, 578, 0, 0], ["hub_vbig_3", 640, 574, 0, 2],
-		["hub_vbig_1", 760, 576, 0, 2], ["hub_gcypress_0", 900, 580, 0, 0]])
+	_shopfronts(t)
+	# the near edge (round two): behind the balustrade (tale.gd "near") only dark masses of leaves at
+	# the corners, where nobody walks in front of them: they frame the view like a lens's near blur
+	props.append_array([["hub_fleaf_g_5", 18, 600, 0, 4], ["hub_fleaf_o_4", 84, 612, 0, 4], ["hub_fleaf_g_4", 884, 610, 0, 4],
+		["hub_fleaf_g_5", 948, 598, 0, 4]])
+
+
+## THE NORTH STREET'S SHOPFRONTS (round two): what stands at the doors of the frontage (tale.gd
+## town() "houses"), on the terrace or at its foot: the greengrocer's crates under its awning, the
+## potter's pots and jugs, the chandler's barrels, a notice board, benches, lanterns at the steps.
+## Nothing stands on a step or in front of a door (doors are at x 124, 206, 300, 396, 565, 660, 748,
+## 836, 903; steps at 140, 322, 650, 842).
+static func _shopfronts(t: Dictionary) -> void:
+	var props: Array = t["props"]
+	var lights: Array = t["lights"]
+	props.append_array([
+		# the greengrocer (220): crates of greens under the awning, sacks by the door
+		["hub_sveg_2", 226, 167, 0, 0], ["hub_sveg_5", 240, 168, 0, 0], ["hub_sveg_0", 248, 172, 0, 0], ["hub_ssack_1", 190, 168, 0, 0],
+		# the potter (382): pots and a jug on a bench under the awning, a crate
+		["hub_spot", 360, 166, 0, 0], ["hub_sjug", 370, 168, 0, 0], ["hub_spot", 356, 174, 0, 0], ["hub_scrate_0", 412, 170, 0, 0],
+		# the chandler (579): barrels and a crate either side of the door
+		["hub_sbarrel_f", 592, 168, 4, 0], ["hub_sbarrel_f", 604, 172, 4, 0], ["hub_scrate_3", 548, 170, 4, 0],
+		# the smithy (660): a crate of iron and a bucket at the corners
+		["hub_scrate_4", 700, 169, 4, 0], ["hub_sbucket", 620, 172, 0, 0],
+		# the weaver (748): sacks, a crate of wool under the awning
+		["hub_ssack_4", 724, 170, 0, 0], ["hub_scrate_1", 776, 168, 0, 0], ["hub_ssack_3", 786, 173, 0, 0],
+		# the end house (916): firewood and a barrel
+		["hub_slog", 928, 172, 0, 0], ["hub_sbarrel_f", 940, 168, 0, 0],
+		# lanterns at the foot of the steps, either side of the frontage
+		["hub_slantern", 116, 196, 2, 0], ["hub_slantern", 868, 196, 2, 0, true],
+	])
+	for at: Vector2 in [Vector2(116, 196), Vector2(868, 196)]:
+		var flip := at.x > 480.0
+		lights.append([at + Vector2(-LANTERN_GLASS.x if flip else LANTERN_GLASS.x, LANTERN_GLASS.y), Color(1.0, 0.78, 0.46), 1.0, 0.55])
 
 
 ## IRON LANTERNS (fixer pass, 13 Nov 2026): every bare lamp post of the town (a wooden stick with
