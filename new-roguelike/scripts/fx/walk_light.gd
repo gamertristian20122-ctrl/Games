@@ -72,8 +72,8 @@ const GRADES := {
 	"dustwatch:lit": {"warm": Vector3(1.12, 1.0, 0.82), "haze": Color(1.0, 0.78, 0.50), "shafts": 1.0, "motes": 1.0},
 	"suncourt:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the world map: a wide view, so the distance matters most
-	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.6, "rim": 0.6, "shafts": 0.55, "motes": 0.3, "dapple": 0.0, "exposure": 0.42, "gold": 0.3, "rich": 0.8, "key": 0.8},
-	"world:night": {"haze": Color(0.16, 0.22, 0.38), "far": 0.45},
+	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.6, "rim": 0.6, "shafts": 0.55, "motes": 0.3, "dapple": 0.0, "exposure": 0.42, "gold": 0.3, "rich": 0.8, "key": 0.8, "lamps": 0.55, "bounce": 0.7},
+	"world:night": {"haze": Color(0.16, 0.22, 0.38), "far": 0.45, "lamps": 0.55},
 	# rooms: candle warmth, soft brown shade
 	"indoors": {"warm": Vector3(1.09, 0.99, 0.84), "shade": Vector3(0.96, 0.88, 0.90), "punch": 1.05, "rich": 0.98,
 		"haze": Color(0.32, 0.20, 0.14), "far": 0.0, "rim": 0.50, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "key": 0.0},
