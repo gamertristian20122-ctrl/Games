@@ -7,6 +7,7 @@ extends MeshInstance3D
 ##   Sprite3.make("hub_patch_0", "idle", true)    lies flat on the ground (trodden earth, flowers)
 ## One world unit is 16 art pixels (one floor tile).
 
+const Hd = preload("res://scripts/fx/hd.gd")
 const PX := 1.0 / 16.0
 
 ## PATCHES OF SUN (the owner's reference picture, 12 Nov 2026: golden light falling through
@@ -83,7 +84,31 @@ void light() {
 }
 "
 
+## HD (Forward+ on PC, scripts/fx/hd.gd): the same picture, built from the same parts, but
+##  - it THROWS a real shadow (sun / moon and spell lights' shadow maps; the flat copy is not drawn)
+##    and lies in the real shadows of trees and fighters. In the shadow pass it is pushed a little
+##    away from the light (`shadow_push`), so a picture never shades its own face;
+##  - FIGHTER pictures (everything made with make(): fighters, hands, the sword, the fire) are
+##    never in the fog, get a little more contrast and light, and a second, COOL rim along the top
+##    edge (the moon / sky behind them) besides the warm key rim. So a fighter at the back of the
+##    line "comes forward" and reads at a glance (the owner: "bring the characters forward");
+##  - the sun counts `sun_face` (0.72) on a standing picture: the ground catches it at a slant, a
+##    picture facing the camera would otherwise burn brighter than the sand it stands on;
+##  - on a FIGHTER a lamp's or a spell's light is soft-clipped, so a spell that lands right on
+##    somebody lights them up hot but never burns them into a white shape.
+static func hd_code(fighter: bool) -> String:
+	var c := CODE
+	c = c.replace("render_mode cull_disabled, specular_disabled;", "render_mode cull_disabled, specular_disabled" + (", fog_disabled" if fighter else "") + ";" + ("\n#define FIGHTER" if fighter else ""))
+	c = c.replace("varying float top;", "varying float top;\nuniform float shadow_push = 0.15;\nuniform float pop = 1.12;\nuniform float boost = 1.14;\nuniform float sun_face = 0.72;\nuniform float tame = 0.0;\nuniform float top_rim = 0.0;\nuniform vec3 top_rim_col : source_color = vec3(0.6, 0.75, 1.0);")
+	c = c.replace("\tworld_at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n}", "\tif (IN_SHADOW_PASS) {\n\t\tvec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n\t\tvec3 away = PROJECTION_MATRIX[3][3] > 0.5 ? -INV_VIEW_MATRIX[2].xyz : normalize(w - INV_VIEW_MATRIX[3].xyz);\n\t\tw += normalize(away) * shadow_push;\n\t\tVERTEX = (inverse(MODEL_MATRIX) * vec4(w, 1.0)).xyz;\n\t}\n\tworld_at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n}")
+	c = c.replace("\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);", "#ifdef FIGHTER\n\tc.rgb = max((c.rgb - 0.16) * pop + 0.16, vec3(0.0));\n\tc.rgb *= 1.0 / (1.0 + tame * max(dot(c.rgb, vec3(0.333)) - 0.6, 0.0) * 1.5);\n#endif\n\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);")
+	c = c.replace("\tROUGHNESS = 1.0;\n\tsun_share", "#ifdef FIGHTER\n\tif (top_rim > 0.0) {\n\t\tvec2 ty = vec2(0.0, 1.0 / float(textureSize(tex, 0).y));\n\t\tfloat open_up = 1.0 - step(0.5, texture(tex, uv - ty).a);\n\t\tfloat open_up2 = 1.0 - step(0.5, texture(tex, uv - ty * 2.0).a);\n\t\tEMISSION += top_rim_col * top_rim * clamp(open_up + open_up2 * 0.4, 0.0, 1.0) * smoothstep(0.25, 0.6, top);\n\t}\n#endif\n\tROUGHNESS = 1.0;\n\tsun_share")
+	c = c.replace("\tDIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);", "\tvec3 add = ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share * sun_face : 0.35);\n#ifdef FIGHTER\n\tadd *= boost;\n\tif (!LIGHT_IS_DIRECTIONAL) { add = add / (1.0 + dot(add, vec3(0.333)) * 0.6); }\n#endif\n\tDIFFUSE_LIGHT += add;")
+	return c
+
+
 static var _shader: Shader
+static var _hd_shaders := {}          ## HD: false = scenery, true = fighter (see hd_code)
 ## The camera looks DOWN at the stage, which makes anything standing look shorter than it was
 ## drawn ("the characters look squished", the owner, 12 Nov 2026). Standing pictures are drawn
 ## this much taller so that on the screen they keep the shape the artist gave them
@@ -129,8 +154,14 @@ static func set_sun(strength: float, patch: float, drift: Vector2, pool_at: Vect
 	RenderingServer.global_shader_parameter_set(&"hh_pool", Vector4(pool_at.x, pool_at.y, pool_radius, pool_strength))
 
 
-static func shader() -> Shader:
+static func shader(fighter: bool = false) -> Shader:
 	ensure_sun()
+	if Hd.on():
+		if not _hd_shaders.has(fighter):
+			var sh := Shader.new()
+			sh.code = hd_code(fighter)
+			_hd_shaders[fighter] = sh
+		return _hd_shaders[fighter]
 	if _shader == null:
 		_shader = Shader.new()
 		_shader.code = CODE
@@ -147,7 +178,7 @@ func setup(id: String, play_anim: String, lie_flat: bool) -> void:
 	sprite_id = id
 	flat = lie_flat
 	_mat = ShaderMaterial.new()
-	_mat.shader = shader()
+	_mat.shader = shader(true)
 	mesh = QuadMesh.new()
 	material_override = _mat
 	_offset = Art.feet_offset(id)
@@ -182,6 +213,8 @@ func set_flip(on: bool) -> void:
 ## Gives the picture a shadow on the ground that follows its animation (the stage hands over
 ## the material and the lean, see stage.gd).
 func add_shadow(mat: ShaderMaterial, lean: Basis) -> void:
+	if Hd.on():
+		return                    # HD: the picture throws a real shadow instead (cast_shadow)
 	_shadow_mat = mat
 	_shadow_mat.set_shader_parameter("tex", _mat.get_shader_parameter("tex"))
 	var m := MeshInstance3D.new()
@@ -209,6 +242,13 @@ func set_rim(strength: float, colour: Color, side: float = -1.0) -> void:
 	_mat.set_shader_parameter("rim", strength)
 	_mat.set_shader_parameter("rim_col", Vector3(colour.r, colour.g, colour.b))
 	_mat.set_shader_parameter("rim_side", side)
+
+
+## HD: a second, cool edge of light along the top of the picture (the sky behind the fighter).
+func set_top_rim(strength: float, colour: Color) -> void:
+	if Hd.on():
+		_mat.set_shader_parameter("top_rim", strength)
+		_mat.set_shader_parameter("top_rim_col", Vector3(colour.r, colour.g, colour.b))
 
 
 func set_flash(v: float) -> void:
