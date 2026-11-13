@@ -99,11 +99,11 @@ void light() {
 static func hd_code(fighter: bool) -> String:
 	var c := CODE
 	c = c.replace("render_mode cull_disabled, specular_disabled;", "render_mode cull_disabled, specular_disabled" + (", fog_disabled" if fighter else "") + ";" + ("\n#define FIGHTER" if fighter else ""))
-	c = c.replace("varying float top;", "varying float top;\nuniform float shadow_push = 0.15;\nuniform float pop = 1.12;\nuniform float boost = 1.14;\nuniform float sun_face = 0.72;\nuniform float tame = 0.0;\nuniform float top_rim = 0.0;\nuniform vec3 top_rim_col : source_color = vec3(0.6, 0.75, 1.0);")
+	c = c.replace("varying float top;", "varying float top;\nuniform float shadow_push = 0.15;\nuniform float pop = 1.12;\nuniform float boost = 1.14;\nuniform float sun_face = 0.72;\nuniform float tame = 0.0;\nuniform float top_rim = 0.0;\nuniform vec3 top_rim_col : source_color = vec3(0.6, 0.75, 1.0);\nuniform float hold = 0.0;\nuniform float spell_rim = 0.0;\nuniform vec3 spell_rim_col : source_color = vec3(0.6, 0.8, 1.0);")
 	c = c.replace("\tworld_at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n}", "\tif (IN_SHADOW_PASS) {\n\t\tvec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n\t\tvec3 away = PROJECTION_MATRIX[3][3] > 0.5 ? -INV_VIEW_MATRIX[2].xyz : normalize(w - INV_VIEW_MATRIX[3].xyz);\n\t\tw += normalize(away) * shadow_push * (1.0 - UV.y);\n\t\tVERTEX = (inverse(MODEL_MATRIX) * vec4(w, 1.0)).xyz;\n\t}\n\tworld_at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n}")
-	c = c.replace("\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);", "#ifdef FIGHTER\n\tc.rgb = max((c.rgb - 0.16) * pop + 0.16, vec3(0.0));\n\tc.rgb *= 1.0 / (1.0 + tame * max(dot(c.rgb, vec3(0.333)) - 0.6, 0.0) * 1.5);\n#endif\n\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);")
-	c = c.replace("\tROUGHNESS = 1.0;\n\tsun_share", "#ifdef FIGHTER\n\tif (top_rim > 0.0) {\n\t\tvec2 ty = vec2(0.0, 1.0 / float(textureSize(tex, 0).y));\n\t\tfloat open_up = 1.0 - step(0.5, texture(tex, uv - ty).a);\n\t\tfloat open_up2 = 1.0 - step(0.5, texture(tex, uv - ty * 2.0).a);\n\t\tEMISSION += top_rim_col * top_rim * clamp(open_up + open_up2 * 0.4, 0.0, 1.0) * smoothstep(0.25, 0.6, top);\n\t}\n#endif\n\tROUGHNESS = 1.0;\n\tsun_share")
-	c = c.replace("\tDIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);", "\tvec3 add = ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share * sun_face : 0.35);\n#ifdef FIGHTER\n\tadd *= boost;\n\tif (!LIGHT_IS_DIRECTIONAL) { add = add / (1.0 + dot(add, vec3(0.333)) * 0.6); }\n#endif\n\tDIFFUSE_LIGHT += add;")
+	c = c.replace("\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);", "#ifdef FIGHTER\n\tc.rgb = max((c.rgb - 0.16) * pop + 0.16, vec3(0.0));\n\tc.rgb *= 1.0 / (1.0 + tame * max(dot(c.rgb, vec3(0.333)) - 0.6, 0.0) * 1.5);\n\tc.rgb = pow(c.rgb, vec3(1.0 + 0.7 * hold)) * (1.0 - 0.15 * hold);\n#endif\n\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);")
+	c = c.replace("\tROUGHNESS = 1.0;\n\tsun_share", "#ifdef FIGHTER\n\tif (top_rim > 0.0) {\n\t\tvec2 ty = vec2(0.0, 1.0 / float(textureSize(tex, 0).y));\n\t\tfloat open_up = 1.0 - step(0.5, texture(tex, uv - ty).a);\n\t\tfloat open_up2 = 1.0 - step(0.5, texture(tex, uv - ty * 2.0).a);\n\t\tEMISSION += top_rim_col * top_rim * clamp(open_up + open_up2 * 0.4, 0.0, 1.0) * smoothstep(0.25, 0.6, top);\n\t}\n\tif (spell_rim > 0.0) {\n\t\tvec2 tq = 1.0 / vec2(textureSize(tex, 0));\n\t\tfloat o1 = step(0.5, texture(tex, uv + vec2(tq.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(tq.x, 0.0)).a) * step(0.5, texture(tex, uv + vec2(0.0, tq.y)).a) * step(0.5, texture(tex, uv - vec2(0.0, tq.y)).a);\n\t\tvec2 t2 = tq * 2.0;\n\t\tfloat o2 = step(0.5, texture(tex, uv + vec2(t2.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(t2.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(0.0, t2.y)).a);\n\t\tEMISSION += spell_rim_col * spell_rim * o1 * (1.0 - o2);\n\t}\n#endif\n\tROUGHNESS = 1.0;\n\tsun_share")
+	c = c.replace("\tDIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);", "\tvec3 add = ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share * sun_face : 0.35);\n#ifdef FIGHTER\n\tadd *= boost;\n\tif (!LIGHT_IS_DIRECTIONAL) { add = add / (1.0 + dot(add, vec3(0.333)) * (0.8 + hold * 2.5)); }\n#endif\n\tDIFFUSE_LIGHT += add;")
 	return c
 
 
@@ -274,6 +274,19 @@ func set_top_rim(strength: float, colour: Color) -> void:
 	if Hd.on():
 		_mat.set_shader_parameter("top_rim", strength)
 		_mat.set_shader_parameter("top_rim_col", Vector3(colour.r, colour.g, colour.b))
+
+
+## HD: while a spell lands on this fighter: `hold` keeps the spell's light on him under the bloom
+## (he is lit, never burnt white), and a thin edge of the spell's colour runs just inside his dark
+## outline, so he reads as a crisp shape in front of the blazing column.
+func spell_hold(colour: Color, strength: float, seconds: float) -> void:
+	if not Hd.on():
+		return
+	_mat.set_shader_parameter("spell_rim_col", Vector3(colour.r, colour.g, colour.b))
+	var tw := create_tween()
+	tw.tween_method(func(v: float) -> void:
+		_mat.set_shader_parameter("hold", v)
+		_mat.set_shader_parameter("spell_rim", v * strength), 1.0, 0.0, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 
 func set_flash(v: float) -> void:
