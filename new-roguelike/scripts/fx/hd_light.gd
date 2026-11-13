@@ -10,11 +10,13 @@ extends RefCounted
 ##   sync_light()       every frame: the colour of the day, flicker, windows, beams
 ##   sync_view(...)     every frame, after the camera moved: the last pass and the patches of sun
 ## HD (Forward+ on PC, `Hd.on()`): the same place lit for real: a sun with soft shadow maps
-## (everything standing throws its shadow, houses and trees shade people), warm lamps whose nearest
-## few throw shadows too, AgX tone, SSAO and SSIL, wide bloom over a hot threshold so flames BLAZE,
-## thin volumetric fog that the sun's beams and the lamps' halos really cut through, and the
-## camera's own depth of field: blur far behind the people and in front of them, never ON them
-## (the band in focus is stretched every frame to hold every person in view, `_focus_band`).
+## (everything standing throws its shadow, houses and trees shade people) that is golden by day and
+## sinks low and amber at dusk, amber lamps with a real-light falloff (a hot pool, deep shade round
+## it) whose nearest few throw shadows too, ACES tone, SSAO and SSIL, bloom over a hot threshold so
+## flames BLAZE, thin volumetric fog plus a thicker band of air BEHIND the play (`_build_haze`) that
+## the sun's beams and the lamps' halos cut through, mirror water (SSR), and the camera's own depth
+## of field: blur far behind the people and in front of them, never ON them (the band in focus is
+## stretched every frame to hold every person in view, `_focus_band`).
 ## Without HD (the phone, `--nohd`) everything stays as it was: flat shadows and the blur pass.
 
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
@@ -30,15 +32,20 @@ const HD_LEAN := Vector2(-0.82, 0.76)
 ## HD numbers (all in one place to tune by eye)
 const HD_SHADOW_LAMPS := 4          ## this many lamps nearest the knight throw real shadows
 const HD_SUN_DAY := 4.2             ## the sun by day (it is the key light: warm and hard)
-const HD_SUN_COLOUR := Color(1.0, 0.72, 0.42)   ## deep amber: a sun low over the land
+const HD_SUN_COLOUR := Color(1.0, 0.66, 0.36)   ## deep amber: the sun low over the land at dusk
+const HD_SUN_COLOUR_DAY := Color(1.0, 0.86, 0.64)   ## and in the full afternoon: golden, so a day reads as DAY
 const HD_SUN_NIGHT := 0.35          ## the moon
-const HD_AMBIENT_DAY := 0.14        ## the shade by day: deep, so the sun reads
+const HD_AMBIENT_DAY := 0.19        ## the shade by day: deep, so the sun reads (but faces in shade still read)
 const HD_AMBIENT_NIGHT := 0.16
-const HD_LAMP := 2.8                ## lamps are this much stronger than in the flat look
+const HD_LAMP := 1.2                ## lamps are this much stronger than in the flat look (2.8 burned the ground white)
+const HD_LAMP_DECAY := 1.9          ## HD: how fast a lamp's light falls off (2 = as real light: a hot pool, deep shade round it)
+const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled this far towards amber (half way)
 const HD_LAMP_REACH := 2.5          ## HD: a lamp's light reaches this many times as far as its 2D picture
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
-const HD_FOG_DAY := 0.0035          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
-const HD_FOG_NIGHT := 0.012         ## ... a little thicker at night (halos round every lamp)
+const HD_FOG_DAY := 0.0016          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
+const HD_FOG_NIGHT := 0.009         ## ... a little thicker at night (halos round every lamp)
+const HD_HAZE_DAY := 0.09           ## the sunlit air behind the play by day (times the grade's "shafts")
+const HD_HAZE_NIGHT := 0.012        ## ... and at night
 const HD_FOG_LENGTH := 40.0         ## the volumetric fog ends this far from the camera (else a wide view is a sheet of fog)
 const HD_DAPPLE := 1.6             ## how far apart sun and shade patches are (times the grade's "dapple": 0 on open sand)
 const HD_EXPOSURE_DAY := 0.95
@@ -47,6 +54,7 @@ const HD_DOF := 0.22                ## how strong the depth of field is (0 = non
 const HD_ROOM_DOF := 0.06
 
 static var _dot_tex: GradientTexture2D
+static var _exposure_ready := false
 
 var v                              ## the view (scripts/hub/view3d.gd; untyped: its members are read by name)
 var env: Environment
@@ -59,12 +67,14 @@ var flies: CPUParticles3D
 var sky_fx: Node3D                 ## beams of sun and dust: follows the camera's spot
 var shaft_mats: Array = []
 var motes: CPUParticles3D
+var haze_mat: FogMaterial          ## HD: the band of sunlit air behind the play (`_build_haze`)
 var grade := {}
 var lift := 0.0                    ## how much the darks are lifted towards a warm haze (soft light)
 var day := 0.0                     ## 1 = out of doors by day (patches of golden sun), 0 = night or a room
 var attrs: CameraAttributesPractical  ## HD: the camera's depth of field
 var _band := Vector2.ZERO          ## HD: the distances in focus now (eased towards the wanted band)
 var _drift := 0.0
+var _sun_low := 1.0                ## HD: how much lower than HD_LEAN the sun stands now (dusk: lower)
 var _stats_t := 0.0
 
 
@@ -127,10 +137,23 @@ func setup() -> void:
 
 ## HD: the real light of a PC (see the top of this file).
 func _setup_hd(post_mat: ShaderMaterial) -> void:
-	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	if not _exposure_ready:
+		# the exposure, for the people's shader (scripts/fx/card_shader.gd keeps them from burning white)
+		_exposure_ready = true
+		RenderingServer.global_shader_parameter_add(&"hh_exposure", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 1.0)
+		# the last pass's grade, for the see-through copies of scenery that are drawn AFTER it (they
+		# copy its dark corners, its dark foreground and its tint, so they match what is round them)
+		RenderingServer.global_shader_parameter_add(&"hh_grade", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4.ZERO)
+		RenderingServer.global_shader_parameter_add(&"hh_tint", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4.ONE)
+	# ACES: hot lamps and fires keep their amber and orange far up the curve (AgX, round one, greyed
+	# them to white), and the shade sinks deep: the blazing look of the reference pictures
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_white = 6.0
 	env.tonemap_exposure = HD_EXPOSURE_DAY
-	env.tonemap_agx_contrast = 1.35
-	env.tonemap_agx_white = 14.0            # a hot core keeps its hue (gold), it does not go to white at once
+	if G.arg("tone") == "agx":              # test: round one's tone curve, to compare
+		env.tonemap_mode = Environment.TONE_MAPPER_AGX
+		env.tonemap_agx_contrast = 1.35
+		env.tonemap_agx_white = 14.0
 	env.ssao_enabled = true
 	env.ssao_radius = 0.9
 	env.ssao_intensity = 1.8
@@ -154,11 +177,18 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	env.fog_enabled = false
 	env.volumetric_fog_enabled = true
 	env.volumetric_fog_density = HD_FOG_DAY
-	env.volumetric_fog_anisotropy = 0.62
+	env.volumetric_fog_anisotropy = 0.4         # (the sun comes from behind and to the side: some light must scatter sideways to the eye)
 	env.volumetric_fog_length = HD_FOG_LENGTH
 	env.volumetric_fog_detail_spread = 1.6
 	env.volumetric_fog_ambient_inject = 0.02    # the shade does not glow: only the sun and the lamps light the air
 	env.volumetric_fog_sky_affect = 0.0
+	# the ponds mirror what stands round them (screen-space reflections: only the water is smooth
+	# enough to show them, scripts/hub/view3d_water.gd)
+	env.ssr_enabled = true
+	env.ssr_max_steps = 72
+	env.ssr_fade_in = 0.12
+	env.ssr_fade_out = 1.6
+	env.ssr_depth_tolerance = 0.5
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.directional_shadow_max_distance = 90.0
@@ -170,8 +200,10 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	sun.light_angular_distance = 1.6            # soft edges that widen away from the thing that throws them
 	sun.light_volumetric_fog_energy = 0.7
 	RenderingServer.directional_shadow_atlas_set_size(4096, true)
-	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
-	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
+	# (the soft edges are a disc of samples turned at random per pixel: few samples = grain; a PC
+	# affords the most, so the penumbras are smooth gradients, not sand)
+	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_ULTRA)
+	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
 	attrs = CameraAttributesPractical.new()
 	attrs.dof_blur_far_enabled = true
 	attrs.dof_blur_near_enabled = true
@@ -189,6 +221,7 @@ func reset() -> void:
 	windows.clear()
 	shaft_mats.clear()
 	motes = null
+	haze_mat = null
 	sky_fx = null
 	flies = null
 	_band = Vector2.ZERO
@@ -224,26 +257,28 @@ func build_lamps(place: Dictionary) -> void:
 				flame = v._where_at(foot) + v._stood(Vector2(side, -27.0)) + Vector3(0.0, 0.0, 0.08)
 				three.position = flame + Vector3(0.0, -0.15, 0.45)
 				break
-		three.light_color = two.color
+		var warm := two.color.r > two.color.b
+		# (HD: a warm lamp is AMBER, not a pale cream that the tone curve turns white)
+		var colour := two.color.lerp(HD_LAMP_AMBER, 0.5) if warm and Hd.on() else two.color
+		three.light_color = colour
 		three.omni_range = 64.0 * two.texture_scale * PX * (HD_LAMP_REACH if Hd.on() else LAMP_REACH)
-		three.omni_attenuation = 1.4
+		three.omni_attenuation = HD_LAMP_DECAY if Hd.on() else 1.4
 		three.shadow_enabled = false
 		if Hd.on():
-			three.light_volumetric_fog_energy = 1.3      # a halo of lit air round every lamp
+			three.light_volumetric_fog_energy = 0.8      # a halo of lit air round every lamp (more turns the air white)
 			three.light_size = 0.08
 			three.shadow_blur = 1.2
 			three.shadow_bias = 0.08
 			three.shadow_normal_bias = 1.0
 		v._world.add_child(three)
 		lamps.append([two, three])
-		var warm := two.color.r > two.color.b
 		var reach := 64.0 * two.texture_scale * PX * (HD_POOL_REACH if Hd.on() else 0.62)
 		var ground := Vector3(base.x * PX, v.build.height(base), base.y * PX + (0.3 if base == two.position else 0.15))
 		if ground_at != Vector2.INF:
 			ground = Vector3(ground_at.x * PX, v.build.height(ground_at), ground_at.y * PX + 0.2)
-		var pool := WalkLight.pool(ground, reach, two.color)
+		var pool := WalkLight.pool(ground, reach, colour)
 		v._world.add_child(pool)
-		var halo := WalkLight.halo(flame, clampf(reach * 0.55, 0.9, 2.4), two.color)
+		var halo := WalkLight.halo(flame, clampf(reach * 0.55, 0.9, 2.4), colour)
 		v._world.add_child(halo)
 		glows.append([two, pool.material_override, halo.material_override, warm, float(glows.size()) * 2.7])
 
@@ -252,6 +287,32 @@ func build_lamps(place: Dictionary) -> void:
 func build_air(place: Dictionary) -> void:
 	_build_flies(place)
 	_build_sky_fx(place)
+	if Hd.on():
+		_build_haze(place)
+
+
+## HD: a band of thicker air BEHIND the play area (over the north row of houses and the wood at the
+## back), never between the camera and the people. The low sun shines through it from behind, and
+## the shadows of the roofs and trees cut real beams out of it (volumetric fog keeps the shadow
+## maps); at night it is a faint blue-grey mist that the lamps light amber.
+func _build_haze(place: Dictionary) -> void:
+	var size: Vector2 = place["size"]
+	var walk: Rect2 = place.get("walk", Rect2(Vector2.ZERO, size))
+	if float(place.get("zoom", 1.0)) < 0.9:
+		return                                     # the world map: seen from high up, no band behind
+	var back := -8.0                               # (world units: past the north edge of the place)
+	var front := (walk.position.y + walk.size.y * 0.18) * PX
+	var vol := FogVolume.new()
+	vol.shape = RenderingServer.FOG_VOLUME_SHAPE_BOX
+	vol.size = Vector3(size.x * PX + 24.0, 9.0, front - back)
+	vol.position = Vector3(size.x * PX * 0.5, 3.5, (front + back) * 0.5)
+	haze_mat = FogMaterial.new()
+	haze_mat.density = 0.0
+	haze_mat.albedo = Color(1.0, 0.92, 0.80)
+	haze_mat.height_falloff = 0.18                 # thick near the ground, thin up high
+	haze_mat.edge_fade = 0.35                      # no hard face where the band ends
+	vol.material = haze_mat
+	v._world.add_child(vol)
 
 
 func _build_flies(place: Dictionary) -> void:
@@ -368,10 +429,13 @@ func sync_light() -> void:
 		var two := pair[0] as PointLight2D
 		var g: Array = glows[i]
 		var f := WalkLight.flicker(t, float(g[4]), bool(g[3]))
-		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f * (HD_LAMP * lerpf(0.55, 1.0, night) if Hd.on() else 1.0)
+		# (HD: a big fire is not brighter in the middle than a lamp, it only reaches further: its heat
+		# is spread by its size, so the square round it is a warm glow, not a white floodlight)
+		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f \
+			* (HD_LAMP * lerpf(0.55, 1.0, night) / sqrt(maxf(two.texture_scale, 1.0)) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
-		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.04, 0.7, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.22, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
 		# (HD: the bloom and the lit fog make most of the glow; the painted halo only adds a little)
 		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.42, night) * f * (0.3 if Hd.on() else 1.0))
 	RenderingServer.global_shader_parameter_set(&"hh_lamp_on", clampf(0.3 + 1.2 * night, 0.3, 1.0) if outdoor else 1.0)
@@ -382,6 +446,9 @@ func sync_light() -> void:
 		(w[0] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2)
 		(w[1] as ShaderMaterial).set_shader_parameter("strength", 0.30 * dark_k * f2 * (0.4 if Hd.on() else 1.0))
 	var beams := float(grade.get("shafts", 0.0)) * day
+	if haze_mat != null:
+		haze_mat.density = HD_HAZE_DAY * beams + HD_HAZE_NIGHT * night * (1.0 if outdoor else 0.0)
+		haze_mat.albedo = Color(1.0, 0.92, 0.80).lerp(Color(0.80, 0.78, 0.80), night)
 	for mat: ShaderMaterial in shaft_mats:
 		mat.set_shader_parameter("strength", (0.07 if Hd.on() else 0.17) * beams)
 		# (HD: warm sunlight, not the grey of the distance)
@@ -455,16 +522,29 @@ func _vec(c: Color) -> Vector3:
 func _sync_hd(sky: Color, outdoor: bool) -> void:
 	var night := 1.0 - day
 	if outdoor:
-		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY, day)
-		sun.light_color = sky.lerp(HD_SUN_COLOUR, 0.7).lerp(Color(0.62, 0.72, 1.0), night)
-		env.ambient_light_energy = lerpf(HD_AMBIENT_NIGHT, HD_AMBIENT_DAY, day)
+		# (the sun keeps its strength well into the evening: dusk is a low, raking, golden light, not a dim one)
+		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY, sqrt(day))
+		# and it sinks: the shadows grow longer towards dusk (turned in small steps, so the shadow
+		# maps do not swim while the day goes by)
+		var low := snappedf(lerpf(1.55, 1.0, clampf(day * 1.4 - 0.2, 0.0, 1.0)), 0.05)
+		if not is_equal_approx(low, _sun_low):
+			_sun_low = low
+			sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x * low, -1.0, HD_LEAN.y * low), Vector3.UP)
+		# full day: a golden afternoon sun; towards dusk it sinks to deep amber; the moon is blue
+		var amber := HD_SUN_COLOUR_DAY.lerp(HD_SUN_COLOUR, clampf(night * 1.8, 0.0, 1.0))
+		sun.light_color = sky.lerp(amber, 0.7).lerp(Color(0.62, 0.72, 1.0), smoothstep(0.55, 1.0, night))
+		env.ambient_light_energy = lerpf(HD_AMBIENT_NIGHT, HD_AMBIENT_DAY, day) * float(grade.get("ambient", 1.0))
 		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night)
 		var haze: Color = grade.get("haze", Color(1.0, 0.86, 0.62)) if not grade.is_empty() else Color(1.0, 0.86, 0.62)
 		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day)
-		env.volumetric_fog_albedo = haze.lerp(Color(0.55, 0.62, 0.80), night)
-		sun.light_volumetric_fog_energy = lerpf(0.25, 0.7, day)
+		# (at night the air is a warm grey: the moon makes it blue, a lamp makes it amber, never white)
+		env.volumetric_fog_albedo = haze.lerp(Color(0.78, 0.74, 0.70), night)
+		sun.light_volumetric_fog_energy = lerpf(0.25, 1.6, day)      # (the air is thin except in the band behind the play)
 		env.tonemap_exposure = lerpf(HD_EXPOSURE_NIGHT, HD_EXPOSURE_DAY, day) * float(grade.get("exposure", 1.0))
 	else:
+		if not is_equal_approx(_sun_low, 1.0):
+			_sun_low = 1.0
+			sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x, -1.0, HD_LEAN.y), Vector3.UP)
 		sun.light_energy = 0.9
 		env.ambient_light_energy = 0.42
 		env.volumetric_fog_density = 0.004
@@ -474,6 +554,7 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 	# NO MILKY VEIL: sync_light() sets the flat look's bloom and depth mist each frame; in HD the
 	# bloom is only for what burns over the threshold (no blurred copy of the whole picture added on
 	# top) and the volumetric fog is the only air (the depth mist would wash out the shade again)
+	RenderingServer.global_shader_parameter_set(&"hh_exposure", env.tonemap_exposure)
 	env.glow_bloom = 0.0
 	env.glow_hdr_threshold = 1.15
 	env.fog_enabled = false
@@ -527,7 +608,13 @@ func _focus_band(delta: float, dist: float, target: Vector3, people: Array, mat:
 	attrs.dof_blur_amount = HD_DOF if v._outdoor else HD_ROOM_DOF
 	# whatever stands nearer than the walking area (between the camera and the play) is put in shade,
 	# cooler and greyer: a dark blurred frame round the lit middle, as in a real photograph
-	mat.set_shader_parameter("fore_z", minf(fore_z, _band.x + 0.4) if fore_z > 0.0 else 0.0)
+	var fz := minf(fore_z, _band.x + 0.4) if fore_z > 0.0 else 0.0
+	mat.set_shader_parameter("fore_z", fz)
+	var warm: Vector3 = mat.get_shader_parameter("warm")
+	var shade: Vector3 = mat.get_shader_parameter("shade")
+	var tint := (warm + shade) * 0.5
+	RenderingServer.global_shader_parameter_set(&"hh_grade", Vector4(float(mat.get_shader_parameter("rim")), fz, 0.0, 0.0))
+	RenderingServer.global_shader_parameter_set(&"hh_tint", Vector4(tint.x, tint.y, tint.z, 1.0))
 	# the haze of the last pass begins where the blur begins
 	var mid := (_band.x + _band.y) * 0.5
 	mat.set_shader_parameter("focus", mid)

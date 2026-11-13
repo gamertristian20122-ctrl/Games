@@ -62,12 +62,19 @@ void light() {
 ## turned to the sun or a lamp catch a hard rim, bright grey pixels (steel) glint, and the bottom
 ## edge of every shape and the feet sit in a little ambient shade (AO). People get a softer wrap so
 ## they never go dark on their far side.
-static func card_code(hero: bool) -> String:
-	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled" + (", fog_disabled" if hero else "") + ";\n" \
-		+ ("#define HERO\n" if hero else "") + Sprite3.SUN_PART + HD_CARD_BODY
+## PEOPLE COME FIRST (HD): a standing picture that is nearer the camera than somebody and covers
+## them fades out SMOOTHLY in a soft oval round that person (Sprite3.set_people says where they are
+## on the screen). The solid card leaves a hole there and its GHOST (the same card drawn again as
+## `next_pass`, see-through) fills the hole: whole at the oval's rim, about a fifth at its middle,
+## eased between, so the person shows through cleanly (no screen-door dither, no flicker).
+static func card_code(hero: bool, ghost := false) -> String:
+	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled" + (", fog_disabled" if hero else "") \
+		+ (", depth_draw_never, blend_mix" if ghost else "") + ";\n" \
+		+ ("#define HERO\n" if hero else "") + ("#define GHOST\n" if ghost else "") + Sprite3.SUN_PART + HD_CARD_BODY
 
 
 const HD_CARD_BODY := "
+const float GHOST_MIN = 0.28;                                   // how much of a faded picture is left at its most
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec3 tint : source_color = vec3(1.0);
@@ -87,6 +94,11 @@ uniform vec3 hot_col : source_color = vec3(1.0, 0.52, 0.16);
 uniform float hot = 0.0;                                        // how far the glow is pushed to hot_col
 uniform float by_night = 0.0;                                   // 1 = a lamp: dim by day, full at dusk and night
 global uniform float hh_lamp_on;                                // (set every frame by scripts/fx/hd_light.gd)
+global uniform float hh_exposure;                               // the camera's exposure now (scripts/fx/hd_light.gd)
+#ifdef GHOST
+global uniform vec4 hh_grade;                                   // the last pass: x = dark corners, y = where the foreground begins
+global uniform vec4 hh_tint;                                    // the last pass: its middle tint
+#endif
 global uniform sampler2D hh_people : filter_nearest;            // where the people are (Sprite3.set_people)
 global uniform int hh_people_n;
 varying float shadow_pass;
@@ -119,31 +131,42 @@ vec4 px_at(vec2 uv) {
 	return texture(tex, uv);
 }
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+// how far this pixel of scenery is faded for the people behind it (0 = solid, 1 = the most)
+float people_fade(vec2 suv, vec2 vps, float fz) {
+	float best = 0.0;
+	vec2 at = suv * vps;
+	float pad = 9.0 * vps.y / 720.0;
+	for (int i = 0; i < hh_people_n; i++) {
+		vec4 pr = texelFetch(hh_people, ivec2(i, 0), 0);
+		vec2 lo = pr.xy * vps;
+		vec2 hi = pr.zw * vps;
+		// a soft oval a little bigger than the person (their rect already has a few px round it)
+		vec2 rad = (hi - lo) * vec2(0.64, 0.58) + pad;
+		float d = length((at - (lo + hi) * 0.5) / rad);
+		if (d >= 1.0) { continue; }
+		vec4 pd = texelFetch(hh_people, ivec2(i, 1), 0);
+		float t = clamp((suv.y - pr.y) / max(pr.w - pr.y, 1e-4), 0.0, 1.0);
+		if (fz < mix(pd.y, pd.x, t) - 0.3) {
+			float k = 1.0 - smoothstep(0.42, 1.0, d);
+			best = max(best, k * k * (3.0 - 2.0 * k));
+		}
+	}
+	return best;
+}
 void fragment() {
 	vec2 uv = uv_rect.xy + UV * uv_rect.zw;
 	vec4 c = texture(tex, uv);
 	if (c.a < 0.5) { discard; }
+#ifdef GHOST
+	// the see-through copy: only inside the oval round a person, never in a shadow map
+	float fade = (shadow_pass < 0.5 && hh_people_n > 0) ? people_fade(SCREEN_UV, VIEWPORT_SIZE, -VERTEX.z) : 0.0;
+	if (fade < 0.004) { discard; }
+#else
 #ifndef HERO
-	// PEOPLE COME FIRST: where this picture stands in front of somebody, it is thinned out to a
-	// screen-door of about a third of its pixels, so the person shows through (never in the
-	// shadow pass: the shadow stays whole)
-	if (shadow_pass < 0.5 && hh_people_n > 0) {
-		float fz = -VERTEX.z;
-		bool cover = false;
-		for (int i = 0; i < hh_people_n; i++) {
-			vec4 pr = texelFetch(hh_people, ivec2(i, 0), 0);
-			if (SCREEN_UV.x > pr.x && SCREEN_UV.x < pr.z && SCREEN_UV.y > pr.y && SCREEN_UV.y < pr.w) {
-				vec4 pd = texelFetch(hh_people, ivec2(i, 1), 0);
-				float t = (SCREEN_UV.y - pr.y) / max(pr.w - pr.y, 1e-4);
-				cover = cover || fz < mix(pd.y, pd.x, t) - 0.3;
-			}
-		}
-		if (cover) {
-			ivec2 q = ivec2(FRAGCOORD.xy) % 4;
-			int b4[16] = int[](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
-			if (float(b4[q.y * 4 + q.x]) / 16.0 > 0.34) { discard; }
-		}
-	}
+	// PEOPLE COME FIRST: the solid card leaves a hole where it covers somebody (its ghost fills it
+	// see-through); never in the shadow pass: the shadow stays whole
+	if (shadow_pass < 0.5 && hh_people_n > 0 && people_fade(SCREEN_UV, VIEWPORT_SIZE, -VERTEX.z) >= 0.004) { discard; }
+#endif
 #endif
 	vec3 col = c.rgb * tint;
 	vec2 tx = 1.0 / vec2(textureSize(tex, 0));
@@ -196,13 +219,35 @@ void fragment() {
 	// (and a little light of its own, so a person in deep shade still reads: bring them forward)
 	EMISSION = col * shine + rim_col * rim * edge + col * 0.24 * rim;
 #else
-	float core = smoothstep(0.86, 0.97, me);
-	vec3 glow_c = mix(col, hot_col * max(me, 0.55) * 1.25, hot * (1.0 - 0.5 * core));
-	EMISSION = glow_c * shine * mix(1.0, hh_lamp_on, by_night);
+	vec3 glow_c = col;
+	float glow_k = 1.0;
+	if (hot > 0.0) {
+		// how hot each pixel burns comes from the artist's own light and dark: dark red at the
+		// edges, orange in the body, a gold-white core only in the brightest pixels (so a flame
+		// reads as a FLAME, not a white blob, after the tone curve and the bloom)
+		float heat = smoothstep(0.25, 0.85, max(max(col.r, col.g), col.b) * 0.5 + me * 0.5);
+		vec3 fire = mix(hot_col * 0.8, mix(hot_col, vec3(1.0, 0.80, 0.50), 0.75), heat * heat);
+		glow_c = mix(col, fire * (0.45 + 0.9 * heat), hot);
+		// only warm or bright pixels burn (embers, flame, glass), never the grey stones of a fire pit
+		glow_k = max(smoothstep(0.12, 0.35, col.r - col.b), smoothstep(0.72, 0.88, me));
+	}
+	EMISSION = glow_c * glow_k * shine * mix(1.0, hh_lamp_on, by_night);
 #endif
 	ALBEDO = col;
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(foot);
+#ifdef GHOST
+	ALPHA = mix(1.0, GHOST_MIN, fade);
+	// the copy is drawn after the last pass (which only sees solid things), so it copies the last
+	// pass's grade itself: its tint, its dark corners and the shade of the foreground (in linear light)
+	vec2 q = SCREEN_UV - 0.5;
+	float vig = 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * hh_grade.x;
+	float fz2 = -VERTEX.z;
+	float fore = hh_grade.y > 0.0 ? 1.0 - smoothstep(hh_grade.y - 2.5, hh_grade.y - 0.2, fz2) : 0.0;
+	vec3 graded = pow(max(hh_tint.rgb * vig * mix(vec3(1.0), vec3(0.40, 0.42, 0.47), fore), vec3(0.0)), vec3(2.2));
+	ALBEDO *= graded;
+	EMISSION *= graded;
+#endif
 }
 void light() {
 	float ndl = dot(NORMAL, LIGHT);
@@ -221,12 +266,20 @@ void light() {
 		float wrap = clamp((ndl + w) / (1.0 + w), 0.0, 1.0);
 #endif
 		lit = 0.62 * wrap * (1.15 - 0.3 * (1.0 - UV.y)) + tilt * max(ndl, 0.0) * 0.9;
+#ifndef HERO
+		// a flame or a lamp's glass makes its own light: the lamp inside it would wash it white
+		lit *= shine > 0.0 ? 0.2 : 1.0;
+#endif
 	}
 	vec3 add = ATTENUATION * LIGHT_COLOR / PI * lit;
 	// glints on steel: a hard little highlight where the light bounces into the eye
 	add += ATTENUATION * LIGHT_COLOR * metal * pow(max(dot(reflect(-LIGHT, NORMAL), VIEW), 0.0), 14.0) * (LIGHT_IS_DIRECTIONAL ? 0.9 : 1.6);
 #ifdef HERO
-	add *= boost;
+	// people are lit as if the camera were not opened up for a dark place (the woods open it to 1.7:
+	// a pale elf in the sun went white), and the brightest light on them rolls off softly, so a
+	// face or a white robe keeps its pixels instead of burning into the bloom
+	add *= boost * clamp(1.3 / max(hh_exposure, 0.01), 0.62, 1.0);
+	add /= 1.0 + max(dot(add, vec3(0.333)) - 0.45, 0.0) * 0.9;
 #endif
 	DIFFUSE_LIGHT += add;
 }
@@ -288,7 +341,7 @@ static func casts() -> GeometryInstance3D.ShadowCastingSetting:
 
 static var _card_shader: Shader
 static var _shade_shader: Shader
-static var _hd_shaders := {}          ## false = scenery, true = HERO
+static var _hd_shaders := {}          ## false = scenery, true = HERO, "ghost" = scenery's see-through copy
 
 
 static func card_shader(hero := false) -> Shader:
@@ -317,17 +370,35 @@ static func card(tex: Texture2D, uv: Vector4, tint: Color, hero := false) -> Sha
 	mat.shader = card_shader(hero)
 	if hero and Hd.on():
 		mat.set_shader_parameter("rim", HERO_RIM)
-	mat.set_shader_parameter("tex", tex)
-	mat.set_shader_parameter("uv_rect", uv)
-	mat.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+	elif Hd.on():
+		# scenery: its see-through copy for the people behind it (drawn after the last pass, which
+		# only sees solid things and would paint over it: render_priority above the last pass's 0)
+		var ghost := ShaderMaterial.new()
+		if not _hd_shaders.has("ghost"):
+			var sh := Shader.new()
+			sh.code = card_code(false, true)
+			_hd_shaders["ghost"] = sh
+		ghost.shader = _hd_shaders["ghost"]
+		ghost.render_priority = 1
+		mat.next_pass = ghost
+	param(mat, "tex", tex)
+	param(mat, "uv_rect", uv)
+	param(mat, "tint", Vector3(tint.r, tint.g, tint.b))
 	set_glow(mat, tex, hero)
 	return mat
+
+
+## Sets a setting of a card's material (and of its see-through copy, if it has one).
+static func param(mat: ShaderMaterial, key: StringName, value: Variant) -> void:
+	mat.set_shader_parameter(key, value)
+	if mat.next_pass is ShaderMaterial:
+		(mat.next_pass as ShaderMaterial).set_shader_parameter(key, value)
 
 
 ## How a picture glows (its shine; HD: gold and orange, not white; lamps dim by day). Called again
 ## whenever a moving card changes its picture (scripts/hub/view3d.gd).
 static func set_glow(mat: ShaderMaterial, tex: Texture2D, hero := false) -> void:
-	mat.set_shader_parameter("shine", shine_of(tex))
+	param(mat, "shine", shine_of(tex))
 	if not Hd.on() or hero or tex == null:
 		return
 	var path := tex.resource_path
@@ -340,9 +411,9 @@ static func set_glow(mat: ShaderMaterial, tex: Texture2D, hero := false) -> void
 	elif path.contains("hub_flame") or path.contains("hub_fire"):
 		hot = 0.7
 		hot_col = Vector3(1.0, 0.45, 0.12)
-	mat.set_shader_parameter("hot", hot)
-	mat.set_shader_parameter("by_night", by_night)
-	mat.set_shader_parameter("hot_col", hot_col)
+	param(mat, "hot", hot)
+	param(mat, "by_night", by_night)
+	param(mat, "hot_col", hot_col)
 
 
 ## A flat shadow's material: the ground under it, darker (`ground_params` = the floor's settings).
