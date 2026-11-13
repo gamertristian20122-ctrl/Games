@@ -26,6 +26,10 @@ const Gear = preload("res://scripts/data/gear.gd")
 const Skills = preload("res://scripts/data/skills.gd")
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const UI = preload("res://scripts/ui/theme.gd")
+const Hd = preload("res://scripts/fx/hd.gd")
+## HD (PC): as the battle opens the camera comes DOWN out of the sky (clouds, stars and the moon by
+## night) onto the clearing: where it looks first, relative to where it ends up.
+const SKY_LOOK := Vector3(0.0, 15.0, -16.0)
 
 const PARTY_AT := [Vector3(-2.6, 0.0, 0.7), Vector3(-4.8, 0.0, -0.9), Vector3(-5.4, 0.0, 1.8), Vector3(-7.2, 0.0, 0.2)]
 const FOES_AT := [Vector3(2.2, 0.0, 0.9), Vector3(4.5, 0.0, -0.9), Vector3(6.4, 0.0, 1.1), Vector3(7.8, 0.0, -1.4)]
@@ -63,6 +67,7 @@ var _boss_bar := {}                ## a boss's own bar at the top of the screen
 var _intro := 0.0                  ## the camera comes in from further back as the battle opens (1 -> 0)
 var _push := 0.0                   ## and moves in a little at the end of a won battle (0 -> 1)
 var _fade: ColorRect               ## black over the screen at the start, gold at a victory
+var _sky := 0.0                    ## HD: how far up into the sky the camera still looks as the battle opens (1 -> 0)
 
 
 func _ready() -> void:
@@ -116,12 +121,22 @@ func _enter() -> void:
 		return
 	_intro = 1.0
 	var tw := create_tween()
-	tw.tween_property(self, "_intro", 0.0, 1.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(self, "_intro", 0.0, 1.4 if Hd.on() else 1.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	if Hd.on():
+		_sky = 1.0
+		var ts := create_tween()
+		ts.tween_interval(0.25)
+		ts.tween_property(self, "_sky", 0.0, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_fade.color = Color(0.0, 0.0, 0.0, 1.0)
 	_fade.visible = true
 	var tf := create_tween()
-	tf.tween_property(_fade, "color:a", 0.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tf.tween_property(_fade, "color:a", 0.0, 0.45 if Hd.on() else 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tf.tween_callback(func() -> void: _fade.visible = false)
+	if G.flag("shotintro") and G.arg("shots", "") != "":
+		# test: --shotintro writes battle_intro.png while the camera still looks at the sky
+		await get_tree().create_timer(float(G.arg("introwait", "0.45"))).timeout
+		DirAccess.make_dir_recursive_absolute(G.arg("shots", ""))
+		get_viewport().get_texture().get_image().save_png(G.arg("shots", "").path_join("battle_intro.png"))
 
 
 # ------------------------------------------------------------------ the fighters on the stage
@@ -636,7 +651,7 @@ func _say(text: String) -> void:
 
 func _run(title: String) -> void:
 	_say(title)
-	await _wait(0.9)
+	await _wait(1.45 if Hd.on() and _speed <= 4.0 else 0.9)      # (HD: the camera comes down out of the sky first)
 	while String(fight.call("result")) == "":
 		var who: Dictionary = fight.call("next")
 		if who.is_empty():
@@ -996,6 +1011,16 @@ func _take_shot() -> void:
 	var dir := G.arg("shots", "")
 	DirAccess.make_dir_recursive_absolute(dir)
 	get_viewport().get_texture().get_image().save_png(dir.path_join("battle.png"))
+	if G.arg("shotspell", "") != "":
+		# test: --shotspell=<skill id of battles.gd FX> writes battle_spell.png in the middle of that
+		# spell's light, landing on the first monster (a look only: nothing in the fight changes)
+		_fx = Battles.FX.get(G.arg("shotspell", ""), [])
+		_menu.visible = false
+		_show_fx(fight.foes[0])
+		_feel(fight.foes[0], "large")
+		await get_tree().create_timer(float(G.arg("spellwait", "0.16")), true, false, true).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_spell.png"))
+		_fx = []
 	if G.flag("shotmenu"):
 		_show_skills()
 		await get_tree().create_timer(0.4).timeout
@@ -1014,7 +1039,8 @@ func _process(delta: float) -> void:
 	var jolt := Vector3(0.42 * sin(_shake_t * 1.7), 0.26 * sin(_shake_t * 2.3), 0.0) * shake
 	var glide := Vector3(-1.6, 2.2, 6.5) * _intro * _intro - Vector3(0.0, 1.4, 4.2) * _push
 	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + jolt + glide
-	stage.cam.look_at(Stage.AIM + Vector3(0.0, 0.5, 0.0) * _push, Vector3.UP)
+	var sky := SKY_LOOK * _sky
+	stage.cam.look_at(Stage.AIM + Vector3(0.0, 0.5, 0.0) * _push + sky, Vector3.UP)
 	if _marker != null and _marker.visible:
 		var m := _marker.material_override as StandardMaterial3D
 		m.albedo_color.a = 0.5 + 0.25 * sin(_t * 4.0)

@@ -10,6 +10,8 @@ extends Node3D
 ## One world unit is 16 art pixels. x = left / right, z = towards the camera, y = up.
 
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
+const Hd = preload("res://scripts/fx/hd.gd")
+const StageHd = preload("res://scripts/battle/stage_hd.gd")
 const PX := 1.0 / 16.0
 ## What the camera looks at. Low, so the fighters stand in the upper half of the screen and the
 ## menus along the bottom never cover them.
@@ -118,6 +120,8 @@ var _sun: DirectionalLight3D
 var _lean := Vector2.ZERO
 var _ground_params := {}
 var _shadow_shader: Shader
+var hd: RefCounted                 ## HD only (Forward+ on PC): the real light, see stage_hd.gd
+var _people: Array = []            ## every fighter on the stage (HD: the depth of field keeps them sharp)
 
 const POST_CODE := "
 shader_type spatial;
@@ -136,6 +140,8 @@ uniform float rich = 1.0;        // above 1: stronger colours
 uniform float lift = 0.0;        // soft light: the darks are lifted a little towards the haze
 uniform vec3 haze : source_color = vec3(1.0, 0.85, 0.6);
 uniform float show_depth = 0.0;
+uniform float blur_on = 1.0;     // 0 = no blur here (HD: the camera's own depth of field does it)
+uniform float linear_in = 0.0;   // 1 = the picture is linear light (HD, Forward+): grade it as seen
 const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
@@ -163,7 +169,7 @@ void fragment() {
 	float cc = soft(zc);
 	vec3 sum = texture(screen_tex, SCREEN_UV).rgb;
 	float n = 1.0;
-	for (int i = 1; i <= TAPS; i++) {
+	for (int i = 1; i <= TAPS && blur_on > 0.5; i++) {
 		float r = sqrt(float(i) / float(TAPS));
 		float a = float(i) * 2.39996;
 		vec2 uv = SCREEN_UV + vec2(cos(a), sin(a)) * r * r_max * px;
@@ -175,6 +181,7 @@ void fragment() {
 		n += w;
 	}
 	vec3 col = sum / n;
+	if (linear_in > 0.5) { col = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2)); }
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = pow(max(col, vec3(0.0)), vec3(punch));
 	l = dot(col, vec3(0.299, 0.587, 0.114));
@@ -185,6 +192,7 @@ void fragment() {
 	vec2 q = SCREEN_UV - 0.5;
 	col *= 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * rim;
 	if (show_depth > 0.5) { col = vec3(cc); }
+	if (linear_in > 0.5) { col = pow(max(col, vec3(0.0)), vec3(2.2)); }
 	ALBEDO = col;
 }
 "
@@ -258,6 +266,9 @@ void light() {
 func build(look_name: String = "forest", seed_value: int = 11) -> void:
 	look = LOOKS.get(look_name, LOOKS["forest"])
 	rng.seed = seed_value
+	if Hd.on():
+		hd = StageHd.new(self)
+		hd.call("setup", look_name)
 	Sprite3.ensure_sun()
 	# patches of sun on the day stages (see sprite3.gd SUN_PART), a pool of light on the fighters
 	Sprite3.set_sun(float(look.get("patches", 0.0)), 6.0, Vector2(seed_value * 0.37, seed_value * 0.11), Vector2(0.0, 0.0), 13.0, 1.0)
@@ -316,6 +327,8 @@ func _sky_and_light() -> void:
 	_sun.rotation_degrees = look["sun_angle"]
 	_sun.shadow_enabled = false
 	add_child(_sun)
+	if hd != null:
+		hd.call("env", env, _sun)
 
 
 func _ground() -> void:
@@ -331,12 +344,16 @@ func _ground() -> void:
 		"texel": Vector2(0.5 / tile.size.x, 0.5 / tile.size.y),
 		"grey": float(look.get("grey", 0.3)),
 	}
-	var sh := Shader.new()
-	sh.code = GROUND_CODE
-	var mat := ShaderMaterial.new()
-	mat.shader = sh
-	for k: String in _ground_params:
-		mat.set_shader_parameter(k, _ground_params[k])
+	var mat: ShaderMaterial
+	if hd != null:
+		mat = hd.call("ground_material", _ground_params)      # (HD: wet ground that mirrors the lights)
+	else:
+		var sh := Shader.new()
+		sh.code = GROUND_CODE
+		mat = ShaderMaterial.new()
+		mat.shader = sh
+		for k: String in _ground_params:
+			mat.set_shader_parameter(k, _ground_params[k])
 	# the ground climbs behind the fighters (height_at): the wood stands row above row
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -386,6 +403,10 @@ func shadow_basis() -> Basis:
 	return Basis(Vector3(1.0, 0.0, 0.0), Vector3(_lean.x, 0.0, _lean.y), Vector3(0.0, 1.0, 0.0))
 
 
+## Pack pieces drawn with their ground painted round them (see prop()).
+const SAND_BACKED := ["hub_dpebble", "hub_dblock", "hub_dboulder", "hub_dspire", "hub_dcave"]
+
+
 ## Stands a pack picture on the ground (scenery that never changes). Pictures of the same piece
 ## are gathered and drawn together in one go (see _flush): a phone cannot afford hundreds of
 ## separate things, and past a certain count the shadows stop being drawn at all.
@@ -397,9 +418,16 @@ func prop(id: String, at: Vector3, flip: bool = false, sway: float = 0.0, shadow
 	if up > 0.0:
 		at.y += up                     # it stands on the slope behind the fighting ground
 		shadow = shadow and up < 0.05
-	var key := "%s|%.3f|%s|%s|%.2f|%s" % [id, sway, shadow, tint.to_html(false), shine, lie_flat]
+	# HD: pieces the pack drew WITH sand round them (pebbles, boulders, spires) would throw square
+	# shadows; the small ones lie flat on the sand instead, the big ones throw none
+	var cast := true
+	if hd != null and SAND_BACKED.any(func(w: String) -> bool: return id.begins_with(w)):
+		cast = false
+		if id.begins_with("hub_dpebble") or id.begins_with("hub_dblock"):
+			lie_flat = true
+	var key := "%s|%.3f|%s|%s|%.2f|%s|%s" % [id, sway, shadow, tint.to_html(false), shine, lie_flat, cast]
 	if not _batches.has(key):
-		_batches[key] = {"id": id, "sway": sway, "shadow": shadow, "tint": tint, "shine": shine, "flat": lie_flat, "at": []}
+		_batches[key] = {"id": id, "sway": sway, "shadow": shadow, "tint": tint, "shine": shine, "flat": lie_flat, "cast": cast, "at": []}
 	var basis := Basis.IDENTITY
 	if lie_flat:
 		basis = Basis(Vector3.UP, turn) * Basis(Vector3.RIGHT, -PI / 2.0)
@@ -441,8 +469,10 @@ func _flush() -> void:
 		var node := MultiMeshInstance3D.new()
 		node.multimesh = mm
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		if hd != null and not bool(b["flat"]) and bool(b["cast"]):
+			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON    # HD: real shadows, no flat copies
 		add_child(node)
-		if bool(b["shadow"]) and not bool(b["flat"]):
+		if bool(b["shadow"]) and not bool(b["flat"]) and hd == null:
 			var lean := shadow_basis()
 			var sq := quad.duplicate() as QuadMesh
 			sq.material = shadow_material(tex)
@@ -473,6 +503,9 @@ func stand(id: String, at: Vector3, faces_left: bool = false, anim: String = "id
 		var key: Array = look.get("key", [Color(1.0, 0.85, 0.6), 0.5, 1.0])
 		# (the light stands between the two sides: each side is lit on the edge that faces the middle)
 		s.set_rim(float(key[1]), key[0], float(key[2]) * (1.0 if at.x < 0.0 else -1.0))
+		_people.append(s)
+		if hd != null:
+			hd.call("fighter", s)
 	s.set_flip(faces_left)
 	return s
 
@@ -486,6 +519,8 @@ func lamp(at: Vector3, colour: Color, energy: float, reach: float) -> OmniLight3
 	l.omni_range = reach
 	l.omni_attenuation = 1.4
 	l.shadow_enabled = false
+	if hd != null:
+		hd.call("lamp", l, false)
 	add_child(l)
 	return l
 
@@ -539,9 +574,13 @@ func _scenery() -> void:
 		var fire_at := Vector3(0.6, 0.0, -3.4)
 		stand("hub_fire_a", fire_at, false, "idle", false)
 		var flame := stand("hub_flame", fire_at + Vector3(0.0, 0.35, 0.03), false, "idle", false)
-		flame.set_shine(2.6)
-		_fire_energy = float(look["fire_energy"])
+		var boost := float(hd.call("num", "fire_boost")) if hd != null else 1.0
+		flame.set_shine(2.6 * boost)              # (HD: a white-hot core far over the bloom's threshold)
+		_fire_energy = float(look["fire_energy"]) * (0.75 if hd != null else 1.0)
 		_fire = lamp(fire_at + Vector3(0.0, 1.3, 0.7), look["fire"], _fire_energy, 14.0)
+		if hd != null:
+			hd.call("lamp", _fire, true)            # every fighter's shadow leans away from the fire
+			_fire.light_volumetric_fog_energy = 3.0
 		_embers(fire_at + Vector3(0.0, 1.1, 0.05))
 	# the place's own pieces: [id, where, turned round, glow, (light colour, light strength)]
 	for f: Array in look.get("features", []):
@@ -779,6 +818,8 @@ func fx_anim(id: String, at: Vector3, colour: Color = Color.WHITE, size: float =
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	mat.albedo_texture = first
+	if hd != null:
+		glow *= 0.6 * float(hd.call("num", "spell")) + 0.2     # (HD: the bloom adds the rest; the one hit must stay seen)
 	mat.albedo_color = Color(colour.r * glow, colour.g * glow, colour.b * glow, 1.0)
 	mat.disable_fog = true
 	mat.render_priority = 12
@@ -833,6 +874,14 @@ func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, ar
 	add_child(p)
 	p.emitting = true
 	get_tree().create_timer(p.lifetime + 0.3).timeout.connect(p.queue_free)
+	if hd != null:
+		# HD: a real light that flares and fades, glows in the air, and (big ones) throws shadows;
+		# a blazing core of light; the big ones a whirl of sparks too
+		hd.call("spell_light", at + Vector3(0.0, 1.0, 1.1), colour, power, 0.5 + 0.15 * power)
+		hd.call("core", Vector3(at.x, height_at(at.z) + 0.6, at.z - 0.35), colour, 0.8 + 0.35 * power, 0.25 + 0.06 * power)
+		if power >= 2.0:
+			hd.call("swirl", Vector3(at.x, 0.1, at.z), colour, power, 4.0 + rise)
+		return
 	var l := lamp(at + Vector3(0.0, 0.4, 0.6), colour, 0.0, 6.0 + 2.5 * power)
 	var tw := create_tween()
 	tw.tween_property(l, "light_energy", 5.0 + 6.0 * power, 0.05)
@@ -854,23 +903,43 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0)
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	m.albedo_texture = across
-	m.albedo_color = Color(colour.r * 2.0, colour.g * 2.0, colour.b * 2.0, 0.0)
+	var hot := (1.6 + 0.8 * float(hd.call("num", "spell"))) if hd != null else 2.0       # (HD: far over the bloom's threshold, so it BLAZES)
+	m.albedo_color = Color(colour.r * hot, colour.g * hot, colour.b * hot, 0.0)
 	m.disable_fog = true
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.render_priority = 11
 	var q := QuadMesh.new()
-	q.size = Vector2(width, height)
+	q.size = Vector2(width * (0.6 if hd != null else 1.0), height)     # (HD: the bloom widens it; the one hit stays seen)
 	var beam := MeshInstance3D.new()
 	beam.mesh = q
 	beam.material_override = m
 	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	beam.position = at + Vector3(0.0, height * 0.5, 0.05)
+	# (HD: just BEHIND the one it lands on, so its body stands dark and sharp against the light)
+	beam.position = at + Vector3(0.0, height * 0.5, -0.25 if hd != null else 0.05)
 	add_child(beam)
 	var tw := create_tween()
 	tw.tween_property(m, "albedo_color:a", 0.9, 0.05)
 	tw.tween_property(beam, "scale:x", 0.25, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.parallel().tween_property(m, "albedo_color:a", 0.0, 0.32)
 	tw.tween_callback(beam.queue_free)
+	if hd != null:
+		# HD: a wide soft column of light round the hot beam, a light high in it and a whirl of sparks
+		var wide := MeshInstance3D.new()
+		wide.mesh = q
+		var wm := m.duplicate() as StandardMaterial3D
+		wm.albedo_color = Color(colour.r * 1.4, colour.g * 1.4, colour.b * 1.4, 0.0)
+		wide.material_override = wm
+		wide.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		wide.position = beam.position
+		wide.scale = Vector3(4.0, 1.0, 1.0)
+		add_child(wide)
+		var tw2 := create_tween()
+		tw2.tween_property(wm, "albedo_color:a", 0.18, 0.06)
+		tw2.tween_property(wide, "scale:x", 1.5, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw2.parallel().tween_property(wm, "albedo_color:a", 0.0, 0.45)
+		tw2.tween_callback(wide.queue_free)
+		hd.call("spell_light", at + Vector3(0.0, 4.0, 0.4), colour, 1.2, 0.7)
+		hd.call("swirl", Vector3(at.x, 0.1, at.z), colour, 2.6, height * 0.8)
 
 
 ## The last pass over the whole picture: blur away from the fighters, warm lights and cool shade,
@@ -895,6 +964,10 @@ func _post() -> void:
 		mat.set_shader_parameter("rim", float(look.get("rim", 0.55)))
 	var haze: Color = look.get("haze", Color(1.0, 0.85, 0.6))
 	mat.set_shader_parameter("haze", Vector3(haze.r, haze.g, haze.b))
+	if hd != null:
+		# HD: the camera's own depth of field blurs (stage_hd.gd focus); this pass only grades
+		mat.set_shader_parameter("blur_on", 0.0)
+		mat.set_shader_parameter("linear_in", 1.0)
 	var q := QuadMesh.new()
 	q.size = Vector2(2.0, 2.0)
 	post = MeshInstance3D.new()
@@ -908,6 +981,8 @@ func _post() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	if hd != null:
+		hd.call("focus", delta, _people)
 	if _fire != null:
 		# a fire never burns evenly
 		_fire.light_energy = _fire_energy * (0.9 + 0.07 * sin(_t * 9.0) + 0.05 * sin(_t * 23.0 + 1.3))
