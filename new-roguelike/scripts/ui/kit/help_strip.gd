@@ -48,6 +48,7 @@ func _rebuild() -> void:
 	if _row == null:
 		return
 	for c in _row.get_children():
+		_row.remove_child(c)          # (out at once: a queued one still counted in the width)
 		c.queue_free()
 	for pair: Variant in pairs:
 		var a: Array = pair

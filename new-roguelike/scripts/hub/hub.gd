@@ -31,6 +31,7 @@ const Weapons = preload("res://scripts/data/weapons.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const QuestList = preload("res://scripts/ui/quest_list.gd")
+const WalkKit = preload("res://scripts/ui/walk_kit.gd")
 const HeroLook = preload("res://scripts/entities/hero_look.gd")
 const Hands = preload("res://scripts/entities/hands.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
@@ -84,9 +85,13 @@ var _talked := {}               ## npc ids spoken to during this visit
 var _quests: Control
 var _small := false              ## the place fits on the screen: the camera stands still
 var _entered := false
-var _arrive_t := 0.0
-var _banner: Label
-var _banner_text := ""
+var _banner: Control             ## the place banner (scripts/ui/walk_kit.gd Banner): name on arrival, Night / Morning
+var _ui: Control                 ## the interface's root on the UI grid (UI.attach): story line, coins, banner, toast, help
+var _toast: Control              ## one small card bottom-centre (WalkKit Toast): hub.say(), "The way is shut."
+var _coins: Control              ## the coins, top-right (WalkKit Coins)
+var _help: Control               ## "[C] Knight  [Esc] Pause" bottom-right
+var _walk_t := 0.0               ## seconds the knight has been walking without a stop
+var _still_t := 0.0              ## seconds he has stood still
 var _sky_node: CanvasModulate
 var _lamps: Array = []           ## [PointLight2D, energy by day]
 var _flies: CPUParticles2D
@@ -110,6 +115,7 @@ func _ready() -> void:
 		add_child(_view)
 		_view.call("setup", self)
 	_prompt = UI.label("", "Small")
+	_prompt.set_meta("walk_kind", "tag")         # (the 3D look shows a name tag + "[Q] Talk": view3d.gd _twin)
 	_prompt.theme = UI.theme()
 	_prompt.z_index = 200
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -125,26 +131,11 @@ func _ready() -> void:
 	_prompt.add_theme_stylebox_override("normal", tag)
 	add_child(_prompt)
 	Controls.action_pressed.connect(_on_talk_pressed)
-	# the quest list in the top-left corner, as in a level
+	# rain (game px) on the HUD layer; the interface on its own layer on the UI grid (UI px)
 	var layer := CanvasLayer.new()
 	layer.layer = G.LAYER_HUD
 	add_child(layer)
-	_quests = QuestList.new()
-	_quests.in_camp = true
-	var ins := UI.safe_insets(self)
-	_quests.position = Vector2(ins.x + 2.0, ins.y + 2.0)
-	_quests.modulate.a = 0.92
-	layer.add_child(_quests)
-	_banner = UI.label("", "Head")
-	_banner.theme = UI.theme()
-	_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_banner.offset_top = 30            # under the story panel in the corner, not across it
-	_banner.add_theme_color_override("font_outline_color", UI.C_INK)
-	_banner.add_theme_constant_override("outline_size", 4)
-	_banner.visible = false
-	layer.add_child(_banner)
+	_build_hud()
 	# rain: thin pale strokes falling across the whole screen (only out of doors, only now and then)
 	if G.world_clock < 0.0:
 		G.world_clock = float(Save.hub_get("clock"))
@@ -170,7 +161,10 @@ func _ready() -> void:
 	_fade.color = Color(UI.C_VOID, 0.0)
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(_fade)
+	var over := CanvasLayer.new()            # (over the interface too, as before)
+	over.layer = G.LAYER_HUD
+	add_child(over)
+	over.add_child(_fade)
 	if G.arg("hub") != "":
 		start_place = G.arg("hub")       # test: --hub=<place id>
 	Story.migrate()
@@ -364,7 +358,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		_cam.position = _hero.position.round()
 	_cam.reset_smoothing()
 	if _entered:
-		_arrive_t = 2.2                 # the place's name floats up for a moment
+		_show_banner(String(place.get("name", "")))       # the place's name floats up for a moment
 	_entered = true
 	if Tale.on():
 		var news := Tale.entered(id)                           # walking in here may move the story on
@@ -453,6 +447,74 @@ func _weather(delta: float) -> void:
 	_rain.emitting = rain
 
 
+## The interface of a walking place, on its own layer on the UI grid (spec 6.3): the story line
+## top-left, the coins top-right, the place banner, the toast card, the help strip bottom-right.
+## Sizes and places are UI px (about 800 x 360 on a PC, 400 x 180 on a phone).
+func _build_hud() -> void:
+	var ui_layer := CanvasLayer.new()
+	ui_layer.layer = G.LAYER_HUD
+	add_child(ui_layer)
+	_ui = UI.attach(ui_layer)
+	_ui.theme = UI.theme()
+	var ins := UI.safe_insets(_ui)
+	_quests = QuestList.new()
+	_quests.in_camp = true
+	_quests.position = Vector2(ins.x, ins.y)
+	_ui.add_child(_quests)
+	_coins = WalkKit.Coins.new()
+	_coins.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	var cw := 70.0 if UI.is_phone() else 120.0
+	_coins.offset_left = -cw - ins.z
+	_coins.offset_right = -ins.z
+	_coins.offset_top = ins.y
+	_coins.offset_bottom = ins.y + (16.0 if UI.is_phone() else 30.0)
+	_ui.add_child(_coins)
+	_banner = WalkKit.Banner.new()
+	_banner.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_ui.add_child(_banner)
+	_toast = WalkKit.Toast.new()
+	_toast.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	var bottom := (22.0 if UI.is_phone() else 22.0) + ins.w
+	_toast.offset_top = -bottom - (16.0 if UI.is_phone() else 24.0) - 8.0
+	_toast.offset_bottom = -bottom
+	_ui.add_child(_toast)
+	_help = UI.help_strip([["knight", "Knight"], ["pause", "Pause"]], "bottom_right")
+	_ui.add_child(_help)
+
+
+## Each frame: what the interface shows (hidden while a window is open), the story line at half
+## while the knight walks (whole after 1 s still), the help strip gone after 6 s of walking (back
+## after 3 s still), the coins.
+func _sync_hud(delta: float, moving: bool) -> void:
+	if moving:
+		_walk_t += delta
+		_still_t = 0.0
+	else:
+		_still_t += delta
+		if _still_t > 0.5:
+			_walk_t = 0.0
+	var outdoor := bool(place.get("outdoor", false))
+	_quests.visible = not frozen and outdoor
+	var want := 0.5 if _still_t < 1.0 and _walk_t > 0.0 else 1.0
+	_quests.modulate.a = move_toward(_quests.modulate.a, want, delta * 2.0)
+	_coins.visible = not frozen
+	_coins.set("value", Upgrades.coins())
+	_banner.visible = _banner.visible and not frozen
+	if frozen:
+		_toast.call("hide_now")
+	if is_instance_valid(_help):
+		var help_on := not frozen and not Controls.using_touch and (_walk_t < 6.0 or _still_t >= 3.0)
+		_help.modulate.a = move_toward(_help.modulate.a, 1.0 if help_on else 0.0, delta * 3.0)
+		_help.visible = _help.modulate.a > 0.0 and not Controls.using_touch and not frozen
+
+
+## The place banner (big: a place's name; small: Night / Morning).
+func _show_banner(words: String, small := false) -> void:
+	if words == "":
+		return
+	_banner.call("show_text", words, String(place.get("title", "")) if not small else "", small, 2.2)
+
+
 ## The bed in your room: sleep until night falls, or until morning.
 func sleep() -> void:
 	var to_night := not _is_night()
@@ -461,8 +523,7 @@ func sleep() -> void:
 		G.world_clock = (day + NIGHT_FROM + 0.06) * DAY_LENGTH
 	else:
 		G.world_clock = (day + 1.0 + 0.02) * DAY_LENGTH
-	_banner_text = "Night has fallen" if to_night else "Morning"
-	_arrive_t = 2.6
+	_show_banner("Night has fallen" if to_night else "Morning", true)
 	Sfx.play("door_close", -8.0)
 
 
@@ -671,6 +732,7 @@ func _build_signs() -> void:
 					can = can or Story.is_open(String(ahead["id"]))
 			colour = UI.C_GREEN if left == 0 else (UI.C_GOLD if can else UI.C_FAINT)
 		var l := UI.label(text, "Small")
+		l.set_meta("walk_kind", "sign")          # (the 3D look: Cinzel caps, view3d.gd _twin)
 		l.theme = UI.theme()
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.custom_minimum_size = Vector2(160, 0)
@@ -972,6 +1034,7 @@ func _add_person(row: Dictionary) -> Dictionary:
 	node.position = row["pos"]
 	_ysort.add_child(node)
 	var mark := UI.label("!", "Head")
+	mark.set_meta("walk_kind", "news")         # (the 3D look shows it as a gold "!" coin: view3d.gd _twin)
 	mark.theme = UI.theme()
 	mark.add_theme_color_override("font_color", UI.C_GOLD)
 	mark.add_theme_color_override("font_outline_color", UI.C_INK)
@@ -1140,8 +1203,7 @@ func _physics_process(delta: float) -> void:
 					_hero.position = was
 					if _shut_t <= 0.0:
 						_shut_t = 3.0
-						_banner_text = String(e.get("why", "The way is shut."))
-						_arrive_t = 3.0
+						_toast.call("show_text", String(e.get("why", "The way is shut.")), 2.5)
 						Sfx.play("ui_back")
 				else:
 					_go(String(e["to"]), e["at"])
@@ -1158,15 +1220,8 @@ func _physics_process(delta: float) -> void:
 	if not _small:
 		# (zoomed out, the camera moves in steps of two map pixels so the small trees do not shimmer)
 		_cam.position = _hero.position.round() if _zoom >= 1.0 else (_hero.position * _zoom).round() / _zoom
-	if _arrive_t > 0.0:
-		_arrive_t -= delta
-		_banner.text = _banner_text if _banner_text != "" else String(place.get("name", ""))
-		_banner.visible = not frozen
-		_banner.modulate.a = clampf(_arrive_t / 0.6, 0.0, 1.0)
-	elif _banner.visible:
-		_banner.visible = false
-		_banner_text = ""
 	_weather(delta)
+	_sync_hud(delta, moving)
 	_update_people(delta)
 
 
@@ -1191,9 +1246,10 @@ func _update_people(delta: float) -> void:
 			best = i
 		var mark: Label = p["mark"]
 		mark.visible = (news and String(p["row"].get("role", "")) == "quests") or bool(p.get("news", false)) or (String(p["row"].get("role", "")) == "ally" and not Allies.joined(String(p["row"].get("ally", ""))))
-		mark.position.y = -float(p["top"]) - 16.0 + roundf(sin(_time * 5.0) * 1.5)
+		# (the 3D look draws its own bobbing coin from this anchor: scripts/ui/walk_kit.gd NewsMark)
+		mark.position.y = -float(p["top"]) - 16.0 + (roundf(sin(_time * 5.0) * 1.5) if _view == null else 0.0)
+		mark.set_meta("under_tag", false)
 	_near = best
-	_quests.visible = not frozen and bool(place.get("outdoor", false))
 	G.hub_near = best >= 0 and not frozen
 	if best >= 0 and not frozen:
 		var p: Dictionary = _people[best]
@@ -1207,6 +1263,10 @@ func _update_people(delta: float) -> void:
 			up = maxf(up, at.y - _hero.position.y + 34.0 * _k + 18.0)
 		_prompt.position = (at + Vector2(-_prompt.size.x * 0.5, -up) / _zoom).round()
 		_prompt.visible = not place.has("signs")        # on the world map the name already floats over the place
+		# with news, the name tag carries the gold "!" itself and the mark over the head steps aside
+		var mark: Label = p["mark"]
+		_prompt.set_meta("news", mark.visible)
+		mark.set_meta("under_tag", _prompt.visible)
 	else:
 		_prompt.visible = false
 
@@ -1495,6 +1555,7 @@ func _build_roamers() -> void:
 			hands = Hands.new()
 			hands.build(node, body, String(row["hands"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)))
 		var mark := UI.label("!", "Head")
+		mark.set_meta("walk_kind", "foe")      # (the 3D look shows it as a red "!" coin)
 		mark.theme = UI.theme()
 		mark.add_theme_color_override("font_color", UI.C_RED)
 		mark.add_theme_color_override("font_outline_color", UI.C_INK)
@@ -1553,13 +1614,12 @@ func _move_roamers(delta: float) -> void:
 			(r["hands"] as RefCounted).update(delta, moving, float(r["face"]), 0.0, true, null, r["tint"])
 		var mark: Label = r["mark"]
 		mark.visible = r["chasing"]
-		mark.position.y = -float(Art.meta(String(Enemies.info(Roamers.shows(int(r["spot"]))).get("sprite", ""))).get("body_height", 28.0)) - 16.0 + roundf(sin(_time * 8.0) * 1.5)
+		mark.position.y = -float(Art.meta(String(Enemies.info(Roamers.shows(int(r["spot"]))).get("sprite", ""))).get("body_height", 28.0)) - 16.0 + (roundf(sin(_time * 8.0) * 1.5) if _view == null else 0.0)
 
 
 ## A line in the place's banner for a few seconds (main.gd: what a won roamer fight paid).
 func say(text: String) -> void:
-	_banner_text = text
-	_arrive_t = 3.5
+	_toast.call("show_text", text, 2.5)
 
 
 ## Who travels with the knight changed (main.gd): build the place again around him, where he stands.
