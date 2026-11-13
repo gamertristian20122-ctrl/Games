@@ -296,6 +296,8 @@ func build_lamps(place: Dictionary) -> void:
 		v._world.add_child(three)
 		lamps.append([two, three])
 		var reach := 64.0 * two.texture_scale * PX * (HD_POOL_REACH if Hd.on() else 0.62)
+		if Hd.on():
+			reach = minf(reach, 4.5)        # (a painted pool as wide as a big fire's reach lay over the whole clearing at night as a pale sheet; the real light does the rest)
 		var ground := Vector3(base.x * PX, v.build.height(base), base.y * PX + (0.3 if base == two.position else 0.15))
 		if ground_at != Vector2.INF:
 			ground = Vector3(ground_at.x * PX, v.build.height(ground_at), ground_at.y * PX + 0.2)
@@ -458,7 +460,7 @@ func sync_light() -> void:
 			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
-		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.26, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.26, night) * (1.0 if bool(g[3]) else 0.35) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
 		# (HD: the painted halo is a deep orange, so it carries the glow round a flame: the bloom of a
 		# light bright enough to bloom on its own comes out white)
 		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.03, 0.42, night) * f)
@@ -552,7 +554,8 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 	var night := 1.0 - day
 	if outdoor:
 		# (the sun keeps its strength well into the evening: dusk is a low, raking, golden light, not a dim one)
-		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY * float(grade.get("sun", 1.0)), sqrt(day))
+		# (GRADES "sun": under the leaves of the woods less of the sun, and of the moon, gets through)
+		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY, sqrt(day)) * float(grade.get("sun", 1.0))
 		# and it sinks: the shadows grow longer towards dusk (turned in small steps, so the shadow
 		# maps do not swim while the day goes by)
 		var low := snappedf(lerpf(1.55, 1.0, clampf(day * 1.4 - 0.2, 0.0, 1.0)), 0.05)

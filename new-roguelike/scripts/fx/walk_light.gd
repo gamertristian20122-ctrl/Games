@@ -47,6 +47,8 @@ const GRADES := {
 		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.48, "shafts": 0.35, "motes": 0.4, "dapple": 0.4, "exposure": 1.85, "ambient": 3.0, "gold": 0.5, "key": 3.5, "sun": 0.55, "dull": 0.12},
 	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.35, "exposure": 1.45, "ambient": 1.4, "gold": 0.5, "key": 3.0, "sun": 0.8, "dull": 0.12},
 	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4, "exposure": 1.55, "ambient": 1.5, "gold": 0.45, "key": 3.0, "sun": 0.7, "dull": 0.15},
+	# the woods by night: the leaves keep most of the moon out too (the fire and the lamps light the clearing)
+	"elfwood:night": {"sun": 0.5, "exposure": 0.7}, "deepwood:night": {"sun": 0.5, "exposure": 0.7}, "glade:night": {"sun": 0.6, "exposure": 0.75},
 	# golden dawn: the land after its beacon is lit
 	"elfwood:lit": {"warm": Vector3(1.10, 1.01, 0.84), "shade": Vector3(1.02, 0.93, 0.86), "punch": 1.05, "rich": 1.0,
 		"haze": Color(1.0, 0.82, 0.55), "far": 0.30, "rim": 0.42, "shafts": 1.0, "motes": 1.0},
@@ -244,7 +246,7 @@ void fragment() {
 	float d = length(p) * 2.0;
 	float f = 1.0 - smoothstep(0.0, 1.0, d);
 	f = f * f * (0.55 + 0.45 * f);
-	float e = (exp(-d * 4.2) * 0.8 + exp(-d * 1.6) * 0.2) * (1.0 - smoothstep(0.75, 1.0, d));
+	float e = (exp(-d * 4.5) * 0.9 + exp(-d * 2.4) * 0.1) * (1.0 - smoothstep(0.6, 1.0, d));
 	ALBEDO = colour * mix(f, e, steep) * strength * 2.5;
 }
 "
