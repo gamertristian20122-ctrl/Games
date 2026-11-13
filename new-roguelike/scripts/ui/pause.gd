@@ -15,6 +15,9 @@ var _knight: Button
 
 
 func build() -> void:
+	if run == null:
+		_build_walking()
+		return
 	var safe := UI.safe_margin(self, 6)
 	add_child(safe)
 	var cols := UI.hbox(6)
@@ -125,6 +128,37 @@ func build() -> void:
 	else:
 		_show_item(String(ids[ids.size() - 1]))
 	UI.pop_in(cols)
+
+
+## The pause menu over a walking place (no run): Resume, Knight, Settings, Title (asks first).
+## (core placeholder in the new look; the menus group owns the final look of this screen)
+func _build_walking() -> void:
+	veil()
+	var centre := CenterContainer.new()
+	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(centre)
+	var panel := UI.panel("panel")
+	panel.custom_minimum_size.x = 220 if not UI.is_phone() else 150
+	centre.add_child(panel)
+	var col := UI.vbox(3)
+	panel.add_child(col)
+	var head := UI.label("Paused", "Head")
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(head)
+	var resume := UI.button("Resume", func() -> void: send("resume"), "Big")
+	col.add_child(resume)
+	_knight = UI.button(_knight_text(), func() -> void: send("knight"))
+	col.add_child(_knight)
+	col.add_child(UI.button("Settings", func() -> void: send("settings")))
+	col.add_child(UI.button("Title", func() -> void:
+		ask("Back to the title? The game saves as you walk.", "Title", "Stay", func() -> void: send("title"), false)))
+	default_focus = resume
+	UI.pop_in(panel)
+
+
+func help_pairs() -> Array:
+	return [["confirm", "Choose"], ["back", "Resume"]]
 
 
 ## The Knight button says his level, and how many points wait to be spent.

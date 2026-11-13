@@ -1,0 +1,16 @@
+Google Fonts (github.com/google/fonts) families used by the HD interface (13 Nov 2026)
+
+1. Alegreya Sans - Juan Pablo del Peral / Huerta Tipografica - SIL OFL 1.1
+   source: https://raw.githubusercontent.com/google/fonts/main/ofl/alegreyasans/
+   files: AlegreyaSans-Medium.ttf, AlegreyaSans-Bold.ttf, AlegreyaSans-ExtraBold.ttf
+   evidence: assets_raw/fonts/alegreya_sans/ (OFL.txt, SOURCE.txt, original files)
+2. Cinzel - Natanael Gama - SIL OFL 1.1
+   source: https://raw.githubusercontent.com/google/fonts/main/ofl/cinzel/
+   files: Cinzel[wght].ttf (shipped as assets/fonts/hd/Cinzel-Variable.ttf)
+   evidence: assets_raw/fonts/cinzel/ (OFL.txt, SOURCE.txt, original file)
+
+SIL OFL 1.1 allows bundling and embedding in commercial closed-source software. Conditions kept:
+- the licence text ships with the fonts (assets/fonts/hd/OFL_*.txt);
+- the fonts are not sold by themselves;
+- no Reserved Font Name is used for a modified version (the files are unmodified).
+Both fonts are human-designed type (no AI). Credit rows: scripts/data/credits.gd.

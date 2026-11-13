@@ -1,0 +1,10 @@
+Font: Alegreya Sans (Medium, Bold, ExtraBold) - the HD interface's body, button and number font
+Authors: Juan Pablo del Peral / Huerta Tipografica (The Alegreya Sans Project Authors)
+Project: https://github.com/huertatipografica/Alegreya-Sans
+Downloaded from: https://raw.githubusercontent.com/google/fonts/main/ofl/alegreyasans/
+  AlegreyaSans-Medium.ttf, AlegreyaSans-Bold.ttf, AlegreyaSans-ExtraBold.ttf, OFL.txt
+Retrieved: 2026-11-13 (UTC)
+Licence: SIL Open Font License 1.1 (OFL.txt here and next to the shipped copies in assets/fonts/hd/).
+  Commercial, closed-source games may embed it; the font itself may not be sold on its own.
+Shipped copies: assets/fonts/hd/AlegreyaSans-*.ttf (byte-identical) + assets/fonts/hd/OFL_AlegreyaSans.txt
+Credit row: scripts/data/credits.gd

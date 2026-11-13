@@ -128,6 +128,10 @@ EXTRA = {
     "skill_frost": (1014, "ice spikes"),
     "skill_slam": (1044, "a golden hammer"),
     "skill_storm": (1029, "forked lightning"),
+    # HD GUI (13 Nov 2026): small pictures the interface shows (scripts/ui/theme.gd ICON_*)
+    "ui_shield": (1811, "a blue kite shield (Guard)"),
+    "ui_boot": (1854, "a leather boot (Flee)"),
+    "ui_book": (292, "a blue spellbook (Skills)"),
 }
 
 

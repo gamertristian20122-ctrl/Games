@@ -128,6 +128,18 @@
   "skill_whirl": {
    "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa725.png",
    "shows": "a pale swirl"
+  },
+  "ui_book": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa292.png",
+   "shows": "a blue spellbook (Skills)"
+  },
+  "ui_boot": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1854.png",
+   "shows": "a leather boot (Flee)"
+  },
+  "ui_shield": {
+   "file": "Free - Raven Fantasy Icons/Separated Files/16x16/fa1811.png",
+   "shows": "a blue kite shield (Guard)"
   }
  },
  "icons": {

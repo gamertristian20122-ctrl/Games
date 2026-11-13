@@ -61,6 +61,11 @@ func _find_button(node: Node, starts_with: String) -> Button:
 	return null
 
 
+## Where a control's centre is on the screen, in game pixels (it may live on a scaled UI layer).
+func _centre_of(c: Control) -> Vector2:
+	return c.get_global_transform_with_canvas() * (c.size * 0.5)
+
+
 ## Pretends a finger touches the screen at a position given in game pixels.
 func _touch(finger: int, game_pos: Vector2, pressed: bool) -> void:
 	var scale := Vector2(DisplayServer.window_get_size()) / UI.screen_size(self)
@@ -230,6 +235,16 @@ func _run_tour() -> void:
 	main.call("close_top")
 	main.call("top_screen").call("on_back")
 	await _shot("title_quit_question")
+	main.call("top_screen").call("close_dialog")
+
+	# ---- the pause menu over a walking place (HD GUI: Esc no longer goes straight to the title)
+	await main.call("show_hub", "village")
+	await _settle(1.0)
+	main.call("open_hub_pause")
+	await _shot("hub_pause")
+	main.call("open", "knight")
+	await _shot("hub_pause_knight")
+	main.call("close_all")
 
 	print("[tour] done, %d screenshots" % _count)
 	G.quit()
@@ -272,7 +287,7 @@ func _run_flow() -> void:
 	await _key(KEY_UP)
 	# a finger tap on Play (touch reaches buttons as an emulated mouse click)
 	var play := get_viewport().gui_get_focus_owner()
-	var centre := play.get_global_rect().get_center()
+	var centre := _centre_of(play)
 	_touch(0, centre, true)
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -282,7 +297,25 @@ func _run_flow() -> void:
 	_check("a touch switches to touch controls", Controls.using_touch)
 	await _key(KEY_ESCAPE)
 	await _settle()
-	_check("Esc in the camp goes back to the title", main.call("top_name") == "title" and not is_instance_valid(main.get("hub")))
+	_check("Esc in the camp opens the pause", main.call("top_name") == "pause" and is_instance_valid(main.get("hub")) and bool(main.get("hub").get("frozen")))
+	await G.save_shot("flow_01b_hub_pause.png")
+	var to_title := _find_button(main.call("top_screen"), "Title")
+	if to_title != null:
+		to_title.grab_focus()
+		await _key(KEY_ENTER)
+		await _settle()
+		await _key(KEY_ENTER)          # the question: Stay has the focus, so go right to "Title" first
+		await _settle()
+	_check("Title asks first, Stay keeps the pause open", main.call("top_name") == "pause")
+	to_title = _find_button(main.call("top_screen"), "Title")
+	if to_title != null:
+		to_title.grab_focus()
+		await _key(KEY_ENTER)
+		await _settle()
+		await _key(KEY_RIGHT)
+		await _key(KEY_ENTER)
+		await _settle(0.8)
+	_check("Title goes back to the title", main.call("top_name") == "title" and not is_instance_valid(main.get("hub")))
 	main.call("open", "hero_select")
 	await _settle()
 	await _key(KEY_RIGHT)
@@ -481,7 +514,7 @@ func _run_flow() -> void:
 	var leave := get_viewport().gui_get_focus_owner()
 	_check("the Leave button is there", leave is Button and (leave as Button).text == "Leave")
 	if leave is Button:
-		var at := (leave as Button).get_global_rect().get_center()
+		var at := _centre_of(leave as Button)
 		_touch(1, at, true)
 		await get_tree().process_frame
 		await get_tree().process_frame
@@ -635,8 +668,13 @@ func _run_flow() -> void:
 	_check("the beaten roamer is gone for a while", not Roamers.here(0) and main.call("top_name") == "")
 	await G.save_shot("flow_12_back_on_the_map.png")
 	await _key(KEY_ESCAPE)
+	await _settle(0.6)
+	_check("Esc on the map opens the pause", main.call("top_name") == "pause")
+	await _key(KEY_ESCAPE)
+	await _settle(0.6)
+	_check("Esc again resumes the walk", main.call("top_name") == "" and is_instance_valid(main.get("hub")) and not bool(main.get("hub").get("frozen")))
+	main.call("show_title")
 	await _settle(1.0)
-	_check("Esc in the camp returns to the title", main.call("top_name") == "title")
 	await _key(KEY_ESCAPE)
 	await _settle()
 	_check("Esc on the title asks before quitting", _focus_text() == "Stay")

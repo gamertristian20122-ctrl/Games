@@ -216,6 +216,18 @@ const LIST := [
 		"url": "https://managore.itch.io/m5x7",
 	},
 	{
+		"what": "Font: Alegreya Sans (interface text and numbers)",
+		"author": "Juan Pablo del Peral / Huerta Tipográfica",
+		"licence": "SIL OFL 1.1",
+		"url": "https://github.com/huertatipografica/Alegreya-Sans",
+	},
+	{
+		"what": "Font: Cinzel (interface headings and names)",
+		"author": "Natanael Gama",
+		"licence": "SIL OFL 1.1",
+		"url": "https://github.com/NDISCOVER/Cinzel",
+	},
+	{
 		"what": "Kings and Pigs (hearts, bomb with lit fuse)",
 		"author": "Pixel Frog",
 		"licence": "CC0",

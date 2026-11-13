@@ -1,0 +1,11 @@
+Font: Cinzel (variable weight, used at 700) - the HD interface's headings, names, tabs and titles
+Author: Natanael Gama (The Cinzel Project Authors)
+Project: https://github.com/NDISCOVER/Cinzel
+Downloaded from: https://raw.githubusercontent.com/google/fonts/main/ofl/cinzel/
+  Cinzel[wght].ttf, OFL.txt
+Retrieved: 2026-11-13 (UTC)
+Licence: SIL Open Font License 1.1 (OFL.txt here and next to the shipped copy in assets/fonts/hd/).
+  Commercial, closed-source games may embed it; the font itself may not be sold on its own.
+Shipped copy: assets/fonts/hd/Cinzel-Variable.ttf (byte-identical to Cinzel[wght].ttf, renamed:
+  square brackets in a res:// path are awkward) + assets/fonts/hd/OFL_Cinzel.txt
+Credit row: scripts/data/credits.gd

@@ -58,6 +58,8 @@ var touch: CanvasLayer           ## scripts/ui/touch.gd
 var backdrop: Control            ## scripts/ui/backdrop.gd
 var _world: Node                 ## runs are added under this node; it stops when the game is paused
 var _menu: CanvasLayer
+var _menu_root: Control          ## the menu layer's UiRoot (UI.attach): screens are built in UI px under it
+var _fade_root: Control
 var _shade: ColorRect            ## darkens the frozen game behind the pause menu
 var _fade: ColorRect
 var _stack: Array[Control] = []  ## open screens, the last one is on top
@@ -141,24 +143,28 @@ func _build_layers() -> void:
 	_menu.layer = G.LAYER_MENU
 	_menu.name = "Menu"
 	add_child(_menu)
+	# the HD GUI: the menus live on the UI grid (scripts/ui/theme.gd attach()); every screen, the
+	# backdrop and the shade are children of its root and anchor to it (it is the whole screen)
+	_menu_root = UI.attach(_menu)
 	backdrop = Control.new()
 	backdrop.set_script(load("res://scripts/ui/backdrop.gd"))
 	backdrop.name = "Backdrop"
-	_menu.add_child(backdrop)
+	_menu_root.add_child(backdrop)
 	_shade = ColorRect.new()
 	_shade.color = Color(0.02, 0.02, 0.04, 0.66)
 	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_shade.visible = false
-	_menu.add_child(_shade)
+	_menu_root.add_child(_shade)
 	var fade_layer := CanvasLayer.new()
 	fade_layer.layer = G.LAYER_FADE
 	fade_layer.name = "Fade"
 	add_child(fade_layer)
+	_fade_root = UI.attach(fade_layer)
 	_fade = ColorRect.new()
 	_fade.color = Color(UI.C_VOID, 0.0)
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fade_layer.add_child(_fade)
+	_fade_root.add_child(_fade)
 	_refresh_layers()
 
 
@@ -184,7 +190,7 @@ func open(screen_name: String, setup: Dictionary = {}) -> Control:
 	_stack.append(s)
 	_names.append(screen_name)
 	s.connect("action", _on_action)
-	_menu.add_child(s)
+	_menu_root.add_child(s)
 	_refresh_layers()
 	return s
 
@@ -757,7 +763,17 @@ func _back() -> void:
 	elif is_instance_valid(intro):
 		intro.call("skip")             # Back during the intro: skip it
 	elif is_instance_valid(hub):
-		_transition(show_title)        # Back in the camp: to the title
+		open_hub_pause()               # Back in a walking place: the pause menu (Resume, Knight, Settings, Title)
+
+
+## The pause menu over a walking place (Esc, the pad's Start, the phone's pause button). The place
+## is frozen while it is open (_refresh_layers), as for a talk window. Its actions: "resume",
+## "knight", "settings", "title".
+func open_hub_pause() -> void:
+	if _busy or _ending or not _stack.is_empty() or not is_instance_valid(hub) or is_instance_valid(intro):
+		return
+	Sfx.play("ui_click")
+	open("pause", {"run": null})
 
 
 func _unhandled_input(event: InputEvent) -> void:

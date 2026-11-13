@@ -10,7 +10,8 @@ signal action_pressed        ## the second button (reserved for the game's twist
 signal pause_pressed
 signal skill_pressed(slot: int)   ## skill button 1 or 2 (0 or 1): the touch buttons, keys 1 / 2 or F / R, gamepad X / B
 signal menu_pressed          ## open the Knight screen (level, stats): the "Lv" touch button, C or Tab, gamepad Y
-## The player switched between the touch screen and a keyboard / gamepad.
+## The player switched between the touch screen and a keyboard / gamepad, or between the
+## keyboard (and mouse) and a gamepad (`last_pad` says which). `touch` = using_touch.
 signal device_changed(touch: bool)
 
 var move := Vector2.ZERO      ## length 0..1
@@ -31,6 +32,9 @@ var touch_action_held := false
 ## True while the touch screen is the input in use. The touch controls hide themselves when a
 ## key or gamepad is used and come back on the next touch.
 var using_touch := false
+## True after a gamepad button or stick was used, false after a key or the mouse: the key
+## prompts (scripts/ui/kit/prompt.gd) show pad caps or key caps from it.
+var last_pad := false
 
 # written by the test bot (when bot == true these replace all other input)
 var bot := false
@@ -45,10 +49,14 @@ func _ready() -> void:
 	get_window().window_input.connect(_watch_device)
 
 
-func _set_touch(on: bool) -> void:
-	if on != using_touch:
-		using_touch = on
-		device_changed.emit(on)
+func _set_touch(on: bool, pad: Variant = null) -> void:
+	var changed := on != using_touch
+	using_touch = on
+	if pad != null and bool(pad) != last_pad:
+		last_pad = bool(pad)
+		changed = true
+	if changed:
+		device_changed.emit(using_touch)
 
 
 ## Only watches WHICH device is in use; the real handling is below and in scripts/ui/touch.gd.
@@ -60,13 +68,17 @@ func _watch_device(event: InputEvent) -> void:
 	elif event is InputEventKey:
 		# (the phone's Back and volume keys are keys too, and must not hide the touch controls)
 		if event.pressed and not event.echo and event.keycode not in [KEY_BACK, KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_VOLUMEMUTE, KEY_MENU]:
-			_set_touch(false)
+			_set_touch(false, false)
 	elif event is InputEventJoypadButton:
 		if event.pressed:
-			_set_touch(false)
+			_set_touch(false, true)
 	elif event is InputEventJoypadMotion:
 		if absf(event.axis_value) > 0.5:
-			_set_touch(false)
+			_set_touch(false, true)
+	elif event is InputEventMouseButton:
+		# a real mouse (not a touch the engine turned into a click) means keyboard prompts
+		if event.pressed and last_pad and not using_touch and event.device != InputEvent.DEVICE_ID_EMULATION:
+			_set_touch(false, false)
 
 
 func press_bomb() -> void:
