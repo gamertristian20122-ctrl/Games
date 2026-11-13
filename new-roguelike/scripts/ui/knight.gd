@@ -188,6 +188,7 @@ func _tab(id: String, text: String, phone: bool) -> Button:
 	tb.focus_mode = Control.FOCUS_NONE      # Q / E (LB / RB) page through; the arrows stay in the list
 	if phone:
 		tb.custom_minimum_size = Vector2(52, 22)
+		tb.add_theme_font_size_override("font_size", 8)
 	else:
 		tb.custom_minimum_size = Vector2(0, 22)
 	_tabs[id] = tb
