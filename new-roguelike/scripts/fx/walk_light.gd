@@ -64,8 +64,8 @@ const GRADES := {
 	"glade:lit": {"warm": Vector3(1.10, 1.01, 0.85), "haze": Color(1.0, 0.84, 0.58), "shafts": 1.0, "motes": 1.0},
 	"beacon:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the Sands: hot pale dust before the beacon, deep amber after it
-	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.92, 0.92, 1.04), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0, "blue": 0.35, "fog": 0.6, "lamps": 0.8, "bounce": 0.6, "exposure": 0.82},
-	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0, "blue": 0.35, "fog": 0.6, "lamps": 0.8, "bounce": 0.6, "exposure": 0.82},
+	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.92, 0.92, 1.04), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0, "blue": 0.35, "fog": 0.6, "lamps": 0.8, "bounce": 0.6, "exposure": 0.76, "key": 0.6},
+	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0, "blue": 0.35, "fog": 0.6, "lamps": 0.8, "bounce": 0.6, "exposure": 0.76, "key": 0.6},
 	# the sands by night: clear air, a blue moonlit plain, the lamps and fires in small amber pools
 	"dustwatch:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},
 	"suncourt:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},

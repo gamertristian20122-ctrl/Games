@@ -592,6 +592,8 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		var dusk := 1.0 - absf(night * 2.0 - 1.0)
 		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night).lerp(Color(0.36, 0.48, 0.95), dusk * 0.6)
 		env.ssil_intensity = 0.5 * float(grade.get("bounce", 1.0))
+		# (and the sky beyond the place sinks to a deep evening blue, not a flat sheet of orange)
+		env.background_color = env.background_color.lerp(Color(0.04, 0.07, 0.15), clampf(night * 1.6, 0.0, 1.0) * 0.75)
 		var haze: Color = grade.get("haze", Color(1.0, 0.86, 0.62)) if not grade.is_empty() else Color(1.0, 0.86, 0.62)
 		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day) * float(grade.get("fog", 1.0))
 		# (at night the air is a warm grey: the moon makes it blue, a lamp makes it amber, never white)
