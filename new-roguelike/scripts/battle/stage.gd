@@ -932,7 +932,7 @@ func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, ar
 		art = "fx_sparkle_magic" if rise > 0.0 else ("fx_explosion" if power >= 2.2 else "fx_hit")
 	var big := art == "fx_explosion"
 	# (HD: a big one's art plays just BEHIND the one hit: drawn over him it washed him out)
-	var art_z := -0.5 if hd != null and power >= 1.4 else 0.3
+	var art_z := -0.5 if power >= 1.4 else 0.3
 	# the pack's own effect art for blows, fire and heals; the other elements are light of their own
 	# (HD: a column's whirl of light is its art)
 	if ["blade", "fire", "heal"].has(element) and not (hd != null and _pillar_now):

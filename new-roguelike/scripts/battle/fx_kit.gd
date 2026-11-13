@@ -67,7 +67,7 @@ void fragment() {
 	vec2 sc = SCREEN_UV;
 	float inside = step(hold.x, sc.x) * step(sc.x, hold.z) * step(hold.y, sc.y) * step(sc.y, hold.w);
 	float inside2 = step(hold2.x, sc.x) * step(sc.x, hold2.z) * step(hold2.y, sc.y) * step(sc.y, hold2.w);
-	float k = (1.0 - 0.88 * inside * step(hold_z + 0.1, near_z)) * (1.0 - 0.85 * inside2 * step(hold2_z + 0.1, near_z));
+	float k = (1.0 - 0.98 * inside * step(hold_z + 0.02, near_z)) * (1.0 - 0.9 * inside2 * step(hold2_z + 0.02, near_z));
 	float m = max(max(tint.r, tint.g), tint.b);
 	ALBEDO = mix(tint, core_col * max(m, 0.4), clamp(hot * core_k, 0.0, 1.0)) * heat;
 	ALPHA = clamp((body + hot * 0.8) * fade * k, 0.0, 1.0);

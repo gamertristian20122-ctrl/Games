@@ -18,6 +18,7 @@ var s                              ## the stage (stage.gd; untyped: its members 
 var _sun_base := -1.0
 var _flash_light: OmniLight3D
 var _flash_n := 0
+var _hz := -1000.0                 ## the one hit's world z (his picture's plane: sparks nearer are thinned over him)
 
 ## Which element a skill's look is (battles.gd FX keys). Anything else is told by its colour.
 const ID_ELEMENT := {
@@ -103,6 +104,7 @@ func impact(at: Vector3, element: String, power: float = 1.0, fighter: Node3D = 
 	if not ELEMENTS.has(element):
 		element = "blade"
 	var hold := screen_box(fighter)
+	_hz = fighter.global_position.z if fighter != null and is_instance_valid(fighter) else at.z
 	match element:
 		"blade":
 			_blade(at, power, hold)
@@ -127,11 +129,11 @@ func _blade(at: Vector3, power: float, hold: Vector4) -> void:
 	slash(at + Vector3(0.0, 0.1, 0.35), Color(1.0, 0.92, 0.75), 0.85 + 0.18 * power, power)
 	# sword sparks: a fan of hot streaks that fly out, fall and skip on the ground
 	var n := int((14.0 + 14.0 * power) * lite)
-	var sp := _streaks(at, 7.0 + 2.0 * power, Color(1.0, 0.8, 0.4))
+	var sp := _streaks(at, 9.0 + 2.5 * power, Color(1.0, 0.8, 0.4))
 	sp.grav = Vector3(0.0, -16.0, 0.0)
-	sp.drag = 1.2
-	sp.trail = 0.035
-	sp.width = 0.045
+	sp.drag = 1.0
+	sp.trail = 0.045
+	sp.width = 0.055
 	sp.floor_y = g.y + 0.02
 	sp.bounce = 0.35
 	sp.cool = Color(0.9, 0.2, 0.02)
@@ -189,7 +191,7 @@ func _frost(at: Vector3, power: float, hold: Vector4) -> void:
 	# cold mist that rolls out low over the ground
 	mist(g + Vector3(0.0, 0.08, -0.5), Color(0.62, 0.82, 1.0, 0.2), power)
 	# glints: slow white-blue sparkles that drift down
-	var n := int((30.0 + 18.0 * power) * (1.0 if hd() else 0.5))
+	var n := int((20.0 + 12.0 * power) * (1.0 if hd() else 0.5))
 	var sp := _streaks(at, 4.0, Color(0.55, 0.85, 1.0), Color(0.9, 0.97, 1.0))
 	sp.grav = Vector3(0.0, -1.6, 0.0)
 	sp.drag = 2.5
@@ -200,8 +202,8 @@ func _frost(at: Vector3, power: float, hold: Vector4) -> void:
 	_hold(sp, hold, at.z)
 	sp.start(n, sp.get_meta("mat"))
 	for i in n:
-		var dir := Vector3(randf_range(-1.0, 1.0), randf_range(-0.2, 1.0), randf_range(-0.8, 0.3)).normalized()
-		sp.add(i, at + Vector3(randf_range(-0.3, 0.3), randf_range(-0.5, 0.6), 0.0), dir * randf_range(2.0, 6.5), randf() * 0.2, randf_range(0.5, 1.2), Color(0.5, 0.85, 1.0).lerp(Color(0.9, 0.97, 1.0), randf()))
+		var dir := Vector3(randf_range(-1.0, 1.0), randf_range(-0.2, 1.0), randf_range(-1.0, -0.1)).normalized()
+		sp.add(i, at + Vector3(randf_range(-0.3, 0.3), randf_range(-0.5, 0.6), -0.3), dir * randf_range(2.0, 6.5), randf() * 0.2, randf_range(0.5, 1.2), Color(0.5, 0.85, 1.0).lerp(Color(0.9, 0.97, 1.0), randf()))
 	s.add_child(sp)
 	_light(at + Vector3(0.0, 0.6, 1.0), Color(0.55, 0.85, 1.0), 6.0 + 3.0 * power, 9.0 + 2.5 * power, 0.7, false, 0.6)
 	s.mark(g, "frost", 1.1 + 0.4 * power, 3.6)
@@ -334,7 +336,7 @@ func _streaks(at: Vector3, heat: float, colour: Color, core: Color = Color(1.0, 
 func _hold(sp: FxKit.Streaks, hold: Vector4, z: float) -> void:
 	var mat := sp.get_meta("mat") as ShaderMaterial
 	mat.set_shader_parameter("hold", hold)
-	mat.set_shader_parameter("hold_z", z)
+	mat.set_shader_parameter("hold_z", _hz if _hz > -999.0 else z)
 
 
 ## A short real light that flares and fades on the ground and the fighters. `air` = how much it
