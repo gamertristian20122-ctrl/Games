@@ -343,6 +343,9 @@ func _make_boss_bar(unit: Dictionary) -> void:
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	box.offset_top = 2
+	# (left of the middle: a big boss stands on the right, its head must not sit under its own bar)
+	box.offset_left -= 56
+	box.offset_right -= 56
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_area.add_child(box)
 	var name_label := UI.label(String(unit["name"]), "Hud")

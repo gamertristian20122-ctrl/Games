@@ -16,6 +16,7 @@ const PX := 1.0 / 16.0
 ## What the camera looks at. Low, so the fighters stand in the upper half of the screen and the
 ## menus along the bottom never cover them.
 const AIM := Vector3(0.0, -0.9, 0.6)
+const AIM_HD := Vector3(0.0, -1.8, 0.6)
 
 ## One row per place a fight can happen in. Colours are the mood; pieces are pack ids.
 const LOOKS := {
@@ -290,9 +291,15 @@ func _camera() -> void:
 	add_child(cam)
 	cam.position = Vector3(0.0, 7.5, 17.0)
 	cam.look_at(AIM, Vector3.UP)
+	if hd != null:
+		# HD (PC): a WIDE stage. The camera stands back and a little lower, so the fighters stand
+		# smaller on a broad lit ground, a tall boss is never cut by the top of the screen and the
+		# rows of trees behind fill the top of the picture.
+		cam.position = Vector3(0.0, 8.95, 28.6)
+		cam.look_at(AIM_HD, Vector3.UP)
 	cam.current = true
 	# standing pictures are drawn taller by the camera's slant, so nobody looks squashed (sprite3.gd)
-	var slant := (AIM - cam.position).normalized()
+	var slant := ((AIM_HD if hd != null else AIM) - cam.position).normalized()
 	Sprite3.tall = 1.0 / maxf(Vector2(slant.x, slant.z).length(), 0.5)
 
 
@@ -917,7 +924,9 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0)
 	beam.material_override = m
 	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# (HD: just BEHIND the one it lands on, so its body stands dark and sharp against the light)
-	beam.position = at + Vector3(0.0, height * 0.5, -0.25 if hd != null else 0.05)
+	# (a tall one leans back by the stand-up tilt: the beam stands behind its TOP too, so it never
+	# veils its upper body)
+	beam.position = at + Vector3(0.0, height * 0.5, -1.7 if hd != null else 0.05)
 	add_child(beam)
 	var tw := create_tween()
 	tw.tween_property(m, "albedo_color:a", 0.9, 0.05)
@@ -936,11 +945,12 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0)
 		wide.scale = Vector3(4.0, 1.0, 1.0)
 		add_child(wide)
 		var tw2 := create_tween()
-		tw2.tween_property(wm, "albedo_color:a", 0.18, 0.06)
+		tw2.tween_property(wm, "albedo_color:a", 0.12, 0.06)
 		tw2.tween_property(wide, "scale:x", 1.5, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw2.parallel().tween_property(wm, "albedo_color:a", 0.0, 0.45)
 		tw2.tween_callback(wide.queue_free)
-		hd.call("spell_light", at + Vector3(0.0, 4.0, 0.4), colour, 1.2, 0.7)
+		# (the light stands in the column BEHIND the one hit: it rims them, it does not wash them out)
+		hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.7)
 		hd.call("swirl", Vector3(at.x, 0.1, at.z), colour, 2.6, height * 0.8)
 
 

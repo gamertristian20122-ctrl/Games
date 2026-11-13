@@ -102,7 +102,7 @@ void vertex() {
 		// away from the light that is drawing its shadow map: no shadow of a card on its own face
 		vec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 		vec3 away = PROJECTION_MATRIX[3][3] > 0.5 ? -INV_VIEW_MATRIX[2].xyz : normalize(w - INV_VIEW_MATRIX[3].xyz);
-		w += normalize(away) * shadow_push;
+		w += normalize(away) * shadow_push * (1.0 - UV.y);      // (the feet stay where they meet the ground)
 		VERTEX = (inverse(MODEL_MATRIX) * vec4(w, 1.0)).xyz;
 	}
 	shadow_pass = IN_SHADOW_PASS ? 1.0 : 0.0;
@@ -190,7 +190,7 @@ void fragment() {
 	EMISSION = col * shine + rim_col * rim * edge + col * 0.24 * rim;
 #else
 	float core = smoothstep(0.86, 0.97, me);
-	vec3 glow_c = mix(col, hot_col * max(me, 0.55) * 1.25, hot * (1.0 - 0.75 * core));
+	vec3 glow_c = mix(col, hot_col * max(me, 0.55) * 1.25, hot * (1.0 - 0.5 * core));
 	EMISSION = glow_c * shine * mix(1.0, hh_lamp_on, by_night);
 #endif
 	ALBEDO = col;
@@ -331,7 +331,7 @@ static func set_glow(mat: ShaderMaterial, tex: Texture2D, hero := false) -> void
 		hot = 0.7
 		by_night = 1.0
 	elif path.contains("hub_flame") or path.contains("hub_fire"):
-		hot = 0.55
+		hot = 0.7
 		hot_col = Vector3(1.0, 0.45, 0.12)
 	mat.set_shader_parameter("hot", hot)
 	mat.set_shader_parameter("by_night", by_night)

@@ -126,7 +126,7 @@ void fragment() {
 	float m = texture(hh_dapple, at * 0.21 + vec2(0.7, 0.2)).r;
 	puddle = smoothstep(0.78 - wet * 0.1, 0.80 - wet * 0.1, n * 0.85 + m * 0.15) * step(0.01, wet);
 	float damp = smoothstep(0.45 - wet * 0.25, 0.62 - wet * 0.22, n) * wet;
-	ALBEDO = c * (1.0 - 0.4 * damp) * (1.0 - 0.55 * puddle);
+	ALBEDO = c * (1.0 - 0.25 * damp) * (1.0 - 0.3 * puddle);       // (darker read as holes in the ground)
 	ROUGHNESS = mix(1.0, 0.06, puddle) * (1.0 - 0.25 * damp);
 	SPECULAR = mix(0.2, 0.5, puddle);
 	sun_share = sun_at(at);

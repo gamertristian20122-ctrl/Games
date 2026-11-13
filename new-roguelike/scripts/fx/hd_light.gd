@@ -458,7 +458,7 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day)
 		env.volumetric_fog_albedo = haze.lerp(Color(0.55, 0.62, 0.80), night)
 		sun.light_volumetric_fog_energy = lerpf(0.25, 0.7, day)
-		env.tonemap_exposure = lerpf(HD_EXPOSURE_NIGHT, HD_EXPOSURE_DAY, day)
+		env.tonemap_exposure = lerpf(HD_EXPOSURE_NIGHT, HD_EXPOSURE_DAY, day) * float(grade.get("exposure", 1.0))
 	else:
 		sun.light_energy = 0.9
 		env.ambient_light_energy = 0.42

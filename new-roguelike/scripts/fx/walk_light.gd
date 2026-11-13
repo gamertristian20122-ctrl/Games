@@ -17,22 +17,24 @@ extends RefCounted
 ##   shafts         beams of sun (0 none, 1 full)               motes  dust in the sun (0 to 1)
 ##   dapple         HD: soft patches of leaf shade on the ground (0 = none: open sand, a square;
 ##                  the real shadow maps do the shade there; 1 = under thick leaves)
+##   exposure       HD: how much more the camera opens up here (the dark woods: more, so the
+##                  clearing glows and only the woods round it stay near black)
 ## Rows: "<place>" (by day), "<place>:night", "<place>:lit" (after its land's beacon is lit),
 ## "default", "default:night", "indoors". A missing key is taken from "default" / "default:night".
 const GRADES := {
 	"default": {"warm": Vector3(1.06, 1.01, 0.90), "shade": Vector3(1.0, 0.93, 0.88), "punch": 1.07, "rich": 0.97,
-		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5},
+		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0},
 	"default:night": {"warm": Vector3(1.10, 1.0, 0.86), "shade": Vector3(0.84, 0.94, 1.16), "punch": 1.06, "rich": 0.95,
-		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0},
+		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0},
 	# Wickmere at dusk: honey light on the stones, plum shade
 	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25},
 	# the dark road (before the beacon): greener, cooler shade, thicker air, few beams
 	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 0.94,
-		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.52, "shafts": 0.45, "motes": 0.5, "dapple": 0.9},
+		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.52, "shafts": 0.45, "motes": 0.5, "dapple": 0.7, "exposure": 1.7},
 	"deepwood": {"warm": Vector3(1.0, 1.02, 0.94), "shade": Vector3(0.84, 0.96, 1.06), "punch": 1.10, "rich": 0.92,
-		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.56, "shafts": 0.35, "motes": 0.4, "dapple": 1.0},
-	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.8},
-	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4},
+		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.56, "shafts": 0.35, "motes": 0.4, "dapple": 0.8, "exposure": 1.75},
+	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.7, "exposure": 1.3},
+	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4, "exposure": 1.2},
 	# golden dawn: the land after its beacon is lit
 	"elfwood:lit": {"warm": Vector3(1.10, 1.01, 0.84), "shade": Vector3(1.02, 0.93, 0.86), "punch": 1.05, "rich": 1.0,
 		"haze": Color(1.0, 0.82, 0.55), "far": 0.30, "rim": 0.42, "shafts": 1.0, "motes": 1.0},

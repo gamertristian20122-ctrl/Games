@@ -428,11 +428,38 @@ func _sync_holder(entry: Dictionary, ysort: Node2D, stamp: int) -> void:
 		shade.transform = _shade_transform(card, foot, lift)
 		if build.has_height and not build.shadow_ok(holder.position, (card["y"] as Vector3).length()):
 			shade.visible = false
+	if Hd.on() and bool(entry.get("person", false)):
+		# a soft dark spot where the feet meet the ground (ambient shade: never floating)
+		if not entry.has("blob"):
+			entry["blob"] = _contact_blob()
+		var blob: MeshInstance3D = entry["blob"]
+		blob.visible = holder.visible and not found.is_empty()
+		blob.position = foot + Vector3(0.0, 0.03, 0.06)
 	for id: int in cards.keys():
 		if int(cards[id]["stamp"]) != stamp:
 			(cards[id]["body"] as Node).queue_free()
 			(cards[id]["shade"] as Node).queue_free()
 			cards.erase(id)
+
+
+static var _blob_mat: StandardMaterial3D
+func _contact_blob() -> MeshInstance3D:
+	if _blob_mat == null:
+		_blob_mat = StandardMaterial3D.new()
+		_blob_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_blob_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_blob_mat.albedo_texture = HdLight.dot()
+		_blob_mat.albedo_color = Color(0.03, 0.02, 0.02, 0.55)
+		_blob_mat.disable_fog = true
+		_blob_mat.render_priority = 3
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(0.95, 0.42)
+	var m := MeshInstance3D.new()
+	m.mesh = plane
+	m.material_override = _blob_mat
+	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_world.add_child(m)
+	return m
 
 
 ## HD: where a person is on the screen (for Sprite3.set_people): the rect round all their cards,
@@ -524,6 +551,8 @@ func _sync(_delta: float) -> void:
 			for card: Dictionary in (entry["cards"] as Dictionary).values():
 				(card["body"] as Node).queue_free()
 				(card["shade"] as Node).queue_free()
+			if entry.has("blob") and is_instance_valid(entry["blob"]):
+				(entry["blob"] as Node).queue_free()
 			_live.erase(id)
 			continue
 		_sync_holder(entry, ysort, stamp)

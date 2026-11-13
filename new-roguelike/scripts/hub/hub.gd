@@ -15,6 +15,7 @@ extends Node2D
 ## pictures; --hubtalk=<npc id> also opens that person's window; --hublevel=<level id> goes down into
 ## that story level after a second.
 
+const Hd = preload("res://scripts/fx/hd.gd")
 const Hub = preload("res://scripts/data/hub.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Floors = preload("res://scripts/data/floors.gd")
@@ -336,6 +337,10 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	else:
 		_cam.limit_left = 0 if size.x > view.x else int((size.x - view.x) / 2.0)
 		_cam.limit_top = 0 if size.y > view.y else int((size.y - view.y) / 2.0)
+		if _view != null and bool(place.get("outdoor", false)) and size.y > view.y and Hd.on():
+			# HD: room above the north edge, so the facades, roofs and the hill behind the town are
+			# seen over the square (the 3D camera looks a little past the knight, scripts/hub/view3d.gd)
+			_cam.limit_top = -int(view.y * 0.3)
 		_cam.limit_right = int(size.x) if size.x > view.x else int((size.x + view.x) / 2.0)
 		_cam.limit_bottom = int(size.y) if size.y > view.y else int((size.y + view.y) / 2.0)
 		_cam.position = _hero.position.round()
