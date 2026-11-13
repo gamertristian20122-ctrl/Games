@@ -242,7 +242,8 @@ func _refresh_layers() -> void:
 	backdrop.call("set_dimmed", dimmed)
 	# behind the title and its menus: the lit 3D picture (scripts/ui/title_scene.gd) in place of
 	# the old flat one, when the story and the 3D look are on
-	var lit: bool = backdrop.visible and Tale.on() and bool(Save.setting("look3d")) and DisplayServer.get_name() != "headless" and not G.flag("flat")
+	# (the story always gets the lit picture: the old flat crypt belongs to the dungeon runs only)
+	var lit: bool = backdrop.visible and Tale.on() and DisplayServer.get_name() != "headless" and not G.flag("flat")
 	if lit and not is_instance_valid(_title3d):
 		_title3d = (load("res://scripts/ui/title_scene.gd") as Script).new()
 		_title3d.name = "TitleScene"
@@ -270,6 +271,8 @@ func show_title() -> void:
 	close_all()
 	open("title")
 	Sfx.music("title")
+	# a place or battle freed this frame still counts as alive until the frame ends: look again after
+	_refresh_layers.call_deferred()
 
 
 ## A turn-based battle (scripts/battle/battle.gd) with the pack of a roamer of the world map.

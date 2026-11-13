@@ -432,6 +432,13 @@ func _raining() -> bool:
 	return hash(["weather", int(G.world_clock / WEATHER_SLOT)]) % 100 < RAIN_CHANCE
 
 
+## No rain in the sands: Dustwatch, the Sunwell, and the desert half of the world map (east of x 860).
+func _dry_here() -> bool:
+	if place_id in ["dustwatch", "suncourt"]:
+		return true
+	return place_id == "world" and is_instance_valid(_hero) and _hero.position.x > 860.0
+
+
 ## Moves the day on and lays its light over the place (out of doors only).
 func _weather(delta: float) -> void:
 	G.world_clock += delta
@@ -445,7 +452,7 @@ func _weather(delta: float) -> void:
 			sky = (SKY[i][1] as Color).lerp(SKY[i + 1][1], (t - float(SKY[i][0])) / maxf(float(SKY[i + 1][0]) - float(SKY[i][0]), 0.001))
 			break
 	var dark := clampf((1.0 - sky.g) / 0.42, 0.0, 1.0)             # 0 by day, 1 in the middle of the night
-	var rain := _raining()
+	var rain := _raining() and not _dry_here()
 	if rain:
 		sky *= RAIN_SKY
 	var own: Color = place.get("tint", DUSK)                       # a place's own shade (the deep wood is bluer)

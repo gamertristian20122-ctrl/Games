@@ -574,6 +574,28 @@ func _sync_words(_zoom: float) -> void:
 					copy.reset_size()
 		var at := cam.unproject_position(p) * k
 		copy.position = (at - Vector2(copy.size.x * 0.5, copy.size.y)).round()
+		if kind == "sign":
+			_keep_clear(copy)
+
+
+## World-map place names stay on the screen, inside the phone's safe area, and fade out under the
+## story line (top left) and the coins / pause / level buttons (top right) instead of covering them.
+func _keep_clear(copy: Control) -> void:
+	var room: Vector2 = _words.size if _words is Control else Vector2(get_viewport().get_visible_rect().size)
+	var cut := UI.safe_insets(copy)
+	var pad := 6.0
+	var lo := cut.x + pad
+	var hi := room.x - cut.z - pad - copy.size.x
+	if hi > lo:
+		copy.position.x = clampf(copy.position.x, lo, hi)
+	var r := Rect2(copy.position, copy.size)
+	var band := room.y * 0.24                        # the HUD's top strip
+	var fade := 1.0
+	if r.position.y < band and (r.position.x < room.x * 0.5 or r.end.x > room.x * 0.78):
+		fade = clampf((r.position.y - band * 0.6) / (band * 0.4), 0.0, 1.0)
+	if r.end.y > room.y - cut.w - pad:
+		fade = minf(fade, clampf((room.y - cut.w - r.position.y) / maxf(r.size.y, 1.0) - 0.5, 0.0, 1.0))
+	copy.modulate.a = fade
 
 
 # ------------------------------------------------------------------ every frame

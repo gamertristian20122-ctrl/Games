@@ -42,6 +42,12 @@ func build() -> void:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(list)
 	var w := 540.0 if not _ph else 360.0
+	# never wider than the screen between the phone's notch / rounded corners (the labels below are
+	# made at this width, so a too-wide w pushes the panel off the right edge)
+	if is_inside_tree():
+		var room := UI.screen_size(self)
+		var cut := UI.safe_insets(self)
+		w = minf(w, room.x - cut.x - cut.z - (24.0 if _ph else 40.0))
 	resized.connect(_fit_size.bind(panel, w))
 	_fit_size.call_deferred(panel, w)
 
@@ -82,7 +88,9 @@ func build() -> void:
 func _fit_size(panel: Control, w: float) -> void:
 	var host := UI.screen_size(self)
 	var h := host.y - (52.0 if not _ph else 8.0)
-	panel.custom_minimum_size = Vector2(minf(w + 20.0, host.x - 16.0), maxf(h, 80.0))
+	var cut := UI.safe_insets(self) if _ph else Vector4.ZERO
+	h -= cut.y + cut.w
+	panel.custom_minimum_size = Vector2(minf(w + 20.0, host.x - 16.0 - cut.x - cut.z), maxf(h, 80.0))
 
 
 func _header() -> Control:
