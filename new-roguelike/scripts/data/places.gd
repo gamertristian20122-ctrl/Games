@@ -112,11 +112,11 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	props.append_array([["hub_ghedge", 682, 356, 0, 0], ["hub_ghedge", 746, 356, 0, 0],
 		["hub_gbed_0", 668, 392, 0, 0], ["hub_gbed_5", 692, 392, 0, 0], ["hub_gbed_2", 716, 392, 0, 0], ["hub_gbed_7", 740, 392, 0, 0], ["hub_gbed_3", 764, 392, 0, 0],
 		["hub_gbed_1", 680, 418, 0, 0], ["hub_gbed_6", 704, 418, 0, 0], ["hub_gbed_4", 728, 418, 0, 0], ["hub_gbed_0", 752, 418, 0, 0],
-		["hub_gurn_1", 780, 376, 5, 1], ["hub_planter", 656, 432, 6, 1]])
+		["hub_gurn_1", 780, 376, 5, 1], ["hub_planter", 676, 444, 6, 1]])
 	blocks.append(Rect2(650, 346, 128, 10))
 	# flowers: clumps of single garden flowers (cut one by one from the Garden pack)
 	var clumps: Array = [Vector2(186, 178), Vector2(356, 196), Vector2(612, 196), Vector2(780, 206), Vector2(160, 420), Vector2(96, 432),
-		Vector2(344, 452), Vector2(170, 452), Vector2(400, 394), Vector2(560, 394), Vector2(272, 260), Vector2(822, 512), Vector2(892, 512),
+		Vector2(344, 452), Vector2(170, 452), Vector2(400, 394), Vector2(560, 394), Vector2(300, 228), Vector2(822, 512), Vector2(892, 512),
 		Vector2(620, 470), Vector2(232, 316), Vector2(780, 440), Vector2(640, 330), Vector2(56, 220), Vector2(420, 210), Vector2(540, 210)]
 	var tints: Array = [[0, 1, 2, 4, 5], [6, 8, 9, 12, 13], [16, 17, 18, 19, 20], [23, 24, 25, 28, 29]]
 	for i in clumps.size():
@@ -136,12 +136,70 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 		lights.append([at - Vector2(0, 40), Color(1.0, 0.78, 0.46), 1.0, 0.55])
 	t["torches"] = torches
 	t["lights"] = lights
+	_market_town(t)
 	# more kinds of grass and flowers lying in the grass
 	var scatter: Dictionary = (t["scatter"] as Dictionary).duplicate()
 	scatter["hub_gflower"] = [32, 36]
 	scatter["hub_gtuft"] = [4, 60]
 	t["scatter"] = scatter
 	return t
+
+
+## WICKMERE AS A MARKET TOWN (set dressing): what a lived-in street leaves about, all of it the
+## purchased packs' own pieces (ids hub_s*, hub_v*; tools/import_hub.py):
+##   the south lamp     moved off the middle of the south road to its east verge
+##   market stalls      Mira's stall at the south-east corner of the square, a produce stall on
+##                      the west street ("stalls": built in 3D by scripts/hub/arch/sites.gd; the
+##                      goods on their counters are props lifted onto the counter)
+##   the yards          barrels and sacks at the Hollow Flagon, crates and a water tub in the smithy's yard
+##   bunting            pennants strung from lamp post to lamp post round the square and down the streets
+##   bushes and ferns   round bushes in four colours in the garden corners
+##   the near edge      tall dark shrubs past the south edge, between the camera and the town (the
+##                      near blur melts them, as a real lens would)
+## Nothing here stands on a road or a doorstep; anything tall stands where nobody walks behind it
+## (its "blocks" rectangle keeps people off it and out of the shade behind it).
+static func _market_town(t: Dictionary) -> void:
+	var props: Array = t["props"]
+	var blocks: Array = t["blocks"]
+	var torches: Array = t["torches"]
+	var lights: Array = t["lights"]
+	# the lamp post that stood in the middle of the south road goes to its east verge
+	var old := Vector2(480, 470)
+	var new := Vector2(514, 474)
+	for i in props.size():
+		var row: Array = props[i]
+		if String(row[0]) == "hub_post" and Vector2(row[1], row[2]) == old:
+			props[i] = ["hub_post", new.x, new.y, 3, 0]
+	for i in torches.size():
+		if torches[i] == old:
+			torches[i] = new
+	for row: Array in lights:
+		if row[0] == old - Vector2(0, 40):
+			row[0] = new - Vector2(0, 40)
+	# market stalls: their counters face the street, their backs to a hedge or the garden
+	t["stalls"] = [{"at": Vector2(636, 422), "wide": 54.0, "roof": "hub_roof_tiles"},
+		{"at": Vector2(256, 262), "wide": 46.0, "roof": "hub_roof_planks"}]
+	blocks.append_array([Rect2(608, 400, 56, 24), Rect2(232, 238, 48, 26)])
+	# what Mira sells: pots, a jug, a sack of meal, apples in a crate
+	props.append_array([["hub_spot", 620, 423, 0, -12], ["hub_sjug", 632, 423, 0, -12], ["hub_ssack_0", 646, 423, 0, -12], ["hub_sveg_4", 658, 423, 0, -4]])
+	# the produce stall on the west street: cabbages, leeks and greens in crates, sacks of grain
+	props.append_array([["hub_sveg_2", 242, 263, 0, -4], ["hub_sveg_0", 256, 263, 0, -4], ["hub_sveg_5", 270, 263, 0, -4],
+		["hub_ssack_1", 288, 268, 0, 1], ["hub_ssack_2", 224, 268, 0, 1]])
+	# the Hollow Flagon's barrels and a crate; the smithy's crates, its water tub and buckets
+	props.append_array([["hub_sbarrel_1", 74, 172, 8, 1], ["hub_sbarrel_f", 52, 178, 4, 1], ["hub_ssack_4", 92, 182, 0, 1], ["hub_scrate_4", 168, 170, 5, 1],
+		["hub_sbarrel_1", 790, 250, 8, 1], ["hub_scrate_5", 808, 254, 5, 1], ["hub_scrate_1", 822, 250, 4, 1], ["hub_sbucket", 742, 262, 0, 0]])
+	# bunting from lamp post to lamp post (the posts are 48 px tall)
+	# (only where people stand in front of the rope, never behind it: a pennant never hides a face)
+	t["bunting"] = [[Vector2(210, 300), Vector2(360, 250), 44.0], [Vector2(360, 250), Vector2(600, 250), 44.0, 12.0],
+		[Vector2(600, 250), Vector2(880, 250), 44.0, 14.0]]
+	# round bushes in the garden corners, ferns and reeds at the mere's edge
+	props.append_array([["hub_vbushl_0", 196, 236, 8, 2], ["hub_vbushm_2", 352, 336, 7, 2],
+		["hub_vbush_6", 60, 452, 8, 2], ["hub_vbushm_0", 584, 204, 7, 2],
+		["hub_vplant_4", 160, 466, 0, 1], ["hub_vplant_5", 372, 462, 0, 1], ["hub_vplant_6", 386, 470, 0, 1],
+		["hub_vplant_7", 340, 392, 0, 1]])
+	# the near edge: dark shrubs and a cypress past the south edge, nearer the camera than anyone
+	props.append_array([["hub_vbig_0", 60, 572, 0, 2], ["hub_gcypress_1", 404, 578, 0, 0], ["hub_vbig_3", 640, 574, 0, 2],
+		["hub_vbig_1", 760, 576, 0, 2], ["hub_gcypress_0", 900, 580, 0, 0]])
 
 
 static func _base_place(id: String) -> Dictionary:
@@ -194,7 +252,18 @@ static func _base_place(id: String) -> Dictionary:
 					["hub_gflower_0", 160, 226, 0, 0], ["hub_gflower_4", 168, 230, 0, 0], ["hub_gflower_1", 154, 233, 0, 0], ["hub_gflower_24", 362, 222, 0, 0],
 					["hub_gflower_28", 370, 226, 0, 0], ["hub_gflower_25", 356, 229, 0, 0], ["hub_gflower_12", 300, 176, 0, 0], ["hub_gflower_13", 309, 172, 0, 0],
 					["hub_gflower_8", 294, 170, 0, 0], ["hub_gflower_17", 520, 176, 0, 0], ["hub_gflower_18", 528, 181, 0, 0], ["hub_gflower_20", 514, 183, 0, 0],
-					["hub_gflower_6", 430, 228, 0, 0], ["hub_gflower_9", 438, 232, 0, 0], ["hub_gflower_29", 204, 288, 0, 0], ["hub_gflower_23", 212, 292, 0, 0]],
+					["hub_gflower_6", 430, 228, 0, 0], ["hub_gflower_9", 438, 232, 0, 0], ["hub_gflower_29", 204, 288, 0, 0], ["hub_gflower_23", 212, 292, 0, 0],
+					# set dressing: reeds and ferns round the pond, foxgloves in the light, round bushes in
+					# layers along both edges, a dead tree and old stumps where the thorn-sickness passed
+					["hub_vplant_4", 184, 304, 0, 1], ["hub_vplant_5", 316, 300, 0, 1], ["hub_vplant_6", 326, 308, 0, 1], ["hub_vplant_3", 300, 296, 0, 1],
+					["hub_vplant_0", 206, 296, 0, 1], ["hub_vplant_7", 158, 268, 0, 1], ["hub_vplant_8", 168, 274, 0, 1], ["hub_vplant_9", 376, 302, 0, 1],
+					["hub_vplant_7", 500, 286, 0, 1], ["hub_vplant_1", 404, 168, 0, 1], ["hub_vplant_1", 112, 186, 0, 1],
+					["hub_vbushm_0", 226, 126, 8, 2], ["hub_vbush_5", 432, 124, 8, 2], ["hub_vbushl_2", 610, 120, 0, 2], ["hub_vbushs_0", 46, 120, 0, 2],
+					["hub_vbushm_3", 520, 330, 8, 2], ["hub_vbush_4", 412, 334, 8, 2], ["hub_vbushl_0", 52, 332, 0, 2],
+					["hub_vdead_0", 560, 116, 0, 2], ["hub_vdead_2", 140, 252, 0, 1], ["hub_vdead_2", 470, 120, 0, 1],
+					# the near edge: dark bushes past the south edge, nearer the camera than anyone (the near blur melts them)
+					["hub_vbig_0", 56, 362, 0, 2], ["hub_vbig_2", 150, 366, 0, 2], ["hub_vbig_0", 372, 364, 0, 2], ["hub_vbig_3", 470, 368, 0, 2], ["hub_vbig_1", 598, 360, 0, 2]],
+				"tour": [Vector2(140, 230), Vector2(300, 260), Vector2(470, 240), Vector2(560, 200)],     # test pictures (--hub=elfwood --shots)
 				"paths": [[Vector2(-10, 204), Vector2(250, 210), Vector2(400, 190), Vector2(650, 196)]],
 				"scatter": {"hub_tuft": [24, 90], "hub_flower": [26, 60], "hub_pebble": [20, 10], "hub_twig": [10, 14], "hub_gtuft": [4, 50], "hub_gflower": [32, 30]},
 				"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 150, 70, 120), Rect2(600, 140, 80, 120)]},
@@ -360,28 +429,74 @@ static func _world() -> Dictionary:
 	}
 
 
-## Dustwatch: the diggers' camp in the eastern sands, over the stair down to the Warrens.
+## Dustwatch: the diggers' camp in the eastern sands, over the stair down to the Warrens. Since the
+## set dressing it is a real town of the Sands, all of it the purchased Desert, Hideout and Free pieces:
+##   the wall market    four stalls against the town wall (sloping roofs on posts, plank counters:
+##                      "stalls", built by scripts/hub/arch/sites.gd), their wares on the counters
+##   Nib's stall        on the east side of the plaza, pots and a chest of things the sand gave up
+##   Grukk's smithy     the anvil, a work table, the forge's barrels and a crate
+##   the caravan camp   bedrolls round a cook fire in the south-west corner
+##   the yard           crates, barrels and sacks stacked in the south-east corner
+##   lanterns           lanterns on arms at the plaza's corners and by the stalls (warm pools at night)
+##   bunting            pennants from tower to tower over the cistern door, and across the market
+##   the near edge      cacti and a dead tree past the low wall, between the camera and the town
 static func _dustwatch() -> Dictionary:
+	var warm := Color(1.0, 0.74, 0.44)
+	var lanterns := [Vector2(204, 346), Vector2(428, 346), Vector2(110, 238), Vector2(598, 196)]
+	var props: Array = [
+		["hub_ddoor", 320, 152, 0, 0], ["hub_dstairs", 320, 200, 0, 0],
+		["hub_obelisk_0", 150, 190, 12, 2], ["hub_obelisk_1", 492, 190, 12, 2], ["hub_obelisk_2", 548, 318, 12, 2],
+		["hub_dpillar_0", 262, 204, 6, 2], ["hub_dpillar_1", 378, 204, 6, 2],
+		["hub_dpot_1", 118, 312, 4, 1], ["hub_dpot_0", 102, 318, 5, 1],
+		["hub_anvil_0", 160, 300, 16, 4], ["hub_dstone_2", 50, 256, 10, 2],
+		["hub_cactus_4", 76, 206, 8, 2], ["hub_cactus_3", 590, 236, 6, 2], ["hub_dbush_1", 566, 366, 8, 3], ["hub_tusk_2", 600, 290, 6, 2],
+		["hub_dblock_0", 410, 350, 0, 1], ["hub_dblock_1", 230, 356, 0, 1],
+		# the wall market's wares, lifted onto the counters
+		["hub_dpot_0", 66, 147, 0, -12], ["hub_dpot_1", 78, 147, 0, -12], ["hub_spot", 90, 147, 0, -12], ["hub_sjug", 100, 147, 0, -12],
+		["hub_ssack_0", 186, 147, 0, -12], ["hub_ssack_1", 202, 147, 0, -12], ["hub_sveg_6", 214, 147, 0, -4],
+		["hub_sjug", 426, 147, 0, -12], ["hub_sbucket", 440, 147, 0, -12], ["hub_spot", 454, 147, 0, -12],
+		["hub_sveg_3", 546, 147, 0, -4], ["hub_sveg_1", 560, 147, 0, -4], ["hub_ssack_3", 578, 147, 0, -12],
+		["hub_sbarrel_f", 118, 150, 4, 1], ["hub_ssack_4", 232, 152, 0, 1], ["hub_scrate_3", 404, 150, 4, 1], ["hub_sbarrel_f", 596, 150, 4, 1],
+		# Nib's stall: pots and a jug on the counter, his chest beside it
+		["hub_dpot_1", 472, 265, 0, -12], ["hub_dpot_0", 486, 265, 0, -12], ["hub_sjug", 500, 265, 0, -12], ["hub_dchest", 532, 274, 10, 2],
+		# Grukk's smithy: the forge's barrels and a crate
+		["hub_fbarrel_0", 120, 286, 5, 1], ["hub_fbarrel_1", 134, 280, 5, 1], ["hub_fcrate_1", 104, 298, 8, 2],
+		# the caravan camp: sacks and a crate by the bedrolls
+		["hub_ssack_2", 56, 344, 0, 1], ["hub_ssack_4", 70, 340, 0, 1], ["hub_scrate_2", 186, 356, 4, 1], ["hub_strough", 176, 384, 6, 1],
+		# the yard: crates, barrels and sacks
+		["hub_scrate_4", 456, 362, 5, 1], ["hub_scrate_5", 472, 358, 5, 1], ["hub_sbarrel_1", 498, 368, 8, 1], ["hub_ssack_2", 482, 374, 0, 1],
+		["hub_scrate_0", 520, 372, 4, 1],
+		# the near edge: past the low wall, nearer the camera than anyone
+		["hub_cactus_4", 110, 452, 0, 2], ["hub_dtree_0", 556, 456, 0, 2], ["hub_cactus_2", 470, 448, 0, 2], ["hub_dbush_0", 196, 450, 0, 3],
+	]
+	var lights: Array = [[Vector2(320, 276), Color(1.0, 0.72, 0.42), 2.1, 0.7], [Vector2(320, 150), Color(0.45, 0.75, 1.0), 1.2, 0.4],
+		[Vector2(150, 348), Color(1.0, 0.68, 0.40), 1.4, 0.6]]                    # the caravan's cook fire
+	for at: Vector2 in lanterns:
+		props.append(["hub_slantern", at.x, at.y, 0, 0])
+		lights.append([at + Vector2(16, -33), warm, 1.1, 0.55])
+	for x: float in [82.0, 198.0, 440.0, 562.0]:
+		lights.append([Vector2(x, 146 - 28), warm, 0.7, 0.45])                     # a lamp under each stall's roof
 	return {
 		"name": "Dustwatch", "camp": 1, "size": Vector2(640, 430), "outdoor": true, "walk": Rect2(30, 104, 580, 290), "spawn": Vector2(320, 366),
 		"ground": "hub_sand", "tint": Color(0.96, 0.88, 0.78), "fire": Vector2(320, 286),
 		"floor": [["hub_paving", Rect2(224, 208, 192, 128)]],
-		"props": [
-			["hub_ddoor", 320, 152, 0, 0], ["hub_dstairs", 320, 200, 0, 0],
-			["hub_obelisk_0", 150, 190, 12, 2], ["hub_obelisk_1", 492, 190, 12, 2], ["hub_obelisk_2", 548, 318, 12, 2],
-			["hub_dpillar_0", 262, 204, 6, 2], ["hub_dpillar_1", 378, 204, 6, 2],
-			["hub_dchest", 470, 262, 10, 2], ["hub_dpot_0", 494, 270, 5, 1], ["hub_dpot_1", 452, 274, 4, 1], ["hub_dpot_1", 118, 312, 4, 1], ["hub_dpot_0", 102, 318, 5, 1],
-			["hub_anvil_0", 160, 300, 16, 4], ["hub_dstone_2", 124, 262, 10, 2],
-			["hub_cactus_4", 76, 206, 8, 2], ["hub_cactus_3", 574, 236, 6, 2], ["hub_dbush_1", 566, 366, 8, 3], ["hub_dtree_1", 84, 370, 5, 2], ["hub_tusk_2", 236, 160, 6, 2],
-			["hub_dblock_0", 410, 350, 0, 1], ["hub_dblock_1", 230, 356, 0, 1],
-		],
+		"tour": [Vector2(320, 330), Vector2(140, 200), Vector2(500, 210), Vector2(140, 330), Vector2(470, 320)],     # test pictures (--hub=dustwatch --shots)
+		"props": props,
+		"stalls": [{"at": Vector2(82, 146), "wide": 56.0, "roof": "hub_roof_tiles"}, {"at": Vector2(198, 146), "wide": 48.0, "roof": "hub_roof_planks"},
+			{"at": Vector2(440, 146), "wide": 52.0, "roof": "hub_roof_planks"}, {"at": Vector2(562, 146), "wide": 56.0, "roof": "hub_roof_tiles"},
+			{"at": Vector2(488, 264), "wide": 56.0, "roof": "hub_roof_tiles"}],
+		"bunting": [[Vector2(258, 92), Vector2(382, 92), 64.0, 10.0], [Vector2(56, 120), Vector2(224, 120), 46.0, 6.0], [Vector2(414, 120), Vector2(588, 120), 46.0, 6.0]],
+		"decals": [["hub_sbed_0", 72, 360], ["hub_sbed_1", 96, 364], ["hub_scush", 122, 374], ["hub_sring", 150, 362],
+			["hub_sripple_1", 566, 210], ["hub_sripple_2", 92, 228], ["hub_sripple_3", 560, 392], ["hub_sripple_4", 404, 386], ["hub_sripple_2", 232, 392]],
+		"anims": [["hub_fire_c", 150, 364, 7.0, 9.0, false]],
 		"scatter": {"hub_dgrass": [4, 46], "hub_dblock": [4, 10]},
 		"forest": {"top_gaps": [[250.0, 390.0]], "behind": [], "open": [Rect2(250, 390, 140, 90)],
 			"big": ["hub_dstone_0", "hub_dtree_0", "hub_dstone_1", "hub_tusk_1", "hub_obelisk_2", "hub_dbush_0"],
 			"side": ["hub_cactus_4", "hub_dbush_0", "hub_cactus_3", "hub_dstone_1"],
 			"low": ["hub_dshrub", "hub_dbush_2", "hub_cactus_1", "hub_cactus_0", "hub_dstone_2", "hub_dbush_2"],
 			"young": ["hub_dtree_1", "hub_cactus_2", "hub_dbush_1"]},
-		"blocks": [Rect2(288, 104, 64, 96)],
+		"blocks": [Rect2(288, 104, 64, 96), Rect2(52, 104, 60, 44), Rect2(172, 104, 52, 44), Rect2(412, 104, 56, 44), Rect2(532, 104, 60, 44),
+			Rect2(458, 236, 60, 30), Rect2(56, 350, 80, 22)],
 		"exits": [{"rect": Rect2(270, 386, 100, 10), "to": "world", "at": Vector2(1120, 690)}],
 		"people": [
 			{"id": "sefa", "name": "Captain Sefa", "title": "Keeper of the Cistern Stair", "sprite": "pc_royal_archer", "hands": "pc_hand_castle_17",
@@ -395,7 +510,7 @@ static func _dustwatch() -> Dictionary:
 				"pos": Vector2(226, 214), "face": 1, "role": "quests", "text": "I keep the camp's list of work. Do it, and your pack will be heavier."},
 			{"id": "dustfire", "name": "The camp fire", "title": "A place to rest", "ghost": true, "pos": Vector2(320, 300), "top": 22, "role": "bed", "text": ""},
 		],
-		"lights": [[Vector2(320, 276), Color(1.0, 0.72, 0.42), 2.1, 0.7], [Vector2(320, 150), Color(0.45, 0.75, 1.0), 1.2, 0.4]],
+		"lights": lights,
 	}
 
 

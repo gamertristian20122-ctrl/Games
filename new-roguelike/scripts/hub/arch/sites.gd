@@ -9,6 +9,9 @@ extends RefCounted
 ##   Dustwatch    the town wall of the Sands with merlons, two towers either side of the cistern
 ##                stair, stairs up to the wall walk, flat-roofed sandstone houses behind the wall,
 ##                and a low wall along the near edge
+##   stalls       any place's "stalls": market stalls (four posts, a sloping roof with a fringe, a
+##                plank counter); the goods on the counter are ordinary props of the place
+##   bunting      any place's "bunting": a rope of little pennants strung between two posts
 ## NOTHING HERE BLOCKS WALKING: walking is hub.gd's flat 2D, so everything stands where nobody
 ## walks (behind a place's "walk" top, on water, past its near edge) or is low (kerbs, the gate steps).
 ## Positions are art pixels of the flat picture (x, y) as in scripts/data/; heights are px too.
@@ -52,6 +55,10 @@ func build(place_id: String, place: Dictionary, the_shade: SurfaceTool) -> void:
 	shade = the_shade
 	_kerbs(place)
 	kit.take_corners()                                  # (kerbs are too low to throw a shadow)
+	for row: Dictionary in place.get("stalls", []):
+		_stall(row)
+	for row: Array in place.get("bunting", []):
+		_bunting(row[0], row[1], float(row[2]), float(row[3]) if row.size() > 3 else 8.0)
 	match place_id:
 		"village":
 			_wickmere(place)
@@ -328,3 +335,80 @@ func _wall_stair(x_top: float, dir: float, face: float, high: float, cap: Textur
 		var up := high * float(n - i) / n
 		blk(wall, Vector3(minf(xa, xb), 0, face), Vector3(maxf(xa, xb), up, face + deep), Kit.BOTTOM, cap)
 	_shadow()
+
+
+# ------------------------------------------------------------------ market stalls and bunting
+## A market stall. Row keys: "at" Vector2 (middle of the counter's front, px), "wide" 52, "deep" 22,
+## "tall" 28 (the front edge of the roof), "deep" 18, "roof" (an Art id: hub_roof_tiles, hub_roof_planks).
+## Only the stall is built here: its goods are props, and the place's "blocks" keep people off it
+## and out of the shade behind it (it is as tall as a man).
+func _stall(row: Dictionary) -> void:
+	var at: Vector2 = row["at"]
+	var wide := float(row.get("wide", 52.0))
+	var deep := float(row.get("deep", 18.0))
+	var tall := float(row.get("tall", 28.0))
+	var roof := Art.tex(String(row.get("roof", "hub_roof_tiles")))
+	var post := Art.tex("hub_bpost")
+	var plank := Art.tex("hub_bplank")
+	var beam := Art.tex("hub_bbeam")
+	var lift: float = b.height(at) / (PX * vs)
+	var w := wide * 0.5
+	var back := at.y - deep
+	var rise := 6.0                                     # the roof slopes down to the front
+	# four posts, the back ones taller
+	for c: Array in [[at.x - w + 2, at.y - 1, tall], [at.x + w - 2, at.y - 1, tall], [at.x - w + 2, back + 2, tall + rise], [at.x + w - 2, back + 2, tall + rise]]:
+		blk(post, Vector3(c[0] - 1.2, lift, c[1] - 1.2), Vector3(c[0] + 1.2, lift + c[2], c[1] + 1.2), Kit.BOTTOM | Kit.TOP)
+	# the counter: a plank box along the front, a shelf top
+	blk(plank, Vector3(at.x - w + 3, lift, at.y - 8), Vector3(at.x + w - 3, lift + 13, at.y - 1), Kit.BOTTOM, plank)
+	blk(beam, Vector3(at.x - w + 2, lift + 13, at.y - 9), Vector3(at.x + w - 2, lift + 14.5, at.y), Kit.BOTTOM)
+	# a back board, so the stall reads as a little booth
+	blk(plank, Vector3(at.x - w + 2, lift, back + 1), Vector3(at.x + w - 2, lift + tall * 0.55, back + 3), Kit.BOTTOM)
+	_shadow()
+	# the roof: from above the back posts down over the front, a little past every side
+	var over := 3.0
+	var y_back := lift + tall + rise + 1.0
+	var y_front := lift + tall - 1.0
+	var zb := back - 2.0
+	var zf := at.y + 2.0
+	var n := Vector3(0, zf - zb, (y_back - y_front) * vs).normalized()
+	kit.poly(roof, [p(at.x - w - over, y_back, zb), p(at.x + w + over, y_back, zb), p(at.x + w + over, y_front, zf), p(at.x - w - over, y_front, zf)], n)
+	kit.poly(plank, [p(at.x - w - over, y_back - 1.5, zb), p(at.x + w + over, y_back - 1.5, zb), p(at.x + w + over, y_front - 1.5, zf), p(at.x - w - over, y_front - 1.5, zf)], -n)
+	# the fringe along the low edge (its scallops hang down) and the beam it hangs from
+	var fringe := Art.tex("hub_bfringe")
+	var fh := fringe.get_size().y
+	kit.panel(fringe, p(at.x - w - over, 0, zf + 0.3), p(at.x + w + over, 0, zf + 0.3), (y_front - fh) * PX * vs, y_front * PX * vs, Vector3(0, 0, 1), "solid")
+	_shadow()
+
+
+## A rope from a to b (px of the flat picture) tied `high` px up at both ends, sagging `sag` px in
+## the middle, with a little pennant every few px in turn of three colours.
+func _bunting(a: Vector2, c: Vector2, high: float, sag: float) -> void:
+	var rope := Art.tex("hub_bbeam")
+	var flags := [Art.tex("hub_sbanner_0"), Art.tex("hub_sbanner_1"), Art.tex("hub_sbanner_2")]
+	var span := a.distance_to(c)
+	var steps := maxi(4, int(span / 10.0))
+	var along := (c - a).normalized()
+	var n := Vector3(-along.y, 0.0, along.x)
+	if n.z < 0.0:
+		n = -n                                           # the pennants face the camera's side
+	var la: float = b.height(a) / (PX * vs)
+	var lc: float = b.height(c) / (PX * vs)
+	var pts: Array = []
+	for i in steps + 1:
+		var t := float(i) / steps
+		var q := a.lerp(c, t)
+		pts.append(Vector3(q.x, lerpf(la, lc, t) + high - sag * 4.0 * t * (1.0 - t), q.y))
+	for i in steps:
+		var s0: Vector3 = pts[i]
+		var s1: Vector3 = pts[i + 1]
+		kit.poly(rope, [p(s0.x, s0.y + 0.6, s0.z), p(s1.x, s1.y + 0.6, s1.z), p(s1.x, s1.y - 0.6, s1.z), p(s0.x, s0.y - 0.6, s0.z)], n)
+		# a pennant hangs from the middle of every piece of rope but the ends
+		if i == 0 or i == steps - 1:
+			continue
+		var m := (s0 + s1) * 0.5
+		var fw := 5.0
+		var fl := 9.0
+		var l := Vector2(m.x, m.z) - along * fw * 0.5
+		var r := Vector2(m.x, m.z) + along * fw * 0.5
+		kit.panel(flags[i % 3], p(l.x, 0, l.y), p(r.x, 0, r.y), (m.y - fl) * PX * vs, m.y * PX * vs, n, "solid", true)
+	kit.take_corners()                                   # (too thin for a flat shadow)

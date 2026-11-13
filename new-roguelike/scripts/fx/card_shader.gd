@@ -313,7 +313,7 @@ static func shine_of(tex: Texture2D) -> float:
 ## How much a still picture sways in the wind (plants do, stone and wood do not).
 static func sway_of(tex: Texture2D) -> float:
 	var path := tex.resource_path
-	for word: String in ["hub_tree", "hub_bush", "hub_bloom", "hub_vine", "hub_plant", "hub_dtree", "hub_dbush", "hub_planter"]:
+	for word: String in ["hub_tree", "hub_bush", "hub_bloom", "hub_vine", "hub_plant", "hub_dtree", "hub_dbush", "hub_planter", "hub_vbush", "hub_vbig", "hub_vplant"]:
 		if path.contains(word):
 			return 0.035
 	return 0.0
