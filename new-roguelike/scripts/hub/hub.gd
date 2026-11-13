@@ -1174,9 +1174,12 @@ func _physics_process(delta: float) -> void:
 	_time += delta
 	_move_follower(delta)
 	_move_roamers(delta)
+	_wild_steps(delta)
 	var move := Vector2.ZERO
 	if not frozen and not _changing:
 		move = Controls.move
+		if G.flag("wildtest"):           # test: --wildtest walks him east across the map
+			move = Vector2(1.0, 0.1)
 		if not _tour.is_empty():
 			move = _tour_step(delta)
 	var moving := move.length() > 0.12
@@ -1552,7 +1555,9 @@ func _build_roamers() -> void:
 	_roamers.clear()
 	_caught = false
 	_roam_grace = Roamers.GRACE
-	if place_id != "world":
+	_wild_left = randf_range(Roamers.STEPS_MIN, Roamers.STEPS_MAX)
+	_wild_last = Vector2.INF
+	if place_id != "world" or Roamers.RANDOM:
 		return
 	for i in Roamers.SPOTS.size():
 		if not Roamers.here(i):
@@ -1585,6 +1590,41 @@ func _build_roamers() -> void:
 		node.add_child(mark)
 		_roamers.append({"spot": i, "node": node, "body": body, "hands": hands, "mark": mark, "home": spot["at"], "leash": float(spot.get("leash", 60.0)),
 			"goal": spot["at"], "wait": randf_range(0.5, 3.0), "chasing": false, "face": 1.0, "runs": Art.has_anim(sprite_id, "run"), "tint": row.get("tint", Color.WHITE)})
+
+
+var _wild_left := 800.0
+var _wild_last := Vector2.INF
+
+
+## Pokemon-style meetings: on the world map every bit of walking in the wild counts down, and at
+## zero a fight starts by itself (a "!" sound, a beat, then the battle) with the monsters of the
+## ground he is on. Never near the village gate, never during a test tour, never right after arriving.
+func _wild_steps(_delta: float) -> void:
+	if not Roamers.RANDOM or place_id != "world" or not is_instance_valid(_hero):
+		return
+	if not frozen and not _changing:
+		_roam_grace -= _delta
+	if frozen or _changing or _caught or not _tour.is_empty() or _roam_grace > 0.0:
+		_wild_last = _hero.position
+		return
+	if _wild_last == Vector2.INF:
+		_wild_last = _hero.position
+		return
+	var walked := _hero.position.distance_to(_wild_last)
+	_wild_last = _hero.position
+	if walked <= 0.0 or walked > 40.0 or _hero.position.distance_to(Roamers.SAFE_GATE) < Roamers.SAFE_R:
+		return
+	_wild_left -= walked
+	if _wild_left > 0.0:
+		return
+	var spot := Roamers.spot_for(_hero.position)
+	_wild_left = randf_range(Roamers.STEPS_MIN, Roamers.STEPS_MAX)
+	if spot < 0:
+		return
+	_caught = true
+	print("[wild] a fight starts: spot %d (%s) at %s" % [spot, Roamers.kind_at(_hero.position), _hero.position])
+	Sfx.play("enemy_shoot", -6.0, 0.05, 0.7)
+	get_tree().create_timer(0.35).timeout.connect(func() -> void: action.emit("hub_encounter", spot))
 
 
 func _move_roamers(delta: float) -> void:

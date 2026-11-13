@@ -648,7 +648,7 @@ func _run_flow() -> void:
 	main.call("show_hub", "world")
 	await _settle(1.5)
 	var world: Node = main.get("hub")
-	_check("monsters roam the world map", is_instance_valid(world) and String(world.get("place_id")) == "world" and (world.get("_roamers") as Array).size() >= 4)
+	_check("monsters roam the world map", is_instance_valid(world) and String(world.get("place_id")) == "world" and ((world.get("_roamers") as Array).size() >= 4 or Roamers.RANDOM))
 	await G.save_shot("flow_10_world_roamers.png")
 	var stood: Vector2 = world.call("hero_pos")
 	main.call("_on_action", "hub_encounter", 0)

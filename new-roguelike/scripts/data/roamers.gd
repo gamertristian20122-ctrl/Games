@@ -24,6 +24,14 @@ const WALK := 26.0                 ## px/s strolling        (the knight does 190
 const CHASE := 118.0               ## px/s chasing: slower than the knight, so he can get away
 const TOUCH := 20.0                ## map px between their feet that counts as a touch
 const GRACE := 3.0                 ## seconds after arriving on the map before any roamer chases
+## (13 Nov 2026) The owner: fights should start while you walk, "like in Pokemon", not by going up
+## to a monster. RANDOM = true: no monsters stand on the map; walking through the wild starts a
+## fight now and then (the terrain under the knight picks which kind). false = the old roamers.
+const RANDOM := true
+const STEPS_MIN := 520.0           ## map px walked in the wild before a fight may start
+const STEPS_MAX := 1100.0          ## ... and at the latest
+const SAFE_GATE := Vector2(300, 570)  ## no fights this close to the village gate
+const SAFE_R := 200.0
 
 const KINDS := {
 	"grass": {"look": "forest", "tier": 0, "shows": ["thorn_elf", "wood_beast", "sporeling"], "title": "Ambush in the grass", "area": "The wild woods"},
@@ -88,3 +96,27 @@ static func fight(spot: int) -> Dictionary:
 
 
 const Story = preload("res://scripts/data/story.gd")
+
+
+## The terrain at a point of the world map (places.gd "world": sand east of about x 870, the Cinder
+## rock in the north-east corner), and one roamer spot of that kind whose fight to start.
+static func kind_at(at: Vector2) -> String:
+	if at.x > 1330.0 and at.y < 440.0:
+		return "rock"
+	if at.x > 870.0:
+		return "sand"
+	return "grass"
+
+
+static func spot_for(at: Vector2) -> int:
+	var want := kind_at(at)
+	var best := -1
+	var best_d := INF
+	for i in SPOTS.size():
+		if String(SPOTS[i]["kind"]) != want or Story.chapter() < int(SPOTS[i].get("from", 0)):
+			continue
+		var d := (SPOTS[i]["at"] as Vector2).distance_to(at)
+		if d < best_d:
+			best_d = d
+			best = i
+	return best
