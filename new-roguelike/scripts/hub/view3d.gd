@@ -512,7 +512,8 @@ func _twin(label: Label, holder: Node2D) -> void:
 			var ph := UI.is_phone()
 			sign.add_theme_font_size_override("font_size", 8 if ph else 10)
 			sign.add_theme_constant_override("outline_size", 3)
-			sign.add_theme_color_override("font_color", label.get_theme_color("font_color"))
+			sign.add_theme_color_override("font_color", label.get_meta("sign_colour", UI.C_PARCH))
+			sign.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
 			sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			copy = sign
 		_:

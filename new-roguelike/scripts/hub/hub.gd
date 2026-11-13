@@ -749,6 +749,7 @@ func _build_signs() -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.custom_minimum_size = Vector2(160, 0)
 		l.add_theme_color_override("font_color", colour)
+		l.set_meta("sign_colour", colour)
 		l.add_theme_color_override("font_outline_color", UI.C_INK)
 		l.add_theme_constant_override("outline_size", 3)
 		l.scale = Vector2.ONE / _zoom
@@ -1686,7 +1687,10 @@ func _tour_step(delta: float) -> Vector2:
 func _tour_end() -> void:
 	await get_tree().create_timer(0.3).timeout
 	if G.arg("hubtalk") != "":
-		talk_to(G.arg("hubtalk"))
+		if G.arg("hubtalk") == "shelf":
+			action.emit("hub_shelf", "Tam")      # test: --hubtalk=shelf opens the smith's shelf of gear
+		else:
+			talk_to(G.arg("hubtalk"))
 		await get_tree().create_timer(0.8).timeout
 		G.save_shot("hub_talk_%s.png" % G.arg("hubtalk"))
 		await get_tree().create_timer(0.3).timeout

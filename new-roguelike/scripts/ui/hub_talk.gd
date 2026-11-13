@@ -12,7 +12,8 @@ extends "res://scripts/ui/screen.gd"
 ## A button sends its "what" and "arg" to main.gd; "off": true shows it greyed out, and pressing it
 ## says why on the line under the list. The "Leave" button and these names are used by the UI tour.
 ## Layout numbers are UI px (spec 6.2); a phone uses its own smaller set (see _geo()).
-## Test flags: --talkdone (each page is shown whole at once), --talkchoices (straight to the choices).
+## Test flags: --talkdone (each page is shown whole at once), --talkchoices (straight to the choices),
+## --talkwhy (presses the first greyed choice so its reason shows).
 
 const Story = preload("res://scripts/data/story.gd")
 const Looks = preload("res://scripts/data/looks.gd")
@@ -55,6 +56,8 @@ func _geo() -> Dictionary:
 func help_pairs() -> Array:
 	if UI.is_phone():
 		return []
+	if _choices != null:
+		return [["confirm", "Choose"], ["back", "Leave"]]
 	return [["confirm", "Next"], ["back", "Leave"]]
 
 
@@ -364,6 +367,8 @@ func _show_choices() -> void:
 		col.add_child(b)
 		if first == null and not off:
 			first = b
+		if off and G.flag("talkwhy") and _why == null:
+			b.pressed.emit.call_deferred()        # test: --talkwhy presses the first greyed choice (its reason shows)
 	var back := UI.button("Leave", on_back, "", "")
 	_row_look(back, row_h, inner_w, fs)
 	back.add_theme_color_override("font_color", UI.C_DIM)
@@ -380,7 +385,8 @@ func _show_choices() -> void:
 	col.add_child(why_row)
 	panel.resized.connect(_place_choices)
 	_place_choices.call_deferred()
-	set_help([["confirm", "Choose"], ["back", "Leave"]] if not ph else [])
+	if help != null:          # (during build() the strip is not made yet: help_pairs() says Choose then)
+		set_help(help_pairs())
 	default_focus = first if first != null else back
 	default_focus.grab_focus.call_deferred()
 	UI.pop_in(panel, Vector2(0, 6))
@@ -417,7 +423,7 @@ func _show_lines(lines: Array) -> void:
 	if lines.size() > 4 and not ph:
 		fs = 10
 	var list := UI.vbox(0 if ph else 1)
-	list.position = Vector2(_text.position.x if is_instance_valid(_text) else 14.0, 8.0 if not ph else 4.0)
+	list.position = Vector2(_text.position.x if is_instance_valid(_text) else (14.0 if not ph else 8.0), float(_g["text_y"]))
 	# the last page stays when the rows fit under it; otherwise the rows take its place
 	if is_instance_valid(_text) and _text.visible:
 		var used := float(_text.get_line_count() * int(_g["line"]))
