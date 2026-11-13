@@ -42,7 +42,9 @@ func start(colour: Color, source: Callable, seconds: float, fade: float = 0.17) 
 	_mat.no_depth_test = false
 	_mat.render_priority = 12             # (over the last pass: see-through things need it)
 	# (vertex colours are kept in 0..1; the material lifts them over the bloom's threshold in HD)
-	var hot := 2.6 if Hd.on() else 1.4
+	# (HD: 2.6 made a 200-degree swing, held still by the hit-stop, bloom into a white dome round
+	# the hand that hid both fighters at night; a little over the bloom threshold is enough)
+	var hot := 1.3 if Hd.on() else 1.4
 	_mat.albedo_color = Color(hot, hot, hot, 1.0)
 	material_override = _mat
 	top_level = true
@@ -109,7 +111,9 @@ func _draw() -> void:
 		# the outer edge is the hottest (the blade's tip moves fastest), the inner edge fades out
 		var base: Vector3 = s[1]
 		var tip: Vector3 = s[2]
-		var inner := base.lerp(tip, 0.35 * age)
+		# (a crescent along the blade's outer half, thinning as it fades: a fat ribbon from near
+		# the hand read as a solid half-disc)
+		var inner := base.lerp(tip, (0.45 if Hd.on() else 0.0) + 0.35 * age)
 		_im.surface_set_color(Color(_colour.r, _colour.g, _colour.b, 0.0))
 		_im.surface_add_vertex(inner)
 		_im.surface_set_color(Color(white.r, white.g, white.b, k * 0.95))
