@@ -648,14 +648,20 @@ static func beacon() -> Dictionary:
 		"hills": [{"at": Vector2(240, 204), "radius": 182.0, "height": 46.0, "top": 104.0}],
 		"props": [["hub_rune_1", 150, 200, 12, 3], ["hub_rune_1", 330, 200, 12, 3], ["hub_rune_0", 150, 262, 9, 3], ["hub_rune_0", 330, 262, 9, 3],
 			["hub_rune_2", 190, 150, 5, 2], ["hub_rune_2", 290, 150, 5, 2], ["hub_rock_moss_1", 70, 300, 12, 3], ["hub_rock_moss_0", 410, 310, 12, 3],
-			["hub_vine_0", 196, 214, 0, 2], ["hub_vine_1", 286, 216, 0, 2], ["hub_bloom_0", 100, 372, 0, 2], ["hub_bloom_5", 390, 374, 0, 2],
+			["hub_vine_0", 196, 214, 0, 2], ["hub_vine_1", 286, 216, 0, 2],
 			["hub_bush_deep_1", 150, 380, 10, 4], ["hub_bush_green_1", 344, 384, 10, 4],
+			# ROUND TWO: the old giants of the wood stand behind the hilltop's stones (nobody walks behind
+			# them) and frame it; ferns and foxgloves at the foot of the hill instead of the giant blooms
+			["hub_froots_0", 64, 132, 26, 2], ["hub_ftrunk_0", 64, 132, 0, -102], ["hub_froots_1", 420, 134, 26, 2], ["hub_ftrunk_1", 420, 134, 0, -102],
+			["hub_fleaf_g_4", 120, 126, 0, 2], ["hub_fleaf_o_3", 364, 128, 0, 2],
+			["hub_vplant_1", 100, 368, 0, 1], ["hub_vplant_7", 112, 362, 0, 1], ["hub_vplant_1", 388, 370, 0, 1], ["hub_vplant_8", 376, 364, 0, 1],
 			# the beacon: a great stone with the fire bowl on top of it
 			["hub_stone_1", 240, 190, 16, 3], ["hub_stone_0", 214, 196, 8, 2], ["hub_stone_0", 268, 198, 8, 2]],
 		"beacon": {"pos": Vector2(240, 186), "lit": glow, "lift": 30.0},
 		"paths": [[Vector2(240, 440), Vector2(240, 230)]],
 		"scatter": {"hub_tuft": [24, 60], "hub_flower": [26, 34 if glow else 6], "hub_pebble": [20, 18], "hub_twig": [10, 12]},
-		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(180, 400, 120, 80)]},
+		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(180, 400, 120, 80)],
+			"low": ["hub_bush_deep_0", "hub_bush_green_1", "hub_bush_deep_1", "hub_bush_green_0", "hub_bush_deep_2", "hub_bush_green_2"]},
 		"exits": [{"rect": Rect2(200, 392, 80, 10), "to": "deepwood", "at": Vector2(664, 226)}],
 		"people": [
 			{"id": "giant", "name": "Old Bramblejaw", "title": "The Bramble Giant", "sprite": "boss_ogre", "pos": Vector2(250, 232), "face": -1,
@@ -690,6 +696,7 @@ static func suncourt() -> Dictionary:
 		"ground": "hub_sand", "tint": Color(1.0, 0.93, 0.80) if glow else Color(0.64, 0.68, 0.92),
 		"rise": {"from": 100.0, "over": 80.0, "height": 34.0},
 		"floor": [["hub_paving", Rect2(184, 144, 192, 160)]],
+		"terraces": [{"rect": Rect2(184, 144, 192, 160), "high": 6.0, "steps": [[280.0, 60.0]], "face": "hub_bsandcap", "top": "hub_paving"}],     # (round two: a dais)
 		"props": [["hub_obelisk_0", 150, 186, 12, 2], ["hub_obelisk_1", 410, 186, 12, 2], ["hub_obelisk_2", 96, 330, 12, 2], ["hub_obelisk_2", 464, 330, 12, 2],
 			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_3", 390, 290, 6, 2],
 			["hub_dpot_0", 230, 316, 5, 1], ["hub_dpot_1", 330, 318, 4, 1], ["hub_dchest", 448, 226, 10, 2], ["hub_dpot_1", 470, 236, 4, 1],

@@ -423,7 +423,8 @@ static func start() -> Array:
 static func _world() -> Dictionary:
 	var trees := ["hub_tree_green_1", "hub_tree_green_2", "hub_tree_teal_2", "hub_tree_green_3", "hub_tree_pink_2", "hub_tree_teal_3", "hub_bush_green_1", "hub_tree_green_2"]
 	var elf := ["hub_tree_teal_1", "hub_tree_pink_1", "hub_tree_teal_2", "hub_tree_pink_2", "hub_bloom_0", "hub_tree_teal_3", "hub_rune_2"]
-	var dry := ["hub_cactus_4", "hub_cactus_3", "hub_dbush_0", "hub_dbush_1", "hub_dstone_1", "hub_cactus_2", "hub_dtree_1", "hub_dstone_2", "hub_dshrub", "hub_tusk_2", "hub_cactus_0", "hub_dtree_0"]
+	# (round two: no broken sandstone stubs among them: spread evenly they read as rows of gravestones)
+	var dry := ["hub_cactus_4", "hub_cactus_3", "hub_dbush_0", "hub_dbush_1", "hub_dshrub", "hub_cactus_2", "hub_dtree_1", "hub_dbush_2", "hub_dshrub", "hub_tusk_2", "hub_cactus_0", "hub_dtree_0"]
 	var crag := ["hub_rock_2", "hub_rock_1", "hub_dtree_0", "hub_rock_0", "hub_rock_3", "hub_dtree_1", "hub_stone_2", "hub_rock_2"]
 	return {
 		"name": "The Wide World", "size": Vector2(2000, 1120), "outdoor": true, "walk": Rect2(40, 70, 1920, 1010), "spawn": Vector2(300, 650),
@@ -448,9 +449,11 @@ static func _world() -> Dictionary:
 			{"rect": Rect2(40, 70, 760, 420), "ids": trees, "n": 46, "solid": 7.0},
 			{"rect": Rect2(420, 110, 360, 330), "ids": elf, "n": 30, "solid": 7.0},
 			{"rect": Rect2(40, 740, 760, 330), "ids": trees, "n": 42, "solid": 7.0},
-			{"rect": Rect2(940, 70, 340, 440), "ids": dry, "n": 26, "solid": 6.0},
-			{"rect": Rect2(940, 720, 1000, 350), "ids": dry, "n": 54, "solid": 6.0},
-			{"rect": Rect2(1300, 480, 640, 220), "ids": dry, "n": 22, "solid": 6.0},
+			# the Sands: (round two) clumps of desert growth with open sand between them, not one even spread
+			{"rect": Rect2(950, 80, 160, 150), "ids": dry, "n": 9, "solid": 6.0}, {"rect": Rect2(1120, 300, 160, 170), "ids": dry, "n": 9, "solid": 6.0},
+			{"rect": Rect2(950, 730, 190, 150), "ids": dry, "n": 9, "solid": 6.0}, {"rect": Rect2(1320, 960, 240, 110), "ids": dry, "n": 9, "solid": 6.0},
+			{"rect": Rect2(1440, 700, 170, 120), "ids": dry, "n": 7, "solid": 6.0}, {"rect": Rect2(1760, 900, 180, 170), "ids": dry, "n": 9, "solid": 6.0},
+			{"rect": Rect2(1320, 590, 160, 110), "ids": dry, "n": 6, "solid": 6.0}, {"rect": Rect2(1720, 520, 220, 170), "ids": dry, "n": 9, "solid": 6.0},
 			{"rect": Rect2(940, 70, 1000, 1000), "ids": ["hub_dgrass_0", "hub_dgrass_1", "hub_dgrass_2", "hub_dgrass_3", "hub_dblock_2", "hub_dblock_3"], "n": 150, "solid": 0.0, "poly": 0},
 			{"rect": Rect2(1420, 70, 520, 300), "ids": crag, "n": 34, "solid": 7.0},
 			# v0.24.0: meadows of ferns, blooms and toadstools between the woods of the west
