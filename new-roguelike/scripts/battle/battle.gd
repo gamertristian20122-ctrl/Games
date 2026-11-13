@@ -171,6 +171,21 @@ func _ready() -> void:
 	_refresh()
 	_enter()
 	_run.call_deferred(title)
+	if G.arg("shotfight", "") != "" and G.arg("shots", "") != "":
+		_fight_shot()
+
+
+## Test: --shotfight=<s1,s2,...> (game seconds) writes battle_fight_<s>.png at those moments of a
+## battle the bot fights (--autobattle; a look only).
+func _fight_shot() -> void:
+	var waited := 0.0
+	for t: String in G.arg("shotfight", "").split(",", false):
+		await get_tree().create_timer(maxf(float(t) - waited, 0.0)).timeout
+		waited = float(t)
+		if not is_inside_tree():
+			return
+		DirAccess.make_dir_recursive_absolute(G.arg("shots", ""))
+		get_viewport().get_texture().get_image().save_png(G.arg("shots", "").path_join("battle_fight_%s.png" % t))
 
 
 ## THE WAY IN: the screen opens from black while the camera glides in to its place.
@@ -408,11 +423,14 @@ func _layout() -> void:
 		return
 	var room: Vector2 = _root.size
 	var n := _cards.size()
+	var ins := UI.safe_insets(_root) if _ph else Vector4.ZERO
 	if _ph:
+		# (the phone's camera puts the monsters' heads in the top right: your side's strips sit on
+		# the empty ground bottom left, stacked up from the bottom, clear of the orders' tiles)
 		for i in n:
 			var card: Control = _cards[i]
-			card.call("set_width", 132.0)
-			card.call("place_at", Vector2(room.x - 136.0, 4.0 + 19.0 * i))
+			card.call("set_width", 120.0)
+			card.call("place_at", Vector2(8.0 + ins.x, room.y - 4.0 - ins.w - 18.0 * (n - i)))
 	elif n > 0:
 		var gap := 6.0
 		var avail := room.x - 28.0 - MENU_W - 16.0 - gap * (n - 1)
@@ -424,14 +442,14 @@ func _layout() -> void:
 			card.call("set_width", cw)
 			card.call("place_at", Vector2(x, room.y - 14.0 - 44.0))
 			x += cw + gap
-	_rail.position = Vector2.ZERO
+	_rail.position = Vector2(ins.x, ins.y)
 	var top := 4.0 if _ph else 14.0
 	if is_instance_valid(_boss):
 		# the boss's bar: top middle, a little left of the middle (a big boss stands on the right and
 		# its head must not sit under its own bar), clear of the turn order and the help strip
 		var w := 140.0 if _ph else 260.0
 		var rail_end := float(_rail.get("end_x")) + (10.0 if _ph else 14.0)
-		var right := room.x - (140.0 if _ph else 200.0)
+		var right := room.x - (14.0 if _ph else 200.0)
 		w = minf(w, maxf(right - rail_end, 80.0))
 		var cx := clampf(room.x * 0.5 - (0.0 if _ph else 56.0), rail_end + w * 0.5, right - w * 0.5)
 		_boss.call("set_width", w)
@@ -454,7 +472,8 @@ func _place_menu() -> void:
 	var ms := _menu.get_combined_minimum_size()
 	if _ph:
 		_menu.size = ms
-		_menu.position = Vector2(room.x - 8.0 - ms.x, room.y - 8.0 - ms.y).round()
+		var ins := UI.safe_insets(_root)
+		_menu.position = Vector2(room.x - 8.0 - ins.z - ms.x, room.y - 8.0 - ins.w - ms.y).round()
 	else:
 		_menu.size = Vector2(maxf(MENU_W, ms.x), ms.y)
 		_menu.position = Vector2(14.0, room.y - 14.0 - ms.y).round()
@@ -462,7 +481,7 @@ func _place_menu() -> void:
 	if _warn.visible:
 		var ws := _warn.get_combined_minimum_size()
 		_warn.size = Vector2(_menu.size.x if not _ph else ws.x, ws.y)
-		_warn.position = Vector2(_menu.position.x if not _ph else room.x - 8.0 - ws.x, _menu.position.y - 6.0 - ws.y).round()
+		_warn.position = Vector2(_menu.position.x if not _ph else _menu.position.x + _menu.size.x - ws.x, _menu.position.y - 6.0 - ws.y).round()
 
 
 ## A boss gets its name and a long bar at the top middle of the screen.
@@ -1581,6 +1600,13 @@ func _end_screen(outcome: String, summary: Dictionary, lines: Array, _head: Stri
 	_menu.visible = false
 	_warn.visible = false
 	_set_help("")
+	# (the turn order and the boss's bar are done with: they make way for the result)
+	var done: Array = [_rail, _boss]
+	if _ph:
+		done.append_array(_cards)          # (the phone's panel needs the whole height)
+	for c: Control in done:
+		if is_instance_valid(c):
+			UI.pop_out(c, false)
 	var room: Vector2 = _root.size
 	var won := outcome == "win"
 	var banner: Control = BUI.Banner.new()
@@ -1593,7 +1619,7 @@ func _end_screen(outcome: String, summary: Dictionary, lines: Array, _head: Stri
 	banner.call("play_sweep", 0.25)
 	var col := UI.vbox(2 if _ph else 4)
 	var holder: Control = col
-	var width := minf(room.x - 40.0, 300.0) if _ph else 300.0
+	var width := minf(room.x - 40.0, 236.0) if _ph else 300.0
 	if won:
 		var panel := UI.panel("panel")
 		panel.add_child(col)
@@ -1644,7 +1670,7 @@ func _victory_rows(col: VBoxContainer, summary: Dictionary, lines: Array) -> voi
 		xp.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		xp.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(xp)
-		var bar := UI.bar("xp", 44.0 if _ph else 82.0)
+		var bar := UI.bar("xp", 44.0 if _ph else 100.0)
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		bar.call("set_value", from, 1.0, false)
 		row.add_child(bar)
@@ -1815,6 +1841,7 @@ func _take_shot() -> void:
 		await get_tree().create_timer(0.4).timeout
 		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_skills.png"))
 		_show_commands(true)
+		await get_tree().create_timer(0.2).timeout
 	if G.flag("shotaim"):
 		# test: --shotaim writes battle_target.png while aiming an Attack (on the second monster)
 		_on_attack()

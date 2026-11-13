@@ -45,7 +45,7 @@ static func text_w(f: Font, s: String, size: int) -> float:
 # ------------------------------------------------------------------ a fighter of your side
 class Card extends Control:
 	const H_PC := 44.0
-	const H_PHONE := 17.0
+	const H_PHONE := 16.0
 	var unit: Dictionary
 	var level := 1                     ## the "Lv n" on the card (the whole party shares the knight's level)
 	var is_phone := false
@@ -108,8 +108,8 @@ class Card extends Control:
 		button.position = Vector2.ZERO
 		button.size = size
 		if is_phone:
-			_bar_at(hp_bar, Vector2(50, 5), Vector2(46, 3))
-			_bar_at(mp_bar, Vector2(50, 10), Vector2(46, 2))
+			_bar_at(hp_bar, Vector2(46, 5), Vector2(46, 3))
+			_bar_at(mp_bar, Vector2(46, 10), Vector2(46, 2))
 		else:
 			coin.position = (Vector2(17, 22) - coin.custom_minimum_size * 0.5).round()
 			var bx := 34.0
@@ -195,8 +195,8 @@ class Card extends Control:
 		var hp_col := UI.C_LOW if bool(hp_bar.call("is_low")) else UI.C_PARCH
 		hp_col = hp_col.lerp(UI.C_BAD, flash)
 		if is_phone:
-			# a thin strip on a wash that fades out to the left
-			UI.rs_hgrad(ci, Rect2(-22, 0, w + 22, size.y), Color(UI.C_WASH, 0.0), Color(UI.C_WASH, 0.62 + 0.2 * glow))
+			# a thin strip on a wash that fades out to the right
+			UI.rs_hgrad(ci, Rect2(-8, 0, w + 30, size.y), Color(UI.C_WASH, 0.62 + 0.2 * glow), Color(UI.C_WASH, 0.0))
 			if glow > 0.0:
 				draw_line(Vector2(-2, 2), Vector2(-2, size.y - 2), Color(UI.C_EMBER, glow), 1.5)
 			ink_text_(UI.font_bold, Vector2(2, 11), String(unit["name"]), 8, name_col)
