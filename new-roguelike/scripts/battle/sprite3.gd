@@ -72,7 +72,7 @@ void fragment() {
 		burn_edge = 1.0 - smoothstep(0.0, 0.09, d - dissolve * 1.08);
 	}
 	ALBEDO = mix(c.rgb * tint, vec3(1.0), flash);
-	ALBEDO *= mix(vec3(1.0), flash_col, min(flash * 4.0, 1.0));
+	ALBEDO *= mix(vec3(1.0), flash_col, flash);
 	EMISSION = c.rgb * shine;
 	EMISSION += flash_col * flash * flash_glow + dissolve_col * burn_edge * 2.5;
 	if (rim > 0.0) {

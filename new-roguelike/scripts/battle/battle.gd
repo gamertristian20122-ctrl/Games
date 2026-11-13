@@ -1054,7 +1054,8 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 		var c: Color = who.get("colour", Color.WHITE) if not who.is_empty() else Color.WHITE
 		stage.call("burst", at, c.lerp(Color.WHITE, 0.4), minf((0.55 + 0.9 * ratio + (0.5 if crit else 0.0)) * weight + 0.15, 1.6), 0.0, "", node)
 	# the flash (gold on a crit), and the pack's own hit animation
-	node.call("set_flash", 1.0, Color(1.0, 0.85, 0.45) if crit else Color.WHITE, 1.0 if Hd.on() else 0.3)
+	# (the flash shines by itself only a little: a big picture flashing hot blooms into a white blob)
+	node.call("set_flash", 1.0, Color(1.0, 0.85, 0.45) if crit else Color.WHITE, (0.45 if Hd.on() else 0.3) * (0.5 if big_one else 1.0))
 	_later(0.05 if not crit else 0.09, node, func(n: Node) -> void: n.call("set_flash", 0.0))
 	if Art.has_anim(String(target["sprite"]), "hit") and int(target["hp"]) > 0:
 		node.call("play", "hit")
@@ -1123,14 +1124,14 @@ func _die(u: Dictionary, killer: Dictionary) -> void:
 		return
 	var boss := bool(u.get("boss", false))
 	Sfx.play("boss_die" if boss else "enemy_die", -4.0 if boss else -8.0)
-	node.call("set_flash", 1.0, Color.WHITE, 1.2 if Hd.on() else 0.4)
+	node.call("set_flash", 1.0, Color.WHITE, (0.6 if Hd.on() else 0.4) * (0.5 if boss else 1.0))
 	var d := _away(u, killer)
 	var tw := a.create_tween().set_parallel(true)
 	tw.tween_property(a, "offset", Vector3(d * (0.4 if boss else 0.8), 0.0, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_method(func(t: float) -> void: a.set("lift", (0.15 if boss else 0.5) * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.32)
-	if boss and _speed <= 4.0:
-		_slow_motion(0.3, 1.1)
 	await _wait(0.09)
+	if boss and _speed <= 4.0:
+		_slow_motion(0.35, 0.9)
 	if not is_instance_valid(node):
 		_dying -= 1
 		return
@@ -1138,7 +1139,7 @@ func _die(u: Dictionary, killer: Dictionary) -> void:
 	if has_death:
 		node.call("play", "death")
 	var fade := node.create_tween()
-	fade.tween_method(func(v: float) -> void: node.call("set_flash", v, Color.WHITE, 1.2 if Hd.on() else 0.4), 0.8, 0.0, 0.16)
+	fade.tween_method(func(v: float) -> void: node.call("set_flash", v, Color.WHITE, (0.6 if Hd.on() else 0.4) * (0.5 if boss else 1.0)), 0.8, 0.0, 0.1 if boss else 0.16)
 	await _wait(minf(float(node.call("anim_length", "death")), 0.5) if has_death else 0.2)
 	if boss and is_instance_valid(node):
 		# the boss burns away from the top, embers flying, then breaks
@@ -1294,6 +1295,9 @@ func _finish() -> void:
 	else:
 		outcome = "fled"
 		head = "You got away"
+	if _auto and G.flag("animend") and outcome != "fled":
+		await _closing(outcome == "win")            # test: the victory poses / the defeat, under the bot too
+		await _wait(1.6)
 	if _auto:
 		print("[battle] result=%s rounds=%d xp=%d coins=%d party_hp=%s" % [outcome, int(fight.round_no), int(summary["xp"]), int(summary["coins"]),
 			(fight.party as Array).map(func(u: Dictionary) -> int: return int(u["hp"]))])

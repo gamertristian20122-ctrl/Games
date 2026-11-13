@@ -13,7 +13,7 @@ const STEPS := 8                  ## samples added between two frames
 const Hd = preload("res://scripts/fx/hd.gd")
 
 var life := 0.17                  ## how long a piece of the arc stays lit (seconds of game time)
-var width_hot := 1.0
+var whiten := 0.55               ## how white the hot edge is (a sword: white-hot; a fire bolt: its own colour)
 var _source: Callable
 var _until := 0.0
 var _t := 0.0
@@ -93,7 +93,7 @@ func _draw() -> void:
 	_im.clear_surfaces()
 	if _samples.size() < 2:
 		return
-	var white := _colour.lerp(Color.WHITE, 0.55)
+	var white := _colour.lerp(Color.WHITE, whiten)
 	_im.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP, _mat)
 	for s: Array in _samples:
 		var age := clampf((_t - float(s[0])) / life, 0.0, 1.0)

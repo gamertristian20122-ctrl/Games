@@ -280,8 +280,8 @@ func tell(u: Dictionary, seconds: float, times: int = 1, colour: Color = Color(1
 		return
 	var tw := body.create_tween()
 	for i in times:
-		tw.tween_method(func(v: float) -> void: body.call("set_flash", v, colour, 0.9 if Hd.on() else 0.4), 0.0, 0.5, seconds / times * 0.5)
-		tw.tween_method(func(v: float) -> void: body.call("set_flash", v, colour, 0.9 if Hd.on() else 0.4), 0.5, 0.0, seconds / times * 0.5)
+		tw.tween_method(func(v: float) -> void: body.call("set_flash", v, colour, 0.5 if Hd.on() else 0.3), 0.0, 0.45, seconds / times * 0.5)
+		tw.tween_method(func(v: float) -> void: body.call("set_flash", v, colour, 0.5 if Hd.on() else 0.3), 0.45, 0.0, seconds / times * 0.5)
 
 
 # ------------------------------------------------------------------ a turn
@@ -455,6 +455,7 @@ func projectile(from: Vector3, to: Vector3, colour: Color, width: float, arc_up:
 	var path := func(k: float) -> Vector3:
 		return from.lerp(to, k) + Vector3(0.0, arc_up * 4.0 * k * (1.0 - k), 0.0)
 	var t := Trail.new()
+	t.whiten = 0.4 if kind == "arrow" else 0.12
 	stage.add_child(t)
 	t.start(colour, func() -> Dictionary:
 		var k := float(st["k"])
@@ -495,7 +496,7 @@ func charge(who: Dictionary, colour: Color, seconds: float, size: float, ring: b
 	var light: OmniLight3D = stage.call("lamp", at + Vector3(0.0, 0.0, 0.6), colour, 0.0, 5.0)
 	var gt := glow.create_tween().set_parallel(true)
 	gt.tween_property(glow, "scale", Vector3.ONE * (size / 0.15), seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	gt.tween_property(light, "light_energy", 3.5 if Hd.on() else 2.5, seconds)
+	gt.tween_property(light, "light_energy", (3.5 if Hd.on() else 2.5) * (0.6 + 0.5 * size), seconds)
 	glow.tree_exiting.connect(light.queue_free)
 	if b.get("_speed") <= 4.0:
 		var p := CPUParticles3D.new()
@@ -788,7 +789,7 @@ func volley(who: Dictionary, impacts: Array, colour: Color) -> void:
 ## Every other spell: a CAST with a charge glow, then what that spell does.
 func spell(who: Dictionary, id: String, impacts: Array, colour: Color) -> void:
 	var heal := not impacts.is_empty() and String(impacts[0]["type"]) == "heal"
-	var glow := await charge(who, colour, 0.42, 0.85)
+	var glow := await charge(who, colour, 0.42, 1.25)
 	var from := glow.global_position if is_instance_valid(glow) else _mid(who, 0.8)
 	match id:
 		"firebolt", "sunbolt", "roots":
