@@ -61,10 +61,19 @@ static func get_place(id: String) -> Dictionary:
 	# DEPTH (scripts/hub/view3d.gd): where the ground climbs, the hills, the water of each place
 	match id:
 		"elfwood":
-			place["rise"] = {"from": 100.0, "over": 84.0, "height": 44.0}
-			place["hills"] = [{"at": Vector2(486, 300), "radius": 120.0, "height": 16.0, "top": 24.0}, {"at": Vector2(120, 150), "radius": 100.0, "height": 14.0}]
-			place["water"] = [{"at": Vector2(252, 312), "radius": Vector2(58, 17)}]
-			(place["forest"] as Dictionary)["open"] = ((place["forest"] as Dictionary)["open"] as Array) + [Rect2(180, 330, 150, 60)]
+			place["rise"] = {"from": 92.0, "over": 84.0, "height": 44.0}
+			place["hills"] = [{"at": Vector2(560, 310), "radius": 110.0, "height": 14.0, "top": 20.0}, {"at": Vector2(120, 150), "radius": 100.0, "height": 14.0}]
+			# the pond by the road, and (round two) a still pool behind the clearing with a plank footbridge
+			# over it into the deep wood, seen through a gap in the trees (the forest picture's bridge)
+			place["water"] = [{"at": Vector2(252, 312), "radius": Vector2(58, 17)}, {"at": Vector2(430, 93), "radius": Vector2(70, 13)}]
+			place["bridges"] = [{"x": 430.0, "z0": 77.0, "z1": 110.0, "wide": 22.0, "wood": true}]
+			# a lantern on a post at the bridge's head, and the pale light over the pool that shows it
+			(place["props"] as Array).append(["hub_slantern", 400, 114, 2, 0])
+			(place["lights"] as Array).append_array([[Vector2(400 + LANTERN_GLASS.x, 114 + LANTERN_GLASS.y), Color(1.0, 0.78, 0.46), 1.0, 0.5],
+				[Vector2(430, 96), Color(0.70, 0.88, 1.0), 1.3, 0.6]])
+			(place["forest"] as Dictionary)["open"] = ((place["forest"] as Dictionary)["open"] as Array) + [Rect2(180, 330, 150, 60), Rect2(346, 66, 168, 44)]
+			(place["props"] as Array).append_array([["hub_vplant_4", 374, 100, 0, 1], ["hub_vplant_5", 386, 104, 0, 1], ["hub_vplant_8", 402, 104, 0, 1],
+				["hub_vplant_6", 470, 104, 0, 1], ["hub_vplant_4", 490, 98, 0, 1], ["hub_vplant_7", 480, 104, 0, 1], ["hub_vbushm_0", 356, 92, 0, 2], ["hub_vbush_4", 506, 90, 0, 2]])
 		"glade":
 			place["rise"] = {"from": 100.0, "over": 84.0, "height": 48.0}
 			place["hills"] = [{"at": Vector2(300, 208), "radius": 128.0, "height": 13.0, "top": 74.0}]      # the rune ring stands on a low rise
@@ -198,8 +207,8 @@ static func _market_town(t: Dictionary) -> void:
 	_shopfronts(t)
 	# the near edge (round two): behind the balustrade (tale.gd "near") only dark masses of leaves at
 	# the corners, where nobody walks in front of them: they frame the view like a lens's near blur
-	props.append_array([["hub_fleaf_g_5", 18, 600, 0, 4], ["hub_fleaf_o_4", 84, 612, 0, 4], ["hub_fleaf_g_4", 884, 610, 0, 4],
-		["hub_fleaf_g_5", 948, 598, 0, 4]])
+	props.append_array([["hub_fleaf_g_5", 12, 640, 0, 4], ["hub_fleaf_o_4", 84, 662, 0, 4], ["hub_fleaf_g_4", 884, 660, 0, 4],
+		["hub_fleaf_g_5", 950, 640, 0, 4]])        # (far enough past the edge: at the 35 degree view a thing hides about 1.7 times its height of ground)
 
 
 ## THE NORTH STREET'S SHOPFRONTS (round two): what stands at the doors of the frontage (tale.gd
@@ -297,14 +306,14 @@ static func _base_place(id: String) -> Dictionary:
 				"name": "The Elfwood Road", "size": Vector2(640, 368), "outdoor": true, "walk": Rect2(30, 108, 580, 226), "spawn": Vector2(52, 204),
 				"tint": Color(0.72, 0.84, 0.92),
 				"props": [["hub_tree_teal_1", 320, 196, 8, 8], ["hub_rune_0", 214, 250, 9, 3], ["hub_rune_2", 250, 270, 5, 2], ["hub_bloom_0", 196, 160, 0, 2],
-					["hub_bloom_5", 430, 290, 0, 2], ["hub_bloom_6", 470, 170, 0, 2], ["hub_shroom_0", 150, 292, 0, 1], ["hub_shroom_1", 520, 250, 0, 1],
-					["hub_stump_0", 420, 232, 12, 4], ["hub_rock_moss_2", 110, 300, 14, 3], ["hub_bush_deep_1", 360, 300, 10, 4],
-					["hub_bush_green_1", 150, 150, 12, 5], ["hub_vine_0", 560, 300, 0, 2], ["hub_tree_pink_4", 500, 140, 4, 5],
+					["hub_shroom_0", 150, 292, 0, 1], ["hub_shroom_1", 526, 262, 0, 1],
+					["hub_rock_moss_2", 110, 300, 14, 3], ["hub_bush_deep_1", 352, 304, 10, 4],
+					["hub_bush_green_1", 150, 150, 12, 5], ["hub_vine_0", 606, 322, 0, 2], ["hub_tree_pink_4", 500, 140, 4, 5],
 					# v0.24.0: the road's edges: ferns, toadstools, mossy stones, flowers in the light under the trees
 					["hub_plant_3", 182, 178, 0, 1], ["hub_plant_4", 120, 232, 0, 1], ["hub_plant_1", 352, 168, 0, 1], ["hub_plant_5", 548, 222, 0, 1],
 					["hub_plant_0", 236, 236, 0, 1], ["hub_plant_6", 470, 214, 0, 1], ["hub_shroom_3", 330, 250, 0, 1], ["hub_shroom_4", 344, 258, 0, 1],
-					["hub_shroom_2", 584, 280, 0, 1], ["hub_shroom_0", 92, 160, 0, 1], ["hub_rock_moss_0", 62, 254, 12, 3], ["hub_stone_1", 384, 150, 10, 3],
-					["hub_rock_1", 476, 318, 12, 3], ["hub_bush_orange_1", 560, 150, 9, 4], ["hub_bush_green_0", 96, 136, 10, 4], ["hub_bloom_2", 300, 290, 0, 2],
+					["hub_shroom_2", 584, 280, 0, 1], ["hub_shroom_0", 92, 160, 0, 1], ["hub_rock_moss_0", 62, 254, 12, 3], ["hub_stone_1", 556, 136, 10, 3],
+					["hub_rock_1", 476, 318, 12, 3], ["hub_bush_orange_1", 560, 150, 9, 4], ["hub_bush_green_0", 96, 136, 10, 4],
 					["hub_bloom_1", 556, 330, 0, 2], ["hub_bloom_7", 80, 320, 0, 2],
 					# two rune stones mark the way on to the glade
 					["hub_rune_0", 592, 172, 9, 3], ["hub_rune_2", 592, 236, 5, 2],
@@ -312,21 +321,34 @@ static func _base_place(id: String) -> Dictionary:
 					["hub_gflower_0", 160, 226, 0, 0], ["hub_gflower_4", 168, 230, 0, 0], ["hub_gflower_1", 154, 233, 0, 0], ["hub_gflower_24", 362, 222, 0, 0],
 					["hub_gflower_28", 370, 226, 0, 0], ["hub_gflower_25", 356, 229, 0, 0], ["hub_gflower_12", 300, 176, 0, 0], ["hub_gflower_13", 309, 172, 0, 0],
 					["hub_gflower_8", 294, 170, 0, 0], ["hub_gflower_17", 520, 176, 0, 0], ["hub_gflower_18", 528, 181, 0, 0], ["hub_gflower_20", 514, 183, 0, 0],
-					["hub_gflower_6", 430, 228, 0, 0], ["hub_gflower_9", 438, 232, 0, 0], ["hub_gflower_29", 204, 288, 0, 0], ["hub_gflower_23", 212, 292, 0, 0],
+					["hub_gflower_29", 204, 288, 0, 0], ["hub_gflower_23", 212, 292, 0, 0],
 					# set dressing: reeds and ferns round the pond, foxgloves in the light, round bushes in
 					# layers along both edges, a dead tree and old stumps where the thorn-sickness passed
 					["hub_vplant_4", 184, 304, 0, 1], ["hub_vplant_5", 316, 300, 0, 1], ["hub_vplant_6", 326, 308, 0, 1], ["hub_vplant_3", 300, 296, 0, 1],
 					["hub_vplant_0", 206, 296, 0, 1], ["hub_vplant_7", 158, 268, 0, 1], ["hub_vplant_8", 168, 274, 0, 1], ["hub_vplant_9", 376, 302, 0, 1],
-					["hub_vplant_7", 500, 286, 0, 1], ["hub_vplant_1", 404, 168, 0, 1], ["hub_vplant_1", 112, 186, 0, 1],
-					["hub_vbushm_0", 226, 126, 8, 2], ["hub_vbush_5", 432, 124, 8, 2], ["hub_vbushl_2", 610, 120, 0, 2], ["hub_vbushs_0", 46, 120, 0, 2],
+					["hub_vplant_7", 500, 286, 0, 1], ["hub_vplant_1", 112, 186, 0, 1],
+					["hub_vbushm_0", 226, 126, 8, 2], ["hub_vbushl_2", 610, 120, 0, 2], ["hub_vbushs_0", 46, 120, 0, 2],
 					["hub_vbushm_3", 520, 330, 8, 2], ["hub_vbush_4", 412, 334, 8, 2], ["hub_vbushl_0", 52, 332, 0, 2],
 					["hub_vdead_0", 560, 116, 0, 2], ["hub_vdead_2", 140, 252, 0, 1], ["hub_vdead_2", 470, 120, 0, 1],
-					# the near edge: dark bushes past the south edge, nearer the camera than anyone (the near blur melts them)
-					["hub_vbig_0", 56, 362, 0, 2], ["hub_vbig_2", 150, 366, 0, 2], ["hub_vbig_0", 372, 364, 0, 2], ["hub_vbig_3", 470, 368, 0, 2], ["hub_vbig_1", 598, 360, 0, 2]],
-				"tour": [Vector2(140, 230), Vector2(300, 260), Vector2(470, 240), Vector2(560, 200)],     # test pictures (--hub=elfwood --shots)
+					# THE CAMP IN THE CLEARING (round two, like the forest-campfire picture): the fire (see "fire")
+					# with logs and a sawn round to sit on, bedrolls (see "decals"), packs, the cook's pot, a crate,
+					# firewood and a lantern on a post; the elf child warms her hands at it
+					["hub_slog", 428, 226, 0, 1], ["hub_slog", 470, 250, 0, 1], ["hub_sround", 396, 244, 5, 1],
+					["hub_ssack_2", 380, 236, 0, 1], ["hub_ssack_4", 482, 232, 0, 1], ["hub_spot", 414, 262, 0, 0], ["hub_scrate_1", 494, 238, 4, 1],
+					["hub_slog_s", 494, 258, 0, 0], ["hub_slog_s", 498, 263, 0, 0], ["hub_slantern", 504, 226, 2, 0],
+					# the near edge (round two): the camera looks down at 35 degrees, so a thing past the walk's
+					# bottom edge hides the ground about 1.7 times its own height behind it: only LOW dark bushes,
+					# ferns and reeds there (they melt in the near blur), the tall dark leaves outside the walk
+					["hub_bush_deep_2", 70, 384, 0, 2], ["hub_vplant_4", 112, 380, 0, 1], ["hub_bush_green_3", 150, 388, 0, 2],
+					["hub_bush_deep_2", 404, 386, 0, 2], ["hub_vplant_5", 432, 380, 0, 1], ["hub_bush_green_3", 472, 390, 0, 2],
+					["hub_bush_deep_1", 540, 392, 0, 2], ["hub_vplant_4", 584, 382, 0, 1],
+					["hub_fleaf_g_5", -16, 380, 0, 4], ["hub_fleaf_g_4", 656, 376, 0, 4]],
+				"tour": [Vector2(430, 196), Vector2(140, 230), Vector2(410, 290), Vector2(300, 260), Vector2(560, 200)],     # test pictures (--hub=elfwood --shots)
+				"fire": Vector2(430, 248),
+				"decals": [["hub_sbed_0", 404, 272], ["hub_sbed_1", 380, 262]],
 				"paths": [[Vector2(-10, 204), Vector2(250, 210), Vector2(400, 190), Vector2(650, 196)]],
 				"scatter": {"hub_tuft": [24, 90], "hub_flower": [26, 60], "hub_pebble": [20, 10], "hub_twig": [10, 14], "hub_gtuft": [4, 50], "hub_gflower": [32, 30]},
-				"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 150, 70, 120), Rect2(600, 140, 80, 120)]},
+				"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 150, 70, 120), Rect2(600, 140, 80, 120), Rect2(-40, 340, 720, 60)]},
 				"exits": [{"rect": Rect2(26, 176, 10, 60), "to": "village", "at": Vector2(660, 204)},
 					{"rect": Rect2(604, 168, 10, 60), "to": "glade", "at": Vector2(50, 196)}],
 				"people": [
@@ -334,11 +356,12 @@ static func _base_place(id: String) -> Dictionary:
 						"pos": Vector2(270, 180), "face": -1, "role": "chat",
 						"text": "Turn back, tin man. Past the glade our own kin wait with thorns in their eyes. The hunger under your hill is in the roots now."},
 					{"id": "wicker", "name": "Wicker", "title": "Elf Child", "sprite": "pc_elf_druid", "hands": "pc_hand_elf_23",
-						"pos": Vector2(440, 258), "face": 1, "role": "chat",
+						"pos": Vector2(458, 272), "face": -1, "role": "chat",
 						"text": "The mushrooms walk at night. I counted nine. Mother says do not count them, they count back."},
 				],
 				"lights": [[Vector2(214, 236), Color(0.45, 0.85, 1.0), 1.2, 0.5], [Vector2(320, 150), Color(0.6, 1.0, 0.7), 1.6, 0.35],
-					[Vector2(520, 236), Color(0.5, 1.0, 0.85), 0.9, 0.5], [Vector2(592, 200), Color(0.45, 0.85, 1.0), 1.0, 0.45]],
+					[Vector2(592, 200), Color(0.45, 0.85, 1.0), 1.0, 0.45],
+					[Vector2(430, 238), Color(1.0, 0.62, 0.32), 2.4, 0.8], [Vector2(504 + LANTERN_GLASS.x, 226 + LANTERN_GLASS.y), Color(1.0, 0.78, 0.46), 0.9, 0.5]],
 			}
 		"glade":
 			return {
@@ -530,7 +553,7 @@ static func _dustwatch() -> Dictionary:
 		["hub_scrate_4", 456, 362, 5, 1], ["hub_scrate_5", 472, 358, 5, 1], ["hub_sbarrel_1", 498, 368, 8, 1], ["hub_ssack_2", 482, 374, 0, 1],
 		["hub_scrate_0", 520, 372, 4, 1],
 		# the near edge: past the low wall, nearer the camera than anyone
-		["hub_cactus_4", 110, 452, 0, 2], ["hub_dtree_0", 556, 456, 0, 2], ["hub_cactus_2", 470, 448, 0, 2], ["hub_dbush_0", 196, 450, 0, 3],
+		["hub_cactus_4", 110, 470, 0, 2], ["hub_dtree_0", 596, 520, 0, 2], ["hub_cactus_2", 470, 466, 0, 2], ["hub_dbush_0", 170, 506, 0, 3],
 	]
 	var lights: Array = [[Vector2(320, 276), Color(1.0, 0.72, 0.42), 2.1, 0.7], [Vector2(320, 150), Color(0.45, 0.75, 1.0), 1.2, 0.4],
 		[Vector2(150, 348), Color(1.0, 0.68, 0.40), 1.4, 0.6]]                    # the caravan's cook fire

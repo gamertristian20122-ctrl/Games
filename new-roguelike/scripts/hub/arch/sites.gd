@@ -255,7 +255,7 @@ func _footbridge(x: float, z0: float, z1: float, wide: float) -> void:
 	var xr := x + wide * 0.5
 	var steps := 12
 	var span := z1 - z0
-	var deck := func(z: float) -> float: return 2.0 + 7.0 * sin(PI * clampf((z - z0) / span, 0.0, 1.0))
+	var deck := func(z: float) -> float: return 2.0 + 10.0 * sin(PI * clampf((z - z0) / span, 0.0, 1.0))
 	for i in steps:
 		var za := z0 + span * i / steps
 		var zb := z0 + span * (i + 1) / steps

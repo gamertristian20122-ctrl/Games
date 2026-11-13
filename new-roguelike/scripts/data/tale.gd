@@ -522,7 +522,7 @@ static func town() -> Dictionary:
 			"door": "hub_door_wood", "windows": "hub_win_shut", "boxes": true},
 		{"at": Vector2(916, 160), "wide": 64.0, "deep": 50.0, "wall": "hub_wall_brick", "upper": "hub_wall_plaster", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood",
 			"rise": 26.0, "floors": 3, "door": "hub_door_arch", "door_dx": -13.0, "windows": "hub_win_tall", "win_xs": [16.0], "up_xs": [-14.0, 14.0]},
-		{"at": Vector2(104, 400), "wall": "hub_wall_white", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 32.0, "gable": true,
+		{"at": Vector2(104, 400), "wall": "hub_wall_white", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 32.0, "gable": true,
 			"door": "hub_door_wood", "windows": "hub_win_shut", "chimney": true},
 		{"at": Vector2(856, 480), "wall": "hub_wall_plank", "wall_h": 54.0, "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 30.0,
 			"door": "hub_door_arch", "windows": "hub_win_closed"},
