@@ -9,6 +9,11 @@ const Stage = preload("res://scripts/battle/stage.gd")
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 const PX := 1.0 / 16.0
+const UI = preload("res://scripts/ui/theme.gd")
+## Where the camera looks. On a PC the HD GUI puts the logo and the menu on the LEFT (spec 6.5), so
+## the camera looks further left and the knight stands right of the middle, clear of the menu; on a
+## phone the menu stays on the right and the knight on the left, as before.
+var _look := Vector3(1.4, 0.6, 0.0)
 
 var stage: Node3D
 var _home := Vector3.ZERO
@@ -22,12 +27,15 @@ func _ready() -> void:
 	stage.call("build", "forest", 4)
 	# closer than a battle, and aimed so the knight stands left of the menu
 	stage.cam.position = Vector3(1.6, 5.2, 12.5)
+	if not UI.is_phone():
+		stage.cam.position.x -= 6.4
+		_look.x -= 6.4
 	_home = stage.cam.position
 	var hero: Dictionary = Heroes.by_id("knight")
 	var at := Vector3(-2.4, 0.0, 0.6)
 	# this camera stands lower and nearer than a battle's: keep the knight sharp and unsquashed
 	(stage.post.material_override as ShaderMaterial).set_shader_parameter("focus", _home.distance_to(at + Vector3(0, 1, 0)))
-	var slant := (Vector3(1.4, 0.6, 0.0) - _home).normalized()
+	var slant := (_look - _home).normalized()
 	Sprite3.tall = 1.0 / maxf(Vector2(slant.x, slant.z).length(), 0.5)
 	var body: MeshInstance3D = stage.call("stand", String(hero["sprite"]), at, false)
 	var m := Art.meta(String(hero["sprite"]))
@@ -50,7 +58,7 @@ func _ready() -> void:
 
 func _aim() -> void:
 	stage.cam.position = _home + Vector3(sin(_t * 0.18) * 0.5, sin(_t * 0.11) * 0.12, 0.0)
-	stage.cam.look_at(Vector3(1.4, 0.6, 0.0), Vector3.UP)
+	stage.cam.look_at(_look, Vector3.UP)
 
 
 func _process(delta: float) -> void:

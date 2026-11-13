@@ -8,6 +8,7 @@ const BLUR_CODE := """
 shader_type canvas_item;
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
 uniform float strength = 1.0;
+uniform float gain = 1.0;
 void fragment() {
 	vec3 c = vec3(0.0);
 	float n = 0.0;
@@ -19,7 +20,7 @@ void fragment() {
 	}
 	c /= n;
 	float l = dot(c, vec3(0.3, 0.55, 0.15));
-	c = mix(vec3(l), c, 0.55) * 0.42 + vec3(0.008, 0.012, 0.03);
+	c = mix(vec3(l), c, 0.55) * 0.42 * gain + vec3(0.008, 0.012, 0.03);
 	vec2 v = SCREEN_UV - 0.5;
 	c *= 1.0 - dot(v, v) * 0.9;
 	COLOR = vec4(c, strength);
@@ -44,3 +45,9 @@ func _init() -> void:
 ## 0..1: how much of the veil shows (fade it in / out with this).
 func set_strength(v: float) -> void:
 	(material as ShaderMaterial).set_shader_parameter("strength", v)
+
+
+## Brightens what shows through (1 = as designed). Screens over a picture main.gd has already
+## darkened with its menu shade (0.66 black) pass about 2.4 so the world still reads behind them.
+func set_gain(v: float) -> void:
+	(material as ShaderMaterial).set_shader_parameter("gain", v)

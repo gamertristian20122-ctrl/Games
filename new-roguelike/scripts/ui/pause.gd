@@ -1,7 +1,10 @@
 extends "res://scripts/ui/screen.gd"
-## Pause menu: Resume, Settings, Give up (asks first), plus what you carry and how the run
-## is going. The game underneath is frozen by main.gd (get_tree().paused).
-## Tap or move onto an item to read what it does.
+## Pause menu. Two kinds:
+##   in a walking place (run == null): the veil and one centred glass panel: PAUSED, Resume, Knight,
+##     Settings, Title (asks first: "Back to the title? The game saves as you walk.").
+##   in an old dungeon run: Resume, Knight, Settings, Back to camp / Give up (asks first), plus what
+##     you carry and how the run is going. The game underneath is frozen by main.gd.
+## Tap or move onto an item to read what it does. Esc / B / a right click = Resume.
 
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Items = preload("res://scripts/data/items.gd")
@@ -14,95 +17,131 @@ var _detail_name: Label
 var _knight: Button
 
 
+## main.gd already darkens the world under every menu (its shade); the veil gives some light back.
+const VEIL_GAIN := 2.4
+
+
 func build() -> void:
+	veil().call("set_gain", VEIL_GAIN)
 	if run == null:
 		_build_walking()
 		return
-	var safe := UI.safe_margin(self, 6)
-	add_child(safe)
-	var cols := UI.hbox(6)
-	safe.add_child(cols)
+	var ph := UI.is_phone()
+	var outer: Control
+	if ph:
+		outer = UI.safe_margin(self, 6)
+		add_child(outer)
+	else:
+		outer = CenterContainer.new()
+		outer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(outer)
+	var cols := UI.hbox(6 if ph else 12)
+	if not ph:
+		cols.custom_minimum_size = Vector2(540, 270)
+	outer.add_child(cols)
 	var player: Variant = run.get("player") if is_instance_valid(run) else null
 	var hero := Heroes.by_id(String(run.get("hero_id"))) if is_instance_valid(run) else Heroes.LIST[0]
 
-	# left: the three buttons, with the hero waiting in between
-	var left := UI.vbox(3)
-	left.custom_minimum_size.x = 88
-	cols.add_child(left)
+	# left: the menu, with the hero waiting under it
+	var left_panel := UI.panel("panel")
+	left_panel.custom_minimum_size.x = 96 if ph else 168
+	cols.add_child(left_panel)
+	var left := UI.vbox(2 if ph else 3)
+	left_panel.add_child(left)
 	var head := UI.label("Paused", "Head")
-	head.custom_minimum_size.y = 18
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.custom_minimum_size.y = 14 if ph else 20
 	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	left.add_child(head)
 	var resume := UI.button("Resume", func() -> void: send("resume"), "Big")
-	resume.custom_minimum_size.y = 22
+	resume.custom_minimum_size.y = 22 if ph else 26
 	left.add_child(resume)
 	_knight = UI.button(_knight_text(), func() -> void: send("knight"))
-	_knight.custom_minimum_size.y = 20
+	_knight.custom_minimum_size.y = 20 if ph else UI.row_h + 3.0
 	left.add_child(_knight)
 	var settings := UI.button("Settings", func() -> void: send("settings"))
-	settings.custom_minimum_size.y = 20
+	settings.custom_minimum_size.y = 20 if ph else UI.row_h + 3.0
 	left.add_child(settings)
-	var stage := Control.new()
-	stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	left.add_child(stage)
-	var sprite := Art.sprite(String(hero["sprite"]))
-	sprite.scale = Vector2(2, 2)
-	sprite.modulate = hero.get("tint", Color.WHITE)
-	stage.add_child(sprite)
-	stage.resized.connect(func() -> void:
-		sprite.position = Vector2(roundf(stage.size.x / 2.0), roundf(stage.size.y / 2.0 + Art.size(String(hero["sprite"])).y) - 2.0))
 	var in_yard: bool = run != null and run.get("training") == true
 	var in_story: bool = in_yard or (run != null and run.get("level") is Dictionary and not (run.get("level") as Dictionary).is_empty())
+	var why_label: Label = null
 	if in_story:
 		# walk back out with what you carry: only while no fight is on
 		var room: Variant = run.get("room")
 		var fight: bool = is_instance_valid(room) and room.get("fighting") == true
 		var leave := UI.button("Back to camp", (func() -> void: send("leave_run")) if in_yard else _ask_leave)
-		leave.custom_minimum_size.y = 20
+		leave.custom_minimum_size.y = 20 if ph else UI.row_h + 3.0
 		leave.disabled = fight and not in_yard
 		if fight and not in_yard:
 			leave.text = "Camp (not in a fight)"
 		if fight and (run.get("level") as Dictionary).get("encounter", false) == true:
 			leave.text = "No way out: win the fight"
 		left.add_child(leave)
+		if leave.disabled:
+			why_label = UI.label("The way out opens when the room is clear.", "Small")
+			why_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			why_label.custom_minimum_size.x = 60
+			why_label.add_theme_color_override("font_color", UI.C_BAD)
+			left.add_child(why_label)
 	else:
-		var give_up := UI.button("Give up", _ask_give_up)
-		give_up.custom_minimum_size.y = 20
+		var give_up := UI.button("Give up", _ask_give_up, "Danger")
+		give_up.custom_minimum_size.y = 20 if ph else UI.row_h + 3.0
 		left.add_child(give_up)
+	var stage := Control.new()
+	stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stage.custom_minimum_size.y = 0 if ph else 64
+	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	left.add_child(stage)
+	var sprite := Art.sprite(String(hero["sprite"]))
+	sprite.scale = Vector2(2, 2)
+	sprite.modulate = hero.get("tint", Color.WHITE)
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	stage.add_child(sprite)
+	stage.resized.connect(func() -> void:
+		sprite.visible = stage.size.y > 40.0
+		sprite.position = Vector2(roundf(stage.size.x / 2.0), roundf(stage.size.y - 6.0)))
 	default_focus = resume
 
 	# right: how the run is going, and what you carry
-	var panel := UI.panel("panel")
+	var panel := UI.panel("card")
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cols.add_child(panel)
-	var col := UI.vbox(3)
+	var col := UI.vbox(2 if ph else 4)
 	panel.add_child(col)
 	var floor_no := int(run.get("floor_index")) + 1 if is_instance_valid(run) else 1
-	var where := UI.label("Floor %d of %d  -  %s" % [floor_no, maxi(int(run.get("floor_count")), floor_no), String(run.get("floor_name"))], "Gold")
+	var where := UI.label("Floor %d of %d  ·  %s" % [floor_no, maxi(int(run.get("floor_count")), floor_no), String(run.get("floor_name"))], "Head")
+	where.add_theme_color_override("font_color", UI.C_GOLD)
 	where.clip_text = true
 	col.add_child(where)
 	var ids: Array = []
 	if is_instance_valid(player) and player.get("items") is Array:
 		ids = player.get("items")
 	var stats := HFlowContainer.new()
-	stats.add_theme_constant_override("h_separation", 10)
+	stats.add_theme_constant_override("h_separation", 12 if not ph else 8)
 	stats.add_theme_constant_override("v_separation", 1)
 	col.add_child(stats)
 	var coins := int(player.get("coins")) if is_instance_valid(player) else 0
 	for pair: Array in [["Time", UI.time_text(float(run.get("time_s")))], ["Kills", str(int(run.get("kills")))], ["Coins", str(coins)], ["Items", str(ids.size())]]:
-		var cell := UI.hbox(3)
-		cell.add_child(UI.label(pair[0], "Small"))
-		cell.add_child(UI.label(pair[1]))
+		var cell := UI.hbox(4)
+		var k := UI.label(pair[0], "Small")
+		k.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		cell.add_child(k)
+		var v := UI.label(pair[1], "Num")
+		if pair[0] == "Coins":
+			v.add_theme_color_override("font_color", UI.C_GOLD)
+		cell.add_child(v)
 		stats.add_child(cell)
-	col.add_child(HSeparator.new())
+	var rule := UI.rule(100, UI.C_BRASS, "both")
+	rule.custom_minimum_size = Vector2(0, 3)
+	col.add_child(rule)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	col.add_child(scroll)
-	var grid := UI.vbox(1)
+	var grid := UI.vbox(0)
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(grid)
 	for id: Variant in ids:
@@ -113,11 +152,11 @@ func build() -> void:
 	col.add_child(foot)
 	var foot_col := UI.vbox(0)
 	foot.add_child(foot_col)
-	_detail_name = UI.label("", "Gold")
+	_detail_name = UI.label("", "Name")
 	_detail_name.clip_text = true
 	foot_col.add_child(_detail_name)
-	_detail = UI.label("", "", 10.0)
-	_detail.custom_minimum_size.y = 2.0 * UI.font_body.get_height(UI.size_body)
+	_detail = UI.label("", "Small" if ph else "", 10.0)
+	_detail.custom_minimum_size.y = 2.0 * UI.font_body.get_height(UI.size_small if ph else UI.size_body)
 	_detail.max_lines_visible = 2
 	foot_col.add_child(_detail)
 	if ids.is_empty():
@@ -131,30 +170,46 @@ func build() -> void:
 
 
 ## The pause menu over a walking place (no run): Resume, Knight, Settings, Title (asks first).
-## (core placeholder in the new look; the menus group owns the final look of this screen)
 func _build_walking() -> void:
-	veil()
+	var ph := UI.is_phone()
 	var centre := CenterContainer.new()
 	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(centre)
 	var panel := UI.panel("panel")
-	panel.custom_minimum_size.x = 220 if not UI.is_phone() else 150
+	panel.custom_minimum_size.x = 220 if not ph else 150
 	centre.add_child(panel)
-	var col := UI.vbox(3)
+	var col := UI.vbox(3 if not ph else 2)
 	panel.add_child(col)
+	col.add_child(UI.spacer(0, 4 if not ph else 1))
 	var head := UI.label("Paused", "Head")
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(head)
+	var rule := UI.rule(120, UI.C_BRASS, "both")
+	rule.custom_minimum_size = Vector2(0, 7 if not ph else 4)
+	col.add_child(rule)
 	var resume := UI.button("Resume", func() -> void: send("resume"), "Big")
+	resume.custom_minimum_size.y = 26
 	col.add_child(resume)
+	col.add_child(UI.spacer(0, 2 if not ph else 0))
 	_knight = UI.button(_knight_text(), func() -> void: send("knight"))
-	col.add_child(_knight)
-	col.add_child(UI.button("Settings", func() -> void: send("settings")))
-	col.add_child(UI.button("Title", func() -> void:
-		ask("Back to the title? The game saves as you walk.", "Title", "Stay", func() -> void: send("title"), false)))
+	var settings := UI.button("Settings", func() -> void: send("settings"))
+	var title := UI.button("Title", func() -> void:
+		ask("Back to the title? The game saves as you walk.", "Title", "Stay", func() -> void: send("title"), false))
+	for b: Button in [_knight, settings, title]:
+		b.custom_minimum_size.y = (UI.row_h + 3.0) if not ph else 20.0
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		col.add_child(b)
+	col.add_child(UI.spacer(0, 3 if not ph else 0))
 	default_focus = resume
 	UI.pop_in(panel)
+
+
+## A right click means "carry on" (the mouse's Back).
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		accept_event()
+		on_back()
 
 
 func help_pairs() -> Array:
@@ -178,8 +233,9 @@ func _item_row(id: String) -> Control:
 	var info := Items.info(id)
 	var cursed := bool(info.get("cursed", false))
 	var b := Button.new()
-	b.theme_type_variation = "Flat"
-	b.custom_minimum_size = Vector2(0, maxf(18.0, UI.font_body.get_height(UI.size_body) + 4.0))
+	b.focus_mode = Control.FOCUS_ALL
+	UI.juice(b)
+	b.custom_minimum_size = Vector2(0, maxf(20.0 if UI.is_phone() else 22.0, UI.font_body.get_height(UI.size_body) + 4.0))
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var row := UI.hbox(4)
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
