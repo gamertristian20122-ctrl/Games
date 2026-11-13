@@ -70,7 +70,17 @@ func build(place_id: String, place: Dictionary, the_shade: SurfaceTool) -> void:
 	for row: Dictionary in place.get("terraces", []):
 		_terrace(row)
 	for row: Dictionary in place.get("bridges", []):
+		if bool(row.get("across", false)):
+			_footbridge_x(float(row["x0"]), float(row["x1"]), float(row["z"]), float(row.get("wide", 16.0)))
+			continue
 		_bridge(float(row["x"]), float(row["z0"]), float(row["z1"]), float(row.get("wide", 22.0)), bool(row.get("wood", false)))
+	var sands := String(place.get("ground", "")) == "hub_sand"
+	for row: Dictionary in place.get("hearths", []):
+		_hearth(row, sands)
+	for row: Array in place.get("rugs", []):
+		_rug(row)
+	for row: Dictionary in place.get("canopies", []):
+		_canopy(row)
 	for row: Dictionary in place.get("near", []):
 		if String(row.get("style", "")) == "sand":
 			_sand_parapet(float(row["z"]), row.get("runs", []), row.get("piers", []))
@@ -982,3 +992,110 @@ func _sand_parapet(z: float, runs: Array, piers: Array) -> void:
 		blk(cap, Vector3(px_ - 9, tall, z - 15), Vector3(px_ + 9, tall + 3, z + 3), Kit.BOTTOM)
 		blk(cap, Vector3(px_ - 4, tall + 3, z - 10), Vector3(px_ + 4, tall + 9, z - 2), Kit.BOTTOM)
 		_shadow()
+
+
+# ------------------------------------------------------------------ a dais's furniture, a bridge seen side-on (round three)
+## A HEARTH ring round a fire ("hearths": [{"at", "rx", "rz", "high"}]): a low eight-sided kerb of the
+## place's stone (sandstone in the Sands) standing on whatever is under it (a dais).
+func _hearth(spec: Dictionary, sands: bool) -> void:
+	var c: Vector2 = spec["at"]
+	var rx := float(spec.get("rx", 15.0))
+	var rz := float(spec.get("rz", 10.0))
+	var high := float(spec.get("high", 4.0))
+	var tex := Art.tex("hub_bsandcap") if sands else stone
+	var lift: float = b.height(c) / (PX * vs)
+	var n := 8
+	for k in n:
+		var a0 := TAU * (k + 0.5) / n
+		var a1 := TAU * (k + 1.5) / n
+		var o0 := c + Vector2(cos(a0) * rx, sin(a0) * rz)
+		var o1 := c + Vector2(cos(a1) * rx, sin(a1) * rz)
+		var i0 := c + Vector2(cos(a0) * (rx - 4.0), sin(a0) * (rz - 3.0))
+		var i1 := c + Vector2(cos(a1) * (rx - 4.0), sin(a1) * (rz - 3.0))
+		var mid := (a0 + a1) * 0.5
+		kit.poly(tex, [p(o0.x, lift + high, o0.y), p(o1.x, lift + high, o1.y), p(o1.x, lift - 0.5, o1.y), p(o0.x, lift - 0.5, o0.y)], Vector3(cos(mid), 0, sin(mid)))
+		kit.poly(tex, [p(i0.x, lift + high, i0.y), p(i1.x, lift + high, i1.y), p(o1.x, lift + high, o1.y), p(o0.x, lift + high, o0.y)], Vector3.UP)
+		kit.poly(tex, [p(i0.x, lift + high, i0.y), p(i1.x, lift + high, i1.y), p(i1.x, lift - 0.5, i1.y), p(i0.x, lift - 0.5, i0.y)], Vector3(-cos(mid), 0, -sin(mid)))
+	kit.take_corners()
+
+
+## RUGS laid flat on the ground or a dais ("rugs": [[Art id, x, y], ...]): the pack's piece laid
+## whole, just over whatever it lies on (its see-through pixels stay see-through).
+func _rug(row: Array) -> void:
+	var tex := Art.tex(String(row[0]))
+	var s := tex.get_size()
+	var c := Vector2(row[1], row[2])
+	var up: float = b.height(c) / (PX * vs) + 0.3
+	var pts := [p(c.x - s.x * 0.5, up, c.y - s.y * 0.5), p(c.x + s.x * 0.5, up, c.y - s.y * 0.5), p(c.x + s.x * 0.5, up, c.y + s.y * 0.5), p(c.x - s.x * 0.5, up, c.y + s.y * 0.5)]
+	kit.face(tex, pts, [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)], Vector3.UP)
+	kit.take_corners()
+
+
+## A CANOPY of canvas on four poles ("canopies": [{"x0", "x1", "z0", "z1", "low" (front edge, px),
+## "high" (back edge), "stripes": [Color, ...]}]): the Hideout pack's canvas laid in strips washed in
+## turn with the given colours (a striped market awning), a fringe of the same along its front.
+func _canopy(spec: Dictionary) -> void:
+	var cloth := Art.tex("hub_bcloth")
+	var post := Art.tex("hub_bpost")
+	var x0 := float(spec["x0"])
+	var x1 := float(spec["x1"])
+	var z0 := float(spec["z0"])
+	var z1 := float(spec["z1"])
+	var low := float(spec.get("low", 40.0))
+	var high := float(spec.get("high", 48.0))
+	var lift: float = b.height(Vector2((x0 + x1) * 0.5, (z0 + z1) * 0.5)) / (PX * vs)
+	var stripes: Array = spec.get("stripes", [Color.WHITE])
+	for c: Array in [[x0, z1, low], [x1, z1, low], [x0, z0, high], [x1, z0, high]]:
+		blk(post, Vector3(c[0] - 1.1, lift, c[1] - 1.1), Vector3(c[0] + 1.1, lift + c[2] + 1.0, c[1] + 1.1), Kit.BOTTOM | Kit.TOP)
+	var n := Vector3(0, z1 - z0, (high - low) * vs).normalized()
+	var w := 8.0
+	var x := x0 - 2.0
+	var i := 0
+	while x < x1 + 2.0:
+		var xe := minf(x + w, x1 + 2.0)
+		kit.tint = stripes[i % stripes.size()]
+		kit.poly(cloth, [p(x, lift + high + 1.0, z0 - 2.0), p(xe, lift + high + 1.0, z0 - 2.0), p(xe, lift + low + 1.0, z1 + 2.0), p(x, lift + low + 1.0, z1 + 2.0)], n, "solid", Vector3(1, 0, 0))
+		kit.poly(cloth, [p(x, lift + low + 1.0, z1 + 2.0), p(xe, lift + low + 1.0, z1 + 2.0), p(xe, lift + low - 4.0, z1 + 2.0), p(x, lift + low - 4.0, z1 + 2.0)], Vector3(0, 0, 1), "solid", Vector3(1, 0, 0))
+		x = xe
+		i += 1
+	kit.tint = Color.WHITE
+	_shadow()
+
+
+## A plank footbridge seen SIDE-ON (a "bridges" row with "across": true): it runs from x0 to x1 at z,
+## arching over a stream that runs towards the camera; plank deck, timber sides, posts and a hand rail
+## along both sides, the end posts down into the bank.
+func _footbridge_x(x0: float, x1: float, z: float, wide: float) -> void:
+	var plank := Art.tex("hub_bplank")
+	var beam := Art.tex("hub_bbeam")
+	var post := Art.tex("hub_bpost")
+	var zf := z + wide * 0.5
+	var zb := z - wide * 0.5
+	var steps := 14
+	var span := x1 - x0
+	var deck := func(x: float) -> float: return 1.5 + 13.0 * sin(PI * clampf((x - x0) / span, 0.0, 1.0))
+	for i in steps:
+		var xa := x0 + span * i / steps
+		var xb := x0 + span * (i + 1) / steps
+		var ya: float = deck.call(xa)
+		var yb: float = deck.call(xb)
+		var n_top := Vector3(ya - yb, (xb - xa) * vs, 0).normalized()
+		kit.poly(plank, [p(xa, ya, zb), p(xb, yb, zb), p(xb, yb, zf), p(xa, ya, zf)], n_top, "solid", Vector3(0, 0, 1))
+		for side: float in [-1.0, 1.0]:
+			var sz := zf if side > 0.0 else zb
+			kit.poly(beam, [p(xa, ya + 0.5, sz), p(xb, yb + 0.5, sz), p(xb, yb - 3.0, sz), p(xa, ya - 3.0, sz)], Vector3(0, 0, side), "solid", Vector3(1, 0, 0))
+			# the hand rail
+			var rz := sz - side * 0.8
+			kit.poly(beam, [p(xa, ya + 10.0, rz), p(xb, yb + 10.0, rz), p(xb, yb + 8.4, rz), p(xa, ya + 8.4, rz)], Vector3(0, 0, side), "solid", Vector3(1, 0, 0))
+			kit.poly(beam, [p(xa, ya + 10.0, rz - 0.8), p(xb, yb + 10.0, rz - 0.8), p(xb, yb + 10.0, rz + 0.8), p(xa, ya + 10.0, rz + 0.8)], Vector3.UP, "solid", Vector3(1, 0, 0))
+		# the arch's soffit under the deck
+		kit.poly(plank, [p(xa, ya - 3.0, zb), p(xb, yb - 3.0, zb), p(xb, yb - 3.0, zf), p(xa, ya - 3.0, zf)], -n_top, "solid", Vector3(0, 0, 1))
+	var k := 0
+	while k <= 4:
+		var x := x0 + 2.0 + (span - 4.0) * k / 4.0
+		var y: float = deck.call(x)
+		for side: float in [-1.0, 1.0]:
+			var pz := (zf if side > 0.0 else zb) - side * 0.8
+			blk(post, Vector3(x - 1.3, (-3.0 if k == 0 or k == 4 else y - 3.5), pz - 1.3), Vector3(x + 1.3, y + 11.5, pz + 1.3))
+		k += 1
+	_shadow()

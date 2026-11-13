@@ -69,8 +69,10 @@ static func get_place(id: String) -> Dictionary:
 			place["hills"] = [{"at": Vector2(560, 310), "radius": 110.0, "height": 14.0, "top": 20.0}, {"at": Vector2(120, 150), "radius": 100.0, "height": 14.0}]
 			# the pond by the road, and (round two) a still pool behind the clearing with a plank footbridge
 			# over it into the deep wood, seen through a gap in the trees (the forest picture's bridge)
-			place["water"] = [{"at": Vector2(252, 312), "radius": Vector2(58, 17)}, {"at": Vector2(430, 93), "radius": Vector2(70, 13)}]
-			place["bridges"] = [{"x": 430.0, "z0": 77.0, "z1": 110.0, "wide": 22.0, "wood": true}]
+			# (round three: the pool is a stream running towards the camera, and the footbridge crosses it
+			# side-on, its arch seen from the side as in the forest picture)
+			place["water"] = [{"at": Vector2(252, 312), "radius": Vector2(58, 17)}, {"at": Vector2(432, 80), "radius": Vector2(19, 40)}]
+			place["bridges"] = [{"x0": 396.0, "x1": 468.0, "z": 92.0, "wide": 14.0, "across": true}]
 			# a lantern on a post at the bridge's head, and the pale light over the pool that shows it
 			(place["props"] as Array).append(["hub_slantern", 400, 114, 2, 0])
 			(place["lights"] as Array).append_array([[Vector2(400 + LANTERN_GLASS.x, 114 + LANTERN_GLASS.y), Color(1.0, 0.78, 0.46), 1.0, 0.5],
@@ -767,6 +769,8 @@ static func _dustwatch() -> Dictionary:
 		# the yard: crates, barrels and sacks
 		["hub_scrate_4", 456, 362, 5, 1], ["hub_scrate_5", 472, 358, 5, 1], ["hub_sbarrel_1", 498, 368, 8, 1], ["hub_ssack_2", 482, 374, 0, 1],
 		["hub_scrate_0", 520, 372, 4, 1],
+		# on the dais: cushions round the fire, urns at its front corners
+		["hub_scush", 338, 312, 0, 0], ["hub_scush", 302, 266, 0, 0], ["hub_dpot_1", 234, 328, 4, 0], ["hub_dpot_0", 406, 328, 4, 0],
 		# the near edge: past the low wall, nearer the camera than anyone
 		["hub_cactus_4", 110, 470, 0, 2], ["hub_dtree_0", 596, 520, 0, 2], ["hub_cactus_2", 470, 466, 0, 2], ["hub_dbush_0", 170, 506, 0, 3],
 	]
@@ -801,6 +805,12 @@ static func _dustwatch() -> Dictionary:
 		"tour": [Vector2(320, 330), Vector2(190, 196), Vector2(470, 196), Vector2(150, 330), Vector2(470, 320)],     # test pictures (--hub=dustwatch --shots)
 		"props": props, "houses": houses,
 		"stalls": [{"at": Vector2(488, 264), "wide": 56.0, "roof": "hub_roof_tiles"}],
+		# (round three) the dais is a place to sit: a sandstone ring round the fire, rugs, cushions, urns
+		# at its front corners, a striped canvas shade on poles over the foot of the cistern stair
+		"hearths": [{"at": Vector2(320, 288), "rx": 17.0, "rz": 11.0, "high": 4.0}],
+		"rugs": [["hub_sbed_0", 282, 262], ["hub_sbed_1", 358, 262], ["hub_sbed_0", 262, 318]],
+		"canopies": [{"x0": 272.0, "x1": 368.0, "z0": 210.0, "z1": 228.0, "low": 42.0, "high": 50.0,
+			"stripes": [Color(0.95, 0.42, 0.30), Color(1.0, 0.92, 0.80), Color(0.38, 0.62, 0.78), Color(1.0, 0.92, 0.80)]}],
 		"bunting": [[Vector2(258, 92), Vector2(382, 92), 64.0, 10.0], [Vector2(222, 152), Vector2(414, 152), 66.0, 14.0]],
 		"decals": [["hub_sbed_0", 72, 360], ["hub_sbed_1", 96, 364], ["hub_scush", 122, 374], ["hub_sring", 150, 362],
 			["hub_sripple_3", 560, 392], ["hub_sripple_4", 404, 386], ["hub_sripple_2", 232, 392], ["hub_sripple_1", 470, 222]],
