@@ -318,9 +318,12 @@ class Banner extends Base:
 		_say(self, head, fs, Vector2(roundf(W * 0.5 - tw * 0.5), base), title, Color(UI.C_PARCH, a), 3 if ph else 5)
 		var mid := base - head.get_ascent(fs) * 0.36
 		var lz := 2.0 if ph else 3.0
-		var gap := (9.0 if ph else 14.0)
-		UI.rs_lozenge(ci, Vector2(roundf(W * 0.5 - tw * 0.5 - gap), roundf(mid)), lz, Color(UI.C_GOLD, a), 10.0 if ph else 16.0)
-		UI.rs_lozenge(ci, Vector2(roundf(W * 0.5 + tw * 0.5 + gap), roundf(mid)), lz, Color(UI.C_GOLD, a), 10.0 if ph else 16.0)
+		var gap := (8.0 if ph else 13.0)
+		var reach := (14.0 if ph else 26.0) * (0.7 if small else 1.0)
+		for side: float in [-1.0, 1.0]:
+			var at := Vector2(roundf(W * 0.5 + side * (tw * 0.5 + gap)), roundf(mid))
+			UI.rs_lozenge(ci, at, lz, Color(UI.C_GOLD, a), 0.0)
+			UI.rs_rule(ci, at + Vector2(side * (lz + 2.0), 0.5), at + Vector2(side * (lz + 2.0 + reach), 0.5), Color(UI.C_GOLD, 0.8 * a), Color(UI.C_GOLD, 0.0))
 		if sub != "" and not small:
 			var ss := 8 if ph else 11
 			var sw := _tw(UI.font_body, ss, sub)

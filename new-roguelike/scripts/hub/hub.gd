@@ -205,6 +205,17 @@ func _ready() -> void:
 		if G.arg("tourat") != "":         # test: --tourat=x,y : the knight walks there, one picture (hub_4.png)
 			var xy := G.arg("tourat").split(",")
 			_tour = [Vector2(float(xy[0]), float(xy[1]))]
+		if G.flag("walkui"):
+			# test: --walkui : first a picture of the interface standing still (hub_walkui.png): the place
+			# banner, a toast (--hubsay=<words>), the help strip, the story line; then the tour
+			var later := _tour
+			_tour = []
+			get_tree().create_timer(0.4).timeout.connect(func() -> void:
+				_show_banner(String(place.get("name", "")))
+				say(G.arg("hubsay", "Won: +38 XP, 12 coins")))
+			get_tree().create_timer(1.3).timeout.connect(func() -> void:
+				await G.save_shot("hub_walkui.png")
+				_tour = later)
 
 
 ## Things the story shows by itself when you arrive: the opening (once, in your room), the Druid's
@@ -464,8 +475,9 @@ func _build_hud() -> void:
 	_coins = WalkKit.Coins.new()
 	_coins.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	var cw := 70.0 if UI.is_phone() else 120.0
-	_coins.offset_left = -cw - ins.z
-	_coins.offset_right = -ins.z
+	var right := ins.z + (30.0 if UI.is_phone() else 0.0)        # (a phone's pause button has the corner)
+	_coins.offset_left = -cw - right
+	_coins.offset_right = -right
 	_coins.offset_top = ins.y
 	_coins.offset_bottom = ins.y + (16.0 if UI.is_phone() else 30.0)
 	_ui.add_child(_coins)

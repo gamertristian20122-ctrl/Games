@@ -43,7 +43,7 @@ func _geo() -> Dictionary:
 	if UI.is_phone():
 		var bw := W.x - 16.0 - ins.x - ins.z
 		return {"box": Rect2(8.0 + ins.x, W.y - 58.0 - ins.w, bw, 52.0), "well": Vector2(40.0, 44.0), "k": 2.0, "well_pad": 4.0,
-			"text_x": 52.0, "text_y": 6.0, "text_r": 14.0, "talk": 10, "line": 12, "plate_x": 50.0, "plate_up": 9.0, "plate_h": 14.0,
+			"text_x": 52.0, "text_y": 9.0, "text_r": 14.0, "talk": 10, "line": 12, "plate_x": 50.0, "plate_up": 8.0, "plate_h": 13.0,
 			"name": 9, "title": 0, "choice_w": 140.0, "row": 22.0, "choice": 10, "gap": 10.0, "marks_h": 10.0, "small": 8}
 	var bw2 := minf(W.x - 40.0, 600.0)
 	var bh := 92.0
