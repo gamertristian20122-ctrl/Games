@@ -119,16 +119,29 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	var blocks: Array = (t["blocks"] as Array).duplicate()
 	# the kings' walk: busts of the old kings on the street up to the sealed gate
 	props.append_array([["hub_cbust_0", 448, 220, 5, 1], ["hub_cbust_2", 512, 220, 5, 1], ["hub_cbust_4", 448, 186, 5, 1], ["hub_cbust_5", 512, 186, 5, 1]])
-	# the herb garden south-east of the square: a picket fence behind (round two: it was a clipped
-	# hedge that read as a flat yellow slab across the foot of the picture), beds in rows, an urn
-	props.append_array([["hub_fence_b", 666, 357, 0, 0], ["hub_fence_b", 706, 357, 0, 0], ["hub_fence_b", 746, 357, 0, 0],
-		["hub_gbed_0", 668, 392, 0, 0], ["hub_gbed_5", 692, 392, 0, 0], ["hub_gbed_2", 716, 392, 0, 0], ["hub_gbed_7", 740, 392, 0, 0], ["hub_gbed_3", 764, 392, 0, 0],
-		["hub_gbed_1", 680, 418, 0, 0], ["hub_gbed_6", 704, 418, 0, 0], ["hub_gbed_4", 728, 418, 0, 0], ["hub_gbed_0", 752, 418, 0, 0],
-		["hub_gurn_1", 780, 376, 5, 1], ["hub_planter", 676, 444, 6, 1]])
-	blocks.append(Rect2(650, 346, 128, 10))
-	# flowers: clumps of single garden flowers (cut one by one from the Garden pack)
-	var clumps: Array = [Vector2(160, 420), Vector2(96, 432), Vector2(344, 452), Vector2(170, 452), Vector2(400, 394), Vector2(560, 394),
-		Vector2(822, 512), Vector2(892, 512), Vector2(620, 470), Vector2(232, 330), Vector2(780, 440), Vector2(640, 330)]
+	# THE SQUARE IS PAVED down to the south road (round two's fixer: the south half read as a park,
+	# lawns and flower confetti round the spawn, the frontage only a strip at the top): cobbles from
+	# the square to y 472 and east to the smithy's yard; the garden beds, the young tree and the
+	# herb garden that stood on that ground go (urns and planters stay as the square's furniture)
+	var floor: Array = (t["floor"] as Array).duplicate()
+	floor.append_array([["hub_gcobble", Rect2(368, 376, 400, 96)], ["hub_gcobble", Rect2(592, 316, 208, 60)]])
+	t["floor"] = floor
+	for i in range(props.size() - 1, -1, -1):
+		var row: Array = props[i]
+		var at := Vector2(row[1], row[2])
+		if Rect2(368, 316, 432, 160).has_point(at) and (String(row[0]).begins_with("hub_gbed") or String(row[0]).begins_with("hub_tree") or String(row[0]).begins_with("hub_bush")):
+			props.remove_at(i)
+	var paths: Array = []
+	for path: Array in t.get("paths", []):
+		if (path[0] as Vector2) == Vector2(840, 496):
+			paths.append([Vector2(840, 496), Vector2(776, 474)])
+		else:
+			paths.append(path)
+	t["paths"] = paths
+	# flowers: clumps of single garden flowers (cut one by one from the Garden pack), only on the
+	# grass that is left (by the mere, the west house and the far corners)
+	var clumps: Array = [Vector2(160, 420), Vector2(96, 432), Vector2(344, 452), Vector2(170, 452),
+		Vector2(822, 512), Vector2(892, 512), Vector2(232, 330)]
 	var tints: Array = [[0, 1, 2, 4, 5], [6, 8, 9, 12, 13], [16, 17, 18, 19, 20], [23, 24, 25, 28, 29]]
 	for i in clumps.size():
 		var at: Vector2 = clumps[i]

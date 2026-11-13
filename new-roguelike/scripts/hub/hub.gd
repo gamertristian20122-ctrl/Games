@@ -533,6 +533,13 @@ func _build_ground() -> void:
 			var area: Rect2 = place.get("scatter_rect", Rect2(8, 70, (place["size"] as Vector2).x - 16.0, (place["size"] as Vector2).y - 78.0))
 			s.position = Vector2(roundf(rng.randf_range(area.position.x, area.end.x)), roundf(rng.randf_range(area.position.y, area.end.y)))
 			s.flip_h = rng.randf() < 0.5
+			var paved := false
+			for f: Array in place.get("floor", []):
+				if (f[1] as Rect2).grow(4.0).has_point(s.position):
+					paved = true                                # (no tufts and flowers on cobbles)
+			if paved:
+				s.free()
+				continue
 			_stage.add_child(s)
 
 
