@@ -709,7 +709,7 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 	# (the two nearest others inside the whirl's reach keep their shapes too)
 	var others: Array = []
 	for p: Node3D in s._people:
-		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 4.6:
+		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < maxf(radius * 4.6, 4.2):
 			others.append(p)
 	others.sort_custom(func(a: Node3D, b: Node3D) -> bool: return a.global_position.distance_to(at) < b.global_position.distance_to(at))
 	var hold2 := screen_box(others[0]) if others.size() > 0 else Vector4(-1.0, -1.0, -1.0, -1.0)
