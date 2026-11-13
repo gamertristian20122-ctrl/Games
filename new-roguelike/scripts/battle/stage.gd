@@ -978,11 +978,11 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0,
 	if hd != null:
 		# HD: THE BLAZE (stage_hd.gd vortex): a whirl of winding streaks of light round the one hit,
 		# sparks spiralling up it, a light high in the column behind him
-		var radius := maxf(width / 2.4 * 0.62, 0.6)
+		var radius := maxf(width / 2.4 * 0.62, 1.05)     # (never thinner than a man is tall: the reference blaze is huge)
 		hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, 2.6, height * 0.9, radius, fighter, 1.2, style)
 		hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.7)
 		hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.8, 0.9, 0.0)     # (the ground before him: a hot pool; no glowing air in front of him)
-		ground_glow(Vector3(at.x, 0.0, at.z + 0.6), Color(colour.r, colour.g, colour.b, 0.5), 3.4, 1.1)
+		ground_glow(Vector3(at.x, 0.0, at.z + 0.9), Color(colour.r, colour.g, colour.b, 0.75), 4.6, 1.2)
 		_pillar_now = true
 		get_tree().create_timer(0.05).timeout.connect(func() -> void: _pillar_now = false)
 		return

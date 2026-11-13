@@ -31,15 +31,20 @@ const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 ##   tame               by day: pale fighters (white robes, pale hair) are drawn a little less bright,
 ##                      so in the full sun they do not burn white and bloom
 ##   spell              how strong spell light is here (by day less: the sun already fills the picture)
+##   pool               [colour, strength]: a broad soft light from high above on the clearing where
+##                      they fight, so the stage is lit and the wood round it falls into deep shade
+##                      (the moonlit ground of the night-battle picture, the golden clearing by day)
 const LOOK := {
-	"forest": {"sun": Color("ffcf8a"), "sun_energy": 2.1, "ambient": Color("b09878"), "ambient_energy": 0.34,
-		"fog": Color("ffe2b8"), "fog_density": 0.005, "fog_sun": 0.8, "fog_aniso": 0.2, "exposure": 1.55,
-		"sky_top": Color("4a5a86"), "sky_low": Color("ffc27a"), "clouds": Color("c8906a"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.7, "tame": 0.8, "beam": 0.07},
+	"forest": {"sun": Color("ffcf8a"), "sun_energy": 2.1, "ambient": Color("8a7458"), "ambient_energy": 0.24,
+		"fog": Color("ffe2b8"), "fog_density": 0.0028, "fog_sun": 0.55, "fog_aniso": 0.2, "exposure": 1.5,
+		"sky_top": Color("3a4a78"), "sky_low": Color("ffb860"), "clouds": Color("b07850"), "stars": 0.0,
+		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.7, "tame": 0.8, "beam": 0.07,
+		"pool": [Color("ffc87a"), 2.2]},
 	"forest_night": {"sun": Color("9fb6ff"), "sun_energy": 1.25, "ambient": Color("38487a"), "ambient_energy": 0.30,
 		"fog": Color("6a84c0"), "fog_density": 0.012, "fog_sun": 0.4, "exposure": 1.35,
 		"sky_top": Color("03060f"), "sky_low": Color("0f1a33"), "clouds": Color("1b2440"), "stars": 1.0, "sky_glow": Vector3(0.28, 0.14, -0.95),
-		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0, "tame": 0.0, "beam": 0.0},
+		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0, "tame": 0.0, "beam": 0.0,
+		"pool": [Color("a8bcff"), 3.4]},
 	"desert": {"sun": Color("ffe0b0"), "sun_energy": 1.7, "ambient": Color("a89cb4"), "ambient_energy": 0.26,
 		"fog": Color("ffe4c0"), "fog_density": 0.006, "fog_sun": 0.6, "fog_aniso": 0.2, "exposure": 1.45,
 		"sky_top": Color("6a8ac4"), "sky_low": Color("ffd8a0"), "clouds": Color("fff0dc"), "stars": 0.0,
@@ -251,6 +256,22 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	sun.shadow_blur = 1.3
 	sun.light_angular_distance = 1.4
 	sun.light_volumetric_fog_energy = num("fog_sun")
+	# the pool of light on the fighting ground (see "pool")
+	var pool: Array = look.get("pool", [])
+	if not pool.is_empty():
+		var sp := SpotLight3D.new()
+		sp.light_color = pool[0]
+		sp.light_energy = float(pool[1])
+		sp.spot_range = 17.0
+		sp.spot_angle = 36.0
+		sp.spot_angle_attenuation = 2.2
+		sp.spot_attenuation = 0.0
+		sp.light_volumetric_fog_energy = 0.0         # (no lit air between the camera and the fighters)
+		sp.shadow_enabled = false
+		sp.light_specular = 0.2
+		sp.position = Vector3(0.5, 9.5, 3.0)
+		s.add_child(sp)
+		sp.look_at(Vector3(0.5, 0.0, -0.2), Vector3(0.0, 0.0, -1.0))
 	RenderingServer.directional_shadow_atlas_set_size(4096, true)
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
 	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
@@ -480,11 +501,11 @@ void fragment() {
 	// the spiral: along one strand the angle a stays the same while it climbs
 	float a = atan(ring.y, ring.x) + hy * twist * 6.2831853 - t * 2.4;
 	float r = bands * 0.3;
-	vec3 p = vec3(cos(a) * r, sin(a) * r, hy * 2.4 - TIME * 1.8 + seed);
+	vec3 p = vec3(cos(a) * r, sin(a) * r, hy * 4.2 - TIME * 2.6 + seed);
 	float strand = ridged(p);
 	// torn into shreds along their length
-	float tear = noise3(vec3(cos(a) * r * 0.6, sin(a) * r * 0.6, hy * 7.0 - TIME * 5.0 + seed * 2.0));
-	strand *= smoothstep(0.25, 0.65, tear + 0.15);
+	float tear = noise3(vec3(cos(a) * r * 0.8, sin(a) * r * 0.8, hy * 11.0 - TIME * 6.0 + seed * 2.0));
+	strand *= smoothstep(0.3, 0.6, tear + 0.1);
 	float fade = smoothstep(0.0, 0.05, hy) * (1.0 - smoothstep(grow * 0.62, grow * 0.62 + 0.38 * grow + 0.001, hy));
 	float edge = 1.0 - abs(dot(normalize(NORMAL), normalize(VIEW)));
 	edge = 0.35 + 0.65 * edge * edge;
@@ -498,7 +519,7 @@ void fragment() {
 	}
 	// a body of light under the strands, hottest at the foot, so it reads as a volume
 	float body = (0.05 + 0.42 * pow(1.0 - hy, 2.6)) * body_k;
-	float v = (strand * mix(1.15, 0.55, hy) + body) * edge * fade * k * alpha;
+	float v = (strand * mix(1.6, 0.7, hy) + body) * edge * fade * k * alpha;
 	vec3 c = mix(col, vec3(1.0), clamp(smoothstep(0.5, 1.0, strand) * 0.4 + pow(1.0 - hy, 6.0) * 0.35, 0.0, 1.0));
 	ALBEDO = c * heat;
 	ALPHA = clamp(v, 0.0, 1.0);
@@ -659,8 +680,8 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 	if style == "storm":
 		# lightning out of the sky into the column, forking as it comes
 		for i in 3:
-			var top := at + Vector3(randf_range(-3.5, 3.5), height * 1.6, randf_range(-3.0, -1.0))
-			bolt(top, at + Vector3(randf_range(-0.3, 0.3), 0.05, -0.5), colour.lerp(Color.WHITE, 0.3), randf_range(0.16, 0.26), life * 0.55, i * life * 0.12, 3, 6.0)
+			var top := at + Vector3(randf_range(-3.5, 3.5), height * 1.6, randf_range(-4.0, -2.5))     # (behind: a tall one leans back by the stand-up tilt)
+			bolt(top, at + Vector3(randf_range(-0.3, 0.3), 0.05, -1.5), colour.lerp(Color.WHITE, 0.3), randf_range(0.16, 0.26), life * 0.55, i * life * 0.12, 3, 6.0)
 	shards(at, colour, height, radius, int(6 + 2 * power), life)
 	if fighter != null and is_instance_valid(fighter) and fighter.has_method("spell_hold"):
 		fighter.call("spell_hold", colour.lerp(Color.WHITE, 0.4), 1.6, life)
@@ -796,7 +817,7 @@ func motes(at: Vector3, colour: Color, power: float, height: float, radius: floa
 	var p := CPUParticles3D.new()
 	p.one_shot = true
 	p.explosiveness = 0.75
-	p.amount = int(clampf(60.0 * power, 50.0, 200.0))
+	p.amount = int(clampf(110.0 * power, 80.0, 320.0))
 	p.lifetime = 1.9
 	p.position = at + Vector3(0.0, height * 0.3, 0.0)
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
@@ -828,7 +849,7 @@ func motes(at: Vector3, colour: Color, power: float, height: float, radius: floa
 	m.disable_fog = true
 	m.render_priority = 12
 	var q := QuadMesh.new()
-	q.size = Vector2(0.13, 0.13)
+	q.size = Vector2(0.16, 0.16)
 	q.material = m
 	p.mesh = q
 	s.add_child(p)
