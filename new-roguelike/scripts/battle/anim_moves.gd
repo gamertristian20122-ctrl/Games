@@ -699,7 +699,7 @@ func lunge(who: Dictionary, impacts: Array) -> void:
 	crouch(who, 1.3, 0.14)
 	sword_to(who, 78.0, 0.14)
 	await _pause(0.14)
-	await dash(who, _front_of(who, target, 0.3) - (who["home"] as Vector3), 0.12)
+	await dash(who, _front_of(who, target, 0.55) - (who["home"] as Vector3), 0.12)
 	await swing(who, e, 0, 3)
 	await swing(who, e, 1, 3)
 	# the thrust: the sword level, the knight stretched long, a straight streak of light
@@ -710,7 +710,7 @@ func lunge(who: Dictionary, impacts: Array) -> void:
 	await _pause(0.07)
 	blade_trail(who, 0.1, 0.14)
 	var tw := _tw(who).set_parallel(true)
-	tw.tween_property(_act(who), "offset", (_act(who).get("offset") as Vector3) + Vector3(d * 0.75, 0.0, 0.0), 0.07).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_act(who), "offset", (_act(who).get("offset") as Vector3) + Vector3(d * 0.4, 0.0, 0.0), 0.07).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_act(who), "squash", Vector2(1.25, 0.85), 0.05)
 	tw.tween_property(_act(who), "lean", -d * 0.1, 0.05)
 	Sfx.play("player_shoot_blade", -3.0, 0.05, 1.25)
@@ -989,17 +989,24 @@ func boss_sweep(who: Dictionary, impacts: Array) -> void:
 # ------------------------------------------------------------------ the ends of the fight
 ## VICTORY: the knight throws his sword up overhead and leaps; the others hop and turn for joy.
 func victory(party: Array) -> void:
+	var idx := 0
 	for u: Dictionary in party:
 		if not _alive(u):
 			continue
 		var a: Node = _act(u)
 		var hop := u.get("sword") != null
+		# (round three: staggered, two hops each, a gold ring under every one of them)
 		var tw := a.create_tween()
-		tw.tween_property(a, "squash", Vector2(1.15, 0.85), 0.1)
-		tw.tween_property(a, "squash", Vector2(0.88, 1.15), 0.08)
-		tw.parallel().tween_method(func(t: float) -> void: a.set("lift", (1.2 if hop else 0.6) * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.42)
-		tw.tween_property(a, "squash", Vector2(1.12, 0.88), 0.05)
-		tw.tween_property(a, "squash", Vector2.ONE, 0.25).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+		tw.tween_interval(0.14 * idx)
+		for k in 2:
+			var high := (1.2 if hop else 0.6) * (1.0 if k == 0 else 0.55)
+			tw.tween_property(a, "squash", Vector2(1.15, 0.85), 0.1)
+			tw.tween_property(a, "squash", Vector2(0.88, 1.15), 0.08)
+			tw.parallel().tween_method(func(t: float) -> void: a.set("lift", high * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.42 if k == 0 else 0.32)
+			tw.tween_property(a, "squash", Vector2(1.12, 0.88), 0.05)
+			tw.tween_property(a, "squash", Vector2.ONE, 0.18 if k == 0 else 0.25).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+		stage.call("ground_glow", u["home"], Color(1.0, 0.78, 0.32, 0.8), 1.5, 1.1, true)
+		idx += 1
 		if hop:
 			sword_to(u, 8.0, 0.18, Tween.TRANS_BACK)
 			var s: Node3D = u["sword"]

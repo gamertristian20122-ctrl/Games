@@ -61,7 +61,11 @@ static func get_place(id: String) -> Dictionary:
 	if id == "dustwatch":
 		# folk round the camp fire on the dais, and two by the trader's awning
 		_extras(place, [["pc_bandit_scout", 292, 296, 1], ["pc_npc_tavern_a", 350, 294, -1], ["pc_royal_priest", 296, 318, 1],
-			["pc_bandit_tracker", 452, 262, -1], ["pc_npc_peasant_a", 466, 276, -1]])
+			["pc_bandit_tracker", 446, 260, -1], ["pc_npc_peasant_a", 470, 276, -1]])
+	if id == "elfwood":
+		# (round three: folk round the camp fire, as round the fire of the forest picture: the fire owns
+		# the clearing and the people stand in its light)
+		_extras(place, [["pc_elf_druid", 402, 234, 1], ["pc_elf_base", 458, 236, -1], ["pc_npc_peasant_a", 450, 270, -1], ["pc_royal_archer", 394, 262, 1]])
 	# DEPTH (scripts/hub/view3d.gd): where the ground climbs, the hills, the water of each place
 	match id:
 		"elfwood":
@@ -168,11 +172,12 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	# townsfolk in twos and threes at the shop doors and round the square (they only stand about)
 	# (those at the doors stand UP on the terrace, never just below its edge: the coping would cross
 	# them at the knee)
-	_extras(t, [["pc_npc_tavern_b", 170, 170, 1], ["pc_scholar_cataloguer", 184, 172, -1],
-		["pc_npc_peasant_a", 614, 168, 1], ["pc_npc_tavern_a_hold", 628, 172, -1],
-		["pc_npc_tavern_a", 712, 174, 1], ["pc_scholar_director", 726, 176, -1],
-		["pc_royal_archer", 432, 232, 1], ["pc_npc_tavern_b_hold", 448, 236, -1], ["pc_royal_priest", 440, 248, -1],
-		["pc_npc_peasant_a", 372, 392, 1], ["pc_npc_tavern_b", 388, 396, -1]])
+	# (round three: 22 px or more apart in x and 6 px in y, so two never melt into one figure)
+	_extras(t, [["pc_npc_tavern_b", 162, 168, 1], ["pc_scholar_cataloguer", 186, 174, -1],
+		["pc_npc_peasant_a", 606, 166, 1], ["pc_npc_tavern_a_hold", 630, 172, -1],
+		["pc_npc_tavern_a", 704, 172, 1], ["pc_scholar_director", 728, 178, -1],
+		["pc_royal_archer", 424, 230, 1], ["pc_npc_tavern_b_hold", 452, 236, -1], ["pc_royal_priest", 436, 250, -1],
+		["pc_npc_peasant_a", 364, 390, 1], ["pc_npc_tavern_b", 390, 396, -1]])
 	# (round two's fixer: no lamps on gibbets round the benches; the square is lit by its corner
 	# lamps and the watch-fire)
 	_lanterns(t, [Vector2(760, 310), Vector2(514, 474), Vector2(360, 400), Vector2(600, 400)])
@@ -231,7 +236,7 @@ const HARBOUR_R := Vector2(260, 142)
 const QUAY_IN := 0.93                    ## the quay wall's ellipse, as a share of the water's (as view3d_build.gd QUAY_IN)
 const JETTY_X := 318.0                   ## the middle of the jetty
 const JETTY_W := 22.0
-const BOAT := {"at": Vector2(246, 508), "long": 100.0, "beam": 26.0}
+const BOAT := {"at": Vector2(236, 510), "long": 130.0, "beam": 30.0, "free": 14.0}      ## (round three: longer, higher-sided)
 
 
 ## How far north the quay wall reaches at x (px): `pad` px further out from the water.
@@ -302,7 +307,7 @@ static func _harbour(t: Dictionary) -> void:
 	var bat: Vector2 = BOAT["at"]
 	var blong := float(BOAT["long"])
 	t["decks"] = [{"rect": Rect2(JETTY_X - JETTY_W * 0.5, head, JETTY_W, 600.0 - head), "up": 2.0},
-		{"rect": Rect2(bat.x - blong * 0.5 + 8.0, bat.y - 9.0, blong - 14.0, 18.0), "up": -6.0}]
+		{"rect": Rect2(bat.x - blong * 0.5 + 8.0, bat.y - 9.0, blong - 14.0, 18.0), "up": 0.0}]
 	# lamps along the quay's edge (iron street lamps in the 3D look), one at the jetty's end, one at the
 	# boat's stern: their light lies on the water as long broken streaks
 	var lights: Array = t["lights"]

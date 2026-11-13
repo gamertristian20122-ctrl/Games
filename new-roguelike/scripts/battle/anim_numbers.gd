@@ -24,7 +24,7 @@ static func pop(root: Control, at: Vector2, text: String, colour: Color, opts: D
 	var sz := l.get_minimum_size()
 	l.pivot_offset = sz * 0.5
 	l.position = (at - Vector2(sz.x * 0.5, sz.y)).round()
-	var big := 1.45 if crit else (1.0 if not word else 0.8)
+	var big := (1.45 if crit else (1.0 if not word else 0.8)) * float(opts.get("size", 1.0))
 	l.scale = Vector2.ONE * big * 2.1
 	l.set_meta("big", big)
 	if crit:

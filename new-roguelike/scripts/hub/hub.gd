@@ -1236,7 +1236,13 @@ func _stroll(p: Dictionary, delta: float, hero_dist: float) -> bool:
 		if float(p["wait"]) <= 0.0:
 			p["wait"] = randf_range(2.5, 6.0)
 			var post: Vector2 = p["post"]
-			p["goal"] = (post + Vector2(randf_range(-Hub.STROLL, Hub.STROLL), randf_range(-Hub.STROLL * 0.6, Hub.STROLL * 0.6))).round()
+			# (round three: never a goal within 16 px of another person or of where another is going:
+			# two strollers ended in one spot and melted into one figure)
+			for attempt in 6:
+				var g := (post + Vector2(randf_range(-Hub.STROLL, Hub.STROLL), randf_range(-Hub.STROLL * 0.6, Hub.STROLL * 0.6))).round()
+				if _clear_spot(g, p):
+					p["goal"] = g
+					break
 		return false
 	var step := (goal - node.position).limit_length(18.0 * delta)
 	node.position += step
@@ -1247,6 +1253,20 @@ func _stroll(p: Dictionary, delta: float, hero_dist: float) -> bool:
 		body.play("run")
 	if int(p["solid"]) >= 0:
 		_solids[int(p["solid"])] = [node.position - Vector2(0, 2), 6.0]
+	return true
+
+
+## No other person (nor the knight) stands at, or is walking to, within 16 px of `at`.
+func _clear_spot(at: Vector2, me: Dictionary) -> bool:
+	if _hero != null and _hero.position.distance_to(at) < 16.0:
+		return false
+	for q: Dictionary in _people:
+		if is_same(q, me):
+			continue
+		if (q["node"] as Node2D).position.distance_to(at) < 16.0:
+			return false
+		if q.has("goal") and (q["goal"] as Vector2).distance_to(at) < 16.0:
+			return false
 	return true
 
 

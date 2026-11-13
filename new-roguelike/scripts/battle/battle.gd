@@ -76,6 +76,7 @@ var _arrow: Polygon2D              ## and the little arrow over his head
 var _turn_unit := {}
 var _boss_bar := {}                ## a boss's own bar at the top of the screen
 var _intro := 0.0                  ## the camera comes in from further back as the battle opens (1 -> 0)
+var _num_stack := {}               ## numbers popping off one fighter: [when, how many] (they stack upwards)
 var _push := 0.0                   ## and moves in a little at the end of a won battle (0 -> 1)
 var _fade: ColorRect               ## black over the screen at the start, gold at a victory
 var _sky := 0.0                    ## HD: how far up into the sky the camera still looks as the battle opens (1 -> 0)
@@ -1314,7 +1315,17 @@ func _float(unit: Dictionary, text: String, colour: Color, opts: Dictionary = {}
 	# can be out of the picture)
 	var room: Vector2 = _root.size
 	p = Vector2(clampf(p.x, 24.0, maxf(room.x - 24.0, 24.0)), clampf(p.y, 58.0 if not _boss_bar.is_empty() else 46.0, maxf(room.y - 30.0, 60.0)))
+	# (round three: bigger in HD, and numbers popping off one fighter close together stack upwards
+	# instead of landing on one another: a volley's "CRITICAL 46 28" collided)
+	var key := str(unit.get("home"))
+	var now := Time.get_ticks_msec()
+	var last: Array = _num_stack.get(key, [-100000, -1])
+	var n := int(last[1]) + 1 if now - int(last[0]) < 650 else 0
+	_num_stack[key] = [now, n]
+	p.y = maxf(p.y - 22.0 * float(n % 3), 46.0)
 	var o := opts.duplicate()
+	if Hd.on():
+		o["size"] = 1.4
 	if not text.is_valid_int() and not text.begins_with("+"):
 		o["word"] = true
 	return Num.pop(_root, p, text, colour, o)
@@ -1409,6 +1420,13 @@ func _closing(won: bool) -> void:
 		tf.tween_property(_fade, "color", Color(0.05, 0.03, 0.02, 0.28), 0.6)
 		var tp := create_tween()
 		tp.tween_property(self, "_push", 1.0, 1.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		# (round three: and in on the party's middle, not up at the sky)
+		var mid := Vector3.ZERO
+		var alive: Array = fight.call("alive", fight.party)
+		for u: Dictionary in alive:
+			mid += u["home"] as Vector3
+		if not alive.is_empty():
+			track(mid / float(alive.size()) + Vector3(0.0, 1.2, 0.0), 2.0, 0.45)
 	else:
 		# the defeat: everybody already lies where he fell; the camera sinks slowly, all goes dark red
 		_fade.color = Color(0.12, 0.0, 0.02, 0.0)

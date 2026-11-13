@@ -766,7 +766,9 @@ func _boat(bt: Dictionary, place: Dictionary) -> void:
 		if t < 0.36:
 			return half_b * pow(sin(t / 0.36 * PI * 0.5), 0.8)
 		return half_b * (1.0 - 0.16 * smoothstep(0.78, 1.0, t))
-	var gw := func(t: float) -> float: return wl + 8.0 + 7.0 * pow(1.0 - t, 3.0) + 2.5 * pow(t, 4.0)
+	# (round three: 14 px of freeboard and more at the bow, so the painted side faces the camera:
+	# at 8 px the boat read as a flat plank tray seen from above)
+	var gw := func(t: float) -> float: return wl + float(bt.get("free", 14.0)) + 8.0 * pow(1.0 - t, 3.0) + 3.0 * pow(t, 4.0)
 	var steps := 14
 	var xs: Array = []
 	var hbs: Array = []
@@ -869,6 +871,31 @@ func _boat(bt: Dictionary, place: Dictionary) -> void:
 	kit.take_corners()
 
 
+const ROPE_VIEW := Vector3(0.0, -0.574, -0.819)      ## the camera's view direction (35 degrees down), x/up/z
+static var _rope_at := Vector2(-1, -1)
+## A light, plain pixel of the rope's timber (its 75th brightest), so a rope is one even tone.
+static func _rope_uv(tex: Texture2D) -> Vector2:
+	if _rope_at.x >= 0.0:
+		return _rope_at
+	var img := tex.get_image()
+	if img == null:
+		_rope_at = Vector2(0.5, 0.5)
+		return _rope_at
+	if img.is_compressed():
+		img.decompress()
+	var seen: Array = []
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a > 0.9:
+				seen.append([c.get_luminance(), x, y])
+	if seen.is_empty():
+		_rope_at = Vector2(0.5, 0.5)
+		return _rope_at
+	seen.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	var pick: Array = seen[int(seen.size() * 0.75)]
+	_rope_at = Vector2((float(pick[1]) + 0.5) / img.get_width(), (float(pick[2]) + 0.5) / img.get_height())
+	return _rope_at
 ## A rope from a to b (px: x, up, z), a thin strip facing the camera, sagging `sag` px in the middle.
 func _rope(a: Vector3, c: Vector3, sag: float) -> void:
 	var rope := Art.tex("hub_bbeam")
@@ -879,9 +906,15 @@ func _rope(a: Vector3, c: Vector3, sag: float) -> void:
 		var t1 := float(i + 1) / n
 		var q0 := a.lerp(c, t0) - Vector3(0, sag * 4.0 * t0 * (1.0 - t0), 0)
 		var q1 := a.lerp(c, t1) - Vector3(0, sag * 4.0 * t1 * (1.0 - t1), 0)
-		var d := Vector2(q1.x - q0.x, q1.y - q0.y)
-		var side := Vector2(-d.y, d.x).normalized() * 0.4 if d.length() > 0.001 else Vector2(0, 0.4)
-		kit.poly(rope, [p(q0.x + side.x, q0.y + side.y, q0.z), p(q1.x + side.x, q1.y + side.y, q1.z), p(q1.x - side.x, q1.y - side.y, q1.z), p(q0.x - side.x, q0.y - side.y, q0.z)], Vector3(0, 0, 1))
+		# (round three: the strip is turned to face the camera whichever way the rope runs, and is 1.2
+		# art px wide: a rope running away from the camera was seen edge-on, and a thinner one aliased
+		# into a dashed line)
+		var dir := (q1 - q0).normalized()
+		var sd := dir.cross(ROPE_VIEW)
+		sd = sd.normalized() * 0.6 if sd.length() > 0.001 else Vector3(0.6, 0.0, 0.0)
+		# (one flat tone of the timber, not its grain: the grain's dark seams read as dashes)
+		var uv := _rope_uv(rope)
+		kit.face(rope, [p(q0.x + sd.x, q0.y + sd.y, q0.z + sd.z), p(q1.x + sd.x, q1.y + sd.y, q1.z + sd.z), p(q1.x - sd.x, q1.y - sd.y, q1.z - sd.z), p(q0.x - sd.x, q0.y - sd.y, q0.z - sd.z)], [uv, uv, uv, uv], -ROPE_VIEW)
 	kit.tint = Color.WHITE
 
 

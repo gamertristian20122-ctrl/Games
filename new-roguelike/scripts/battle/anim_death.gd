@@ -98,7 +98,10 @@ func _update(delta: float) -> void:
 	var age := _t / _life
 	# hot for a moment (the pixels glow as they break), then their own colours, then fade
 	var heat := clampf(1.0 - _t / 0.22, 0.0, 1.0)
-	var glow := (2.2 if Hd.on() else 1.3) * heat
+	# (round three: at 2.2x lerped 70% to cream the break popped as a white bloom ball and the pieces
+	# read as white dust; now a little heat in the monster's own colours, cooling towards dark)
+	var glow := (0.6 if Hd.on() else 0.8) * heat
+	var cool := smoothstep(0.25, 0.9, age)
 	var fade := 1.0 - smoothstep(0.55, 1.0, age)
 	for i in _bits.size():
 		var b: Dictionary = _bits[i]
@@ -122,5 +125,5 @@ func _update(delta: float) -> void:
 		var s := float(b["s"]) * (1.0 - 0.45 * age)
 		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY.scaled(Vector3(s, s, s)), p))
 		var c: Color = b["c"]
-		var hot := c.lerp(Color(1.0, 0.92, 0.75), heat * 0.7)
+		var hot := c.lerp(Color(1.0, 0.85, 0.6), heat * 0.25) * (1.0 - 0.55 * cool)
 		mm.set_instance_color(i, Color(hot.r * (1.0 + glow), hot.g * (1.0 + glow), hot.b * (1.0 + glow), fade))

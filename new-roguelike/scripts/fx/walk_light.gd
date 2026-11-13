@@ -43,17 +43,19 @@ const Hd = preload("res://scripts/fx/hd.gd")
 ## "default", "default:night", "indoors". A missing key is taken from "default" / "default:night".
 const GRADES := {
 	"default": {"warm": Vector3(1.06, 1.01, 0.90), "shade": Vector3(1.0, 0.93, 0.88), "punch": 1.07, "rich": 0.97,
-		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 1.2, "sun": 1.0, "dull": 0.35, "blue": 0.0, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5},
+		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 1.2, "sun": 1.0, "dull": 0.35, "blue": 0.0, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5, "lean": Vector3(-0.82, 0.0, 0.76)},
 	"default:night": {"warm": Vector3(1.10, 1.0, 0.86), "shade": Vector3(0.84, 0.94, 1.16), "punch": 1.06, "rich": 0.95,
-		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45, "blue": 0.3, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5},
+		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45, "blue": 0.3, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5, "lean": Vector3(-0.82, 0.0, 0.76)},
 	# Wickmere at dusk: honey light on the stones, plum shade
-	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25, "rich": 0.85, "gold": 0.25, "dull": 0.5},
+	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25, "rich": 0.85, "gold": 0.25, "dull": 0.5,
+		"lean": Vector3(0.85, 0.0, -0.45), "key": 1.6},     # (round three: the sun from the south-west lights the shop fronts and the street)
 	# Wickmere by night (round three): darker than the dusk of the reference street (median ~36),
 	# blue-violet shade between the lamp pools, a cooler dimmer moon, lamps a little stronger
-	"village:night": {"exposure": 1.0, "ambient": 1.5, "blue": 0.5, "sun": 1.1, "lamps": 0.85, "shade": Vector3(0.80, 0.90, 1.22)},
+	"village:night": {"lean": Vector3(0.85, 0.0, -0.45), "exposure": 1.0, "ambient": 1.5, "blue": 0.5, "sun": 1.1, "lamps": 0.85, "shade": Vector3(0.80, 0.90, 1.22)},
 	# the dark road (before the beacon): greener, cooler shade, thicker air, few beams
-	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 1.0,
-		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.44, "shafts": 0.45, "motes": 0.5, "dapple": 0.35, "exposure": 1.45, "ambient": 1.4, "gold": 0.5, "key": 3.5, "sun": 0.55, "dull": 0.12},
+	# (round three: one golden grade, as in the forest picture; the shade darker so the fire owns the clearing)
+	"elfwood": {"warm": Vector3(1.09, 1.01, 0.84), "shade": Vector3(0.96, 0.92, 0.90), "punch": 1.09, "rich": 1.0,
+		"haze": Color(0.92, 0.78, 0.50), "far": 0.38, "rim": 0.44, "shafts": 0.55, "motes": 0.6, "dapple": 0.35, "exposure": 1.45, "ambient": 0.8, "gold": 0.9, "key": 3.0, "sun": 0.55, "dull": 0.12, "lamps": 1.3},
 	"deepwood": {"warm": Vector3(1.0, 1.02, 0.94), "shade": Vector3(0.84, 0.96, 1.06), "punch": 1.10, "rich": 1.0,
 		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.48, "shafts": 0.35, "motes": 0.4, "dapple": 0.4, "exposure": 1.85, "ambient": 3.0, "gold": 0.5, "key": 3.5, "sun": 0.55, "dull": 0.12},
 	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.35, "exposure": 1.45, "ambient": 1.4, "gold": 0.5, "key": 3.0, "sun": 0.8, "dull": 0.12},

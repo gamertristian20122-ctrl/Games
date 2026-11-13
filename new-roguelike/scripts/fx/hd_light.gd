@@ -42,7 +42,7 @@ const HD_LAMP_DECAY := 2.0          ## HD: how fast a lamp's light falls off (ro
 const HD_LAMP_AMBER := Color(1.0, 0.46, 0.16)   ## HD: warm lamps and fires are pulled towards this amber (HD_LAMP_AMBER_MIX)
 const HD_LAMP_AMBER_MIX := 0.85     ## (round three: half way left cream pools on the cobbles)
 const HD_LAMP_REACH := 2.2          ## HD: a lamp's light reaches this many times as far as its 2D picture (round three: 3.5 made the square one even amber wash)
-const HD_FIRE_REACH := 3.5          ## HD: ... and a big fire's (a camp fire owns its clearing)
+const HD_FIRE_REACH := 4.6          ## HD: ... and a big fire's (a camp fire owns its clearing)
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
 const HD_FOG_DAY := 0.0016          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
 const HD_FOG_NIGHT := 0.009         ## ... a little thicker at night (halos round every lamp)
@@ -77,6 +77,7 @@ var day := 0.0                     ## 1 = out of doors by day (patches of golden
 var attrs: CameraAttributesPractical  ## HD: the camera's depth of field
 var _band := Vector2.ZERO          ## HD: the distances in focus now (eased towards the wanted band)
 var _drift := 0.0
+var _sun_lean := Vector2.INF        ## HD: the lean the sun was last aimed by (GRADES "lean")
 var _sun_low := 1.0                ## HD: how much lower than HD_LEAN the sun stands now (dusk: lower)
 var _stats_t := 0.0
 
@@ -394,7 +395,7 @@ func _build_sky_fx(place: Dictionary) -> void:
 	sky_fx = Node3D.new()
 	v._world.add_child(sky_fx)
 	if float(g["shafts"]) > 0.0:
-		var lean := HD_LEAN if Hd.on() else LEAN
+		var lean := lean_now() if Hd.on() else LEAN
 		var light_dir := Vector3(lean.x, -1.0, lean.y)
 		var many := 6 if (place["size"] as Vector2).x < 1200.0 else 8
 		shaft_mats = WalkLight.shafts(sky_fx, light_dir, many, 11.0, 9.0) if not Hd.on() \
@@ -583,9 +584,11 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		# and it sinks: the shadows grow longer towards dusk (turned in small steps, so the shadow
 		# maps do not swim while the day goes by)
 		var low := snappedf(lerpf(1.55, 1.0, clampf(day * 1.4 - 0.2, 0.0, 1.0)), 0.05)
-		if not is_equal_approx(low, _sun_low):
+		var ln := lean_now()
+		if not is_equal_approx(low, _sun_low) or not ln.is_equal_approx(_sun_lean):
 			_sun_low = low
-			sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x * low, -1.0, HD_LEAN.y * low), Vector3.UP)
+			_sun_lean = ln
+			sun.look_at_from_position(Vector3.ZERO, Vector3(ln.x * low, -1.0, ln.y * low), Vector3.UP)
 		# full day: a golden afternoon sun; towards dusk it sinks to deep amber; the moon is blue
 		var amber := HD_SUN_COLOUR_DAY.lerp(HD_SUN_COLOUR, clampf(night * 1.8, 0.0, 1.0))
 		sun.light_color = sky.lerp(amber, 0.7).lerp(Color(0.62, 0.72, 1.0), smoothstep(0.55, 1.0, night))
@@ -688,6 +691,15 @@ func _focus_band(delta: float, dist: float, target: Vector3, people: Array, mat:
 	env.volumetric_fog_length = minf(maxf(_band.y + dist * 0.5, 24.0), HD_FOG_LENGTH)
 
 
+## HD: which way the sun leans here (GRADES "lean": x, z of where its light runs; Wickmere's sun
+## comes from the south-west, the camera's side, so the shop fronts and the street are lit).
+func lean_now() -> Vector2:
+	var g: Variant = grade.get("lean") if grade != null else null
+	if g is Vector3:
+		return Vector2((g as Vector3).x, (g as Vector3).z)
+	return HD_LEAN
+
+
 ## HD: the key pool follows the knight: from high up and behind, on the sun's side; its cone covers
 ## about the middle three fifths of the picture. Its strength and colour are the land's (GRADES
 ## "key", times the day: none at night) and the sun's.
@@ -695,7 +707,8 @@ func _aim_key(dist: float, pool_at: Vector2) -> void:
 	if key == null:
 		return
 	var ground := Vector3(pool_at.x, v.build.height(Vector2(pool_at.x, pool_at.y) / PX), pool_at.y)
-	var from := ground + Vector3(-HD_LEAN.x * dist * 0.28, dist * 0.62, -HD_LEAN.y * dist * 0.28)
+	var ln := lean_now()
+	var from := ground + Vector3(-ln.x * dist * 0.28, dist * 0.62, -ln.y * dist * 0.28)
 	key.look_at_from_position(from, ground, Vector3.UP)
 	var reach := from.distance_to(ground)
 	key.spot_angle = rad_to_deg(atan(dist * 0.36 / reach))

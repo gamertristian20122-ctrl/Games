@@ -69,7 +69,19 @@ void light() {
 static func card_code(hero: bool, xray := false) -> String:
 	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled" + (", fog_disabled" if hero else "") \
 		+ (", depth_draw_never, depth_test_disabled, blend_mix, shadows_disabled" if xray else "") + ";\n" \
+		+ _stencil(hero, xray) \
 		+ ("#define HERO\n" if hero else "") + ("#define XRAY\n" if xray else "") + Sprite3.SUN_PART + HD_CARD_BODY
+
+
+## (round three) A person's card marks its pixels in the stencil (1); the see-through copy is drawn
+## only where that mark is NOT set, so it shows through scenery but never through another person
+## (a person behind another was drawn at 55% over him: two-headed blobs).
+static func _stencil(hero: bool, xray: bool) -> String:
+	if xray:
+		return "stencil_mode read, compare_not_equal, 1;\n"
+	if hero:
+		return "stencil_mode write, compare_always, 1;\n"
+	return ""
 
 
 const HD_CARD_BODY := "
@@ -138,6 +150,15 @@ void fragment() {
 	vec2 uv = uv_rect.xy + UV * uv_rect.zw;
 	vec4 c = texture(tex, uv);
 	if (c.a < 0.5) { discard; }
+#ifndef HERO
+	// (round three) LEAF SHADE: a swaying card (leaves, bushes) throws a screen-door shadow, which the
+	// soft shadow filter melts into a lighter, soft-edged pool: a tree's shadow was a hard black
+	// stair-stepped ink blot on the cobbles
+	if (IN_SHADOW_PASS && sway > 0.0) {
+		float ign = fract(52.9829189 * fract(dot(FRAGCOORD.xy, vec2(0.06711056, 0.00583715))));
+		if (ign < 0.42) { discard; }
+	}
+#endif
 #ifdef XRAY
 	// the see-through copy of a person: only where something nearer the camera hides them
 	float d = texture(scene_depth, SCREEN_UV).r;
