@@ -876,7 +876,16 @@ func _build_light() -> void:
 	tex.fill_to = Vector2(1.0, 0.5)
 	tex.width = 128
 	tex.height = 128
-	for spec: Array in place.get("lights", []):
+	var specs: Array = place.get("lights", [])
+	if G.flag("pondlamps"):
+		# test: three lamps along the far bank of every pond (to look at their columns in the water)
+		specs = specs.duplicate()
+		for pond: Dictionary in place.get("water", []):
+			var c: Vector2 = pond["at"]
+			var r: Vector2 = pond["radius"]
+			for k: float in [-0.55, 0.0, 0.55]:
+				specs.append([c + Vector2(r.x * k, -r.y * sqrt(1.0 - k * k) - 6.0), Color(1.0, 0.78, 0.46), 1.0, 0.55])
+	for spec: Array in specs:
 		var l := PointLight2D.new()
 		l.texture = tex
 		l.position = spec[0]
