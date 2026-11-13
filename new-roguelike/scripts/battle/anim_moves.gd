@@ -114,9 +114,18 @@ func _orb(at: Vector3, colour: Color, size: float) -> MeshInstance3D:
 
 
 ## A soft puff of dust at someone's feet (a dash starts, a jump lands).
+## The stage's own dust (fx_impact.gd: the ground's colour under its light, grains thrown up) does the
+## puff; a dash adds a low streak of the same dust blown out behind the runner.
 func dust(at: Vector3, power: float = 1.0, side: float = 0.0) -> void:
 	if b.get("_speed") > 4.0:
 		return
+	var tone := Color(0.62, 0.55, 0.46, 0.55) if not Hd.on() else Color(0.42, 0.37, 0.31, 0.55)
+	if stage.has_method("dust"):
+		stage.call("dust", at, power)
+		if side == 0.0:
+			return
+		var c: Color = (stage.get("fx") as RefCounted).call("dust_colour")
+		tone = Color(c.r, c.g, c.b, minf(c.a + 0.1, 0.55))
 	var p := CPUParticles3D.new()
 	p.one_shot = true
 	p.explosiveness = 0.85
@@ -136,7 +145,7 @@ func dust(at: Vector3, power: float = 1.0, side: float = 0.0) -> void:
 	p.scale_amount_max = 1.4 + 0.3 * power
 	var ramp := Gradient.new()
 	ramp.offsets = PackedFloat32Array([0.0, 0.25, 1.0])
-	ramp.colors = PackedColorArray([Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.0)])
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 0.0), Color(1, 1, 1, tone.a), Color(1, 1, 1, 0.0)])
 	p.color_ramp = ramp
 	var q := QuadMesh.new()
 	q.size = Vector2(0.42, 0.42)
@@ -146,7 +155,7 @@ func dust(at: Vector3, power: float = 1.0, side: float = 0.0) -> void:
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	m.vertex_color_use_as_albedo = true
 	m.albedo_texture = dot()
-	m.albedo_color = Color(0.62, 0.55, 0.46) if not Hd.on() else Color(0.42, 0.37, 0.31)
+	m.albedo_color = Color(tone.r, tone.g, tone.b)
 	m.disable_fog = true
 	m.render_priority = 9
 	q.material = m
@@ -228,6 +237,8 @@ func back_home(u: Dictionary, seconds: float) -> void:
 	if u.get("sword") != null:
 		sword_to(u, -28.0, seconds)
 	await _pause(seconds)
+	if _alive(u) and String(u.get("style", "")) != "bat":
+		dust(u["home"], 0.5)                 # (a step's worth of dust where he lands)
 
 
 ## The knight's sword, turned to `deg` (0 = pointing up; - = forward, to the right).
@@ -717,6 +728,7 @@ func slam(who: Dictionary, impacts: Array) -> void:
 	Sfx.play("rock_break", -2.0)
 	Sfx.play("explosion", -10.0)
 	dust(land, 2.2)
+	stage.call("flash", Color(1.0, 0.85, 0.6), 0.7, 0.35)       # (the crash lights the clearing)
 	var colour := Color(1.0, 0.82, 0.5)
 	stage.call("ground_glow", land, Color(colour.r, colour.g, colour.b, 0.9), 2.4, 0.45, true)
 	stage.call("ground_glow", land, Color(colour.r, colour.g, colour.b, 0.7), 4.5, 0.65, true)
@@ -925,6 +937,7 @@ func boss_sweep(who: Dictionary, impacts: Array) -> void:
 	Sfx.play("explosion", -2.0, 0.05, 0.7)
 	Sfx.play("rock_break", 0.0, 0.05, 0.6)
 	dust(at, 2.6)
+	stage.call("flash", Color(1.0, 0.5, 0.35), 0.6, 0.4)
 	b.call("shake", 1.0)
 	for i in 3:
 		get_tree().create_timer(0.08 * i, false).timeout.connect(func() -> void:

@@ -1078,7 +1078,13 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 		_show_fx(target)
 	elif _speed <= 4.0:
 		var c: Color = who.get("colour", Color.WHITE) if not who.is_empty() else Color.WHITE
-		stage.call("burst", at, c.lerp(Color.WHITE, 0.4), minf((0.55 + 0.9 * ratio + (0.5 if crit else 0.0)) * weight + 0.15, 1.6 if crit else 1.3), 0.0, "", node)
+		# (a sword, a claw, a bite or an arrow lands as a blade blow: the white-hot slash and its sparks
+		# from fx_impact.gd; a caster's bolt keeps the element its colour names)
+		var element := "" if String(who.get("style", "")) == "caster" else "blade"
+		stage.call("burst", at, c.lerp(Color.WHITE, 0.4), minf((0.55 + 0.9 * ratio + (0.5 if crit else 0.0)) * weight + 0.15, 1.6 if crit else 1.3), 0.0, "", node, element)
+		# a heavy blow kicks up the ground under the one hit
+		if last and (ratio >= 0.3 or crit or dead):
+			stage.call("dust", target["home"], (1.0 + 1.5 * ratio + (0.5 if crit else 0.0)) * (1.4 if big_one else 1.0))
 	# the flash (gold on a crit), and the pack's own hit animation
 	# (the flash shines by itself only a little: a big picture flashing hot blooms into a white blob)
 	node.call("set_flash", 1.0 if crit else (0.55 if big_one else 0.8), Color(1.0, 0.85, 0.45) if crit else Color.WHITE, (0.45 if Hd.on() else 0.3) * (0.5 if big_one else 1.0))

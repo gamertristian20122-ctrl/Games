@@ -925,9 +925,12 @@ func element_of(colour: Color, style: String = "", rise: float = 0.0) -> String:
 ## A blow or a spell landing on a spot: the pack's effect art (blows, fire, heals), a pool of light
 ## on the ground, and the element's own impact (impact()). `power` 1 = a plain blow; a big spell is
 ## 2 to 3. `fighter` = the one hit (held clear of the blaze in HD).
-func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, art: String = "", fighter: Node3D = null) -> void:
+## `element` names the impact outright (battle.gd: every sword, claw and arrow is "blade" whatever
+## the striker's colour); left empty, it is worked out from the colour.
+func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, art: String = "", fighter: Node3D = null, element: String = "") -> void:
 	var ground := Vector3(at.x, 0.0, at.z)
-	var element := element_of(colour, _pillar_style if _pillar_now else "", rise)
+	if element == "":
+		element = element_of(colour, _pillar_style if _pillar_now else "", rise)
 	if art == "":
 		art = "fx_sparkle_magic" if rise > 0.0 else ("fx_explosion" if power >= 2.2 else "fx_hit")
 	var big := art == "fx_explosion"
