@@ -44,8 +44,10 @@ func _init() -> void:
 func _ready() -> void:
 	if _compact():
 		var shade := Gradient.new()
-		shade.offsets = PackedFloat32Array([0.0, 0.62, 1.0])
-		shade.colors = PackedColorArray([Color(0.03, 0.03, 0.05, 0.62), Color(0.03, 0.03, 0.05, 0.38), Color(0.03, 0.03, 0.05, 0.0)])
+		# (a solid backing behind the letters, so they read over a bright square; it only fades in
+		# the last few pixels past the longest line)
+		shade.offsets = PackedFloat32Array([0.0, 0.86, 1.0])
+		shade.colors = PackedColorArray([Color(0.03, 0.03, 0.05, 0.66), Color(0.03, 0.03, 0.05, 0.6), Color(0.03, 0.03, 0.05, 0.0)])
 		var grad := GradientTexture2D.new()
 		grad.gradient = shade
 		grad.width = 64

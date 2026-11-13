@@ -81,6 +81,8 @@ static func get_place(id: String) -> Dictionary:
 		"glade":
 			place["rise"] = {"from": 100.0, "over": 84.0, "height": 48.0}
 			place["hills"] = [{"at": Vector2(300, 208), "radius": 128.0, "height": 13.0, "top": 74.0}]      # the rune ring stands on a low rise
+			# (nobody walks behind the two big trees at the clearing's back corners)
+			place["blocks"] = (place.get("blocks", []) as Array) + [Rect2(140, 100, 52, 22), Rect2(390, 100, 52, 22)]
 		"world":
 			# Hollow Hill over its gate, the Cinder Mountains in the north-east, dunes in the sands, low wooded hills
 			place["hills"] = [{"at": Vector2(300, 462), "radius": 180.0, "height": 76.0}, {"at": Vector2(1700, 150), "radius": 430.0, "height": 112.0},
@@ -162,10 +164,12 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	t["lights"] = lights
 	_market_town(t)
 	# townsfolk in twos and threes at the shop doors and round the square (they only stand about)
-	_extras(t, [["pc_npc_tavern_b", 196, 186, 1], ["pc_scholar_cataloguer", 212, 190, -1],
-		["pc_npc_peasant_a", 552, 188, 1], ["pc_npc_tavern_a_hold", 568, 186, -1], ["pc_royal_priest", 560, 202, -1],
-		["pc_npc_tavern_a", 734, 188, 1], ["pc_scholar_director", 750, 190, -1],
-		["pc_royal_archer", 438, 230, 1], ["pc_npc_tavern_b_hold", 454, 234, -1],
+	# (those at the doors stand UP on the terrace, never just below its edge: the coping would cross
+	# them at the knee)
+	_extras(t, [["pc_npc_tavern_b", 170, 170, 1], ["pc_scholar_cataloguer", 184, 172, -1],
+		["pc_npc_peasant_a", 614, 168, 1], ["pc_npc_tavern_a_hold", 628, 172, -1],
+		["pc_npc_tavern_a", 712, 174, 1], ["pc_scholar_director", 726, 176, -1],
+		["pc_royal_archer", 432, 232, 1], ["pc_npc_tavern_b_hold", 448, 236, -1], ["pc_royal_priest", 440, 248, -1],
 		["pc_npc_peasant_a", 372, 392, 1], ["pc_npc_tavern_b", 388, 396, -1]])
 	# (round two's fixer: no lamps on gibbets round the benches; the square is lit by its corner
 	# lamps and the watch-fire)
@@ -435,7 +439,11 @@ static func _base_place(id: String) -> Dictionary:
 					["hub_shroom_2", 286, 262, 0, 1], ["hub_shroom_4", 260, 258, 0, 1], ["hub_shroom_0", 237, 250, 0, 1], ["hub_shroom_3", 219, 240, 0, 1], ["hub_shroom_2", 208, 228, 0, 1], ["hub_shroom_2", 237, 178, 0, 1],
 					["hub_shroom_4", 260, 170, 0, 1], ["hub_shroom_2", 340, 170, 0, 1], ["hub_shroom_4", 363, 178, 0, 1], ["hub_shroom_1", 381, 188, 0, 1], ["hub_shroom_3", 392, 200, 0, 1],
 					["hub_vplant_7", 226, 160, 0, 1], ["hub_vplant_8", 236, 164, 0, 1], ["hub_vplant_1", 370, 158, 0, 1], ["hub_plant_3", 384, 162, 0, 1],
-					["hub_froots_2", 300, 116, 24, 2], ["hub_ftrunk_2", 300, 116, 0, -102], ["hub_fleaf_g_3", 214, 118, 0, 2], ["hub_fleaf_o_2", 392, 120, 0, 2]],
+					["hub_froots_2", 300, 116, 24, 2], ["hub_ftrunk_2", 300, 116, 0, -102], ["hub_fleaf_g_3", 214, 118, 0, 2], ["hub_fleaf_o_2", 392, 120, 0, 2],
+					# (round two's fixer) two big trees inside the clearing's back corners frame the ring, and a
+					# fallen log with stumps to sit on in the open west half (nobody is hidden behind them)
+					["hub_tree_green_2", 166, 122, 10, 6], ["hub_tree_teal_2", 416, 122, 10, 6],
+					["hub_slog", 132, 256, 0, 1], ["hub_sround", 160, 266, 5, 1], ["hub_stump_1", 104, 262, 6, 3]],
 				"paths": [[Vector2(-10, 196), Vector2(160, 200), Vector2(270, 206)]],
 				"scatter": {"hub_tuft": [24, 60], "hub_flower": [26, 50], "hub_pebble": [20, 8], "hub_twig": [10, 8]},
 				"forest": {"top_gaps": [], "behind": [], "open": [Rect2(-30, 140, 70, 120)]},
@@ -605,7 +613,7 @@ static func _dustwatch() -> Dictionary:
 		["hub_dpot_1", 118, 312, 4, 1], ["hub_dpot_0", 102, 318, 5, 1],
 		["hub_anvil_0", 160, 300, 16, 4], ["hub_dstone_2", 50, 264, 10, 2],
 		["hub_dbush_1", 566, 366, 8, 3], ["hub_tusk_2", 600, 290, 6, 2],
-		["hub_dblock_0", 410, 350, 0, 1], ["hub_dblock_1", 230, 356, 0, 1],
+		# (no lone sandstone blocks standing about in the open: they read as dropped sponges)
 		# the street's shops (the houses are in "houses"): goods at their doors and under their awnings
 		["hub_dpot_0", 196, 158, 0, 0], ["hub_dpot_1", 206, 160, 0, 0], ["hub_spot", 214, 157, 0, 0], ["hub_sjug", 152, 158, 0, 0],
 		["hub_sbarrel_f", 222, 162, 4, 1],
@@ -659,7 +667,7 @@ static func _dustwatch() -> Dictionary:
 		"decals": [["hub_sbed_0", 72, 360], ["hub_sbed_1", 96, 364], ["hub_scush", 122, 374], ["hub_sring", 150, 362],
 			["hub_sripple_3", 560, 392], ["hub_sripple_4", 404, 386], ["hub_sripple_2", 232, 392], ["hub_sripple_1", 470, 222]],
 		"anims": [["hub_fire_c", 150, 364, 7.0, 9.0, false]],
-		"scatter": {"hub_dgrass": [4, 46], "hub_dblock": [4, 10]},
+		"scatter": {"hub_dgrass": [4, 46]},
 		"forest": {"top_gaps": [[250.0, 390.0]], "behind": [], "open": [Rect2(250, 390, 140, 90)],
 			"big": ["hub_dstone_0", "hub_dtree_0", "hub_dstone_1", "hub_tusk_1", "hub_obelisk_2", "hub_dbush_0"],
 			"side": ["hub_cactus_4", "hub_dbush_0", "hub_cactus_3", "hub_dstone_1"],

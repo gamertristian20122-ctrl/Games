@@ -682,7 +682,9 @@ func _prop(id: String, at: Vector2, solid: float, below: float) -> Sprite2D:
 	s.offset = Vector2(-floorf(sz.x * 0.5), -sz.y + below)        # a negative `below` lifts the picture above its base
 	s.position = at
 	if id.begins_with("hub_bloom_"):
-		s.scale = Vector2(0.7, 0.7)      # (the giant trumpet flowers stood taller than the knight: scale broke)
+		s.scale = Vector2(0.5, 0.5)      # (the giant trumpet flowers stood taller than the knight: scale broke)
+	elif id.begins_with("hub_shroom_"):
+		s.scale = Vector2(0.6, 0.6)      # (toadstools as tall as the knight broke the scale of the glade too)
 	_ysort.add_child(s)
 	if solid > 0.0:
 		_solids.append([at - Vector2(0, solid * 0.4), solid])

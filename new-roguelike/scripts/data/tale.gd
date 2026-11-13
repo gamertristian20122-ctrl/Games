@@ -579,7 +579,7 @@ static func town() -> Dictionary:
 			{"id": "tam", "name": "Tam", "title": "Smith and Lampwright", "sprite": "pc_npc_peasant_a", "hands": "pc_hand_base_2",
 				"pos": Vector2(690, 262), "face": 1, "role": "chat", "as": "smith", "text": ""},
 			{"id": "odo", "name": "Brother Odo", "title": "Chronicler", "sprite": "pc_scholar_researcher", "hands": "pc_hand_library_6",
-				"pos": Vector2(300, 186), "face": 1, "role": "chat", "text": ""},
+				"pos": Vector2(318, 176), "face": 1, "role": "chat", "text": ""},
 			{"id": "ysolde", "name": "Ysolde", "title": "Elf of the Wood", "sprite": "pc_elf_druid", "hands": "pc_hand_elf_23",
 				"pos": Vector2(250, 330), "face": 1, "role": "chat", "text": ""},
 			{"id": "marta", "name": "Marta", "title": "Lamp Trimmer", "sprite": "pc_npc_tavern_a", "hands": "pc_hand_base_2",
@@ -701,11 +701,11 @@ static func suncourt() -> Dictionary:
 			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_3", 390, 290, 6, 2],
 			["hub_dpot_0", 230, 316, 5, 1], ["hub_dpot_1", 330, 318, 4, 1], ["hub_dchest", 448, 226, 10, 2], ["hub_dpot_1", 470, 236, 4, 1],
 			["hub_cactus_4", 70, 214, 8, 2], ["hub_cactus_3", 500, 214, 6, 2], ["hub_dtree_1", 74, 372, 5, 2], ["hub_dbush_1", 486, 372, 8, 3],
-			["hub_tusk_2", 120, 150, 6, 2], ["hub_dblock_0", 240, 360, 0, 1], ["hub_dblock_1", 330, 362, 0, 1],
+			["hub_tusk_2", 120, 150, 6, 2],
 			# the beacon: a great stone with the fire bowl on top of it
 			["hub_dstone_0", 280, 190, 16, 3]],
 		"beacon": {"pos": Vector2(280, 186), "lit": glow, "lift": 24.0},
-		"scatter": {"hub_dgrass": [4, 30], "hub_dblock": [4, 8]},
+		"scatter": {"hub_dgrass": [4, 30]},
 		"forest": forest,
 		"exits": [{"rect": Rect2(230, 392, 100, 10), "to": "dustwatch", "at": Vector2(320, 228)}],
 		"people": [
