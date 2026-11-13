@@ -430,9 +430,12 @@ func _build_screen() -> void:
 	_ff_hint.add_theme_color_override("font_color", UI.C_BONE)
 	_ff_hint.add_theme_color_override("font_outline_color", UI.C_INK)
 	_ff_hint.add_theme_constant_override("outline_size", 3)
-	_ff_hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_ff_hint.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_ff_hint.offset_left = -300.0
 	_ff_hint.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_ff_hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_ff_hint.offset_right = -2.0
+	_ff_hint.offset_top = -12.0
+	_ff_hint.offset_bottom = 0.0
 	_ff_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_ff_hint.visible = false
 	_area.add_child(_ff_hint)
@@ -893,6 +896,7 @@ func _play(events: Array) -> void:
 	var who: Dictionary = first.get("who", {})
 	if _marker != null:
 		_marker.visible = false
+	_turn_unit = {}                    # (the arrow over his home spot would stay behind while he moves)
 	if _speed > 4.0:
 		await _play_quick(events)
 		return

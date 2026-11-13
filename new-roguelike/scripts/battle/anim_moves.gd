@@ -703,7 +703,7 @@ func slam(who: Dictionary, impacts: Array) -> void:
 	tw.tween_method(func(t: float) -> void: _act(who).set("lift", 3.6 * 4.0 * t * (1.0 - t) * (1.0 - 0.25 * t)), 0.0, 1.0, air)
 	tw.tween_property(_act(who), "squash", Vector2(0.84, 1.2), air * 0.3)
 	tw.tween_property(_act(who), "lean", 0.0, air * 0.3)
-	sword_to(who, 170.0, air * 0.55)
+	sword_to(who, 105.0, air * 0.55)       # (raised back over his shoulder: + turns it back, towards his own side)
 	b.call("track", land + Vector3(0.0, 1.4, 0.0), air + 0.5)
 	await _pause(air * 0.62)
 	# the downstroke: the sword over and down
