@@ -797,6 +797,7 @@ static func _dustwatch() -> Dictionary:
 		h.merge(row, true)
 		houses.append(h)
 	return {
+		"iron_lamps": true,          # (round three: iron street lamps, as in Wickmere, not lanterns on timber gallows)
 		"name": "Dustwatch", "camp": 1, "size": Vector2(640, 430), "outdoor": true, "walk": Rect2(30, 104, 580, 290), "spawn": Vector2(320, 366),
 		"ground": "hub_sand", "tint": Color(0.96, 0.88, 0.78), "fire": Vector2(320, 286),
 		"floor": [["hub_paving", Rect2(224, 208, 192, 128)]],

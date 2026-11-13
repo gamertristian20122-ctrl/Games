@@ -47,7 +47,7 @@ func _ready() -> void:
 		# (a solid backing behind the letters, so they read over a bright square; it only fades in
 		# the last few pixels past the longest line)
 		shade.offsets = PackedFloat32Array([0.0, 0.86, 1.0])
-		shade.colors = PackedColorArray([Color(0.03, 0.03, 0.05, 0.66), Color(0.03, 0.03, 0.05, 0.6), Color(0.03, 0.03, 0.05, 0.0)])
+		shade.colors = PackedColorArray([Color(0.03, 0.03, 0.05, 0.76), Color(0.03, 0.03, 0.05, 0.7), Color(0.03, 0.03, 0.05, 0.0)])
 		var grad := GradientTexture2D.new()
 		grad.gradient = shade
 		grad.width = 64
@@ -126,7 +126,7 @@ func refresh() -> void:
 		else:
 			lines.append(["%s %d/%d" % [q["name"], Quests.progress(q), int(q["need"])], UI.C_BONE])
 	if in_camp and not goal_only:
-		lines.append([("Coins: %d" if Tale.on() else "Camp chest: %d coins") % Upgrades.coins(), UI.C_DIM])
+		lines.append([("Coins: %d" if Tale.on() else "Camp chest: %d coins") % Upgrades.coins(), UI.C_GOLD])
 	var key := str(lines)
 	if key == _shown:
 		return

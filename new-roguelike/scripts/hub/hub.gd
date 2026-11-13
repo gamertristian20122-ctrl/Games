@@ -115,6 +115,14 @@ func _ready() -> void:
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt.add_theme_color_override("font_outline_color", UI.C_INK)
 	_prompt.add_theme_constant_override("outline_size", 3)
+	var tag := StyleBoxFlat.new()
+	tag.bg_color = Color(0.03, 0.03, 0.05, 0.62)
+	tag.set_corner_radius_all(3)
+	tag.content_margin_left = 3
+	tag.content_margin_right = 3
+	tag.content_margin_top = 0
+	tag.content_margin_bottom = 1
+	_prompt.add_theme_stylebox_override("normal", tag)
 	add_child(_prompt)
 	Controls.action_pressed.connect(_on_talk_pressed)
 	# the quest list in the top-left corner, as in a level
@@ -1191,7 +1199,13 @@ func _update_people(delta: float) -> void:
 		var p: Dictionary = _people[best]
 		_prompt.text = String(p["row"]["name"])
 		_prompt.reset_size()
-		_prompt.position = ((p["node"] as Node2D).position + Vector2(-_prompt.size.x * 0.5, -float(p["top"]) - 12.0) / _zoom).round()
+		# (above the tallest head near it with clearance: a name over the knight's sword arm, in a grey
+		# outline, merged with both sprites)
+		var at := (p["node"] as Node2D).position
+		var up := float(p["top"]) + 18.0
+		if _hero != null and absf(_hero.position.x - at.x) < 30.0:
+			up = maxf(up, at.y - _hero.position.y + 34.0 * _k + 18.0)
+		_prompt.position = (at + Vector2(-_prompt.size.x * 0.5, -up) / _zoom).round()
 		_prompt.visible = not place.has("signs")        # on the world map the name already floats over the place
 	else:
 		_prompt.visible = false

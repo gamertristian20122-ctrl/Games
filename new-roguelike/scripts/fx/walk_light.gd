@@ -50,7 +50,7 @@ const GRADES := {
 	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25, "rich": 0.85, "gold": 0.25, "dull": 0.5},
 	# Wickmere by night (round three): darker than the dusk of the reference street (median ~36),
 	# blue-violet shade between the lamp pools, a cooler dimmer moon, lamps a little stronger
-	"village:night": {"exposure": 0.8, "ambient": 0.55, "blue": 0.5, "sun": 0.7, "lamps": 1.2, "shade": Vector3(0.80, 0.90, 1.22)},
+	"village:night": {"exposure": 1.0, "ambient": 1.5, "blue": 0.5, "sun": 1.1, "lamps": 0.85, "shade": Vector3(0.80, 0.90, 1.22)},
 	# the dark road (before the beacon): greener, cooler shade, thicker air, few beams
 	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 1.0,
 		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.44, "shafts": 0.45, "motes": 0.5, "dapple": 0.35, "exposure": 1.45, "ambient": 1.4, "gold": 0.5, "key": 3.5, "sun": 0.55, "dull": 0.12},
@@ -67,8 +67,8 @@ const GRADES := {
 	"glade:lit": {"warm": Vector3(1.10, 1.01, 0.85), "haze": Color(1.0, 0.84, 0.58), "shafts": 1.0, "motes": 1.0},
 	"beacon:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the Sands: hot pale dust before the beacon, deep amber after it
-	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.92, 0.92, 1.04), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0, "blue": 0.35, "fog": 0.6, "lamps": 0.8, "bounce": 0.6, "exposure": 0.76, "key": 0.6},
-	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0, "blue": 0.35, "fog": 0.6, "lamps": 0.8, "bounce": 0.6, "exposure": 0.76, "key": 0.6},
+	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.92, 0.92, 1.04), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0, "blue": 0.6, "fog": 0.6, "lamps": 0.8, "bounce": 0.45, "exposure": 0.72, "key": 0.6, "rich": 0.75, "dull": 0.5},
+	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0, "blue": 0.6, "fog": 0.6, "lamps": 0.8, "bounce": 0.45, "exposure": 0.6, "key": 0.6, "rich": 0.75, "dull": 0.5},
 	# the sands by night: clear air, a blue moonlit plain, the lamps and fires in small amber pools
 	"dustwatch:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},
 	"suncourt:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},
@@ -338,6 +338,9 @@ static func pool(at: Vector3, radius: float, colour: Color) -> MeshInstance3D:
 	mat.shader = _shader("pool")
 	mat.set_shader_parameter("colour", Vector3(colour.r, colour.g, colour.b))
 	mat.set_shader_parameter("steep", 1.0 if Hd.on() else 0.0)
+	if Hd.on():
+		# (HD, round three: a deep amber pool; the lamp's own colour came out cream on pale cobbles)
+		mat.set_shader_parameter("colour", Vector3(colour.r, colour.g * 0.5, colour.b * 0.22))
 	mat.render_priority = 4
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * radius * 2.0

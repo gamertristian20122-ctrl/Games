@@ -39,8 +39,8 @@ const HD_AMBIENT_DAY := 0.19        ## the shade by day: deep, so the sun reads 
 const HD_AMBIENT_NIGHT := 0.16
 const HD_LAMP := 1.2                ## lamps are this much stronger than in the flat look (2.8 burned the ground white)
 const HD_LAMP_DECAY := 2.0          ## HD: how fast a lamp's light falls off (round three: hot by the post, near black about three lamp-heights away)
-const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled towards this amber (HD_LAMP_AMBER_MIX)
-const HD_LAMP_AMBER_MIX := 0.8      ## (round three: half way left cream pools on the cobbles)
+const HD_LAMP_AMBER := Color(1.0, 0.46, 0.16)   ## HD: warm lamps and fires are pulled towards this amber (HD_LAMP_AMBER_MIX)
+const HD_LAMP_AMBER_MIX := 0.85     ## (round three: half way left cream pools on the cobbles)
 const HD_LAMP_REACH := 2.2          ## HD: a lamp's light reaches this many times as far as its 2D picture (round three: 3.5 made the square one even amber wash)
 const HD_FIRE_REACH := 3.5          ## HD: ... and a big fire's (a camp fire owns its clearing)
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
@@ -590,6 +590,10 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		var amber := HD_SUN_COLOUR_DAY.lerp(HD_SUN_COLOUR, clampf(night * 1.8, 0.0, 1.0))
 		sun.light_color = sky.lerp(amber, 0.7).lerp(Color(0.62, 0.72, 1.0), smoothstep(0.55, 1.0, night))
 		env.ambient_light_energy = lerpf(HD_AMBIENT_NIGHT, HD_AMBIENT_DAY, day) * float(grade.get("ambient", 1.0))
+		# (round three: the moon's shadows are soft and faint, so the shade of a tree card off the
+		# picture does not lie on the lamp-lit cobbles as a hard black ink blot)
+		sun.shadow_opacity = lerpf(0.3, 1.0, smoothstep(0.25, 0.7, day))
+		sun.light_angular_distance = lerpf(3.0, 0.9, smoothstep(0.25, 0.7, day))
 		# (dusk: the shade takes the blue of the evening sky, the light stays amber)
 		var dusk := 1.0 - absf(night * 2.0 - 1.0)
 		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night).lerp(Color(0.36, 0.48, 0.95), dusk * 0.6)
