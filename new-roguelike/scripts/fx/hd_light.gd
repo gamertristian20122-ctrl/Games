@@ -44,7 +44,7 @@ const HD_LAMP_REACH := 3.5          ## HD: a lamp's light reaches this many time
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
 const HD_FOG_DAY := 0.0016          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
 const HD_FOG_NIGHT := 0.009         ## ... a little thicker at night (halos round every lamp)
-const HD_HAZE_DAY := 0.09           ## the sunlit air behind the play by day (times the grade's "shafts")
+const HD_HAZE_DAY := 0.045          ## the sunlit air behind the play by day (times the grade's "shafts")
 const HD_HAZE_NIGHT := 0.012        ## ... and at night
 const HD_FOG_LENGTH := 40.0         ## the volumetric fog ends this far from the camera (else a wide view is a sheet of fog)
 const HD_DAPPLE := 1.6             ## how far apart sun and shade patches are (times the grade's "dapple": 0 on open sand)
@@ -59,6 +59,7 @@ static var _exposure_ready := false
 var v                              ## the view (scripts/hub/view3d.gd; untyped: its members are read by name)
 var env: Environment
 var sun: DirectionalLight3D
+var key: SpotLight3D               ## HD: the one big warm pool of light where the knight is (GRADES "key")
 var post: MeshInstance3D
 var lamps: Array = []              ## [PointLight2D, OmniLight3D]
 var glows: Array = []              ## per lamp: [PointLight2D, pool material, halo material, warm?, seed]
@@ -206,6 +207,23 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	# affords the most, so the penumbras are smooth gradients, not sand)
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_ULTRA)
 	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
+	# THE KEY POOL (as in the reference pictures: one big warm pool of light where the people stand,
+	# the frame round it sinking into shade): a soft wide spot from high up on the sun's side,
+	# following the spot the camera looks at (sync_view), with real shadows
+	key = SpotLight3D.new()
+	key.spot_range = 40.0
+	key.spot_attenuation = 0.0
+	key.spot_angle_attenuation = 0.7
+	key.shadow_enabled = true
+	key.shadow_blur = 2.0
+	key.light_size = 0.4
+	key.shadow_bias = 0.06
+	key.shadow_normal_bias = 1.0
+	key.light_specular = 0.0
+	key.light_volumetric_fog_energy = 0.0
+	key.light_energy = 0.0
+	key.light_cull_mask = 0xFFFFF & ~2              # (not the ponds: view3d_water.gd WATER_LAYER)
+	v.add_child(key)
 	attrs = CameraAttributesPractical.new()
 	attrs.dof_blur_far_enabled = true
 	attrs.dof_blur_near_enabled = true
@@ -440,7 +458,7 @@ func sync_light() -> void:
 			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
-		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.45, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.36, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
 		# (HD: the painted halo is a deep orange, so it carries the glow round a flame: the bloom of a
 		# light bright enough to bloom on its own comes out white)
 		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.03, 0.42, night) * f)
@@ -454,7 +472,9 @@ func sync_light() -> void:
 	var beams := float(grade.get("shafts", 0.0)) * day
 	if haze_mat != null:
 		haze_mat.density = HD_HAZE_DAY * beams + HD_HAZE_NIGHT * night * (1.0 if outdoor else 0.0)
-		haze_mat.albedo = Color(1.0, 0.92, 0.80).lerp(Color(0.80, 0.78, 0.80), night)
+		# (golden air, not milk: the land's own haze, pushed towards amber)
+		var gold_air := (grade.get("haze", Color(1.0, 0.86, 0.62)) as Color).lerp(Color(1.0, 0.7, 0.4), 0.5)
+		haze_mat.albedo = gold_air.lerp(Color(0.80, 0.78, 0.80), night)
 	for mat: ShaderMaterial in shaft_mats:
 		mat.set_shader_parameter("strength", (0.07 if Hd.on() else 0.17) * beams)
 		# (HD: warm sunlight, not the grey of the distance)
@@ -487,6 +507,8 @@ func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool
 		mat.set_shader_parameter("shade", grade["shade"])
 		mat.set_shader_parameter("punch", grade["punch"])
 		mat.set_shader_parameter("rich", grade["rich"])
+		mat.set_shader_parameter("gold", float(grade.get("gold", 0.0)))
+		mat.set_shader_parameter("dull", float(grade.get("dull", 0.35)))
 		mat.set_shader_parameter("rim", float(grade["rim"]) * (1.2 if Hd.on() else 1.0))
 		# HD: the camera's blur melts the distance; the haze only tints it (else a milky veil)
 		mat.set_shader_parameter("far", float(grade["far"]) * (0.32 if Hd.on() else 1.0))
@@ -507,6 +529,7 @@ func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool
 	mat.set_shader_parameter("haze", _vec(grade["haze"]) if not grade.is_empty() else Vector3(1.0, 0.85, 0.63))
 	if Hd.on():
 		_focus_band(delta, dist, target, people, mat)
+		_aim_key(dist, pool_at)
 	if G.flag("lightstats"):
 		# test: what the 3D look costs (draw calls are what a phone feels most)
 		_stats_t += delta
@@ -529,7 +552,7 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 	var night := 1.0 - day
 	if outdoor:
 		# (the sun keeps its strength well into the evening: dusk is a low, raking, golden light, not a dim one)
-		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY, sqrt(day))
+		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY * float(grade.get("sun", 1.0)), sqrt(day))
 		# and it sinks: the shadows grow longer towards dusk (turned in small steps, so the shadow
 		# maps do not swim while the day goes by)
 		var low := snappedf(lerpf(1.55, 1.0, clampf(day * 1.4 - 0.2, 0.0, 1.0)), 0.05)
@@ -626,3 +649,21 @@ func _focus_band(delta: float, dist: float, target: Vector3, people: Array, mat:
 	mat.set_shader_parameter("sharp", (_band.y - _band.x) * 0.5)
 	mat.set_shader_parameter("falloff", dist * 0.5)
 	env.volumetric_fog_length = minf(maxf(_band.y + dist * 0.5, 24.0), HD_FOG_LENGTH)
+
+
+## HD: the key pool follows the knight: from high up and behind, on the sun's side; its cone covers
+## about the middle three fifths of the picture. Its strength and colour are the land's (GRADES
+## "key", times the day: none at night) and the sun's.
+func _aim_key(dist: float, pool_at: Vector2) -> void:
+	if key == null:
+		return
+	var ground := Vector3(pool_at.x, v.build.height(Vector2(pool_at.x, pool_at.y) / PX), pool_at.y)
+	var from := ground + Vector3(-HD_LEAN.x * dist * 0.28, dist * 0.62, -HD_LEAN.y * dist * 0.28)
+	key.look_at_from_position(from, ground, Vector3.UP)
+	var reach := from.distance_to(ground)
+	key.spot_angle = rad_to_deg(atan(dist * 0.36 / reach))
+	key.spot_range = reach * 1.6
+	var strength := float(grade.get("key", 0.0)) * day if v._outdoor else 0.0
+	key.light_energy = strength
+	key.light_color = sun.light_color
+	key.visible = strength > 0.01

@@ -23,22 +23,30 @@ const Hd = preload("res://scripts/fx/hd.gd")
 ##                  clearing glows and only the woods round it stay near black)
 ##   ambient        HD: how much light the shade gets here (the woods: more, so their edges read
 ##                  as dark green, not black, by day)
+##   sun            HD: how much of the sun gets through (the woods: the leaves keep most of it
+##                  out, and the key pool lights the clearing)
+##   key            HD: the one big warm pool of light where the knight stands (by day; the frame
+##                  round it sinks into shade, as in the reference pictures)
+##   dull           HD: how grey the shade goes (the town at dusk: near grey-brown shade, only
+##                  the lamp-lit parts carry colour; the woods keep more of their green)
+##   gold           HD: how far greens are turned towards olive and gold (the woods of the
+##                  reference pictures have no candy green: every leaf is olive in gold light)
 ## Rows: "<place>" (by day), "<place>:night", "<place>:lit" (after its land's beacon is lit),
 ## "default", "default:night", "indoors". A missing key is taken from "default" / "default:night".
 const GRADES := {
 	"default": {"warm": Vector3(1.06, 1.01, 0.90), "shade": Vector3(1.0, 0.93, 0.88), "punch": 1.07, "rich": 0.97,
-		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0},
+		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 1.2, "sun": 1.0, "dull": 0.35},
 	"default:night": {"warm": Vector3(1.10, 1.0, 0.86), "shade": Vector3(0.84, 0.94, 1.16), "punch": 1.06, "rich": 0.95,
-		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0},
+		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45},
 	# Wickmere at dusk: honey light on the stones, plum shade
-	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25},
+	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25, "rich": 0.85, "gold": 0.25, "dull": 0.5},
 	# the dark road (before the beacon): greener, cooler shade, thicker air, few beams
-	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 0.94,
-		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.44, "shafts": 0.45, "motes": 0.5, "dapple": 0.7, "exposure": 1.45, "ambient": 2.2},
-	"deepwood": {"warm": Vector3(1.0, 1.02, 0.94), "shade": Vector3(0.84, 0.96, 1.06), "punch": 1.10, "rich": 0.92,
-		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.48, "shafts": 0.35, "motes": 0.4, "dapple": 0.8, "exposure": 1.85, "ambient": 4.5},
-	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.7, "exposure": 1.45, "ambient": 2.2},
-	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4, "exposure": 1.55, "ambient": 2.4},
+	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 1.0,
+		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.44, "shafts": 0.45, "motes": 0.5, "dapple": 0.35, "exposure": 1.45, "ambient": 1.4, "gold": 0.5, "key": 3.5, "sun": 0.55, "dull": 0.12},
+	"deepwood": {"warm": Vector3(1.0, 1.02, 0.94), "shade": Vector3(0.84, 0.96, 1.06), "punch": 1.10, "rich": 1.0,
+		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.48, "shafts": 0.35, "motes": 0.4, "dapple": 0.4, "exposure": 1.85, "ambient": 3.0, "gold": 0.5, "key": 3.5, "sun": 0.55, "dull": 0.12},
+	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.35, "exposure": 1.45, "ambient": 1.4, "gold": 0.5, "key": 3.0, "sun": 0.8, "dull": 0.12},
+	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4, "exposure": 1.55, "ambient": 1.5, "gold": 0.45, "key": 3.0, "sun": 0.7, "dull": 0.15},
 	# golden dawn: the land after its beacon is lit
 	"elfwood:lit": {"warm": Vector3(1.10, 1.01, 0.84), "shade": Vector3(1.02, 0.93, 0.86), "punch": 1.05, "rich": 1.0,
 		"haze": Color(1.0, 0.82, 0.55), "far": 0.30, "rim": 0.42, "shafts": 1.0, "motes": 1.0},
@@ -51,11 +59,11 @@ const GRADES := {
 	"dustwatch:lit": {"warm": Vector3(1.12, 1.0, 0.82), "haze": Color(1.0, 0.78, 0.50), "shafts": 1.0, "motes": 1.0},
 	"suncourt:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the world map: a wide view, so the distance matters most
-	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.42, "rim": 0.40, "shafts": 0.55, "motes": 0.3, "dapple": 0.0, "exposure": 0.74},
+	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.6, "rim": 0.6, "shafts": 0.55, "motes": 0.3, "dapple": 0.0, "exposure": 0.42, "gold": 0.3, "rich": 0.8, "key": 0.8},
 	"world:night": {"haze": Color(0.16, 0.22, 0.38), "far": 0.45},
 	# rooms: candle warmth, soft brown shade
 	"indoors": {"warm": Vector3(1.09, 0.99, 0.84), "shade": Vector3(0.96, 0.88, 0.90), "punch": 1.05, "rich": 0.98,
-		"haze": Color(0.32, 0.20, 0.14), "far": 0.0, "rim": 0.50, "shafts": 0.0, "motes": 0.0, "dapple": 0.0},
+		"haze": Color(0.32, 0.20, 0.14), "far": 0.0, "rim": 0.50, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "key": 0.0},
 }
 
 ## Which land a place belongs to, for "lit" (Tale.lit(land)).
@@ -114,6 +122,8 @@ uniform float sky_glow = 0.0;     // a soft bright band at the top of the pictur
 uniform float blur_on = 1.0;      // 0 = no blur here (HD: the camera's own depth of field does it)
 uniform float linear_in = 0.0;    // 1 = the picture is linear light (HD, Forward+): grade it as seen
 uniform float fore_z = 0.0;       // HD: things nearer than this (view distance) are the dark foreground (0 = none)
+uniform float gold = 0.0;         // HD: greens turned towards olive and gold (GRADES gold)
+uniform float dull = 0.35;        // HD: how grey the shade goes (GRADES dull)
 const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
@@ -196,6 +206,14 @@ void fragment() {
 	col = pow(max(col, vec3(0.0)), vec3(punch));
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(l), col, rich);
+#ifdef HD_POST
+	// as in the reference pictures: the shade is near grey-brown and only the lit parts carry colour,
+	// and the greens lean to olive and gold
+	col = mix(vec3(l), col, mix(1.0 - dull, 1.0, smoothstep(0.10, 0.55, l)));
+	float gk = gold * max(col.g - col.r, 0.0);
+	col.g -= gk * 0.6;
+	col.r += gk * 0.25;
+#endif
 	col = mix(col, col * warm, smoothstep(0.25, 0.9, l));
 	col = mix(col, col * shade, 1.0 - smoothstep(0.0, 0.3, l));
 	col = mix(col, haze, lift * (1.0 - l));

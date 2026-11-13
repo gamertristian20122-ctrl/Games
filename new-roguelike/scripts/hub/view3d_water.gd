@@ -7,6 +7,7 @@ const CardShader = preload("res://scripts/fx/card_shader.gd")
 const Hd = preload("res://scripts/fx/hd.gd")
 
 const PX := 1.0 / 16.0
+const WATER_LAYER := 2                  ## the render layer ponds are on (scripts/fx/hd_light.gd: the key light leaves it out)
 
 ## Water: all light and movement, no art. Two layers of soft noise slide over each other; where
 ## they agree the sky shows in the water, and where they peak the sun glints. It is drawn in
@@ -56,10 +57,10 @@ render_mode cull_back;
 " + Sprite3.SUN_PART + "
 uniform vec3 sky : source_color = vec3(0.6, 0.75, 0.9);
 uniform float day = 1.0;
-uniform vec3 deep : source_color = vec3(0.010, 0.040, 0.062);
+uniform vec3 deep : source_color = vec3(0.006, 0.026, 0.042);
 uniform vec3 shallow : source_color = vec3(0.030, 0.140, 0.175);
 uniform float chop = 0.013;              // how steep the ripples are
-uniform float glitter = 3.5;            // how bright the sparkles of the sun and the moon are
+uniform float glitter = 2.2;            // how bright the sparkles of the sun and the moon are
 uniform float streak = 3.0;             // how bright the lamps' streaks are
 uniform float mirror = 0.75;            // how much the water mirrors what stands round it (screen-space reflections)
 varying vec2 at;
@@ -81,9 +82,12 @@ void fragment() {
 	float edge = length(UV * 2.0 - 1.0) * 1.1 + wob * 0.16;
 	if (edge > 1.0) { discard; }
 	// the ripples' slope, one art pixel at a time
+	// (the mirror's normal is the SMOOTH waves: a normal stepped per art pixel mirrored a random grey
+	// in every square, a mosaic of static; only the sparkles keep the art pixel's steps)
 	float e = 1.0 / 16.0;
 	float h0 = waves(w);
-	vec2 slope = vec2(waves(w + vec2(e, 0.0)) - h0, waves(w + vec2(0.0, e)) - h0) / e;
+	float hs = waves(at);
+	vec2 slope = vec2(waves(at + vec2(e, 0.0)) - hs, waves(at + vec2(0.0, e)) - hs) / e;
 	// steeper towards and away from the camera than across: highlights draw out into long streaks
 	vec3 nw = normalize(vec3(-slope.x * chop * 0.55, 1.0, -slope.y * chop * 1.7));
 	NORMAL = normalize((VIEW_MATRIX * vec4(nw, 0.0)).xyz);
@@ -97,13 +101,14 @@ void fragment() {
 	// people and lamps on the far bank, broken up by the ripples' normals; foam and mud do not.
 	// (A mirror has no colour of its own in the light: the water's own deep colour is in EMISSION.)
 	float open_w = (1.0 - foam) * (1.0 - smoothstep(0.9, 0.97, edge));
-	ALBEDO = mix(c, vec3(mirror), open_w);
-	METALLIC = open_w;
-	ROUGHNESS = mix(1.0, 0.04, open_w);
+	// (Fresnel makes the mirror: strong at the far, grazing side, dark water close under the camera)
+	ALBEDO = mix(c, deep, open_w);
+	METALLIC = open_w * 0.2;
+	ROUGHNESS = mix(1.0, 0.05, open_w);
 	SPECULAR = 0.5;
 	// a handful of art pixels sparkle at any moment, each for a blink
 	float seed = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
-	spark = step(0.982, fract(seed * 7.13 + TIME * (0.35 + seed * 0.5))) * (1.0 - smoothstep(0.88, 0.95, edge));
+	spark = step(0.9965, fract(seed * 7.13 + TIME * (0.35 + seed * 0.5))) * (1.0 - smoothstep(0.88, 0.95, edge));
 	// the sky in the water, strongest where we look across it
 	float fres = 0.06 + 0.94 * pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 5.0);
 	// moving crests: thin lines of art pixels where the ripples run highest catch the sky
@@ -122,7 +127,8 @@ void light() {
 		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * (pow(m, 80.0) * 0.3 + smoothstep(0.86, 0.97, m) * spark * glitter * (0.12 + 0.88 * day));
 	} else {
 		// a lamp: a long broken streak towards the camera, its brightest pixels sparkling
-		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * streak * pow(m, 28.0) * (0.6 + 1.4 * spark);
+		// (sparkles only inside the streak itself, never spread over the whole pond)
+		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * streak * (pow(m, 28.0) * 0.6 + smoothstep(0.9, 0.98, m) * spark * 2.0);
 	}
 }
 "
@@ -162,6 +168,7 @@ func build(place: Dictionary) -> void:
 		node.material_override = mat
 		node.position = Vector3(c.x * PX, 0.03 + v.build.height(c), c.y * PX)
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		node.layers = WATER_LAYER               # (the HD key pool of light does not mirror in it: a white blaze)
 		v._world.add_child(node)
 		mats.append(mat)
 		for lily: Array in pond.get("lilies", []):         # flat pieces floating on it: [id, x, y]
