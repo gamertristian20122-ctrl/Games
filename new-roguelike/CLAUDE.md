@@ -1426,10 +1426,34 @@ and a fixer. Rules and battle numbers are unchanged. All tuning is still on soft
 - The jump attack's landing flash was never seen in a render. The gl_compatibility camera can still cut
   the boss's head on some screens.
 
+## v0.27.0 (13 Nov 2026): the HD GUI ("Lantern Glass")
+The owner: "ok now we need to work on the GUI". A new interface for every live screen, in the HD look.
+The full design spec (screen map, palette, fonts, sizes, widgets, DO/DON'T) is **docs/gui_spec.md**: read it before
+touching any UI. Mock tool: `dev/gui_mock.tscn` (`--mock=battle|target|talk|walk|knight [--commands] [--uiphone]`).
+- **Look:** dark translucent glass panels with fine brass trim, soft shadows and gradients, a flame-shaped focus
+  marker, key-cap hints in the corner of every screen. Fonts are OFL (credited in scripts/data/credits.gd).
+- **UI grid:** `UI.attach(layer)` (theme.gd) puts a screen on a finer grid on PC, so the UI is not 4x chunky;
+  the phone keeps the 400x180 game-pixel layout. project.godot viewport settings are unchanged.
+- **Shared widgets:** scripts/ui/kit/ (bar, coin, focus_flame, help_strip, medallion, ornament, prompt, ui_root,
+  veil, wash) and GlassBox in theme.gd. Glyphs are made at the UI grid's size with no hinting (crisp text).
+- **Screens:** battle (turn rail, party cards, orders/skills panel, target plate and brackets, monster bar plates,
+  Victory with XP bars and real level-ups only; the camera slides so the panel never covers the acting fighter),
+  walking (story line, place banner, talk box with bust, name plate and page dots, choices, prompts, coins,
+  world-map signs, intro captions, touch buttons), menus (title with Quit, a NEW pause menu in walking places
+  (Esc no longer drops straight to the title), knight screen in three columns with Stats/Gear/Skills/Party tabs
+  and Q/E paging, settings, your knight, credits, confirm).
+- **PC settings:** Display (window/fullscreen), VSync, Text size; F11 / Alt+Enter toggles fullscreen.
+  Phone-only rows are hidden on PC.
+- Mouse moves the focus on every button. Judges scored the merged GUI 6.5 (look) and 6.5 (use) before the fixer.
+- **Limits:** the round was stopped early by the owner's call for a quick finish: the Cinzel heading font can
+  lose thin strokes at small sizes, hover-to-preview targets with the mouse may be missing, some knight-screen
+  and credits text is small at 1080p. The old roguelike screens only got the theme. Only a quick check was run
+  for this version (CHECK PASSED); the tale and flow tours were last run by the screen agents.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.
-2. A big GUI upgrade: menus, battle panel, health bars, story box, title screen, in the HD look.
+2. A big GUI upgrade: DONE in v0.27.0 (polish left: see its limits).
 3. Polish and bug-hunt the demo slice only; check it on a real GPU PC.
 4. Trailer (60-90 s, recorded on a real PC), a ~10-slide pitch deck, a Steam page for wishlists.
 - The owner may later port to Unreal (a grant may ask). That is a full rewrite (about 43,000 lines of
