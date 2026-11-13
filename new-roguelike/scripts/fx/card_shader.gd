@@ -62,19 +62,18 @@ void light() {
 ## turned to the sun or a lamp catch a hard rim, bright grey pixels (steel) glint, and the bottom
 ## edge of every shape and the feet sit in a little ambient shade (AO). People get a softer wrap so
 ## they never go dark on their far side.
-## PEOPLE COME FIRST (HD): a standing picture that is nearer the camera than somebody and covers
-## them fades out SMOOTHLY in a soft oval round that person (Sprite3.set_people says where they are
-## on the screen). The solid card leaves a hole there and its GHOST (the same card drawn again as
-## `next_pass`, see-through) fills the hole: whole at the oval's rim, about a fifth at its middle,
-## eased between, so the person shows through cleanly (no screen-door dither, no flicker).
-static func card_code(hero: bool, ghost := false) -> String:
+## PEOPLE COME FIRST (HD): every person's card is drawn a second time on top of everything
+## (`next_pass`, the XRAY copy), but only where something nearer the camera hides them: there they
+## show through as a see-through copy of themselves. The scenery in front stays whole and solid
+## (blurred and shaded like everything else), so nothing has holes cut in it.
+static func card_code(hero: bool, xray := false) -> String:
 	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled" + (", fog_disabled" if hero else "") \
-		+ (", depth_draw_never, blend_mix" if ghost else "") + ";\n" \
-		+ ("#define HERO\n" if hero else "") + ("#define GHOST\n" if ghost else "") + Sprite3.SUN_PART + HD_CARD_BODY
+		+ (", depth_draw_never, depth_test_disabled, blend_mix, shadows_disabled" if xray else "") + ";\n" \
+		+ ("#define HERO\n" if hero else "") + ("#define XRAY\n" if xray else "") + Sprite3.SUN_PART + HD_CARD_BODY
 
 
 const HD_CARD_BODY := "
-const float GHOST_MIN = 0.28;                                   // how much of a faded picture is left at its most
+const float XRAY_SHOW = 0.55;                                       // how much of a hidden person shows through what hides them
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec3 tint : source_color = vec3(1.0);
@@ -96,12 +95,11 @@ uniform float by_night = 0.0;                                   // 1 = a lamp: d
 uniform float lamp_take = 1.0;                                  // how much lamplight it takes (a lantern's own cage: little, so it stays dark iron round the glow)
 global uniform float hh_lamp_on;                                // (set every frame by scripts/fx/hd_light.gd)
 global uniform float hh_exposure;                               // the camera's exposure now (scripts/fx/hd_light.gd)
-#ifdef GHOST
+#ifdef XRAY
 global uniform vec4 hh_grade;                                   // the last pass: x = dark corners, y = where the foreground begins
 global uniform vec4 hh_tint;                                    // the last pass: its middle tint
+uniform sampler2D scene_depth : hint_depth_texture, filter_nearest, repeat_disable;
 #endif
-global uniform sampler2D hh_people : filter_nearest;            // where the people are (Sprite3.set_people)
-global uniform int hh_people_n;
 varying float shadow_pass;
 varying vec2 foot;
 varying vec3 card_r;                                            // view space: the picture's right (UV.x)
@@ -136,42 +134,19 @@ vec4 px_at(vec2 uv) {
 	return texture(tex, uv);
 }
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
-// how far this pixel of scenery is faded for the people behind it (0 = solid, 1 = the most)
-float people_fade(vec2 suv, vec2 vps, float fz) {
-	float best = 0.0;
-	vec2 at = suv * vps;
-	float pad = 9.0 * vps.y / 720.0;
-	for (int i = 0; i < hh_people_n; i++) {
-		vec4 pr = texelFetch(hh_people, ivec2(i, 0), 0);
-		vec2 lo = pr.xy * vps;
-		vec2 hi = pr.zw * vps;
-		// a soft oval a little bigger than the person (their rect already has a few px round it)
-		vec2 rad = (hi - lo) * vec2(0.64, 0.58) + pad;
-		float d = length((at - (lo + hi) * 0.5) / rad);
-		if (d >= 1.0) { continue; }
-		vec4 pd = texelFetch(hh_people, ivec2(i, 1), 0);
-		float t = clamp((suv.y - pr.y) / max(pr.w - pr.y, 1e-4), 0.0, 1.0);
-		if (fz < mix(pd.y, pd.x, t) - 0.3) {
-			float k = 1.0 - smoothstep(0.42, 1.0, d);
-			best = max(best, k * k * (3.0 - 2.0 * k));
-		}
-	}
-	return best;
-}
 void fragment() {
 	vec2 uv = uv_rect.xy + UV * uv_rect.zw;
 	vec4 c = texture(tex, uv);
 	if (c.a < 0.5) { discard; }
-#ifdef GHOST
-	// the see-through copy: only inside the oval round a person, never in a shadow map
-	float fade = (shadow_pass < 0.5 && hh_people_n > 0) ? people_fade(SCREEN_UV, VIEWPORT_SIZE, -VERTEX.z) : 0.0;
-	if (fade < 0.004) { discard; }
+#ifdef XRAY
+	// the see-through copy of a person: only where something nearer the camera hides them
+	float d = texture(scene_depth, SCREEN_UV).r;
+#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
+	vec4 sv = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
 #else
-#ifndef HERO
-	// PEOPLE COME FIRST: the solid card leaves a hole where it covers somebody (its ghost fills it
-	// see-through); never in the shadow pass: the shadow stays whole
-	if (shadow_pass < 0.5 && hh_people_n > 0 && people_fade(SCREEN_UV, VIEWPORT_SIZE, -VERTEX.z) >= 0.004) { discard; }
+	vec4 sv = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, d, 1.0);
 #endif
+	if (-sv.z / sv.w > -VERTEX.z - 0.3) { discard; }
 #endif
 	vec3 col = c.rgb * tint;
 	vec2 tx = 1.0 / vec2(textureSize(tex, 0));
@@ -252,15 +227,13 @@ void fragment() {
 	ALBEDO = col;
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(foot);
-#ifdef GHOST
-	ALPHA = mix(1.0, GHOST_MIN, fade);
+#ifdef XRAY
+	ALPHA = XRAY_SHOW;
 	// the copy is drawn after the last pass (which only sees solid things), so it copies the last
-	// pass's grade itself: its tint, its dark corners and the shade of the foreground (in linear light)
+	// pass's grade itself: its tint and its dark corners (in linear light)
 	vec2 q = SCREEN_UV - 0.5;
 	float vig = 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * hh_grade.x;
-	float fz2 = -VERTEX.z;
-	float fore = hh_grade.y > 0.0 ? 1.0 - smoothstep(hh_grade.y - 2.5, hh_grade.y - 0.2, fz2) : 0.0;
-	vec3 graded = pow(max(hh_tint.rgb * vig * mix(vec3(1.0), vec3(0.40, 0.42, 0.47), fore), vec3(0.0)), vec3(2.2));
+	vec3 graded = pow(max(hh_tint.rgb * vig, vec3(0.0)), vec3(2.2));
 	ALBEDO *= graded;
 	EMISSION *= graded;
 #endif
@@ -365,7 +338,7 @@ static func casts() -> GeometryInstance3D.ShadowCastingSetting:
 
 static var _card_shader: Shader
 static var _shade_shader: Shader
-static var _hd_shaders := {}          ## false = scenery, true = HERO, "ghost" = scenery's see-through copy
+static var _hd_shaders := {}          ## false = scenery, true = HERO, "xray" = a person's see-through copy
 
 
 static func card_shader(hero := false) -> Shader:
@@ -394,17 +367,17 @@ static func card(tex: Texture2D, uv: Vector4, tint: Color, hero := false) -> Sha
 	mat.shader = card_shader(hero)
 	if hero and Hd.on():
 		mat.set_shader_parameter("rim", HERO_RIM)
-	elif Hd.on():
-		# scenery: its see-through copy for the people behind it (drawn after the last pass, which
+		# the person's see-through copy where something hides them (drawn after the last pass, which
 		# only sees solid things and would paint over it: render_priority above the last pass's 0)
-		var ghost := ShaderMaterial.new()
-		if not _hd_shaders.has("ghost"):
+		var xray := ShaderMaterial.new()
+		if not _hd_shaders.has("xray"):
 			var sh := Shader.new()
-			sh.code = card_code(false, true)
-			_hd_shaders["ghost"] = sh
-		ghost.shader = _hd_shaders["ghost"]
-		ghost.render_priority = 1
-		mat.next_pass = ghost
+			sh.code = card_code(true, true)
+			_hd_shaders["xray"] = sh
+		xray.shader = _hd_shaders["xray"]
+		xray.render_priority = 1
+		xray.set_shader_parameter("rim", HERO_RIM)
+		mat.next_pass = xray
 	param(mat, "tex", tex)
 	param(mat, "uv_rect", uv)
 	param(mat, "tint", Vector3(tint.r, tint.g, tint.b))

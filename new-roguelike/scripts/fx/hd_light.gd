@@ -50,7 +50,7 @@ const HD_FOG_LENGTH := 40.0         ## the volumetric fog ends this far from the
 const HD_DAPPLE := 1.6             ## how far apart sun and shade patches are (times the grade's "dapple": 0 on open sand)
 const HD_EXPOSURE_DAY := 0.95
 const HD_EXPOSURE_NIGHT := 1.3
-const HD_DOF := 0.22                ## how strong the depth of field is (0 = none)
+const HD_DOF := 0.3                 ## how strong the depth of field is (0 = none)
 const HD_ROOM_DOF := 0.06
 
 static var _dot_tex: GradientTexture2D
@@ -119,7 +119,9 @@ func setup() -> void:
 	v.add_child(sun)
 	# the last pass: blur away from the knight, warm lights, cool shade, dark corners
 	var sh := Shader.new()
-	sh.code = WalkLight.POST_CODE
+	if Hd.on():
+		Sprite3.ensure_sun()                      # (the people's places on screen, which the HD pass reads)
+	sh.code = WalkLight.post_code(Hd.on())
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
 	var q := QuadMesh.new()
@@ -211,7 +213,10 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	v.cam.attributes = attrs
 	RenderingServer.camera_attributes_set_dof_blur_quality(RenderingServer.DOF_BLUR_QUALITY_HIGH, true)
 	RenderingServer.camera_attributes_set_dof_blur_bokeh_shape(RenderingServer.DOF_BOKEH_CIRCLE)
-	post_mat.set_shader_parameter("blur_on", 0.0)
+	# (the camera's depth of field melts the distance; the last pass melts the near side and the top
+	# and bottom of the picture, person by person: see WalkLight HD_POST)
+	attrs.dof_blur_near_enabled = false
+	post_mat.set_shader_parameter("blur_on", 1.0)
 	post_mat.set_shader_parameter("linear_in", 1.0)
 
 
@@ -469,7 +474,7 @@ func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool
 	mat.set_shader_parameter("focus", dist)
 	mat.set_shader_parameter("sharp", dist * lerpf(0.24, 0.17, day))
 	mat.set_shader_parameter("falloff", dist * lerpf(0.9, 0.62, day))
-	mat.set_shader_parameter("blur_px", lerpf(5.0, 7.0, day))
+	mat.set_shader_parameter("blur_px", lerpf(5.0, 7.0, day) * (1.4 if Hd.on() else 1.0))
 	mat.set_shader_parameter("rim", lerpf(0.38, 0.48, day))
 	# the colours of the picture: amber light and brown shade by day, the old cool night otherwise
 	mat.set_shader_parameter("warm", Vector3(1.07, 1.0, 0.90).lerp(Vector3(1.06, 1.01, 0.91), day))
@@ -574,17 +579,17 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		(order[i][1] as OmniLight3D).shadow_enabled = i < HD_SHADOW_LAMPS
 
 
-## HD: the depth of field. Everything between the nearest and the farthest person in view (and a
-## band round the knight) stays sharp; scenery further back melts away, and so does anything
-## standing between the camera and the people (the near blur). Eased, so it never jumps.
+## HD: the depth of field. The camera's own blur melts what lies far behind the play (the band
+## in focus reaches past the farthest person in view, so nobody far back is blurred); what stands
+## between the camera and the play (nearer than the SOUTH edge of the walking area) and the top and
+## bottom of the picture are melted by the last pass, which keeps every person's own pixels sharp
+## (WalkLight HD_POST): a villager at the bottom of the picture no longer pulls the near blur, or the
+## dark foreground, back to the camera. Eased, so it never jumps.
 func _focus_band(delta: float, dist: float, target: Vector3, people: Array, mat: ShaderMaterial) -> void:
 	var cam: Camera3D = v.cam
 	var to_view := cam.global_transform.affine_inverse()
 	var near := dist * 0.80
 	var far := dist * 1.22
-	# the near edge of the band is the SOUTH edge of the walking area (whatever stands past it, a
-	# fence or a bush between the camera and the play, melts away); never the nearest person, which
-	# would pull the band almost to the camera whenever somebody walks at the bottom of the picture
 	var walk: Rect2 = v.hub.place.get("walk", Rect2())
 	var fore_z := 0.0
 	if walk.size.y > 0.0 and v._outdoor:
@@ -596,23 +601,20 @@ func _focus_band(delta: float, dist: float, target: Vector3, people: Array, mat:
 			var q := p + Vector3(0.0, h, 0.0)
 			if not cam.is_position_in_frustum(q):
 				continue
-			var z := -(to_view * q).z
-			near = minf(near, z - 0.6)
-			far = maxf(far, z + 2.5)
+			far = maxf(far, -(to_view * q).z + 2.5)
 	var aim := -(to_view * target).z
 	near = minf(near, aim - dist * 0.2)
 	far = maxf(far, aim + dist * 0.2)
 	var want := Vector2(maxf(near, 1.0), far)
 	_band = want if _band == Vector2.ZERO else _band.lerp(want, clampf(delta * 3.0, 0.0, 1.0))
-	attrs.dof_blur_near_distance = _band.x
-	attrs.dof_blur_near_transition = dist * 0.06
 	attrs.dof_blur_far_distance = _band.y
 	attrs.dof_blur_far_transition = dist * 0.25
 	attrs.dof_blur_amount = HD_DOF if v._outdoor else HD_ROOM_DOF
-	# whatever stands nearer than the walking area (between the camera and the play) is put in shade,
-	# cooler and greyer: a dark blurred frame round the lit middle, as in a real photograph
-	var fz := minf(fore_z, _band.x + 0.4) if fore_z > 0.0 else 0.0
+	# whatever stands nearer than the walking area (between the camera and the play) is melted and put
+	# in shade, cooler and greyer: a dark blurred frame round the lit middle, as in a real photograph
+	var fz := fore_z
 	mat.set_shader_parameter("fore_z", fz)
+	mat.set_shader_parameter("band_k", 1.0 if v._outdoor else 0.0)
 	var warm: Vector3 = mat.get_shader_parameter("warm")
 	var shade: Vector3 = mat.get_shader_parameter("shade")
 	var tint := (warm + shade) * 0.5

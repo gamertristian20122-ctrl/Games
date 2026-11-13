@@ -185,14 +185,15 @@ static func _market_town(t: Dictionary) -> void:
 		if row[0] == old - Vector2(0, 40):
 			row[0] = new - Vector2(0, 40)
 	# market stalls: their counters face the street, their backs to a hedge or the garden
-	t["stalls"] = [{"at": Vector2(636, 422), "wide": 54.0, "roof": "hub_roof_tiles"},
-		{"at": Vector2(256, 262), "wide": 46.0, "roof": "hub_roof_planks"}]
-	blocks.append_array([Rect2(608, 400, 56, 24), Rect2(232, 238, 48, 26)])
+	# (no stall stands out in the west street any more: its roof hid whoever walked behind it)
+	t["stalls"] = [{"at": Vector2(636, 422), "wide": 54.0, "roof": "hub_roof_tiles"}]
+	blocks.append_array([Rect2(608, 400, 56, 24)])
 	# what Mira sells: pots, a jug, a sack of meal, apples in a crate
 	props.append_array([["hub_spot", 620, 423, 0, -12], ["hub_sjug", 632, 423, 0, -12], ["hub_ssack_0", 646, 423, 0, -12], ["hub_sveg_4", 658, 423, 0, -4]])
-	# the produce stall on the west street: cabbages, leeks and greens in crates, sacks of grain
-	props.append_array([["hub_sveg_2", 242, 263, 0, -4], ["hub_sveg_0", 256, 263, 0, -4], ["hub_sveg_5", 270, 263, 0, -4],
-		["hub_ssack_1", 288, 268, 0, 1], ["hub_ssack_2", 224, 268, 0, 1]])
+	# produce on the ground at the corner of the west house: cabbages, leeks and greens in crates,
+	# sacks of grain (all low: nobody is hidden behind them)
+	props.append_array([["hub_sveg_2", 190, 270, 6, 1], ["hub_sveg_0", 204, 274, 6, 1], ["hub_sveg_5", 196, 284, 6, 1],
+		["hub_ssack_1", 214, 266, 5, 1], ["hub_ssack_2", 182, 282, 5, 1]])
 	# the Hollow Flagon's barrels and a crate; the smithy's crates, its water tub and buckets
 	props.append_array([["hub_sbarrel_1", 74, 172, 8, 1], ["hub_sbarrel_f", 52, 178, 4, 1], ["hub_ssack_4", 92, 182, 0, 1], ["hub_scrate_4", 168, 170, 5, 1],
 		["hub_sbarrel_1", 790, 250, 8, 1], ["hub_scrate_5", 808, 254, 5, 1], ["hub_scrate_1", 822, 250, 4, 1], ["hub_sbucket", 742, 262, 0, 0]])

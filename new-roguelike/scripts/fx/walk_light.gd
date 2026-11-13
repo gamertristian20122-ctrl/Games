@@ -131,6 +131,36 @@ float soft(float z) {
 	float f = z < focus ? falloff * 0.45 : falloff;
 	return clamp((abs(z - focus) - sharp) / f, 0.0, 1.0);
 }
+#ifdef HD_POST
+// HD (PC): the camera's own depth of field melts what lies far behind the play; this pass melts
+// what stands between the camera and the play (nearer than `fore_z`) and the top and bottom of the
+// picture (a tilt-shift lens), but NEVER a person: each pixel asks whether it belongs to somebody
+// (the ovals round the people on screen, Sprite3.set_people, at that person's depth).
+uniform float band_k = 0.0;       // how much the top and bottom of the picture melt (0 = not at all)
+global uniform sampler2D hh_people : filter_nearest;
+global uniform int hh_people_n;
+float people_mask(vec2 suv, vec2 vps, float z) {
+	float best = 0.0;
+	vec2 pad = vec2(6.0, 6.0) * (vps.y / 720.0) / vps;
+	for (int i = 0; i < hh_people_n; i++) {
+		vec4 pr = texelFetch(hh_people, ivec2(i, 0), 0);
+		vec2 rad = (pr.zw - pr.xy) * vec2(0.62, 0.56) + pad;
+		float d = length((suv - (pr.xy + pr.zw) * 0.5) / rad);
+		if (d >= 1.0) { continue; }
+		vec4 pd = texelFetch(hh_people, ivec2(i, 1), 0);       // x = the feet's view distance, y = the head's
+		if (z < pd.y - 0.8 || z > pd.x + 1.2) { continue; }    // scenery in front of them, or far behind
+		best = max(best, 1.0 - smoothstep(0.72, 1.0, d));
+	}
+	return best;
+}
+float soft_at(float z, vec2 uv) {
+	float near_k = fore_z > 0.0 ? smoothstep(fore_z - 0.3, fore_z - 3.2, z) : 0.0;
+	float band = band_k * max(smoothstep(0.78, 1.0, uv.y), smoothstep(0.12, 0.0, uv.y) * 0.35);
+	return max(near_k, band);
+}
+#else
+float soft_at(float z, vec2 uv) { return soft(z); }
+#endif
 void vertex() {
 	POSITION = vec4(VERTEX.xy, 1.0, 1.0);
 }
@@ -138,7 +168,12 @@ void fragment() {
 	vec2 px = 1.0 / VIEWPORT_SIZE;
 	float r_max = blur_px * VIEWPORT_SIZE.y / 720.0;
 	float zc = dist(SCREEN_UV, INV_PROJECTION_MATRIX);
-	float cc = soft(zc);
+	float cc = soft_at(zc, SCREEN_UV);
+	float person = 0.0;
+#ifdef HD_POST
+	person = people_mask(SCREEN_UV, VIEWPORT_SIZE, zc);
+	cc *= 1.0 - person;
+#endif
 	vec3 sum = texture(screen_tex, SCREEN_UV).rgb;
 	float n = 1.0;
 	vec3 bright = vec3(0.0);
@@ -147,13 +182,13 @@ void fragment() {
 		float a = float(i) * 2.39996;
 		vec2 uv = SCREEN_UV + vec2(cos(a), sin(a)) * r * r_max * px;
 		float zt = dist(uv, INV_PROJECTION_MATRIX);
-		float ct = soft(zt);
+		float ct = soft_at(zt, uv);
 		if (zt > zc) { ct = min(ct, cc); }
 		float w = smoothstep(r - 0.2, r + 0.05, ct);
 		vec3 s = texture(screen_tex, uv).rgb;
 		sum += s * w;
 		n += w;
-		bright += max(s - vec3(0.8), vec3(0.0));      // light that spills a little into what is round it
+		bright += max(s - vec3(0.8), vec3(0.0)) * (1.0 - linear_in);      // light that spills a little into what is round it (HD: the glow does it)
 	}
 	vec3 col = sum / n;
 	col += bright * (0.9 / float(TAPS));
@@ -168,7 +203,7 @@ void fragment() {
 	float deep = smoothstep(focus + sharp, focus + falloff * 3.2, zc);
 	col = mix(col, haze * (0.75 + 0.25 * l), deep * far);
 	// the foreground (between the camera and the play): in shade, cooler, less colour
-	float fore = fore_z > 0.0 ? 1.0 - smoothstep(fore_z - 2.5, fore_z - 0.2, zc) : 0.0;
+	float fore = fore_z > 0.0 ? (1.0 - smoothstep(fore_z - 2.5, fore_z - 0.2, zc)) * (1.0 - person) : 0.0;
 	col = mix(col, mix(vec3(l), col, 0.55) * vec3(0.40, 0.42, 0.47), fore);
 	// the low sun just over the top of the picture
 	col += haze * sky_glow * pow(1.0 - SCREEN_UV.y, 3.0) * 0.35;
@@ -229,6 +264,11 @@ void fragment() {
 	ALBEDO = colour * across * along * breathe * streak * strength;
 }
 "
+
+## The last pass as the PC's HD look draws it (see HD_POST above).
+static func post_code(hd: bool) -> String:
+	return POST_CODE.replace("shader_type spatial;\n", "shader_type spatial;\n#define HD_POST\n") if hd else POST_CODE
+
 
 static var _pool_shader: Shader
 static var _halo_shader: Shader
