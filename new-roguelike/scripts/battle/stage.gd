@@ -302,7 +302,7 @@ func build(look_name: String = "forest", seed_value: int = 11) -> void:
 
 func _camera() -> void:
 	cam = Camera3D.new()
-	cam.fov = 30.0
+	cam.fov = fit_fov(30.0)
 	cam.near = 0.3
 	cam.far = 140.0
 	add_child(cam)
@@ -318,6 +318,18 @@ func _camera() -> void:
 	# standing pictures are drawn taller by the camera's slant, so nobody looks squashed (sprite3.gd)
 	var slant := (aim - cam.position).normalized()
 	Sprite3.tall = 1.0 / maxf(Vector2(slant.x, slant.z).length(), 0.5)
+
+
+## The camera's height of view for `v` degrees at the stage's own 2.22:1 picture, opened up on a
+## narrower screen (16:9, the usual Steam window) so the fourth foe at x = 10 stays in the picture
+## with a margin (the camera keeps its height, so a narrower window cut the sides off).
+func fit_fov(v: float) -> float:
+	var vp := get_viewport().get_visible_rect().size if is_inside_tree() else Vector2(1600, 720)
+	var a := vp.x / maxf(vp.y, 1.0)
+	const WIDE := 2.22
+	if a >= WIDE:
+		return v
+	return rad_to_deg(2.0 * atan(tan(deg_to_rad(v) * 0.5) * WIDE / a))
 
 
 func _sky_and_light() -> void:
@@ -542,7 +554,7 @@ func stand(id: String, at: Vector3, faces_left: bool = false, anim: String = "id
 			# the phone's camera stands close: a tall boss's head went out of the top of the picture.
 			# It widens to fit the tallest fighter (the HD camera already shows a boss whole).
 			_tallest = maxf(_tallest, at.y + float(s.call("height")))
-			cam.fov = 30.0 + clampf((_tallest - 2.8) * 6.0, 0.0, 8.0)
+			cam.fov = fit_fov(30.0 + clampf((_tallest - 2.8) * 6.0, 0.0, 8.0))
 	s.set_flip(faces_left)
 	return s
 
@@ -644,8 +656,10 @@ func _scenery_common(dim: Color) -> void:
 	# close to the camera: something tall either side and low things along the bottom, all out of focus
 	prop(_pick("big_trees"), Vector3(-12.6, 0.0, 6.2), false, 0.05, false, dim)
 	prop(_pick("big_trees"), Vector3(13.4, 0.0, 7.4), true, 0.05, false, dim)
+	# (round three: sunk lower, so a near bush's top projects below the front fighters' feet; at -0.5
+	# they hid the back foes' legs and the fourth foe at 16:9)
 	for bx: float in [-8.8, -5.2, 6.4, 9.6]:
-		prop(_pick("bushes"), Vector3(bx, -0.5, 8.4 + rng.randf() * 0.8), rng.randf() < 0.5, 0.02, false, dim)
+		prop(_pick("bushes"), Vector3(bx, -1.15, 8.4 + rng.randf() * 0.8), rng.randf() < 0.5, 0.02, false, dim)
 
 
 func _dot_texture() -> Texture2D:

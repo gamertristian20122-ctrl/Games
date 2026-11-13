@@ -38,9 +38,11 @@ const HD_SUN_NIGHT := 0.35          ## the moon
 const HD_AMBIENT_DAY := 0.19        ## the shade by day: deep, so the sun reads (but faces in shade still read)
 const HD_AMBIENT_NIGHT := 0.16
 const HD_LAMP := 1.2                ## lamps are this much stronger than in the flat look (2.8 burned the ground white)
-const HD_LAMP_DECAY := 1.4          ## HD: how fast a lamp's light falls off (steep near the flame, then a long warm tail)
-const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled this far towards amber (half way)
-const HD_LAMP_REACH := 3.5          ## HD: a lamp's light reaches this many times as far as its 2D picture
+const HD_LAMP_DECAY := 2.0          ## HD: how fast a lamp's light falls off (round three: hot by the post, near black about three lamp-heights away)
+const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled towards this amber (HD_LAMP_AMBER_MIX)
+const HD_LAMP_AMBER_MIX := 0.8      ## (round three: half way left cream pools on the cobbles)
+const HD_LAMP_REACH := 2.2          ## HD: a lamp's light reaches this many times as far as its 2D picture (round three: 3.5 made the square one even amber wash)
+const HD_FIRE_REACH := 3.5          ## HD: ... and a big fire's (a camp fire owns its clearing)
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
 const HD_FOG_DAY := 0.0016          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
 const HD_FOG_NIGHT := 0.009         ## ... a little thicker at night (halos round every lamp)
@@ -285,17 +287,17 @@ func build_lamps(place: Dictionary) -> void:
 				break
 		var warm := two.color.r > two.color.b
 		# (HD: a warm lamp is AMBER, not a pale cream that the tone curve turns white)
-		var colour := two.color.lerp(HD_LAMP_AMBER, 0.5) if warm and Hd.on() else two.color
+		var colour := two.color.lerp(HD_LAMP_AMBER, HD_LAMP_AMBER_MIX) if warm and Hd.on() else two.color
 		if Hd.on() and not warm:
 			# (HD: a cool rune or water light is a deep cyan-blue, never a pale white that blows out
 			# whatever stands under it: a footbridge lit by one burned white)
 			colour = Color(colour.r * 0.55, colour.g * 0.85, colour.b)
 		three.light_color = colour
-		three.omni_range = 64.0 * two.texture_scale * PX * (HD_LAMP_REACH if Hd.on() else LAMP_REACH)
+		three.omni_range = 64.0 * two.texture_scale * PX * (((HD_FIRE_REACH if two.texture_scale > 1.5 else HD_LAMP_REACH)) if Hd.on() else LAMP_REACH)
 		three.omni_attenuation = HD_LAMP_DECAY if Hd.on() else 1.4
 		three.shadow_enabled = false
 		if Hd.on():
-			three.light_volumetric_fog_energy = 0.8      # a halo of lit air round every lamp (more turns the air white)
+			three.light_volumetric_fog_energy = 0.3      # a halo of lit air round every lamp (round three: 0.8 wrapped each lamp in a wide milky halo)
 			three.light_size = 0.08
 			three.shadow_blur = 1.2
 			three.shadow_bias = 0.08
@@ -597,7 +599,7 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		var haze: Color = grade.get("haze", Color(1.0, 0.86, 0.62)) if not grade.is_empty() else Color(1.0, 0.86, 0.62)
 		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day) * float(grade.get("fog", 1.0))
 		# (at night the air is a warm grey: the moon makes it blue, a lamp makes it amber, never white)
-		env.volumetric_fog_albedo = haze.lerp(Color(0.78, 0.74, 0.70), night)
+		env.volumetric_fog_albedo = haze.lerp(Color(0.40, 0.45, 0.56), night)     # (round three: a dark blue-grey, so a lamp's halo reads amber, not milky)
 		sun.light_volumetric_fog_energy = lerpf(0.25, 1.6, day)      # (the air is thin except in the band behind the play)
 		env.tonemap_exposure = lerpf(HD_EXPOSURE_NIGHT, HD_EXPOSURE_DAY, day) * float(grade.get("exposure", 1.0))
 	else:

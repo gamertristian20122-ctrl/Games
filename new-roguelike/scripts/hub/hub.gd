@@ -258,7 +258,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		var s := _prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
 		s.flip_h = p.size() > 5 and bool(p[5])          # (field 5: mirrored)
 		if String(p[0]) == "hub_slantern":
-			_lantern_glass(s)
+			_lantern_glass(s, bool(place.get("iron_lamps", false)) and _view != null)
 			if bool(place.get("iron_lamps", false)) and _view != null:
 				s.set_meta("no3d", true)            # (the 3D look stands an iron street lamp there: scripts/hub/arch/sites.gd)
 		if String(p[0]) == "hub_gfountain" and place.has("fountain") and _view != null:
@@ -763,20 +763,55 @@ static func _flame_pane(img: Image, at: Vector2i, w: int, h: int) -> void:
 ## The glass of the pack's hanging lantern (hub_slantern, 43 x 46): a small glowing pane laid
 ## between the posts of its cage (art pixels 35-37 x 15-19), a pixel in front of it so it is drawn over it. The 3D look
 ## makes it blaze (scripts/fx/card_shader.gd shine_of) and puts the lamp's light on it.
+## `iron`: the 3D look's iron street lamp stands there instead (scripts/hub/arch/sites.gd
+## _iron_lamp): its pane fills the whole cage, 5 x 8, with a hot core (round three: a 3 x 5 pane in
+## a dark cage read as a dim lamp under a cream halo; in the references the glass is the hottest
+## thing in the picture).
 static var _lantern_tex: ImageTexture
-func _lantern_glass(lantern: Sprite2D) -> void:
+static var _iron_tex: ImageTexture
+func _lantern_glass(lantern: Sprite2D, iron: bool = false) -> void:
 	if _lantern_tex == null:
 		var img := Image.create(3, 5, false, Image.FORMAT_RGBA8)
 		_flame_pane(img, Vector2i(0, 0), 3, 5)
 		_lantern_tex = ImageTexture.create_from_image(img)
 		_lantern_tex.resource_name = "hub_lampglass"
+	if _iron_tex == null:
+		var big := Image.create(5, 8, false, Image.FORMAT_RGBA8)
+		_iron_pane(big)
+		_iron_tex = ImageTexture.create_from_image(big)
+		_iron_tex.resource_name = "hub_lampglass"
 	var glass := Sprite2D.new()
-	glass.texture = _lantern_tex
+	glass.texture = _iron_tex if iron else _lantern_tex
 	glass.centered = false
 	glass.position = lantern.position + Vector2(0, 1)
-	var left := 35.0 if not lantern.flip_h else 43.0 - 38.0
-	glass.offset = lantern.offset + Vector2(left, 16.0 - 1.0)
+	if iron:
+		glass.offset = lantern.offset + Vector2(34.0 if not lantern.flip_h else 4.0, IRON_PANE_Y)
+	else:
+		var left := 35.0 if not lantern.flip_h else 43.0 - 38.0
+		glass.offset = lantern.offset + Vector2(left, 16.0 - 1.0)
 	_ysort.add_child(glass)
+
+
+const IRON_PANE_Y := 10.0            ## the iron lamp's pane, art pixels down from the lantern picture's top
+
+
+## The iron street lamp's glass, 5 x 8, in flat colours by code: a smoky top row, saturated orange
+## glass with deeper edges, and a small yellow-white heart (2 x 3 px) low in the middle.
+static func _iron_pane(img: Image) -> void:
+	for y in 8:
+		for x in 5:
+			var edge := x == 0 or x == 4
+			var c := Color("9a3e0c") if edge else Color("e0741a")
+			if y == 0:
+				c = Color("4a200a")
+			elif y == 1:
+				c = Color("7a3410") if edge else Color("c45a14")
+			elif y == 7:
+				c = Color("6a2c0c") if edge else Color("b8561a")
+			img.set_pixel(x, y, c)
+	# the flame and its heart
+	for p: Array in [[2, 2, "f8a040"], [2, 3, "ffd070"], [1, 4, "ffb850"], [3, 4, "ffb850"], [2, 4, "fff4c8"], [2, 5, "fff0b8"], [1, 5, "ffc860"], [3, 5, "ffc860"], [2, 6, "f8a040"]]:
+		img.set_pixel(int(p[0]), int(p[1]), Color(String(p[2])))
 
 
 ## A beacon of the story (scripts/data/tale.gd): the fire bowl on its stone. Dark, it is cold

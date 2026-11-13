@@ -43,6 +43,8 @@ uniform vec3 tint : source_color = vec3(1.0);
 uniform float flash = 0.0;
 uniform vec3 flash_col : source_color = vec3(1.0);   // the colour of a hit flash (white; gold on a crit, red on a wind-up)
 uniform float flash_glow = 0.0;                 // how much the flash shines by itself (reads in the dark)
+uniform float tint_flash = 0.0;                 // a wind-up tell: 0..1 toward tint_col (multiplied, never whitened)
+uniform vec3 tint_col : source_color = vec3(1.0, 0.3, 0.22);
 uniform float dissolve = 0.0;                   // 0 = whole .. 1 = gone: the picture burns away pixel by pixel
 uniform vec3 dissolve_col : source_color = vec3(1.0, 0.55, 0.2);
 uniform float shine = 0.0;
@@ -71,10 +73,24 @@ void fragment() {
 		if (d < dissolve * 1.08) { discard; }
 		burn_edge = 1.0 - smoothstep(0.0, 0.09, d - dissolve * 1.08);
 	}
-	ALBEDO = mix(c.rgb * tint, vec3(1.0), flash);
-	ALBEDO *= mix(vec3(1.0), flash_col, flash);
+	// HIT FLASH: every pixel is lifted half way toward the flash colour by the same share, so the
+	// art stays a figure (no flat white cut-out); the dark one-pixel ink outline barely changes.
+	vec3 base = c.rgb * tint;
+	float ink_keep = smoothstep(0.05, 0.2, dot(c.rgb, vec3(0.299, 0.587, 0.114)));
+	float fl = flash * mix(0.2, 1.0, ink_keep);
+	ALBEDO = mix(base, (base * 0.5 + vec3(0.5)) * flash_col, fl);
+	// TINT FLASH (a wind-up): multiplies toward its colour, never toward white
+	ALBEDO *= mix(vec3(1.0), tint_col, tint_flash);
 	EMISSION = c.rgb * shine;
-	EMISSION += flash_col * flash * flash_glow + dissolve_col * burn_edge * 2.5;
+	EMISSION += (base * 0.6 + flash_col * 0.4) * fl * flash_glow + dissolve_col * burn_edge * 2.5;
+	if (tint_flash > 0.0) {
+		// ... and a rim of its colour along the first pixel inside the outline
+		vec2 tq = 1.0 / vec2(textureSize(tex, 0));
+		float in1 = step(0.5, texture(tex, uv + vec2(tq.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(tq.x, 0.0)).a) * step(0.5, texture(tex, uv + vec2(0.0, tq.y)).a) * step(0.5, texture(tex, uv - vec2(0.0, tq.y)).a);
+		vec2 t2 = tq * 2.0;
+		float in2 = step(0.5, texture(tex, uv + vec2(t2.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(t2.x, 0.0)).a) * step(0.5, texture(tex, uv + vec2(0.0, t2.y)).a) * step(0.5, texture(tex, uv - vec2(0.0, t2.y)).a);
+		EMISSION += tint_col * tint_flash * in1 * (1.0 - in2) * 1.6;
+	}
 	if (rim > 0.0) {
 		// RIM LIGHT: the pack draws a dark one-pixel outline, so the lit edge is the first pixel
 		// INSIDE it: its neighbour towards the light (above, or the light's side) is outline and the
@@ -116,7 +132,7 @@ static func hd_code(fighter: bool) -> String:
 	c = c.replace("render_mode cull_disabled, specular_disabled;", "render_mode cull_disabled, specular_disabled" + (", fog_disabled" if fighter else "") + ";" + ("\n#define FIGHTER" if fighter else ""))
 	c = c.replace("varying float top;", "varying float top;\nuniform float shadow_push = 0.15;\nuniform float pop = 1.12;\nuniform float boost = 1.14;\nuniform float sun_face = 0.72;\nuniform float tame = 0.0;\nuniform float top_rim = 0.0;\nuniform vec3 top_rim_col : source_color = vec3(0.6, 0.75, 1.0);\nuniform float hold = 0.0;\nuniform float spell_rim = 0.0;\nuniform vec3 spell_rim_col : source_color = vec3(0.6, 0.8, 1.0);")
 	c = c.replace("\tworld_at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n}", "\tif (IN_SHADOW_PASS) {\n\t\tvec3 w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n\t\tvec3 away = PROJECTION_MATRIX[3][3] > 0.5 ? -INV_VIEW_MATRIX[2].xyz : normalize(w - INV_VIEW_MATRIX[3].xyz);\n\t\tw += normalize(away) * shadow_push * (1.0 - UV.y);\n\t\tVERTEX = (inverse(MODEL_MATRIX) * vec4(w, 1.0)).xyz;\n\t}\n\tworld_at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;\n}")
-	c = c.replace("\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);", "#ifdef FIGHTER\n\tc.rgb = max((c.rgb - 0.16) * pop + 0.16, vec3(0.0));\n\tc.rgb *= 1.0 / (1.0 + tame * max(dot(c.rgb, vec3(0.333)) - 0.6, 0.0) * 1.5);\n\tc.rgb = pow(c.rgb, vec3(1.0 + 0.7 * hold)) * (1.0 - 0.15 * hold);\n#endif\n\tALBEDO = mix(c.rgb * tint, vec3(1.0), flash);")
+	c = c.replace("\tvec3 base = c.rgb * tint;", "#ifdef FIGHTER\n\tc.rgb = max((c.rgb - 0.16) * pop + 0.16, vec3(0.0));\n\tc.rgb *= 1.0 / (1.0 + tame * max(dot(c.rgb, vec3(0.333)) - 0.6, 0.0) * 1.5);\n\tc.rgb = pow(c.rgb, vec3(1.0 + 0.7 * hold)) * (1.0 - 0.15 * hold);\n#endif\n\tvec3 base = c.rgb * tint;")
 	c = c.replace("\tROUGHNESS = 1.0;\n\tsun_share", "#ifdef FIGHTER\n\tif (top_rim > 0.0) {\n\t\tvec2 ty = vec2(0.0, 1.0 / float(textureSize(tex, 0).y));\n\t\tfloat open_up = 1.0 - step(0.5, texture(tex, uv - ty).a);\n\t\tfloat open_up2 = 1.0 - step(0.5, texture(tex, uv - ty * 2.0).a);\n\t\tEMISSION += top_rim_col * top_rim * (1.0 - open_up) * open_up2 * smoothstep(0.25, 0.6, top);\n\t}\n\tif (spell_rim > 0.0) {\n\t\tvec2 tq = 1.0 / vec2(textureSize(tex, 0));\n\t\tfloat o1 = step(0.5, texture(tex, uv + vec2(tq.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(tq.x, 0.0)).a) * step(0.5, texture(tex, uv + vec2(0.0, tq.y)).a) * step(0.5, texture(tex, uv - vec2(0.0, tq.y)).a);\n\t\tvec2 t2 = tq * 2.0;\n\t\tfloat o2 = step(0.5, texture(tex, uv + vec2(t2.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(t2.x, 0.0)).a) * step(0.5, texture(tex, uv - vec2(0.0, t2.y)).a);\n\t\tfloat ink = clamp(spell_rim * o1 * (1.0 - o2) * 0.5, 0.0, 0.9);\n\t\tALBEDO = mix(ALBEDO, vec3(0.05, 0.04, 0.08), ink);\n\t\tEMISSION *= 1.0 - ink;\n\t}\n#endif\n\tROUGHNESS = 1.0;\n\tsun_share")
 	c = c.replace("\tDIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share : 0.35);", "\tvec3 add = ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun_share * sun_face : 0.35);\n#ifdef FIGHTER\n\tadd *= boost;\n\tif (!LIGHT_IS_DIRECTIONAL) { add = add / (1.0 + dot(add, vec3(0.333)) * (1.3 + hold * 2.5)); add = mix(add, vec3(dot(add, vec3(0.333))), 0.25); }\n#endif\n\tDIFFUSE_LIGHT += add;")
 	return c
@@ -309,6 +325,13 @@ func set_flash(v: float, colour: Color = Color.WHITE, glow: float = -1.0) -> voi
 	_mat.set_shader_parameter("flash_col", Vector3(colour.r, colour.g, colour.b))
 	# (a flash shines by itself a little, so a hit reads even in deep night shade)
 	_mat.set_shader_parameter("flash_glow", glow if glow >= 0.0 else (0.9 if Hd.on() else 0.35))
+
+
+## A WIND-UP TELL: the picture darkens toward `colour` (multiplied: it stays a dark figure in its
+## own pixels, never a pale ghost) with a rim of that colour just inside its outline.
+func set_tint_flash(v: float, colour: Color = Color(1.0, 0.3, 0.22)) -> void:
+	_mat.set_shader_parameter("tint_flash", v)
+	_mat.set_shader_parameter("tint_col", Vector3(colour.r, colour.g, colour.b))
 
 
 ## Burns the picture away pixel by pixel (0 = whole, 1 = gone) with a glowing edge of `colour`

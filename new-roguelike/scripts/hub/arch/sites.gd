@@ -221,11 +221,12 @@ func _iron_lamp(foot: Vector2, flip: bool) -> void:
 	blk(stone, Vector3(x - 2.5, L, z - 2.5), Vector3(x + 2.5, L + 3, z + 0.5))              # the stone foot
 	blk(_iron, Vector3(x - 1.0, L + 3, z - 1.5), Vector3(x + 1.0, L + 25, z - 0.5))             # the post
 	blk(_iron, Vector3(x - 3.5, L + 25, z - 3.0), Vector3(x + 3.5, L + 26.5, z + 1.0))          # the cage's floor
+	# (round three: the cage is 8 px tall round a 5 x 8 pane, hub.gd _iron_pane, so the glass fills it)
 	for dx: float in [-3.5, 2.5]:
-		blk(_iron, Vector3(x + dx, L + 26.5, z - 0.6), Vector3(x + dx + 1.0, L + 33, z + 0.4), 0)   # its bars, either side of the pane
-	blk(_iron, Vector3(x - 4.0, L + 33, z - 3.5), Vector3(x + 4.0, L + 34.5, z + 1.5), 0)       # the cap
-	blk(_iron, Vector3(x - 2.5, L + 34.5, z - 2.5), Vector3(x + 2.5, L + 36, z + 0.5), 0)
-	blk(_iron, Vector3(x - 0.5, L + 36, z - 1.5), Vector3(x + 0.5, L + 38.5, z - 0.5), 0)       # the finial
+		blk(_iron, Vector3(x + dx, L + 26.5, z - 0.6), Vector3(x + dx + 1.0, L + 35, z + 0.4), 0)   # its bars, either side of the pane
+	blk(_iron, Vector3(x - 4.0, L + 35, z - 3.5), Vector3(x + 4.0, L + 36.5, z + 1.5), 0)       # the cap
+	blk(_iron, Vector3(x - 2.5, L + 36.5, z - 2.5), Vector3(x + 2.5, L + 38, z + 0.5), 0)
+	blk(_iron, Vector3(x - 0.5, L + 38, z - 1.5), Vector3(x + 0.5, L + 40.5, z - 0.5), 0)       # the finial
 	_shadow()
 
 

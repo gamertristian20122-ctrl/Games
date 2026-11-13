@@ -10,6 +10,7 @@ extends Node
 ## Every frame the picture is put at home + offset + kick + lift and scaled by squash times a slow
 ## BREATH (idle fighters never look frozen). Nothing here touches the fight's rules.
 
+const SQUASH_CAP := 0.06          ## at most this much wider / taller than drawn
 var body: Node3D
 var home := Vector3.ZERO
 var offset := Vector3.ZERO
@@ -41,7 +42,17 @@ func _process(delta: float) -> void:
 	var b := sin(_t * _rate + _phase)
 	var hover := bob * sin(_t * 3.1 + _phase) if bob > 0.0 else 0.0
 	body.position = home + offset + kick + Vector3(0.0, lift + hover, 0.0)
-	body.scale = Vector3(squash.x * (1.0 - b * breath * 0.45), squash.y * (1.0 + b * breath), 1.0)
+	# (squash is capped at 6% and snapped to whole art pixels: a pixel picture resampled 17% wide
+	# and 17% short read as a squat tin can, and no pixel-sprite game deforms its art. The motion
+	# comes from lean, steps, lift and the sword; the squash only nudges a pixel or two)
+	var sx := 1.0 + clampf(squash.x - 1.0, -SQUASH_CAP, SQUASH_CAP) - b * breath * 0.45
+	var sy := 1.0 + clampf(squash.y - 1.0, -SQUASH_CAP, SQUASH_CAP) + b * breath
+	var px: Variant = body.get("_size")
+	if px is Vector2 and (px as Vector2).x > 0.0:
+		var sz := px as Vector2
+		sx = maxf(roundf(sz.x * sx), 1.0) / sz.x
+		sy = maxf(roundf(sz.y * sy), 1.0) / sz.y
+	body.scale = Vector3(sx, sy, 1.0)
 	body.rotation.z = lean
 
 

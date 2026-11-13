@@ -23,6 +23,7 @@ const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const Trail = preload("res://scripts/battle/anim_trail.gd")
 const Battles = preload("res://scripts/data/battles.gd")
 const Hd = preload("res://scripts/fx/hd.gd")
+const FxKit = preload("res://scripts/battle/fx_kit.gd")
 const PX := 1.0 / 16.0
 
 var b                              ## the battle (scripts/battle/battle.gd; untyped: read by name)
@@ -126,6 +127,8 @@ func dust(at: Vector3, power: float = 1.0, side: float = 0.0) -> void:
 			return
 		var c: Color = (stage.get("fx") as RefCounted).call("dust_colour")
 		tone = Color(c.r, c.g, c.b, minf(c.a + 0.1, 0.55))
+		if Hd.on():
+			tone = Color(c.r * 0.72, c.g * 0.72, c.b * 0.72, minf(c.a, 0.45))   # (a pale streak lit by the moon read as snow)
 	var p := CPUParticles3D.new()
 	p.one_shot = true
 	p.explosiveness = 0.85
@@ -180,11 +183,19 @@ func ghost(u: Dictionary) -> void:
 	g.global_transform = body.global_transform
 	g.position.z -= 0.05
 	var c: Color = u["colour"]
-	mat.set_shader_parameter("flash", 0.6)
-	mat.set_shader_parameter("flash_col", Vector3(c.r, c.g, c.b))
-	mat.set_shader_parameter("flash_glow", 1.4 if Hd.on() else 0.6)
+	# (HD: a bright self-lit copy dissolving pixel by pixel bloomed into white confetti round the
+	# start of a dash; now a dim copy in the mover's deepened colour that fades as it dissolves,
+	# so a lone pixel never stays bright)
+	var deep := FxKit.deep(c) if Hd.on() else c
+	mat.set_shader_parameter("flash", 0.5)
+	mat.set_shader_parameter("flash_col", Vector3(deep.r, deep.g, deep.b))
+	mat.set_shader_parameter("flash_glow", 0.25 if Hd.on() else 0.4)
+	mat.set_shader_parameter("tint", Vector3(0.4, 0.4, 0.4) if Hd.on() else Vector3(0.7, 0.7, 0.7))
 	var tw := g.create_tween()
-	tw.tween_method(func(v: float) -> void: mat.set_shader_parameter("dissolve", v), 0.35, 1.0, 0.2)
+	tw.tween_method(func(v: float) -> void:
+		mat.set_shader_parameter("dissolve", v)
+		mat.set_shader_parameter("flash_glow", (0.25 if Hd.on() else 0.4) * (1.0 - v))
+		mat.set_shader_parameter("tint", Vector3.ONE * (0.4 if Hd.on() else 0.7) * (1.0 - v * 0.8)), 0.35, 1.0, 0.2)
 	tw.tween_callback(g.queue_free)
 
 
@@ -194,7 +205,7 @@ func crouch(u: Dictionary, k: float, seconds: float) -> void:
 	var d := _dir(u)
 	var tw := _tw(u).set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_act(u), "squash", Vector2(1.0 + 0.14 * k, 1.0 - 0.17 * k), seconds)
-	tw.tween_property(_act(u), "lean", d * 0.13 * k, seconds)
+	tw.tween_property(_act(u), "lean", d * 0.19 * k, seconds)
 	tw.tween_property(_act(u), "offset", (_act(u).get("offset") as Vector3) + Vector3(-d * 0.22 * k, 0.0, 0.0), seconds)
 
 
@@ -218,8 +229,8 @@ func dash(u: Dictionary, to: Vector3, seconds: float) -> void:
 	tw.tween_property(_act(u), "squash", Vector2(1.17, 0.88), seconds * 0.4)
 	tw.tween_property(_act(u), "lean", -d * 0.16, seconds * 0.5)
 	tw.tween_property(_act(u), "lift", 0.0, seconds * 0.3)
-	for i in 3:
-		get_tree().create_timer(seconds * (0.2 + 0.25 * i), false).timeout.connect(func() -> void: ghost(u))
+	for i in 2:
+		get_tree().create_timer(seconds * (0.25 + 0.3 * i), false).timeout.connect(func() -> void: ghost(u))
 	await _pause(seconds)
 	if Art.has_anim(String(u["sprite"]), "run") and _alive(u):
 		body.call("play", "idle")
@@ -284,15 +295,27 @@ func arc(pivot: Vector3, a0: float, a1: float, r0: float, r1: float, colour: Col
 	tw.tween_method(func(k: float) -> void: st["k"] = k, 0.0, 1.0, seconds).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
+## THE WARNING UNDER ONE ABOUT TO BE HIT: hot red rings that pulse in time with the boss's tell
+## (at night the plain rings were almost invisible, so nobody could tell who the blow was for).
+func _warn(target: Dictionary, red: Color, times: int, seconds: float) -> void:
+	var hot := 1.7 if Hd.on() else 1.2
+	for i in times:
+		get_tree().create_timer(seconds / times * i, false).timeout.connect(func() -> void:
+			stage.call("ground_glow", target["home"], Color(red.r * hot, red.g * hot + 0.12, red.b * hot, 0.95), 1.9 if Hd.on() else 1.6, seconds / times * 1.3, true)
+			stage.call("ground_glow", target["home"], Color(red.r * hot, red.g * hot, red.b * hot, 0.6), 1.25, seconds / times))
+
+
 ## A flash of red on a monster as it winds up (the "tell"), `times` pulses.
 func tell(u: Dictionary, seconds: float, times: int = 1, colour: Color = Color(1.0, 0.25, 0.15)) -> void:
 	var body: Node = u["node"]
 	if not is_instance_valid(body):
 		return
+	# (a tint, not a flash: the old whitening flash turned a boss inside a spell's light into a pale
+	# pink ghost; the threat stays a dark figure in its own pixels, darkened red, with a red rim)
 	var tw := body.create_tween()
 	for i in times:
-		tw.tween_method(func(v: float) -> void: body.call("set_flash", v, colour, 0.5 if Hd.on() else 0.3), 0.0, 0.45, seconds / times * 0.5)
-		tw.tween_method(func(v: float) -> void: body.call("set_flash", v, colour, 0.5 if Hd.on() else 0.3), 0.45, 0.0, seconds / times * 0.5)
+		tw.tween_method(func(v: float) -> void: body.call("set_tint_flash", v, colour), 0.0, 0.75, seconds / times * 0.5)
+		tw.tween_method(func(v: float) -> void: body.call("set_tint_flash", v, colour), 0.75, 0.0, seconds / times * 0.5)
 
 
 # ------------------------------------------------------------------ a turn
@@ -468,12 +491,20 @@ func hands_to(u: Dictionary, up: float, fwd: float, seconds: float) -> void:
 func projectile(from: Vector3, to: Vector3, colour: Color, width: float, arc_up: float, seconds: float, kind: String) -> void:
 	if b.get("_speed") > 4.0:
 		return
-	var head := _orb(from, colour, 0.22 if kind == "arrow" else 0.75)
+	# (an arrow: a 3-4 px hot head and a short streak; a 1 px line could not be seen. A bolt's ball
+	# keeps its own deep colour: a white-hot one read as a lilac-white blob)
+	if kind == "arrow":
+		width = maxf(width, 0.11)
+	var head := _orb(from, colour, 0.36 if kind == "arrow" else 0.75)
+	if kind != "arrow" and Hd.on():
+		var deep := FxKit.deep(colour, 1.4)
+		(head.material_override as StandardMaterial3D).albedo_color = Color(deep.r * 2.4 + 0.25, deep.g * 2.4 + 0.25, deep.b * 2.4 + 0.25, 1.0)
 	var st := {"k": 0.0}
 	var path := func(k: float) -> Vector3:
 		return from.lerp(to, k) + Vector3(0.0, arc_up * 4.0 * k * (1.0 - k), 0.0)
 	var t := Trail.new()
 	t.whiten = 0.4 if kind == "arrow" else 0.12
+	t.edge = false
 	stage.add_child(t)
 	t.start(colour, func() -> Dictionary:
 		var k := float(st["k"])
@@ -488,6 +519,8 @@ func projectile(from: Vector3, to: Vector3, colour: Color, width: float, arc_up:
 		head.position = path.call(k), 0.0, 1.0, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_callback(head.queue_free)
 	await _pause(seconds)
+	if is_instance_valid(t):
+		t.cut(0.05)
 
 
 ## A CHARGE GLOW: the caster lifts a little and raises the hands; a magic ring lies under the feet;
@@ -866,6 +899,7 @@ func boss_attack(who: Dictionary, e: Dictionary) -> void:
 	Sfx.play("boss_roar", -10.0, 0.05, 1.1)
 	stage.call("ground_glow", target["home"], Color(red.r, red.g, red.b, 0.9), 1.4, 0.75, true)
 	stage.call("ground_glow", target["home"], Color(red.r, red.g, red.b, 0.5), 1.2, 0.7)
+	_warn(target, red, 2, 0.5)
 	tell(who, 0.5, 2, red)
 	crouch(who, 0.9, 0.45)
 	b.call("track", (target["home"] as Vector3).lerp(who["home"], 0.5) + Vector3(0.0, 1.5, 0.0), 1.4)
@@ -908,6 +942,7 @@ func boss_sweep(who: Dictionary, impacts: Array) -> void:
 	for e: Dictionary in impacts:
 		stage.call("ground_glow", e["target"]["home"], Color(red.r, red.g, red.b, 0.95), 1.6, 1.0, true)
 		stage.call("ground_glow", e["target"]["home"], Color(red.r, red.g, red.b, 0.55), 1.3, 0.95)
+		_warn(e["target"], red, 3, 0.8)
 	tell(who, 0.8, 3, red)
 	var tw := _tw(who).set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_act(who), "squash", Vector2(0.9, 1.14), 0.35)

@@ -857,7 +857,7 @@ func _run(title: String) -> void:
 				action = await _picked
 			events = fight.call("act", who, action)
 		else:
-			await _wait(0.08)          # (no dead time: the monster's own wind-up is the pause)
+			await _wait(0.25)          # (a short quiet beat, then the monster's own wind-up)
 			events = fight.call("act", who, fight.call("foe_choice", who))
 		await _play(events)
 		_refresh()
@@ -947,7 +947,10 @@ func _play(events: Array) -> void:
 		guard_t += get_process_delta_time()
 	_fx = []
 	_combo.clear()
-	await _wait(0.06)
+	# (a spell's vortex, streaks and column burn on for a second or more: the next fighter began 0.3 s
+	# after the impact and the fight turned to soup. A spell's turn lets its light die down first)
+	var spelled := String(first["type"]) == "skill" and not ["whirl", "lunge", "slam", "cry", "sweep", "pierce", "volley", "guard"].has(String(first["skill"].get("id", "")))
+	await _wait(0.6 if spelled else 0.06)
 
 
 ## The test bot at high speed: the same events, nothing to see.
@@ -1088,14 +1091,18 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 	# the flash (gold on a crit), and the pack's own hit animation
 	# (the flash shines by itself only a little: a big picture flashing hot blooms into a white blob)
 	var strength := 1.0 if crit else (0.55 if big_one else 0.8)
-	# (HD: a white albedo under the blow's own lights blooms; a flash at 0.8 that also shone by
-	# itself turned the one hit into a white slab taller than him for three frames at night. In HD
-	# the flash pales him by half and does not shine: he stays a readable figure in his own colours)
-	if Hd.on():
-		node.call("set_flash", minf(strength * 0.5, 0.45), Color(1.0, 0.85, 0.45) if crit else Color.WHITE, 0.0)
+	var party_hit := String(target["side"]) == "party"
+	# (a white albedo under the blow's own lights blooms; a flash at 0.8 that also shone by itself
+	# turned the one hit into a white slab taller than him at night, and on the phone into a pink
+	# blob. The flash now lifts his own pixels half way (sprite3.gd keeps the ink outline) and does
+	# not shine; one of your side flashes a hurt red instead of white)
+	if party_hit:
+		node.call("set_flash", 0.4, Color(1.0, 0.42, 0.32), 0.12)
 	else:
-		node.call("set_flash", strength, Color(1.0, 0.85, 0.45) if crit else Color.WHITE, 0.3 * (0.5 if big_one else 1.0))
-	_later(0.05 if not crit else 0.09, node, func(n: Node) -> void: n.call("set_flash", 0.0))
+		node.call("set_flash", minf(strength * 0.5, 0.45), Color(1.0, 0.85, 0.45) if crit else Color.WHITE, 0.0)
+	# (ended on REAL time: the hit-stop slows the game to 0.04, and on game time it held the flash
+	# for the whole freeze. One or two frames, whatever the freeze does)
+	_later(0.035 if party_hit else (0.045 if not crit else 0.07), node, func(n: Node) -> void: n.call("set_flash", 0.0), true)
 	if Art.has_anim(String(target["sprite"]), "hit") and int(target["hp"]) > 0:
 		node.call("play", "hit")
 		_later(0.36, node, func(n: Node) -> void:
@@ -1103,11 +1110,16 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 				n.call("play", "idle"))
 	# knock-back, recoil and squash (a boss barely moves; a launched one leaves the ground)
 	var shove := (0.18 + 0.55 * ratio + (0.3 if crit else 0.0) + 0.35 * float(opts.get("launch", 0.0))) * weight * (0.35 if big_one else 1.0)
+	var lean_by := (0.16 + 0.3 * ratio) * weight * (0.4 if big_one else 1.0)
+	if party_hit:
+		# (one of your side takes a blow with weight: thrown back 0.4+, leaning well back, a dip down)
+		shove = maxf(shove, 0.42 * weight)
+		lean_by = maxf(lean_by, 0.35 * weight)
 	var tw := a.create_tween().set_parallel(true)
 	a.set("kick", Vector3(d * shove * 0.45, 0.0, 0.0))
-	tw.tween_property(a, "kick", Vector3(d * shove, 0.0, 0.0), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(a, "lean", -d * (0.16 + 0.3 * ratio) * weight * (0.4 if big_one else 1.0), 0.05)
-	tw.tween_property(a, "squash", Vector2(0.84, 1.14) if not big_one else Vector2(0.94, 1.05), 0.05)
+	tw.tween_property(a, "kick", Vector3(d * shove, -0.06 if party_hit else 0.0, 0.0), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(a, "lean", -d * lean_by, 0.05)
+	tw.tween_property(a, "squash", Vector2(0.95, 1.04) if not big_one else Vector2(0.97, 1.02), 0.05)
 	if float(opts.get("launch", 0.0)) > 0.0 and not big_one:
 		var up := 0.7 * float(opts.get("launch", 0.0))
 		tw.tween_method(func(t: float) -> void: a.set("lift", up * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.36)
@@ -1165,7 +1177,9 @@ func _die(u: Dictionary, killer: Dictionary) -> void:
 		return
 	var boss := bool(u.get("boss", false))
 	Sfx.play("boss_die" if boss else "enemy_die", -4.0 if boss else -8.0)
-	node.call("set_flash", 1.0, Color.WHITE, (0.6 if Hd.on() else 0.4) * (0.5 if boss else 1.0))
+	# (a kill flash at 1.0 that shone by itself made the fallen a solid white slab for 5-10 frames
+	# under the hit-stop; now half way toward white over his own pixels, ended on real time)
+	node.call("set_flash", 0.45, Color.WHITE, 0.0)
 	var d := _away(u, killer)
 	var tw := a.create_tween().set_parallel(true)
 	tw.tween_property(a, "offset", Vector3(d * (0.4 if boss else 0.8), 0.0, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -1179,8 +1193,8 @@ func _die(u: Dictionary, killer: Dictionary) -> void:
 	var has_death := Art.has_anim(String(u["sprite"]), "death")
 	if has_death:
 		node.call("play", "death")
-	var fade := node.create_tween()
-	fade.tween_method(func(v: float) -> void: node.call("set_flash", v, Color.WHITE, (0.6 if Hd.on() else 0.4) * (0.5 if boss else 1.0)), 0.8, 0.0, 0.1 if boss else 0.16)
+	var fade := node.create_tween().set_ignore_time_scale(true)
+	fade.tween_method(func(v: float) -> void: node.call("set_flash", v, Color.WHITE, 0.0), 0.35, 0.0, 0.08 if boss else 0.12)
 	await _wait(minf(float(node.call("anim_length", "death")), 0.5) if has_death else 0.2)
 	if boss and is_instance_valid(node):
 		# the boss burns away from the top, embers flying, then breaks
@@ -1281,9 +1295,9 @@ func _exit_tree() -> void:
 
 ## Does something to a fighter's picture a moment later, if the picture is still there then (a
 ## battle may end, and free it, before the moment comes).
-func _later(seconds: float, node: Node, what: Callable) -> void:
+func _later(seconds: float, node: Node, what: Callable, real: bool = false) -> void:
 	var id := node.get_instance_id()
-	get_tree().create_timer(seconds, false).timeout.connect(func() -> void:
+	get_tree().create_timer(seconds, false, false, real).timeout.connect(func() -> void:
 		var n := instance_from_id(id) as Node
 		if n != null and is_instance_valid(n):
 			what.call(n))

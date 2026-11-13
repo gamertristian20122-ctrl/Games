@@ -48,6 +48,9 @@ const GRADES := {
 		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45, "blue": 0.3, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5},
 	# Wickmere at dusk: honey light on the stones, plum shade
 	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25, "rich": 0.85, "gold": 0.25, "dull": 0.5},
+	# Wickmere by night (round three): darker than the dusk of the reference street (median ~36),
+	# blue-violet shade between the lamp pools, a cooler dimmer moon, lamps a little stronger
+	"village:night": {"exposure": 0.8, "ambient": 0.55, "blue": 0.5, "sun": 0.7, "lamps": 1.2, "shade": Vector3(0.80, 0.90, 1.22)},
 	# the dark road (before the beacon): greener, cooler shade, thicker air, few beams
 	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 1.0,
 		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.44, "shafts": 0.45, "motes": 0.5, "dapple": 0.35, "exposure": 1.45, "ambient": 1.4, "gold": 0.5, "key": 3.5, "sun": 0.55, "dull": 0.12},
