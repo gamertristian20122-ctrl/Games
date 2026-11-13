@@ -588,8 +588,9 @@ func _scenery() -> void:
 func _scenery_common(dim: Color) -> void:
 	# trodden earth where the fighters stand
 	if not (look.get("flat", []) as Array).is_empty():
-		for i in 7:
-			prop(_pick("flat"), Vector3(rng.randf_range(-7.5, 7.5), 0.012 + i * 0.002, rng.randf_range(-2.6, 2.4)), false, 0.0, false, Color.WHITE, 0.0, true, rng.randf() * TAU)
+		var wide := 1.3 if hd != null else 1.0      # (HD: a broader trodden clearing, lit by the pool of light)
+		for i in (15 if hd != null else 7):
+			prop(_pick("flat"), Vector3(rng.randf_range(-7.5, 7.5) * wide, 0.012 + i * 0.002, rng.randf_range(-2.6, 2.4) * wide), false, 0.0, false, Color.WHITE, 0.0, true, rng.randf() * TAU)
 	# low things anywhere; the tall ones only round the edge, never in front of a fighter
 	for i in 110:
 		var at := Vector3(rng.randf_range(-15.0, 15.0), 0.0, rng.randf_range(-8.0, 5.0))
@@ -983,6 +984,8 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0,
 		hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.7)
 		hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.8, 0.9, 0.0)     # (the ground before him: a hot pool; no glowing air in front of him)
 		ground_glow(Vector3(at.x, 0.0, at.z + 0.9), Color(colour.r, colour.g, colour.b, 0.75), 4.6, 1.2)
+		var white_hot := colour.lerp(Color.WHITE, 0.55)
+		ground_glow(Vector3(at.x, 0.0, at.z - 0.2), Color(white_hot.r * 1.6, white_hot.g * 1.6, white_hot.b * 1.6, 0.9), 2.0, 0.9)     # (the white-hot foot of the column)
 		_pillar_now = true
 		get_tree().create_timer(0.05).timeout.connect(func() -> void: _pillar_now = false)
 		return
