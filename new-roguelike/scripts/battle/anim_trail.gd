@@ -67,9 +67,17 @@ func _sample(now: float, first: bool) -> void:
 	else:
 		# fill in between the last frame's pose and this one (the swing is quicker than a frame)
 		var t0 := float(_samples[-1][0]) if not _samples.is_empty() else now
+		# (a sword's angle comes from atan2 and wraps at +-PI: a swing across that line must go the
+		# short way round, or the fill-in swept almost a full turn and drew a white-hot disc the
+		# sword's length round the hand, which the bloom spread into a dome over both fighters.
+		# A spin's source gives unwrapped angles beyond +-PI and keeps its long way.)
+		var a0 := float(_last["a"])
+		var a1 := float(s["a"])
+		if absf(a1 - a0) > PI and absf(a0) <= PI and absf(a1) <= PI:
+			a1 = a0 + wrapf(a1 - a0, -PI, PI)
 		for i in range(1, STEPS + 1):
 			var k := float(i) / float(STEPS)
-			var m := {"p": (_last["p"] as Vector3).lerp(s["p"], k), "a": lerpf(float(_last["a"]), float(s["a"]), k),
+			var m := {"p": (_last["p"] as Vector3).lerp(s["p"], k), "a": lerpf(a0, a1, k),
 				"r0": lerpf(float(_last["r0"]), float(s["r0"]), k), "r1": lerpf(float(_last["r1"]), float(s["r1"]), k)}
 			var pts := _point(m)
 			_samples.append([lerpf(t0, now, k), pts[0], pts[1]])

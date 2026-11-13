@@ -857,14 +857,17 @@ func ground_glow(at: Vector3, colour: Color, radius: float, life: float = 0.6, r
 
 ## Plays one of the purchased effect animations (assets/art/fx, ids "fx_*") once, as a glowing
 ## picture that faces the camera. `size` 1 = the art's own pixels (16 per world unit).
-func fx_anim(id: String, at: Vector3, colour: Color = Color.WHITE, size: float = 1.0, fps: float = 20.0, glow: float = 1.6) -> void:
+## `skip` drops the art's opening frames (HD: fx_hit opens on a solid white disc that the bloom
+## spread into a dome hiding both fighters; its star and cross frames are what reads as a blow).
+func fx_anim(id: String, at: Vector3, colour: Color = Color.WHITE, size: float = 1.0, fps: float = 20.0, glow: float = 1.6, skip: int = 0) -> void:
 	var sf := Art.frames(id)
 	if sf == null or not sf.has_animation("default"):
 		return
 	var n := sf.get_frame_count("default")
+	skip = clampi(skip, 0, maxi(n - 1, 0))
 	if n <= 0:
 		return
-	var first := sf.get_frame_texture("default", 0)
+	var first := sf.get_frame_texture("default", skip)
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -887,7 +890,7 @@ func fx_anim(id: String, at: Vector3, colour: Color = Color.WHITE, size: float =
 	add_child(m)
 	var tw := create_tween()
 	tw.tween_method(func(f: float) -> void:
-		mat.albedo_texture = sf.get_frame_texture("default", mini(int(f), n - 1)), 0.0, float(n) - 0.01, float(n) / fps)
+		mat.albedo_texture = sf.get_frame_texture("default", mini(int(f), n - 1)), float(skip), float(n) - 0.01, float(n - skip) / fps)
 	tw.tween_callback(m.queue_free)
 
 
@@ -936,11 +939,18 @@ func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, ar
 	var big := art == "fx_explosion"
 	# (HD: a big one's art plays just BEHIND the one hit: drawn over him it washed him out)
 	var art_z := -0.5 if power >= 1.4 else 0.3
+	var art_hot := 1.3 + 0.2 * power
+	if hd != null:
+		# (HD: the pack's hit art opens on a solid disc; in front of the one hit it bloomed into a white
+		# ball that hid him for three frames, so in HD it always plays behind him, cooler)
+		art_z = -0.5
+		art_hot *= 0.6
 	# the pack's own effect art for blows, fire and heals; the other elements are light of their own
 	# (HD: a column's whirl of light is its art)
 	if ["blade", "fire", "heal"].has(element) and not (hd != null and _pillar_now):
 		fx_anim(art, at + Vector3(0.0, (0.35 if big else 0.0) + rise * 0.3, art_z), colour.lerp(Color.WHITE, 0.35),
-		(1.1 if big else 1.25 + 0.2 * power) * (2.4 if rise > 0.0 else 1.0), 22.0 if big else 26.0, 1.3 + 0.2 * power)
+		(1.1 if big else 1.25 + 0.2 * power) * (2.4 if rise > 0.0 else 1.0), 22.0 if big else 26.0, art_hot,
+		2 if (hd != null and art == "fx_hit") else 0)
 	ground_glow(ground, Color(colour.r, colour.g, colour.b, 0.55 + 0.1 * power), 1.0 + 0.55 * power, 0.35 + 0.12 * power)
 	if power >= 1.4:
 		ground_glow(ground, Color(colour.r, colour.g, colour.b, 0.8), 1.4 + 0.7 * power, 0.42 + 0.06 * power, true)

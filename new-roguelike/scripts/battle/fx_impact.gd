@@ -771,7 +771,7 @@ func dust_colour() -> Color:
 	if ground == "hub_drock":
 		return Color(0.5, 0.38, 0.34, 0.4)
 	if night or s.look.has("fire"):
-		return Color(0.56, 0.6, 0.72, 0.34)
+		return Color(0.48, 0.52, 0.63, 0.3)
 	return Color(0.85, 0.7, 0.48, 0.4)
 
 

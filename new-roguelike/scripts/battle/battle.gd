@@ -1084,7 +1084,7 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 		stage.call("burst", at, c.lerp(Color.WHITE, 0.4), minf((0.55 + 0.9 * ratio + (0.5 if crit else 0.0)) * weight + 0.15, 1.6 if crit else 1.3), 0.0, "", node, element)
 		# a heavy blow kicks up the ground under the one hit
 		if last and (ratio >= 0.3 or crit or dead):
-			stage.call("dust", target["home"], (1.0 + 1.5 * ratio + (0.5 if crit else 0.0)) * (1.4 if big_one else 1.0))
+			stage.call("dust", target["home"], (0.5 + 0.8 * ratio + (0.3 if crit else 0.0)) * (1.4 if big_one else 1.0))
 	# the flash (gold on a crit), and the pack's own hit animation
 	# (the flash shines by itself only a little: a big picture flashing hot blooms into a white blob)
 	# (the party's pale steel and skin, flashed near white under their pool of light, bloomed into a
