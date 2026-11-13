@@ -38,6 +38,19 @@
   ],
   "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Roofs.png"
  },
+ "hub_bcloth": {
+  "box": [
+   323,
+   341,
+   333,
+   367
+  ],
+  "size": [
+   10,
+   26
+  ],
+  "source": "Pixel Crawler - Hideout/Assets/Tiles.png"
+ },
  "hub_bench_0": {
   "box": [
    48,

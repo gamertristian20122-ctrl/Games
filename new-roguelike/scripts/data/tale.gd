@@ -503,29 +503,32 @@ static func town() -> Dictionary:
 	var houses: Array = [
 		{"at": Vector2(124, 152), "wide": 128.0, "deep": 60.0, "wall": "hub_wall_plaster", "wall_h": 56.0, "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood",
 			"rise": 40.0, "gable": true, "door": "hub_doorway", "windows": "hub_window", "win_dx": 38.0, "win_up": 14.0, "chimney": true,
-			"sign": "hub_sjug", "sign_side": -1.0, "boxes": true},
+			"sign": "hub_sjug", "sign_side": -1.0, "boxes": true, "stair": -1.0, "lamp": 1.0, "tint": Color(1.0, 0.84, 0.62), "timber": Color(0.74, 0.62, 0.50)},
 		{"at": Vector2(220, 155), "wide": 64.0, "deep": 50.0, "wall": "hub_wall_white", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 26.0, "floors": 3,
-			"door": "hub_door_wood", "door_dx": -14.0, "windows": "hub_win_tall", "win_xs": [16.0], "up_xs": [-14.0, 14.0], "shop": "wide", "sign": "hub_ssack_0"},
+			"door": "hub_door_wood", "door_dx": -14.0, "windows": "hub_win_tall", "win_xs": [16.0], "up_xs": [-14.0, 14.0], "shop": "wide", "sign": "hub_ssack_0",
+			"bay": [14.0], "tint": Color(0.72, 0.84, 0.70), "timber": Color(1.0, 0.80, 0.62)},
 		{"at": Vector2(300, 160), "wall": "hub_wall_brick", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 30.0, "floors": 3,
-			"door": "hub_door_arch", "windows": "hub_win_arch", "boxes": true},
+			"door": "hub_door_arch", "windows": "hub_win_arch", "boxes": true, "bay": [0.0], "lamp": -1.0, "chimney": true, "chimney_dx": -26.0, "tint": Color(0.94, 0.66, 0.58), "timber": Color(0.56, 0.50, 0.50)},
 		{"at": Vector2(382, 156), "wide": 66.0, "deep": 50.0, "wall": "hub_wall_plank", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 24.0,
 			"door": "hub_door_arch", "door_dx": 14.0, "windows": "hub_win_shut", "win_xs": [-15.0], "up_xs": [-16.0, 16.0], "shop": "wide",
-			"shop_roof": "hub_roof_planks", "sign": "hub_spot", "sign_side": -1.0},
+			"shop_roof": "hub_roof_planks", "sign": "hub_spot", "sign_side": -1.0, "chimney": true, "chimney_dx": -14.0},
 		{"at": Vector2(579, 156), "wide": 66.0, "deep": 50.0, "wall": "hub_wall_brick", "upper": "hub_wall_white", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal",
 			"rise": 24.0, "door": "hub_door_iron", "door_dx": -14.0, "windows": "hub_win_arch", "win_xs": [15.0], "up_xs": [-15.0, 15.0], "boxes": true,
-			"sign": "hub_cbanner_1"},
+			"sign": "hub_cbanner_1", "bay": [-15.0], "chimney": true, "tint": Color(0.70, 0.78, 0.92), "timber": Color(0.54, 0.60, 0.70)},
 		{"at": Vector2(660, 160), "wall": "hub_wall_dark", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 34.0, "gable": true, "floors": 3,
-			"door": "hub_door_iron", "windows": "hub_win_tall", "chimney": true, "sign": "hub_cshield", "sign_side": -1.0},
+			"door": "hub_door_iron", "windows": "hub_win_tall", "chimney": true, "sign": "hub_cshield", "sign_side": -1.0, "win_xs": [-34.0, 34.0], "lamp": 1.0},
 		{"at": Vector2(748, 158), "wide": 80.0, "deep": 52.0, "wall": "hub_wall_white", "upper": "hub_wall_plaster", "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal",
-			"rise": 26.0, "door": "hub_door_wood", "windows": "hub_win_closed", "win_dx": 26.0, "shop": "wide", "shop_roof": "hub_roof_planks", "boxes": true},
+			"rise": 26.0, "door": "hub_door_wood", "windows": "hub_win_closed", "win_dx": 26.0, "shop": "wide", "shop_roof": "hub_roof_planks", "boxes": true,
+			"bay": [-26.0], "tint": Color(1.0, 0.80, 0.52), "timber": Color(0.74, 0.62, 0.50)},
 		{"at": Vector2(836, 162), "wall": "hub_wall_log", "wall_h": 56.0, "roof": "hub_roof_tiles", "flat_roof": "hub_roof_teal", "rise": 30.0,
-			"door": "hub_door_wood", "windows": "hub_win_shut", "boxes": true},
+			"door": "hub_door_wood", "windows": "hub_win_shut", "boxes": true, "chimney": true, "chimney_dx": -20.0},
 		{"at": Vector2(916, 160), "wide": 64.0, "deep": 50.0, "wall": "hub_wall_brick", "upper": "hub_wall_plaster", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood",
-			"rise": 26.0, "floors": 3, "door": "hub_door_arch", "door_dx": -13.0, "windows": "hub_win_tall", "win_xs": [16.0], "up_xs": [-14.0, 14.0]},
+			"rise": 26.0, "floors": 3, "door": "hub_door_arch", "door_dx": -13.0, "windows": "hub_win_tall", "win_xs": [16.0], "up_xs": [-14.0, 14.0],
+			"stair": 1.0, "chimney": true, "tint": Color(0.94, 0.70, 0.60), "timber": Color(0.56, 0.50, 0.50)},
 		{"at": Vector2(104, 400), "wall": "hub_wall_white", "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 32.0, "gable": true,
-			"door": "hub_door_wood", "windows": "hub_win_shut", "chimney": true},
+			"door": "hub_door_wood", "windows": "hub_win_shut", "chimney": true, "lamp": 1.0},
 		{"at": Vector2(856, 480), "wall": "hub_wall_plank", "wall_h": 54.0, "roof": "hub_roof_planks", "flat_roof": "hub_roof_wood", "rise": 30.0,
-			"door": "hub_door_arch", "windows": "hub_win_closed"},
+			"door": "hub_door_arch", "windows": "hub_win_closed", "lamp": -1.0},
 	]
 	var lamp := Color(1.0, 0.78, 0.46)
 	var lights: Array = [[Vector2(552, 258), Color(1.0, 0.72, 0.42), 2.3, 0.8]]
@@ -567,7 +570,7 @@ static func town() -> Dictionary:
 		"forest": {"top_gaps": [[416.0, 544.0], [40.0, 250.0], [236.0, 364.0], [596.0, 724.0], [772.0, 900.0]],
 			"behind": [["hub_tree_pink_2", 480, 60], ["hub_tree_green_2", 416, 80], ["hub_tree_teal_2", 546, 80]],
 			"open": [Rect2(930, 220, 60, 130), Rect2(60, 520, 840, 140)]},     # (the near edge is the balustrade: no hedge in front of it)
-		"blocks": [Rect2(60, 96, 128, 56), Rect2(188, 104, 64, 51), Rect2(252, 108, 96, 52), Rect2(349, 104, 66, 52), Rect2(546, 104, 66, 52),
+		"blocks": [Rect2(46, 96, 14, 56), Rect2(60, 96, 128, 56), Rect2(188, 104, 64, 51), Rect2(252, 108, 96, 52), Rect2(349, 104, 66, 52), Rect2(546, 104, 66, 52),
 			Rect2(612, 108, 96, 52), Rect2(708, 104, 80, 54), Rect2(788, 106, 96, 56), Rect2(884, 108, 64, 52),
 			Rect2(40, 262, 128, 138), Rect2(792, 340, 128, 140), Rect2(384, 96, 192, 34)],
 		"exits": [{"rect": Rect2(112, 150, 24, 12), "to": "hall", "at": Vector2(30, 232)},
@@ -686,7 +689,7 @@ static func suncourt() -> Dictionary:
 		lights.append([Vector2(280, 180), Color(0.5, 0.6, 1.0), 1.2, 0.35])
 	if held:
 		lights.append([Vector2(206, 250), Color(1.0, 0.9, 0.62), 1.6, 0.9])     # the shard in her fist
-	var forest := {"top_gaps": [], "behind": [], "open": [Rect2(220, 390, 120, 90)],
+	var forest := {"top_gaps": [], "behind": [], "open": [Rect2(220, 390, 120, 90), Rect2(-60, 396, 680, 90), Rect2(120, 30, 320, 80)],
 		"big": ["hub_dstone_0", "hub_obelisk_2", "hub_dstone_1", "hub_tusk_1", "hub_dpillar_3", "hub_dbush_0"],
 		"side": ["hub_dpillar_0", "hub_dstone_1", "hub_dpillar_2", "hub_cactus_3"],
 		"low": ["hub_dshrub", "hub_dbush_2", "hub_dpot_0", "hub_dstone_2", "hub_dpot_1", "hub_dbush_2"],
@@ -695,13 +698,26 @@ static func suncourt() -> Dictionary:
 		"name": "The Sunwell", "size": Vector2(560, 420), "outdoor": true, "walk": Rect2(30, 110, 500, 280), "spawn": Vector2(280, 376),
 		"ground": "hub_sand", "tint": Color(1.0, 0.93, 0.80) if glow else Color(0.64, 0.68, 0.92),
 		"rise": {"from": 100.0, "over": 80.0, "height": 34.0},
-		"floor": [["hub_paving", Rect2(184, 144, 192, 160)]],
-		"terraces": [{"rect": Rect2(184, 144, 192, 160), "high": 6.0, "steps": [[280.0, 60.0]], "face": "hub_bsandcap", "top": "hub_paving"}],     # (round two: a dais)
-		"props": [["hub_obelisk_0", 150, 186, 12, 2], ["hub_obelisk_1", 410, 186, 12, 2], ["hub_obelisk_2", 96, 330, 12, 2], ["hub_obelisk_2", 464, 330, 12, 2],
-			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_3", 390, 290, 6, 2],
-			["hub_dpot_0", 230, 316, 5, 1], ["hub_dpot_1", 330, 318, 4, 1], ["hub_dchest", 448, 226, 10, 2], ["hub_dpot_1", 470, 236, 4, 1],
+		"floor": [["hub_paving", Rect2(184, 144, 192, 160)], ["hub_paving", Rect2(250, 304, 60, 100)]],
+		# (round three) the beacon on a court of three tiers; a paved way from the road up to it between
+		# pairs of obelisks; a portico of columns across the back (scripts/hub/arch/sites.gd _portico)
+		"terraces": [{"rect": Rect2(184, 144, 192, 160), "high": 6.0, "steps": [[280.0, 60.0]], "face": "hub_bsandcap", "top": "hub_paving"},
+			{"rect": Rect2(220, 154, 120, 88), "high": 12.0, "steps": [[280.0, 40.0]], "face": "hub_bsandcap", "top": "hub_paving"},
+			{"rect": Rect2(250, 164, 60, 42), "high": 18.0, "steps": [[280.0, 24.0]], "face": "hub_bsandcap", "top": "hub_paving"}],
+		"portico": {"x0": 120.0, "x1": 440.0, "z": 102.0, "deep": 24.0, "tall": 54.0, "cols": 9, "door": "hub_ddoor"},
+		"tour": [Vector2(280, 372), Vector2(300, 252)],
+		"near": [{"z": 426.0, "style": "sand", "runs": [[-40.0, 226.0], [334.0, 600.0]], "piers": [[236.0, 26.0], [324.0, 26.0]]}],
+		"decals": [["hub_sripple_2", 70, 270], ["hub_sripple_3", 470, 280], ["hub_sripple_1", 120, 390], ["hub_sripple_4", 440, 392]],
+		"props": [["hub_obelisk_0", 150, 186, 12, 2], ["hub_obelisk_1", 410, 186, 12, 2], ["hub_obelisk_2", 236, 340, 10, 2], ["hub_obelisk_2", 324, 340, 10, 2],
+			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_2", 390, 290, 6, 2],
+			["hub_dpot_0", 222, 360, 5, 1], ["hub_dpot_1", 338, 362, 4, 1], ["hub_dchest", 448, 226, 10, 2], ["hub_dpot_1", 470, 236, 4, 1],
 			["hub_cactus_4", 70, 214, 8, 2], ["hub_cactus_3", 500, 214, 6, 2], ["hub_dtree_1", 74, 372, 5, 2], ["hub_dbush_1", 486, 372, 8, 3],
 			["hub_tusk_2", 120, 150, 6, 2],
+			# broken columns half sunk in the sand at the court's sides
+			["hub_dpillar_3", 100, 300, 6, 3], ["hub_dpillar_3", 462, 306, 6, 3], ["hub_dblock_1", 112, 308, 0, 1], ["hub_dblock_3", 450, 314, 0, 1],
+			["hub_dpillar_3", 62, 160, 6, 3], ["hub_dblock_0", 508, 166, 0, 1],
+			# urns along the parapet, past the near edge
+			["hub_dpot_0", 150, 432, 0, 1], ["hub_dpot_1", 196, 434, 0, 1], ["hub_dpot_0", 372, 434, 0, 1], ["hub_dpot_1", 420, 432, 0, 1],
 			# the beacon: a great stone with the fire bowl on top of it
 			["hub_dstone_0", 280, 190, 16, 3]],
 		"beacon": {"pos": Vector2(280, 186), "lit": glow, "lift": 24.0},

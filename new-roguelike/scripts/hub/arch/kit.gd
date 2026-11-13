@@ -20,6 +20,8 @@ const RIGHT := 32
 
 var vs := 1.0                     ## how much taller than wide an art pixel is drawn (the camera's slant)
 var corners: Array = []           ## corners of everything solid made so far (world units)
+var tint := Color.WHITE           ## (round three) every face made from now on wears this tint (a house's own
+                                  ## shade of the pack's plaster or timber; set back to white after)
 var _surf := {}                   ## "<texture id>|<kind>" -> [Texture2D, SurfaceTool, kind]
 
 
@@ -40,6 +42,7 @@ func _tri(st: SurfaceTool, p: Array, uv: Array, n: Vector3) -> void:
 	if ((p[1] as Vector3) - p[0]).cross((p[2] as Vector3) - p[0]).dot(n) > 0.0:
 		order = [0, 2, 1]
 	for i: int in order:
+		st.set_color(tint)
 		st.set_normal(n)
 		st.set_uv(uv[i])
 		st.add_vertex(p[i])
