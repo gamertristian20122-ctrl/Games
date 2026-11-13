@@ -27,6 +27,14 @@ const Skills = preload("res://scripts/data/skills.gd")
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const UI = preload("res://scripts/ui/theme.gd")
 const Hd = preload("res://scripts/fx/hd.gd")
+const Actor = preload("res://scripts/battle/anim_actor.gd")
+const Moves = preload("res://scripts/battle/anim_moves.gd")
+const Shatter = preload("res://scripts/battle/anim_death.gd")
+const Num = preload("res://scripts/battle/anim_numbers.gd")
+## FAST-FORWARD: while the fight plays out (not while you choose), holding Space, Shift, Enter, the
+## mouse button, a finger on the screen, or A / the right shoulder of a pad plays it this much faster.
+const FF_SPEED := 3.0
+const FF_HOLD := 0.18              ## held this long first (a tap that picked an order is not a hold)
 ## HD (PC): as the battle opens the camera comes DOWN out of the sky (clouds, stars and the moon by
 ## night) onto the clearing: where it looks first, relative to where it ends up.
 const SKY_LOOK := Vector3(0.0, 15.0, -16.0)
@@ -73,6 +81,20 @@ var _fade: ColorRect               ## black over the screen at the start, gold a
 var _sky := 0.0                    ## HD: how far up into the sky the camera still looks as the battle opens (1 -> 0)
 var _layer: CanvasLayer
 var _ui := 1.0                     ## HD: the menus are drawn smaller (a whole number of screen pixels per art pixel)
+var moves: Node                    ## the choreography of every blow and spell (scripts/battle/anim_moves.gd)
+var _dying := 0                    ## falls still being shown (a turn waits for them)
+var _punch := 0.0                  ## the camera's punch-in on a crit or a finishing blow (0 to 1)
+var _punch_at := Vector3.ZERO
+var _track := 0.0                  ## the camera leaning towards where the action is (0 to 1)
+var _track_at := Vector3.ZERO
+var _track_zoom := 0.0             ## + moves in, - pulls back (a boss's big move)
+var _track_id := 0
+var _stop_k := 1.0                 ## the hit-stop's share of the time scale
+var _ff := 1.0                     ## and the fast-forward's
+var _hold_t := 0.0
+var _ff_hint: Label
+var _combo := {}                   ## a combo's one counting number, by the fighter hit
+var _plan: Array = []              ## test: --animplan=lunge,slam,thessaly:volley (what the bot picks, in order)
 
 
 func _ready() -> void:
@@ -105,6 +127,19 @@ func _ready() -> void:
 	add_child(stage)
 	stage.call("build", look, 11 + maxi(spot, 0) + story.length())
 	_cam_home = stage.cam.position
+	moves = Moves.new()
+	moves.name = "Moves"
+	add_child(moves)
+	moves.call("setup", self)
+	if G.arg("animplan", "") != "":
+		_plan = G.arg("animplan", "").split(",", false)
+	if G.flag("animfrail"):
+		for u: Dictionary in fight.party:      # test: the defeat, quickly (a look only)
+			u["hp"] = 1
+	if G.flag("animmana"):
+		for u: Dictionary in fight.party:      # test: mana for every skill of --animplan (a look only)
+			u["max_mp"] = 999
+			u["mp"] = 999
 	var party: Array = fight.party
 	var foes: Array = fight.foes
 	for i in party.size():
@@ -151,6 +186,8 @@ func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 	body.call("set_tint", tint)
 	unit["node"] = body
 	unit["home"] = at
+	unit["sword"] = null
+	unit["hands"] = []
 	var m := Art.meta(String(unit["sprite"]))
 	var bw := float(m.get("body_width", 16.0)) * PX
 	var bh := float(m.get("body_height", 28.0)) * PX
@@ -175,6 +212,8 @@ func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 		blade.position = Vector3(0.0, -float(hero.get("grip", 3)) * PX, 0.0)
 		blade.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		sword.add_child(blade)
+		unit["sword"] = sword
+		unit["blade"] = (Art.size(String(hero["weapon"])).y - float(hero.get("grip", 3))) * PX
 	elif String(unit["side"]) == "party":
 		hands = String(Allies.row(String(unit["id"])).get("hands", ""))
 	else:
@@ -183,9 +222,57 @@ func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 		for side: float in [-1.0, 1.0]:
 			var hand := Sprite3.make(hands)
 			hand.position = Vector3(side * (bw * 0.5 + 0.02), bh * 0.3, 0.035)
+			hand.set_meta("rest", hand.position)
 			hand.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			hand.call("set_tint", tint)
 			body.add_child(hand)
+			(unit["hands"] as Array).append(hand)
+	# HOW IT MOVES (scripts/battle/anim_moves.gd) and the colour of its arcs of light
+	unit["style"] = _style(unit)
+	unit["colour"] = _colour(unit)
+	var actor := Actor.new()
+	add_child(actor)
+	actor.call("setup", body, at, hash(String(unit["id"])) + int(at.x * 10.0))
+	if String(unit["side"]) == "foes" and not bool(unit.get("boss", false)) and float(Enemies.info(String(unit["id"])).get("hover", 0.0)) > 0.0:
+		actor.set("bob", 0.07)
+	unit["actor"] = actor
+
+
+## How a fighter moves in a battle (see the header of scripts/battle/anim_moves.gd).
+func _style(unit: Dictionary) -> String:
+	if bool(unit.get("boss", false)):
+		return "boss"
+	var id := String(unit["id"])
+	if id == "knight":
+		return "blade"
+	if String(unit["side"]) == "party":
+		return "archer" if id == "thessaly" else "mage"
+	var sprite := String(unit["sprite"])
+	if Art.has_anim(sprite, "attack"):
+		return "bat"
+	var row := Enemies.info(id)
+	if row.has("shot") or String(row.get("ai", "")) == "shooter":
+		return "archer" if (sprite.contains("ranger") or sprite.contains("hunter") or sprite.contains("archer")) else "caster"
+	return "brute"
+
+
+## The colour of a fighter's arcs, streaks and after-images.
+func _colour(unit: Dictionary) -> Color:
+	match String(unit["id"]):
+		"knight":
+			return Color(1.0, 0.84, 0.5)
+		"thessaly":
+			return Color(0.55, 1.0, 0.62)
+		"sera":
+			return Color(1.0, 0.8, 0.38)
+	if bool(unit.get("boss", false)):
+		return Color(1.0, 0.3, 0.14)
+	match String(unit.get("style", "")):
+		"caster":
+			return Color(0.78, 0.45, 1.0)
+		"archer":
+			return Color(0.7, 1.0, 0.55)
+	return Color(1.0, 0.42, 0.24)
 
 
 # ------------------------------------------------------------------ the screen
@@ -337,6 +424,21 @@ func _build_screen() -> void:
 			_make_boss_bar(unit)
 		var who := unit
 		button.pressed.connect(func() -> void: _target_picked(who))
+
+	# how to speed the fight up (bottom right; hidden while you choose)
+	_ff_hint = UI.label("", "Small")
+	_ff_hint.add_theme_color_override("font_color", UI.C_BONE)
+	_ff_hint.add_theme_color_override("font_outline_color", UI.C_INK)
+	_ff_hint.add_theme_constant_override("outline_size", 3)
+	_ff_hint.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_ff_hint.offset_left = -300.0
+	_ff_hint.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_ff_hint.offset_right = -2.0
+	_ff_hint.offset_top = -12.0
+	_ff_hint.offset_bottom = 0.0
+	_ff_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_ff_hint.visible = false
+	_area.add_child(_ff_hint)
 
 	# the arrow over the one whose turn it is
 	_arrow = Polygon2D.new()
@@ -502,6 +604,39 @@ func _refresh(acting: Dictionary = {}) -> void:
 		face.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(face)
 		_order_row.add_child(slot)
+
+
+## Only the bars of one fighter (the moment a blow lands on him, not before).
+func _refresh_one(u: Dictionary) -> void:
+	for row: Dictionary in _party_rows:
+		if is_same(row["unit"], u):
+			(row["hp"]["text"] as Label).text = "HP %d/%d" % [int(u["hp"]), int(u["max_hp"])]
+			(row["hp"]["fill"] as ColorRect).size.x = 46.0 * float(u["hp"]) / float(u["max_hp"])
+			(row["mp"]["text"] as Label).text = "MP %d/%d" % [int(u["mp"]), int(u["max_mp"])]
+	for tag: Dictionary in _tags:
+		if is_same(tag["unit"], u):
+			_drain(tag["fill"], tag["lost"], 32.0 * float(u["hp"]) / float(u["max_hp"]))
+			(tag["button"] as Button).visible = int(u["hp"]) > 0
+	if not _boss_bar.is_empty() and is_same(_boss_bar["unit"], u):
+		_drain(_boss_bar["fill"], _boss_bar["lost"], float(_boss_bar["width"]) * maxf(float(u["hp"]), 0.0) / float(u["max_hp"]))
+
+
+## Your side's row in the corner jolts and flashes red when that fighter is hit (you see who it was
+## at a glance, even with your eyes on the menu).
+func _row_jolt(u: Dictionary, ratio: float) -> void:
+	for row: Dictionary in _party_rows:
+		if not is_same(row["unit"], u):
+			continue
+		var b: Button = row["button"]
+		var tw := b.create_tween()
+		b.modulate = Color(1.0, 0.45, 0.4)
+		tw.tween_property(b, "modulate", Color.WHITE, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		var name_label: Label = row["name"]
+		var kick := 2.0 + 4.0 * ratio
+		var tl := name_label.create_tween()
+		for i in 4:
+			tl.tween_property(name_label, "position:x", name_label.position.x + kick * (1.0 if i % 2 == 0 else -1.0) * (1.0 - i * 0.22), 0.03)
+		tl.tween_property(name_label, "position:x", name_label.position.x, 0.03)
 
 
 ## A bar falls to its new length at once; a pale piece behind it shows what was lost, then drains.
@@ -711,7 +846,9 @@ func _run(title: String) -> void:
 			var action := {}
 			if _auto:
 				await _wait(0.25)
-				action = fight.call("auto_choice", who)
+				action = _planned(who)
+				if action.is_empty():
+					action = fight.call("auto_choice", who)
 			else:
 				_acting = who
 				_say("")
@@ -720,72 +857,113 @@ func _run(title: String) -> void:
 				action = await _picked
 			events = fight.call("act", who, action)
 		else:
-			await _wait(0.35)
+			await _wait(0.08)          # (no dead time: the monster's own wind-up is the pause)
 			events = fight.call("act", who, fight.call("foe_choice", who))
 		await _play(events)
 		_refresh()
 	await _finish()
 
 
-## Shows what a turn did, one thing after another.
+## Test: --animplan=lunge,slam,thessaly:volley,guard picks the bot's orders in that order (an id
+## alone is the knight's; "attack" and "guard" are orders too). A look only: the fight's rules apply.
+func _planned(who: Dictionary) -> Dictionary:
+	for i in _plan.size():
+		var item := String(_plan[i])
+		var owner := "knight"
+		if item.contains(":"):
+			owner = item.get_slice(":", 0)
+			item = item.get_slice(":", 1)
+		if owner != String(who["id"]):
+			continue
+		_plan.remove_at(i)
+		var foes: Array = fight.call("alive", fight.foes)
+		if item == "guard":
+			return {"do": "guard"}
+		for sk: Dictionary in who["skills"]:
+			if String(sk["id"]) == item and bool(fight.call("can_use", who, sk)):
+				var aim := String(sk.get("aim", "foe"))
+				return {"do": "skill", "skill": sk, "target": who if aim == "friend" else foes[0]}
+		return {"do": "attack", "target": foes[0]}
+	return {}
+
+
+## Shows what a turn did: the whole move of the one who acts (scripts/battle/anim_moves.gd), which
+## calls impact() at the moment each blow lands.
 func _play(events: Array) -> void:
+	if events.is_empty():
+		return
+	var first: Dictionary = events[0]
+	var who: Dictionary = first.get("who", {})
+	if _marker != null:
+		_marker.visible = false
+	_turn_unit = {}                    # (the arrow over his home spot would stay behind while he moves)
+	if _speed > 4.0:
+		await _play_quick(events)
+		return
+	match String(first["type"]):
+		"skill":
+			_say("%s: %s!" % [String(who["name"]), String(first["skill"]["name"])])
+			Sfx.play("ui_start", -8.0)
+			_fx = Battles.FX.get(String(first["skill"].get("id", "")), [])
+			_fx_id = String(first["skill"].get("id", ""))
+			await moves.call("turn", who, events)
+		"hit", "miss":
+			_say("%s strikes %s." % [String(who["name"]), String(first["target"]["name"])])
+			await moves.call("turn", who, events)
+		"guard":
+			_say("%s guards." % String(who["name"]))
+			_float(who, "Guard", UI.C_ICE)
+			await moves.call("turn", who, events)
+		"stunned":
+			_say("%s cannot move." % String(who["name"]))
+			_float(who, "...", UI.C_ICE)
+			var a: Node = who["actor"]
+			var tw := a.create_tween()
+			for i in 4:
+				tw.tween_property(a, "lean", 0.08 * (1.0 if i % 2 == 0 else -1.0), 0.07)
+			tw.tween_property(a, "lean", 0.0, 0.07)
+			await _wait(0.4)
+		"flee":
+			_say("You get away." if bool(first["ok"]) else "No way out!")
+			Sfx.play("ui_back")
+			if bool(first["ok"]):
+				for u: Dictionary in fight.call("alive", fight.party):
+					(u["node"] as Node).call("set_flip", true)
+					var tf := (u["actor"] as Node).create_tween()
+					tf.tween_property(u["actor"], "offset", Vector3(-4.0, 0.0, 0.0), 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			else:
+				var a: Node = who["actor"]
+				var tf := a.create_tween()
+				tf.tween_property(a, "offset", Vector3(-0.8, 0.0, 0.0), 0.15)
+				tf.tween_property(a, "offset", Vector3.ZERO, 0.25).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+			await _wait(0.6)
+		"say":
+			_say(String(first["text"]))
+			await _wait(0.5)
+	# a turn is over when every fall it caused has been shown
+	var guard_t := 0.0
+	while _dying > 0 and guard_t < 4.0:
+		await get_tree().process_frame
+		guard_t += get_process_delta_time()
+	_fx = []
+	_combo.clear()
+	await _wait(0.06)
+
+
+## The test bot at high speed: the same events, nothing to see.
+func _play_quick(events: Array) -> void:
 	for e: Dictionary in events:
 		match String(e["type"]):
-			"skill":
-				_say("%s: %s!" % [String(e["who"]["name"]), String(e["skill"]["name"])])
-				Sfx.play("ui_start", -6.0)
-				_fx = Battles.FX.get(String(e["skill"].get("id", "")), [])
-				_fx_id = String(e["skill"].get("id", ""))
-				await _step(e["who"], 0.5)
 			"hit":
-				var who: Dictionary = e["who"]
-				var target: Dictionary = e["target"]
-				if _message.text == "" or not _message.text.ends_with("!"):
-					_say("%s strikes %s." % [String(who["name"]), String(target["name"])])
-				if _fx.is_empty():
-					await _step(who, 0.9)          # (a skill has already stepped forward once)
-				Sfx.play("hit", -4.0)
-				_show_fx(target)
-				_flash(target)
-				# how hard the hit FEELS: a plain blow is "medium", a crit, a kill or a boss's blow "large"
-				var big := bool(e["crit"]) or bool(e["dead"]) or bool(who.get("boss", false)) or (not _fx.is_empty() and float(_fx[2]) >= 2.0)
-				_feel(target, "large" if big else "medium")
-				_float(target, ("%d!" if bool(e["crit"]) else "%d") % int(e["amount"]), UI.C_GOLD if bool(e["crit"]) else UI.C_BONE)
 				_refresh()
-				await _wait(0.28)
-				if bool(e["dead"]):
-					await _fall(target)
-			"heal":
-				_show_fx(e["target"])
-				_float(e["target"], "+%d" % int(e["amount"]), UI.C_GREEN)
-				Sfx.play("pickup", -6.0)
-				_refresh()
-				await _wait(0.4)
-			"miss":
-				_float(e["target"], "Miss", UI.C_DIM)
-				await _wait(0.35)
-			"guard":
-				_say("%s guards." % String(e["who"]["name"]))
-				_float(e["who"], "Guard", UI.C_ICE)
-				await _wait(0.35)
-			"stun":
-				if not _fx.is_empty() and String(_fx[1]) == "rise":
-					_show_fx(e["target"])
-				_float(e["target"], "Stunned", UI.C_ICE)
-				await _wait(0.25)
-			"stunned":
-				_say("%s cannot move." % String(e["who"]["name"]))
-				_float(e["who"], "...", UI.C_ICE)
-				await _wait(0.45)
-			"flee":
-				_say("You get away." if bool(e["ok"]) else "No way out!")
-				Sfx.play("ui_back")
-				await _wait(0.6)
-			"say":
-				_say(String(e["text"]))
-				await _wait(0.5)
+				if bool(e["dead"]) and String(e["target"]["side"]) == "foes" and is_instance_valid(e["target"]["node"]):
+					(e["target"]["node"] as Node3D).visible = false
+				await _wait(0.1)
+			"flee", "say":
+				await _wait(0.3)
+			_:
+				await _wait(0.05)
 	_fx = []
-	await _wait(0.12)
 
 
 ## The light and sparks of a blow or a spell on the one it lands on (scripts/data/battles.gd FX).
@@ -817,88 +995,275 @@ func _show_fx(target: Dictionary) -> void:
 			stage.call("burst", at, colour, power, 0.0, "", target["node"])
 
 
-## GAME FEEL (v0.23.0): several small, brief answers to one hit, sized by a tier.
-##   medium  a normal blow: a little shake, a very short freeze, the one hit squashes
-##   large   a crit, a kill, a boss's blow, a big spell: more of each
-## The shake is "trauma" that decays in real time; the camera moves by trauma SQUARED along
-## smooth waves (never a random jitter). The freeze slows the whole game for a few hundredths of
-## a second; only the newest freeze may end it. Settings > Screen shake turns the shake off.
+## THE MOMENT A BLOW LANDS (called by scripts/battle/anim_moves.gd). Everything the one hit does:
+##   a flash (white; gold on a crit), the pack's hit animation, a KNOCK-BACK away from the blow and
+##   a recoil lean, a squash, sparks in the striker's colour (or the spell's light), a number that
+##   pops and arcs, the bar draining, and the feel: HIT-STOP (a freeze of a few hundredths of a
+##   second) and SCREEN SHAKE, both scaled by how much of its health the blow took; a camera
+##   PUNCH-IN on a critical blow and on a finishing blow. A fall starts here too.
+## opts: "from" (who struck), "part"/"parts" (a combo: blow i of n; the number counts up and the
+## full weight lands on the last), "fx" (show the skill's spell light), "launch" (thrown upward).
+func impact(e: Dictionary, opts: Dictionary = {}) -> void:
+	var target: Dictionary = e.get("target", {})
+	if target.is_empty() or not is_instance_valid(target.get("node")):
+		return
+	var who: Dictionary = opts.get("from", e.get("who", {}))
+	match String(e["type"]):
+		"hit":
+			_hit(e, target, who, opts)
+		"miss":
+			_float(target, "Miss", UI.C_DIM)
+			Sfx.play("player_shoot_knife", -14.0, 0.1, 1.4)
+			var a: Node = target["actor"]
+			var d := _away(target, who)
+			var tw := a.create_tween()
+			tw.tween_method(func(t: float) -> void: a.set("lift", 0.35 * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.28)
+			tw.parallel().tween_property(a, "kick", Vector3(d * 0.6, 0.0, 0.0), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.tween_property(a, "kick", Vector3.ZERO, 0.22)
+		"heal":
+			if bool(opts.get("fx", false)):
+				_show_fx(target)
+			else:
+				stage.call("burst", (target["home"] as Vector3) + Vector3(0.0, 0.2, 0.15), Color(0.5, 1.0, 0.6), 1.4, 1.6)
+			_float(target, "+%d" % int(e["amount"]), UI.C_GREEN, {"heal": true})
+			Sfx.play("pickup", -6.0)
+			var node: Node = target["node"]
+			node.call("set_flash", 0.45, Color(0.6, 1.0, 0.65))
+			_later(0.25, node, func(n: Node) -> void: n.call("set_flash", 0.0))
+			_refresh_one(target)
+		"stun":
+			if not _fx.is_empty() and String(_fx[1]) == "rise":
+				_show_fx(target)
+			_float(target, "Stunned", UI.C_ICE)
+			stage.call("ground_glow", target["home"], Color(0.6, 0.85, 1.0, 0.8), 1.0, 0.5, true)
+			var a: Node = target["actor"]
+			var tw := a.create_tween()
+			for i in 3:
+				tw.tween_property(a, "lean", 0.12 * (1.0 if i % 2 == 0 else -1.0), 0.06)
+			tw.tween_property(a, "lean", 0.0, 0.08)
+
+
+## Which way a blow from `who` throws `target` (+1 = to the right of the screen).
+func _away(target: Dictionary, who: Dictionary) -> float:
+	if who.is_empty():
+		return 1.0 if String(target["side"]) == "foes" else -1.0
+	var d := signf((target["home"] as Vector3).x - (who["home"] as Vector3).x)
+	return d if d != 0.0 else (1.0 if String(target["side"]) == "foes" else -1.0)
+
+
+func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) -> void:
+	var part := int(opts.get("part", 0))
+	var parts := maxi(int(opts.get("parts", 1)), 1)
+	var last := part >= parts - 1
+	var amount := int(e["amount"])
+	var shown := amount if last else maxi(1, roundi(float(amount) * float(part + 1) / float(parts)))
+	var ratio := clampf(float(amount) / maxf(float(target["max_hp"]), 1.0), 0.0, 1.0)
+	var crit := bool(e["crit"]) and last
+	var dead := bool(e["dead"]) and last
+	var weight := (1.0 if last else 0.45)
+	var d := _away(target, who)
+	var node: Node = target["node"]
+	var a: Node = target["actor"]
+	var big_one := bool(target.get("boss", false))
+	# sound
+	if String(target["side"]) == "party":
+		Sfx.play("player_hurt", -6.0)
+	Sfx.play("hit", -3.0 if last else -8.0, 0.1, 0.85 if crit else 1.0)
+	if crit:
+		Sfx.play("explosion", -14.0, 0.05, 1.6)
+	# light and sparks where it lands
+	var at: Vector3 = a.call("centre", float(target["top"]))
+	at.z += 0.15
+	if bool(opts.get("fx", false)) and not _fx.is_empty():
+		_show_fx(target)
+	elif _speed <= 4.0:
+		var c: Color = who.get("colour", Color.WHITE) if not who.is_empty() else Color.WHITE
+		stage.call("burst", at, c.lerp(Color.WHITE, 0.4), minf((0.55 + 0.9 * ratio + (0.5 if crit else 0.0)) * weight + 0.15, 1.6 if crit else 1.3), 0.0, "", node)
+	# the flash (gold on a crit), and the pack's own hit animation
+	# (the flash shines by itself only a little: a big picture flashing hot blooms into a white blob)
+	node.call("set_flash", 1.0 if crit else (0.55 if big_one else 0.8), Color(1.0, 0.85, 0.45) if crit else Color.WHITE, (0.45 if Hd.on() else 0.3) * (0.5 if big_one else 1.0))
+	_later(0.05 if not crit else 0.09, node, func(n: Node) -> void: n.call("set_flash", 0.0))
+	if Art.has_anim(String(target["sprite"]), "hit") and int(target["hp"]) > 0:
+		node.call("play", "hit")
+		_later(0.36, node, func(n: Node) -> void:
+			if int(target["hp"]) > 0:
+				n.call("play", "idle"))
+	# knock-back, recoil and squash (a boss barely moves; a launched one leaves the ground)
+	var shove := (0.18 + 0.55 * ratio + (0.3 if crit else 0.0) + 0.35 * float(opts.get("launch", 0.0))) * weight * (0.35 if big_one else 1.0)
+	var tw := a.create_tween().set_parallel(true)
+	a.set("kick", Vector3(d * shove * 0.45, 0.0, 0.0))
+	tw.tween_property(a, "kick", Vector3(d * shove, 0.0, 0.0), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(a, "lean", -d * (0.16 + 0.3 * ratio) * weight * (0.4 if big_one else 1.0), 0.05)
+	tw.tween_property(a, "squash", Vector2(0.84, 1.14) if not big_one else Vector2(0.94, 1.05), 0.05)
+	if float(opts.get("launch", 0.0)) > 0.0 and not big_one:
+		var up := 0.7 * float(opts.get("launch", 0.0))
+		tw.tween_method(func(t: float) -> void: a.set("lift", up * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.36)
+	var back := a.create_tween().set_parallel(true)
+	back.tween_interval(0.07)
+	back.chain().tween_property(a, "kick", Vector3.ZERO, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	back.tween_property(a, "lean", 0.0, 0.32).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	back.tween_property(a, "squash", Vector2.ONE, 0.28).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	# the number: a combo keeps one that counts up
+	var key := String(target["id"]) + str(target["home"])
+	if parts > 1 and part > 0 and _combo.has(key) and is_instance_valid(_combo[key]):
+		Num.bump(_combo[key], ("%d" % shown), Color(1.0, 0.85, 0.35) if crit else Color(0, 0, 0, 0))
+	else:
+		var l := _float(target, ("%d" % shown), UI.C_GOLD if crit else UI.C_BONE, {"dir": d, "crit": crit, "hold": 0.22 * float(parts - 1 - part)})
+		if parts > 1:
+			_combo[key] = l
+	if last:
+		_refresh_one(target)
+		if String(target["side"]) == "party":
+			_row_jolt(target, ratio)
+	# the feel: freeze and shake by how much it took, a punch-in on a crit or a finishing blow
+	if _speed <= 4.0:
+		var trauma := (0.16 + 0.85 * ratio + (0.25 if crit else 0.0) + (0.15 if dead else 0.0)) * weight
+		if String(target["side"]) == "party":
+			trauma *= 1.2
+		shake(trauma)
+		var stop := (0.035 + 0.1 * ratio + (0.05 if crit else 0.0) + (0.06 if dead else 0.0)) if last else 0.025
+		_hit_stop(minf(stop, 0.2))
+		var finishing := dead and (big_one or (fight.call("alive", fight.foes) as Array).is_empty())
+		if crit or finishing:
+			punch(at, 1.0)
+		elif dead:
+			punch(at, 0.45)
+	if dead:
+		_die(target, who)
+
+
+## A FALL. A monster: it flashes white, is thrown back, plays the pack's death animation where there
+## is one, then breaks into its own pixels (scripts/battle/anim_death.gd); a boss first burns away
+## in slow motion with embers. One of your side: his death animation or a topple, and he stays down.
+func _die(u: Dictionary, killer: Dictionary) -> void:
+	_dying += 1
+	var node: MeshInstance3D = u["node"]
+	var a: Node = u["actor"]
+	a.set("breath", 0.0)
+	_say("%s falls." % String(u["name"]))
+	for c in node.get_children():
+		if c is Node3D and (c == u.get("sword") or (u["hands"] as Array).has(c)):
+			(c as Node3D).visible = false      # hands and sword: the death pictures do not hold them
+	if String(u["side"]) == "party":
+		Sfx.play("player_die", -8.0)
+		moves.call("collapse", u)
+		await _wait(0.45)
+		_dying -= 1
+		return
+	var boss := bool(u.get("boss", false))
+	Sfx.play("boss_die" if boss else "enemy_die", -4.0 if boss else -8.0)
+	node.call("set_flash", 1.0, Color.WHITE, (0.6 if Hd.on() else 0.4) * (0.5 if boss else 1.0))
+	var d := _away(u, killer)
+	var tw := a.create_tween().set_parallel(true)
+	tw.tween_property(a, "offset", Vector3(d * (0.4 if boss else 0.8), 0.0, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_method(func(t: float) -> void: a.set("lift", (0.15 if boss else 0.5) * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.32)
+	await _wait(0.09)
+	if boss and _speed <= 4.0:
+		_slow_motion(0.35, 0.9)
+	if not is_instance_valid(node):
+		_dying -= 1
+		return
+	var has_death := Art.has_anim(String(u["sprite"]), "death")
+	if has_death:
+		node.call("play", "death")
+	var fade := node.create_tween()
+	fade.tween_method(func(v: float) -> void: node.call("set_flash", v, Color.WHITE, (0.6 if Hd.on() else 0.4) * (0.5 if boss else 1.0)), 0.8, 0.0, 0.1 if boss else 0.16)
+	await _wait(minf(float(node.call("anim_length", "death")), 0.5) if has_death else 0.2)
+	if boss and is_instance_valid(node):
+		# the boss burns away from the top, embers flying, then breaks
+		var burn := node.create_tween()
+		burn.tween_method(func(v: float) -> void: node.call("set_dissolve", v, Color(1.0, 0.45, 0.15)), 0.0, 0.55, 0.7)
+		for i in 4:
+			_later(0.15 * i, node, func(_n: Node) -> void:
+				stage.call("burst", (u["home"] as Vector3) + Vector3(randf_range(-1.0, 1.0), float(u["top"]) * randf_range(0.3, 0.9), 0.3), Color(1.0, 0.5, 0.2), 1.6, 0.8))
+		shake(0.6)
+		await _wait(0.7)
+	if is_instance_valid(node) and _speed <= 4.0:
+		var sh := Shatter.new()
+		stage.add_child(sh)
+		sh.call("burst", node, (killer["home"] as Vector3).x if not killer.is_empty() else 0.0, 2.0 if boss else 1.0)
+		stage.call("ground_glow", u["home"], Color(1.0, 0.75, 0.45, 0.6), 1.2 if not boss else 2.6, 0.5)
+		Sfx.play("rock_break", -14.0, 0.1, 1.5)
+	if is_instance_valid(node):
+		node.visible = false
+	_dying -= 1
+
+
+## THE FEEL of a blow (kept for the test pictures): a normal one, or a large one.
 const FEEL := {"medium": {"trauma": 0.32, "stop": 0.045}, "large": {"trauma": 0.7, "stop": 0.1}}
 
-func _feel(target: Dictionary, tier: String) -> void:
+func _feel(_target: Dictionary, tier: String) -> void:
 	if _speed > 4.0:
 		return                             # the test bot plays without it
 	var f: Dictionary = FEEL[tier]
-	_trauma = clampf(_trauma + float(f["trauma"]), 0.0, 1.0)
-	_pop(target)
+	shake(float(f["trauma"]))
 	_hit_stop(float(f["stop"]))
 
 
-## Squash and spring back (the picture only; nothing in the fight changes).
-func _pop(unit: Dictionary) -> void:
-	var node: Node3D = unit["node"]
-	if not is_instance_valid(node):
+## SCREEN SHAKE: "trauma" that decays in real time; the camera moves by trauma SQUARED on smooth
+## waves (never a random jitter). Settings > Screen shake turns it off.
+func shake(amount: float) -> void:
+	if _speed > 4.0:
 		return
-	if unit.get("pop") is Tween and (unit["pop"] as Tween).is_valid():
-		(unit["pop"] as Tween).kill()      # two tweens on one scale would fight
-	node.scale = Vector3(1.22, 0.8, 1.0)
+	_trauma = clampf(_trauma + amount, 0.0, 1.0)
+
+
+## CAMERA PUNCH-IN: a quick move in on a spot (a crit, a finishing blow), held a moment, eased out.
+func punch(at: Vector3, strength: float = 1.0) -> void:
+	if _speed > 4.0:
+		return
+	_punch_at = at
 	var tw := create_tween()
-	tw.tween_property(node, "scale", Vector3.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	unit["pop"] = tw
+	tw.tween_property(self, "_punch", strength, 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.2)
+	tw.tween_property(self, "_punch", 0.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
+## The camera leans towards where the action is for `seconds` (zoom + moves in, - pulls back).
+func track(at: Vector3, seconds: float, zoom: float = 0.0) -> void:
+	if _speed > 4.0:
+		return
+	_track_id += 1
+	var mine := _track_id
+	_track_at = at
+	_track_zoom = zoom
+	var tw := create_tween()
+	tw.tween_property(self, "_track", 1.0, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(maxf(seconds - 0.25, 0.0))
+	tw.tween_callback(func() -> void:
+		if mine == _track_id:
+			var back := create_tween()
+			back.tween_property(self, "_track", 0.0, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT))
+
+
+## HIT-STOP: the whole game nearly stops for a few hundredths of a second (only the newest stop
+## may end it; the fast-forward shortens it too).
 var _stop_id := 0
-func _hit_stop(duration: float, slow: float = 0.05) -> void:
+func _hit_stop(duration: float, slow: float = 0.04) -> void:
+	await _slow_motion(slow, duration)
+
+
+## Slows the whole game to `scale` for `seconds` of real time (a hit-stop; a boss's fall).
+func _slow_motion(scale: float, seconds: float) -> void:
 	_stop_id += 1
 	var mine := _stop_id
-	Engine.time_scale = slow
+	_stop_k = scale
+	_apply_time()
 	# (process_always, not physics, IGNORE the time scale: or the timer itself would crawl)
-	await get_tree().create_timer(duration, true, false, true).timeout
+	await get_tree().create_timer(seconds / _ff, true, false, true).timeout
 	if mine == _stop_id:
-		Engine.time_scale = 1.0
+		_stop_k = 1.0
+		_apply_time()
+
+
+func _apply_time() -> void:
+	var want := _stop_k * _ff
+	if not is_equal_approx(Engine.time_scale, want):
+		Engine.time_scale = want
 
 
 func _exit_tree() -> void:
-	Engine.time_scale = 1.0                # never leave the game slowed when a battle is freed
-
-
-## A fighter steps towards the other side and back.
-func _step(unit: Dictionary, reach: float) -> void:
-	var node: Node3D = unit["node"]
-	if not is_instance_valid(node) or _speed > 4.0:
-		return
-	if String(unit["side"]) == "foes" and Art.has_anim(String(unit["sprite"]), "attack"):
-		# the pack drew this one striking: play that instead of a step (then back to standing)
-		node.call("play", "attack")
-		await get_tree().create_timer(0.45 / _speed, false).timeout
-		_later(0.5 / _speed, node, func(n: Node) -> void:
-			if int(unit["hp"]) > 0:
-				n.call("play", "idle"))
-		return
-	var home: Vector3 = unit["home"]
-	var dir := 1.0 if String(unit["side"]) == "party" else -1.0
-	var tw := create_tween()
-	tw.tween_property(node, "position", home + Vector3(dir * reach, 0.0, 0.0), 0.11 / _speed).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(node, "position", home, 0.16 / _speed).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	await get_tree().create_timer(0.12 / _speed, false).timeout
-
-
-func _flash(unit: Dictionary) -> void:
-	var node: MeshInstance3D = unit["node"]
-	if not is_instance_valid(node):
-		return
-	node.call("set_flash", 0.85)
-	if Art.has_anim(String(unit["sprite"]), "hit") and int(unit["hp"]) > 0:
-		node.call("play", "hit")
-	var home: Vector3 = unit["home"]
-	var back := -0.25 if String(unit["side"]) == "party" else 0.25
-	var tw := create_tween()
-	tw.tween_property(node, "position", home + Vector3(back, 0.0, 0.0), 0.05)
-	tw.tween_property(node, "position", home, 0.14)
-	_later(0.09, node, func(n: Node) -> void: n.call("set_flash", 0.0))
-	_later(0.36, node, func(n: Node) -> void:
-		if int(unit["hp"]) > 0:
-			n.call("play", "idle"))
+	Engine.time_scale = 1.0                # never leave the game slowed (or sped up) when a battle is freed
 
 
 ## Does something to a fighter's picture a moment later, if the picture is still there then (a
@@ -911,43 +1276,21 @@ func _later(seconds: float, node: Node, what: Callable) -> void:
 			what.call(n))
 
 
-## A fighter goes down: the pack's own death animation, then monsters fade from the ground.
-func _fall(unit: Dictionary) -> void:
-	var node: MeshInstance3D = unit["node"]
-	if not is_instance_valid(node):
-		return
-	_say("%s falls." % String(unit["name"]))
-	Sfx.play("enemy_die", -8.0)
-	for c in node.get_children():
-		if c is Node3D and not (c as Node3D).rotation.is_zero_approx() or c.has_method("set_tint"):
-			(c as Node3D).visible = false      # hands and sword: the death pictures do not hold them
-	if Art.has_anim(String(unit["sprite"]), "death"):
-		node.call("play", "death")
-	await _wait(0.55)
-	if String(unit["side"]) == "foes":
-		node.visible = false
-
-
-## A number or a word that floats up from a fighter.
-func _float(unit: Dictionary, text: String, colour: Color) -> void:
-	var l := UI.label(text, "Head")
-	l.add_theme_color_override("font_color", colour)
-	l.add_theme_color_override("font_outline_color", UI.C_INK)
-	l.add_theme_constant_override("outline_size", 4)
-	_root.add_child(l)
-	var p: Vector2 = _on_ui((unit["home"] as Vector3) + Vector3(0.0, float(unit["top"]) + 0.4, 0.0))
-	var sz := l.get_minimum_size()
-	l.position = p - Vector2(sz.x * 0.5, 14.0)
-	l.pivot_offset = sz * 0.5
-	var big := text.ends_with("!")
-	var drift := randf_range(-6.0, 6.0)
-	l.scale = Vector2.ONE * (2.0 if big else 1.6)
-	var tw := create_tween()
-	tw.tween_property(l, "scale", Vector2.ONE * (1.25 if big else 1.0), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(l, "position:y", l.position.y - 6.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(l, "position", l.position + Vector2(drift, -20.0), 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.3).set_delay(0.5)
-	tw.tween_callback(l.queue_free)
+## A number or a word that pops out of a fighter (scripts/battle/anim_numbers.gd).
+func _float(unit: Dictionary, text: String, colour: Color, opts: Dictionary = {}) -> Label:
+	var a: Node = unit.get("actor")
+	var top: Vector3 = (unit["home"] as Vector3) + Vector3(0.0, float(unit["top"]), 0.0)
+	if a != null:
+		top = a.call("centre", float(unit["top"])) + Vector3(0.0, float(unit["top"]) * 0.5, 0.0)
+	var p: Vector2 = _on_ui(top + Vector3(0.0, 0.35, 0.0))
+	# (never off the screen, nor under the words and the boss's bar at the top: a tall boss's head
+	# can be out of the picture)
+	var room: Vector2 = _root.size
+	p = Vector2(clampf(p.x, 24.0, maxf(room.x - 24.0, 24.0)), clampf(p.y, 58.0 if not _boss_bar.is_empty() else 46.0, maxf(room.y - 30.0, 60.0)))
+	var o := opts.duplicate()
+	if not text.is_valid_int() and not text.begins_with("+"):
+		o["word"] = true
+	return Num.pop(_root, p, text, colour, o)
 
 
 # ------------------------------------------------------------------ the end
@@ -984,6 +1327,9 @@ func _finish() -> void:
 	else:
 		outcome = "fled"
 		head = "You got away"
+	if _auto and G.flag("animend") and outcome != "fled":
+		await _closing(outcome == "win")            # test: the victory poses / the defeat, under the bot too
+		await _wait(1.6)
 	if _auto:
 		print("[battle] result=%s rounds=%d xp=%d coins=%d party_hp=%s" % [outcome, int(fight.round_no), int(summary["xp"]), int(summary["coins"]),
 			(fight.party as Array).map(func(u: Dictionary) -> int: return int(u["hp"]))])
@@ -1028,12 +1374,7 @@ func _closing(won: bool) -> void:
 	if won:
 		for u: Dictionary in fight.call("alive", fight.party):
 			stage.call("ground_glow", u["home"], Color(1.0, 0.85, 0.45, 0.6), 1.6, 1.4)
-			var node: Node3D = u["node"]
-			if is_instance_valid(node):
-				var home: Vector3 = u["home"]
-				var hop := create_tween().set_loops(2)
-				hop.tween_property(node, "position", home + Vector3(0.0, 0.45, 0.0), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-				hop.tween_property(node, "position", home, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		moves.call("victory", fight.call("alive", fight.party))      # the knight's sword up, the others hop and turn
 		_fade.color = Color(1.0, 0.86, 0.5, 0.0)
 		var tf := create_tween()
 		tf.tween_property(_fade, "color:a", 0.45, 0.08)
@@ -1042,9 +1383,11 @@ func _closing(won: bool) -> void:
 		var tp := create_tween()
 		tp.tween_property(self, "_push", 1.0, 1.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	else:
+		# the defeat: everybody already lies where he fell; the camera sinks slowly, all goes dark red
 		_fade.color = Color(0.12, 0.0, 0.02, 0.0)
 		var tl := create_tween()
 		tl.tween_property(_fade, "color:a", 0.62, 1.0)
+		track(Vector3(-4.0, 0.4, 0.5), 2.0, 0.35)
 	await _wait(0.75)
 
 
@@ -1087,12 +1430,22 @@ func _process(delta: float) -> void:
 	var real := delta / maxf(Engine.time_scale, 0.0001)
 	_trauma = maxf(_trauma - 1.5 * real, 0.0)
 	_shake_t += real * 30.0
-	var shake := _trauma * _trauma * (1.0 if bool(Save.setting("shake")) else 0.0)
-	var jolt := Vector3(0.42 * sin(_shake_t * 1.7), 0.26 * sin(_shake_t * 2.3), 0.0) * shake
+	var amp := _trauma * _trauma * (1.0 if bool(Save.setting("shake")) else 0.0)
+	var jolt := Vector3(0.42 * sin(_shake_t * 1.7), 0.26 * sin(_shake_t * 2.3), 0.0) * amp
 	var glide := Vector3(-1.6, 2.2, 6.5) * _intro * _intro - Vector3(0.0, 1.4, 4.2) * _push
-	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + jolt + glide
-	var sky := SKY_LOOK * _sky
-	stage.cam.look_at(stage.aim + Vector3(0.0, 0.5, 0.0) * _push + sky, Vector3.UP)
+	var pos := _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + glide
+	var look: Vector3 = stage.aim + Vector3(0.0, 0.5, 0.0) * _push + SKY_LOOK * _sky
+	# the camera leans towards the action (a jump, a boss's blow) and PUNCHES IN on a crit or a
+	# finishing blow; the shake goes on top of all of it
+	if _track > 0.0:
+		look = look.lerp(_track_at, 0.22 * _track)
+		pos += (_track_at - pos).normalized() * _track_zoom * 4.0 * _track
+	if _punch > 0.0:
+		look = look.lerp(_punch_at, 0.45 * _punch)
+		pos = pos.lerp(_punch_at, 0.13 * _punch)
+	stage.cam.position = pos + jolt
+	stage.cam.look_at(look + jolt * 0.4, Vector3.UP)
+	_fast_forward(real)
 	if _marker != null and _marker.visible:
 		var m := _marker.material_override as StandardMaterial3D
 		m.albedo_color.a = 0.5 + 0.25 * sin(_t * 4.0)
@@ -1103,10 +1456,11 @@ func _process(delta: float) -> void:
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
 		var b: Button = tag["button"]
-		var p: Vector2 = _on_ui((u["home"] as Vector3) + Vector3(0.0, float(u["top"]), 0.0))
+		var stand: Vector3 = (u["actor"] as Node).call("at") if u.get("actor") != null else (u["home"] as Vector3)     # (the bar follows him when he moves)
+		var p: Vector2 = _on_ui(stand + Vector3(0.0, float(u["top"]), 0.0))
 		if Hd.on():
 			# (HD: the frame to tap is as big as the monster really is on the screen)
-			var feet: Vector2 = _on_ui(u["home"])
+			var feet: Vector2 = _on_ui(stand)
 			var h := maxf(feet.y - p.y, 12.0)
 			var want := Vector2(maxf(h * float(u["wide"]) / maxf(float(u["top"]), 0.1) * 0.9, 24.0), h * 0.85 + 4.0).round()
 			if b.custom_minimum_size != want:
@@ -1116,3 +1470,24 @@ func _process(delta: float) -> void:
 				var nl: Label = tag["name"]
 				nl.position.x = (want.x - nl.get_minimum_size().x) * 0.5
 		b.position = (p - Vector2(b.size.x * 0.5, 2.0)).round()
+
+
+## FAST-FORWARD: while the fight plays out (never while you choose), holding a button plays the
+## animations FF_SPEED times as fast. A tap is not a hold (FF_HOLD), so the press that picked an
+## order never speeds up its own blow by accident. The bottom corner says how.
+func _fast_forward(real: float) -> void:
+	if _speed > 4.0:
+		return
+	var choosing := not _acting.is_empty()
+	var held := not choosing and not _over and (Input.is_key_pressed(KEY_SPACE) or Input.is_key_pressed(KEY_SHIFT)
+		or Input.is_action_pressed("ui_accept") or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+		or Input.is_joy_button_pressed(0, JOY_BUTTON_A) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER))
+	_hold_t = _hold_t + real if held else 0.0
+	var want := FF_SPEED if _hold_t >= FF_HOLD else 1.0
+	if want != _ff:
+		_ff = want
+		_apply_time()
+	if _ff_hint != null:
+		_ff_hint.visible = not choosing and not _over and _intro <= 0.0
+		_ff_hint.text = ">> x%d" % int(FF_SPEED) if _ff > 1.0 else ("Hold the screen: faster" if OS.has_feature("mobile") else "Hold Space: faster")
+		_ff_hint.modulate.a = 0.95 if _ff > 1.0 else 0.55
