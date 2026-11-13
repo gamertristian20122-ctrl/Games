@@ -65,7 +65,7 @@ static func get_place(id: String) -> Dictionary:
 	if id == "elfwood":
 		# (round three: folk round the camp fire, as round the fire of the forest picture: the fire owns
 		# the clearing and the people stand in its light)
-		_extras(place, [["pc_elf_druid", 402, 234, 1], ["pc_elf_base", 458, 236, -1], ["pc_npc_peasant_a", 450, 270, -1], ["pc_royal_archer", 394, 262, 1]])
+		_extras(place, [["pc_elf_druid", 388, 230, 1], ["pc_elf_base", 470, 230, -1], ["pc_npc_peasant_a", 474, 272, -1], ["pc_royal_archer", 378, 270, 1]])
 	# DEPTH (scripts/hub/view3d.gd): where the ground climbs, the hills, the water of each place
 	match id:
 		"elfwood":
