@@ -343,82 +343,93 @@ func _feed(role: String) -> void:
 
 
 # ------------------------------------------------------------------ drawing
+## The Lantern Glass look (HD GUI): ink discs at 0.6 with a brass ring, parchment glyphs, ember for
+## what is lit and ready. Sizes, places and hit areas are the old ones (game px; this layer is not
+## on the UI grid). Letters are a fixed small size in game px whatever the UI tier.
+const GLYPH := Color(0.95, 0.92, 0.85)          ## parchment
+const RING := Color(0.78, 0.62, 0.36)           ## brass
+const LIT := Color(1.0, 0.62, 0.26)             ## ember
+const INK := Color(0.035, 0.045, 0.075)
+const WORD_PX := 7                              ## the words on and over the buttons (game px)
+
+
+func _word(text: String, at: Vector2, colour: Color, centred := true, size := WORD_PX) -> void:
+	var f := UI.font_num
+	var x := at.x - (f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x * 0.5 if centred else 0.0)
+	var p := Vector2(roundf(x), roundf(at.y))
+	_canvas.draw_string_outline(f, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 2, Color(INK, 0.85 * colour.a))
+	_canvas.draw_string(f, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, colour)
+
+
 func _draw_controls() -> void:
 	if not active:
 		return
+	UI._load_fonts()
 	var s := _screen()
 	var ins := UI.safe_insets(self)
 	for role: String in ["move", "aim"]:
 		if _held[role]:
 			var o: Vector2 = _origin[role]
 			var k: Vector2 = o + (_knob[role] - o).limit_length(RADIUS)
-			_canvas.draw_circle(o, RADIUS, Color(0, 0, 0, 0.14))
-			_canvas.draw_arc(o, RADIUS, 0.0, TAU, 40, Color(1, 1, 1, ALPHA), 1.5, true)
-			_canvas.draw_circle(k, KNOB, Color(1, 1, 1, ALPHA))
-			_canvas.draw_arc(k, KNOB, 0.0, TAU, 24, Color(1, 1, 1, ALPHA + 0.15), 1.0, true)
+			_canvas.draw_circle(o, RADIUS, Color(INK, 0.32), true, -1.0, true)
+			_canvas.draw_arc(o, RADIUS, 0.0, TAU, 48, Color(RING, 0.55), 1.0, true)
+			_canvas.draw_arc(o, RADIUS - 2.5, 0.0, TAU, 48, Color(1, 1, 1, 0.06), 1.0, true)
+			_canvas.draw_circle(k, KNOB, Color(INK, 0.55), true, -1.0, true)
+			_canvas.draw_circle(k, KNOB - 1.5, Color(GLYPH, 0.45), true, -1.0, true)
+			_canvas.draw_arc(k, KNOB, 0.0, TAU, 32, Color(RING, 0.8), 1.0, true)
 		elif not (hub_mode and role == "aim"):
 			# a faint ring where each thumb usually rests, so new players know where to touch
 			var left := (role == "move") != _swapped
 			var x := ins.x + 52.0 if left else s.x - ins.z - 62.0
 			var rest := Vector2(x, s.y - ins.w - 46.0)
-			_canvas.draw_arc(rest, RADIUS, 0.0, TAU, 40, Color(1, 1, 1, 0.13), 1.0, true)
-			_canvas.draw_circle(rest, KNOB, Color(1, 1, 1, 0.09))
+			_canvas.draw_circle(rest, RADIUS, Color(INK, 0.14), true, -1.0, true)
+			_canvas.draw_arc(rest, RADIUS, 0.0, TAU, 48, Color(RING, 0.22), 1.0, true)
+			_canvas.draw_circle(rest, KNOB, Color(GLYPH, 0.08), true, -1.0, true)
 
 	# bomb: the pack's bomb sprite and how many are left
-	var font := UI.font_body
 	if not hub_mode:
 		var bc := _button_centre("bomb")
 		var dim := 1.0 if _bombs > 0 else 0.4
 		_round_button(bc, _pressed_flash["bomb"], dim)
 		_canvas.draw_texture(_bomb_tex, (bc - _bomb_tex.get_size() / 2.0 + Vector2(-1, -1)).round(), Color(1, 1, 1, 0.9 * dim))
-		var text := str(_bombs)
-		var tp := bc + Vector2(5, 12)
-		_canvas.draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * dim))
-		_canvas.draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(UI.C_BONE, dim))
+		_word(str(_bombs), bc + Vector2(5, 12), Color(GLYPH, dim), false, 8)
 
-	# CALL: the pack's skull (drawn at twice its size), lit only while a call would work,
-	# with a ring that fills up again while the cooldown runs
+	# CALL / TALK / BLOCK: lit only while it would work, with a ring that fills up again while
+	# the cooldown runs; TALK lit = an ember ring (somebody is in reach)
 	if Controls.action_enabled:
 		var ac := _button_centre("action")
 		var lit := 1.0 if _call_ready else 0.4
-		_round_button(ac, _pressed_flash["action"], lit)
+		_round_button(ac, _pressed_flash["action"], lit, _call_ready)
 		var skull_size := _skull_region.size * 2.0
 		if _block_mode():
 			# a small shield: a flat shape
 			var held := 1.0 if Controls.touch_action_held else 0.8
-			_canvas.draw_rect(Rect2(ac.x - 5.0, ac.y - 6.0, 10, 7), Color(UI.C_BONE, held * lit))
-			_canvas.draw_colored_polygon(PackedVector2Array([ac + Vector2(-5, 1), ac + Vector2(5, 1), ac + Vector2(0, 7)]), Color(UI.C_BONE, held * lit))
-			_canvas.draw_rect(Rect2(ac.x - 1.0, ac.y - 4.0, 2, 7), Color(UI.C_INK, 0.6 * lit))
+			_canvas.draw_rect(Rect2(ac.x - 5.0, ac.y - 6.0, 10, 7), Color(GLYPH, held * lit))
+			_canvas.draw_colored_polygon(PackedVector2Array([ac + Vector2(-5, 1), ac + Vector2(5, 1), ac + Vector2(0, 7)]), Color(GLYPH, held * lit))
+			_canvas.draw_rect(Rect2(ac.x - 1.0, ac.y - 4.0, 2, 7), Color(INK, 0.6 * lit))
 			for k in _block_max:       # one pip for every blow the guard can still take
-				_canvas.draw_rect(Rect2(ac.x - 3.0 * _block_max + 1.0 + 6.0 * k, ac.y + 9.0, 4, 2), Color(UI.C_BONE, 0.95) if k < _block_left else Color(UI.C_BONE, 0.2))
+				_canvas.draw_rect(Rect2(ac.x - 3.0 * _block_max + 1.0 + 6.0 * k, ac.y + 9.0, 4, 2), Color(GLYPH, 0.95) if k < _block_left else Color(GLYPH, 0.2))
 		elif hub_mode:
 			for k in 3:       # three dots: "speak"
-				_canvas.draw_rect(Rect2(ac.x - 7.0 + 5.0 * k, ac.y - 1.0, 3, 3), Color(UI.C_BONE, 0.95 * lit))
+				_canvas.draw_circle(Vector2(ac.x - 5.0 + 5.0 * k, ac.y + 0.5), 1.5, Color(GLYPH, 0.95 * lit), true, -1.0, true)
 		else:
 			_canvas.draw_texture_rect_region(_skull_tex, Rect2((ac - skull_size / 2.0).round(), skull_size), _skull_region, Color(CALL_GOLD, 0.95 * lit))
 		if _call_fill < 1.0:
-			_canvas.draw_arc(ac, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _call_fill, 32, Color(CALL_GOLD, 0.85), 2.0, true)
-		elif _call_ready:
-			_canvas.draw_arc(ac, BUTTON_R - 2.5, 0.0, TAU, 32, Color(CALL_GOLD, 0.9), 1.5, true)
+			_canvas.draw_arc(ac, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _call_fill, 32, Color(LIT, 0.85), 2.0, true)
 		if _call_pulse:
 			# the first-run lesson: a ring closes in on the button again and again
 			var k := fmod(_pulse_t * 1.4, 1.0)
-			_canvas.draw_arc(ac, BUTTON_R + 10.0 * (1.0 - k), 0.0, TAU, 32, Color(CALL_GOLD, 0.25 + 0.6 * k), 2.0, true)
+			_canvas.draw_arc(ac, BUTTON_R + 10.0 * (1.0 - k), 0.0, TAU, 32, Color(LIT, 0.25 + 0.6 * k), 2.0, true)
 		var label_text := TALK_LABEL if hub_mode else (BLOCK_LABEL if _block_mode() else CALL_LABEL)
-		var lw := font.get_string_size(label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
-		var lp := Vector2(roundf(ac.x - lw / 2.0), ac.y - BUTTON_R - 3.0)      # above the button: the bomb button is right below
-		_canvas.draw_string_outline(font, lp, label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))
-		_canvas.draw_string(font, lp, label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(CALL_GOLD, lit))
+		_word(label_text, Vector2(ac.x, ac.y - BUTTON_R - 3.0), Color(UI.C_GOLD if _call_ready else GLYPH, lit))      # above the button: the bomb button is right below
 
-	# pause: two bars in a small square
+	# pause: two bars on a small glass plate
 	var pc := _button_centre("pause")
 	var half := PAUSE_SIZE / 2.0
-	var a := 0.5 + 0.4 * float(_pressed_flash["pause"])
-	_canvas.draw_rect(Rect2(pc - Vector2(half, half), Vector2(PAUSE_SIZE, PAUSE_SIZE)), Color(0, 0, 0, 0.3))
-	_canvas.draw_rect(Rect2(pc - Vector2(half, half) + Vector2(0.5, 0.5), Vector2(PAUSE_SIZE - 1, PAUSE_SIZE - 1)), Color(1, 1, 1, a * 0.7), false, 1.0)
-	_canvas.draw_rect(Rect2(pc.x - 4, pc.y - 5, 3, 10), Color(1, 1, 1, a))
-	_canvas.draw_rect(Rect2(pc.x + 1, pc.y - 5, 3, 10), Color(1, 1, 1, a))
-
+	var a := 0.75 + 0.25 * float(_pressed_flash["pause"])
+	_plate(Rect2(pc - Vector2(half, half), Vector2(PAUSE_SIZE, PAUSE_SIZE)), float(_pressed_flash["pause"]), false)
+	_canvas.draw_rect(Rect2(pc.x - 4, pc.y - 5, 3, 10), Color(GLYPH, a))
+	_canvas.draw_rect(Rect2(pc.x + 1, pc.y - 5, 3, 10), Color(GLYPH, a))
 
 	# the skill buttons: the skill's picture, dim while it rests or the mana is short, a ring that refills
 	for slot in Skills.SLOTS:
@@ -433,31 +444,42 @@ func _draw_controls() -> void:
 			var tex: Texture2D = Art.tex(icon_id)
 			_canvas.draw_texture(tex, (sc - tex.get_size() / 2.0).round(), Color(1, 1, 1, 0.95 * lit))
 		if _skill_fill[slot] < 1.0:
-			_canvas.draw_arc(sc, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _skill_fill[slot], 32, Color(0.45, 0.75, 1.0, 0.9), 2.0, true)
+			_canvas.draw_arc(sc, BUTTON_R - 2.5, -PI / 2.0, -PI / 2.0 + TAU * _skill_fill[slot], 32, Color(UI.C_MP_A, 0.9), 2.0, true)
 		elif ready:
-			_canvas.draw_arc(sc, BUTTON_R - 2.5, 0.0, TAU, 32, Color(0.45, 0.75, 1.0, 0.85), 1.5, true)
-		var num := str(slot + 1)
-		var np := sc + Vector2(-BUTTON_R + 1.0, -BUTTON_R + 7.0)
-		_canvas.draw_string_outline(font, np, num, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9 * lit))
-		_canvas.draw_string(font, np, num, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, Color(UI.C_BONE, lit))
+			_canvas.draw_arc(sc, BUTTON_R - 2.5, 0.0, TAU, 32, Color(UI.C_MP_A, 0.7), 1.0, true)
+		_word(str(slot + 1), sc + Vector2(-BUTTON_R + 1.0, -BUTTON_R + 7.0), Color(GLYPH, lit), false, 8)
 
-	# Lv: the knight's level in a small plate under the pause button; it glows while points wait
+	# Lv: the knight's level on a small glass plate under the pause button; it glows while points wait
 	var mc := _button_centre("menu")
 	var plate := Rect2(mc - LV_SIZE / 2.0, LV_SIZE)
 	var glow := 0.5 + 0.5 * sin(_lv_t * 5.0) if _lv_points else 0.0
-	var ma := 0.5 + 0.4 * float(_pressed_flash["menu"])
-	_canvas.draw_rect(plate, Color(0, 0, 0, 0.3))
-	if _lv_points:
-		_canvas.draw_rect(plate, Color(CALL_GOLD, 0.12 + 0.2 * glow))
-	_canvas.draw_rect(Rect2(plate.position + Vector2(0.5, 0.5), plate.size - Vector2(1, 1)), Color(CALL_GOLD, 0.6 + 0.4 * glow) if _lv_points else Color(1, 1, 1, ma * 0.7), false, 1.0)
-	var lvw := font.get_string_size(_lv_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body).x
-	var lvp := Vector2(roundf(mc.x - lvw / 2.0), roundf(mc.y + font.get_ascent(UI.size_body) / 2.0 - 1.0))
-	_canvas.draw_string_outline(font, lvp, _lv_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, 3, Color(UI.C_INK, 0.9))
-	_canvas.draw_string(font, lvp, _lv_text, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_body, CALL_GOLD if _lv_points else Color(UI.C_BONE, 0.95))
+	_plate(plate, float(_pressed_flash["menu"]), _lv_points, glow)
+	_word(_lv_text, Vector2(mc.x, mc.y + UI.font_num.get_ascent(WORD_PX) * 0.5 - 0.5), UI.C_GOLD if _lv_points else Color(GLYPH, 0.95))
 
 
-func _round_button(c: Vector2, flash: float, dim: float) -> void:
-	_canvas.draw_circle(c, BUTTON_R, Color(0, 0, 0, 0.28 * dim))
+## A round button: an ink disc at 0.6, a brass ring (ember and a soft glow when `lit`), a pale
+## flash when pressed. dim < 1 = resting / not ready.
+func _round_button(c: Vector2, flash: float, dim: float, lit := false) -> void:
+	if lit:
+		for i in 3:
+			_canvas.draw_circle(c, BUTTON_R + 4.0 - i * 1.5, Color(LIT, 0.06), true, -1.0, true)
+	_canvas.draw_circle(c, BUTTON_R, Color(INK, 0.6 * maxf(dim, 0.6)), true, -1.0, true)
+	_canvas.draw_arc(c, BUTTON_R - 1.0, PI * 1.1, PI * 1.9, 16, Color(1, 1, 1, 0.07), 1.0, true)
 	if flash > 0.0:
-		_canvas.draw_circle(c, BUTTON_R, Color(1, 1, 1, 0.3 * flash))
-	_canvas.draw_arc(c, BUTTON_R, 0.0, TAU, 32, Color(1, 1, 1, (ALPHA + 0.1) * dim), 1.5, true)
+		_canvas.draw_circle(c, BUTTON_R, Color(GLYPH, 0.25 * flash), true, -1.0, true)
+	_canvas.draw_arc(c, BUTTON_R, 0.0, TAU, 40, Color(LIT, 0.95) if lit else Color(RING, 0.75 * dim), 1.5 if lit else 1.0, true)
+
+
+## A small glass plate with a brass edge (pause, Lv): gold edge and a glow while `hot`.
+func _plate(r: Rect2, flash: float, hot: bool, glow := 0.0) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(INK, 0.6)
+	sb.set_corner_radius_all(3)
+	sb.border_color = Color(UI.C_GOLD, 0.6 + 0.4 * glow) if hot else Color(RING, 0.7)
+	sb.set_border_width_all(1)
+	sb.anti_aliasing = true
+	_canvas.draw_style_box(sb, r)
+	if hot:
+		_canvas.draw_rect(r.grow(-1.0), Color(LIT, 0.10 + 0.18 * glow))
+	if flash > 0.0:
+		_canvas.draw_rect(r.grow(-1.0), Color(GLYPH, 0.25 * flash))

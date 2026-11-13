@@ -37,6 +37,7 @@ extends Node3D
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
+const WalkKit = preload("res://scripts/ui/walk_kit.gd")
 const CardShader = preload("res://scripts/fx/card_shader.gd")
 const HdLight = preload("res://scripts/fx/hd_light.gd")
 const Build = preload("res://scripts/hub/view3d_build.gd")
@@ -85,14 +86,12 @@ func setup(the_hub: Node2D) -> void:
 	add_child(cam)
 	cam.current = true
 	light.setup()
+	# the words over the picture live on the UI grid (UI px; positions converted in _sync_words)
 	var layer := CanvasLayer.new()
 	layer.layer = 0
 	add_child(layer)
-	_words = Control.new()
+	_words = UI.attach(layer)
 	_words.theme = UI.theme()
-	_words.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_words.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	layer.add_child(_words)
 
 
 # ------------------------------------------------------------------ building a place
@@ -495,38 +494,86 @@ func _person_row(entry: Dictionary, rows: Array) -> void:
 
 
 # ------------------------------------------------------------------ words
+## Each Label hub.gd puts in the flat picture gets a copy over the 3D picture, on the UI grid. Its
+## meta "walk_kind" says what the copy is (scripts/ui/walk_kit.gd): "tag" = the name tag with
+## "[Q] Talk" (hub.gd _prompt; meta "news" adds the gold "!"), "news" / "foe" = the "!" coin over a
+## head (meta "under_tag": the name tag carries it now), "sign" = a world-map name in Cinzel caps.
+## Anything else is copied as it is.
 func _twin(label: Label, holder: Node2D) -> void:
-	var copy := label.duplicate() as Label
+	var copy: Control
+	match String(label.get_meta("walk_kind", "")):
+		"tag":
+			copy = WalkKit.NameTag.new()
+		"news", "foe":
+			copy = WalkKit.NewsMark.new()
+			copy.set("foe", String(label.get_meta("walk_kind")) == "foe")
+		"sign":
+			var sign := UI.label("", "HudHead")
+			var ph := UI.is_phone()
+			sign.add_theme_font_size_override("font_size", 8 if ph else 10)
+			sign.add_theme_constant_override("outline_size", 3)
+			sign.add_theme_color_override("font_color", label.get_meta("sign_colour", UI.C_PARCH))
+			sign.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
+			sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			copy = sign
+		_:
+			var plain := label.duplicate() as Label
+			plain.material = null
+			plain.z_index = 0
+			plain.scale = Vector2.ONE
+			copy = plain
 	copy.visible = false
 	copy.modulate = Color.WHITE
-	copy.material = null
-	copy.z_index = 0
+	copy.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_words.add_child(copy)
 	_twins.append([label, copy, holder])
 
 
-func _sync_words(zoom: float) -> void:
+func _sync_words(_zoom: float) -> void:
 	var ysort: Node2D = hub._ysort
+	# game px (what the camera's unproject gives) -> UI px of the words layer
+	var k := float(_words.get("stretch")) / maxf(float(_words.get("px")), 0.01)
 	for trio: Array in _twins:
 		var label: Label = trio[0]
-		var copy: Label = trio[1]
+		var copy: Control = trio[1]
 		if not is_instance_valid(label) or not is_instance_valid(copy):
 			continue
 		var holder: Node2D = trio[2]
+		var kind := String(label.get_meta("walk_kind", ""))
 		var shown := label.visible and label.text != "" and (holder == null or _seen(label, holder))
-		copy.visible = shown
+		if kind in ["news", "foe"] and bool(label.get_meta("under_tag", false)):
+			shown = false
+		var p := Vector3.ZERO
+		if shown:
+			var rel: Transform2D = ysort.global_transform.affine_inverse() * label.get_global_transform()
+			# the point of the label that is placed: the middle of its bottom edge (the "!" marks: a
+			# little above the head, the same for any font)
+			var local := Vector2(label.size.x * 0.5, label.size.y)
+			if kind in ["news", "foe"]:
+				local = Vector2(label.size.x * 0.5, 8.0)
+			var foot2 := rel * local
+			p = Vector3(foot2.x * PX, 0.0, foot2.y * PX)
+			if holder != null and is_instance_valid(holder):
+				p = _where(holder) + _stood(foot2 - holder.position)
+			shown = not cam.is_position_behind(p)
+		if copy.has_method("show_on"):
+			copy.call("show_on", shown)
+		else:
+			copy.visible = shown
 		if not shown:
 			continue
-		copy.text = label.text
-		var rel: Transform2D = ysort.global_transform.affine_inverse() * label.get_global_transform()
-		var foot2 := rel * Vector2(label.size.x * 0.5, label.size.y)       # the middle of its bottom edge
-		var p := Vector3(foot2.x * PX, 0.0, foot2.y * PX)
-		if holder != null and is_instance_valid(holder):
-			p = _where(holder) + _stood(foot2 - holder.position)
-		copy.scale = rel.get_scale() * zoom
-		copy.visible = not cam.is_position_behind(p)
-		var at := cam.unproject_position(p)
-		copy.position = (at - Vector2(copy.size.x * 0.5, copy.size.y) * copy.scale).round()
+		match kind:
+			"tag":
+				copy.set("text", label.text)
+				copy.set("news", bool(label.get_meta("news", false)))
+			"news", "foe":
+				pass
+			_:
+				if (copy as Label).text != label.text:
+					(copy as Label).text = label.text
+					copy.reset_size()
+		var at := cam.unproject_position(p) * k
+		copy.position = (at - Vector2(copy.size.x * 0.5, copy.size.y)).round()
 
 
 # ------------------------------------------------------------------ every frame

@@ -88,49 +88,96 @@ func _ready() -> void:
 	_rain.initial_velocity_max = 300.0
 	_rain.emitting = false
 	layer.add_child(_rain)
-	var root := Control.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# the bars, the words, the Skip button and the fade: on the UI grid (UI px), over the rain
+	var words_layer := CanvasLayer.new()
+	words_layer.layer = G.LAYER_MENU
+	add_child(words_layer)
+	var root := UI.attach(words_layer)
 	root.theme = UI.theme()
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.gui_input.connect(_on_tap)
-	layer.add_child(root)
-	for top: bool in [true, false]:
-		var bar := ColorRect.new()
-		bar.color = UI.C_VOID
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE if top else Control.PRESET_BOTTOM_WIDE)
-		if top:
-			bar.offset_bottom = BAR
-		else:
-			bar.offset_top = -BAR - 14.0
-		root.add_child(bar)
-	_caption = UI.label("", "")
+	var ph := UI.is_phone()
+	# the bars keep the share of the screen they had in game px (BAR of 180; the bottom one 14 more)
+	var top_bar := ColorRect.new()
+	top_bar.color = UI.C_VOID
+	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_bar.anchor_bottom = BAR / 180.0
+	root.add_child(top_bar)
+	var low_bar := ColorRect.new()
+	low_bar.color = UI.C_VOID
+	low_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	low_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	low_bar.anchor_top = 1.0 - (BAR + 14.0) / 180.0
+	root.add_child(low_bar)
+	# a brass hairline fading out at both ends along each bar's inner edge
+	for edge: Array in [[BAR / 180.0, 0.0], [1.0 - (BAR + 14.0) / 180.0, -1.0]]:
+		var line := UI.rule(10, UI.C_BRASS, "both")
+		line.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		line.anchor_top = float(edge[0])
+		line.anchor_bottom = float(edge[0])
+		line.offset_left = 60
+		line.offset_right = -60
+		line.offset_top = float(edge[1])
+		line.offset_bottom = float(edge[1]) + 1.0
+		line.modulate.a = 0.5
+		root.add_child(line)
+	_caption = UI.label("", "Talk")
+	_caption.add_theme_font_size_override("font_size", 10 if ph else 14)
+	_caption.add_theme_constant_override("line_spacing", 0 if ph else 2)
+	_caption.add_theme_color_override("font_color", UI.C_PARCH)
+	_caption.add_theme_constant_override("outline_size", 3)
+	_caption.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
 	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_caption.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	_caption.offset_top = -BAR - 12.0
-	_caption.offset_left = 10
-	_caption.offset_right = -10
-	_caption.offset_bottom = -2
+	_caption.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_caption.anchor_top = 1.0 - (BAR + 14.0) / 180.0
+	_caption.anchor_left = 0.5
+	_caption.anchor_right = 0.5
+	var cw := minf(UI.screen_size(root).x - (24.0 if ph else 80.0), 360.0 if ph else 640.0)
+	_caption.offset_left = -cw * 0.5
+	_caption.offset_right = cw * 0.5
+	_caption.offset_top = 4 if ph else 8
+	_caption.offset_bottom = -4
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	root.add_child(_caption)
-	_title = UI.label("Hollow Hill", "Title")
+	# the game's name, last: Cinzel caps in gold between two lozenges
+	_title = UI.label("Hollow Hill", "Banner")
+	_title.add_theme_font_size_override("font_size", 18 if ph else 34)
 	UI.style_title(_title, UI.C_GOLD, Color("7a4a12"))
-	_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	_title.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_title.add_theme_constant_override("outline_size", 5 if not ph else 3)
+	_title.add_theme_constant_override("shadow_offset_y", 2 if not ph else 1)
+	_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_title.anchor_top = 0.2
+	_title.anchor_bottom = 0.2
+	_title.offset_bottom = 50 if not ph else 26
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_title.offset_top = 36
 	_title.modulate.a = 0.0
 	root.add_child(_title)
+	var loz := UI.lozenge(3.0 if not ph else 2.0, UI.C_GOLD, 60.0 if not ph else 32.0)
+	var lw := loz.custom_minimum_size.x
+	loz.size = loz.custom_minimum_size
+	loz.position = Vector2(roundf(UI.screen_size(root).x * 0.5 - lw * 0.5), 50 if not ph else 26)
+	_title.add_child(loz)             # (fades in with the name)
+	# Skip: a row button with its [Esc] prompt, top-right on a wash (the prompt hides on touch)
+	var ins := UI.safe_insets(root)
+	var corner := HBoxContainer.new()
+	corner.add_theme_constant_override("separation", 2)
+	corner.alignment = BoxContainer.ALIGNMENT_END
+	corner.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	corner.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	corner.offset_right = -(6.0 if ph else 14.0) - ins.z
+	corner.offset_top = (3.0 if ph else 10.0) + ins.y
 	var skip := UI.button("Skip", _finish)
-	skip.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	skip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	skip.custom_minimum_size = Vector2(40, 18)
-	var ins := UI.safe_insets(self)
-	skip.offset_right = -4 - ins.z
-	skip.offset_left = skip.offset_right - 40
-	skip.offset_top = 4
-	skip.offset_bottom = 22
-	root.add_child(skip)
+	skip.name = "Skip"
+	skip.custom_minimum_size = Vector2(36 if ph else 44, 20 if ph else UI.row_h)
+	skip.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	skip.focus_mode = Control.FOCUS_NONE        # (keys: Esc skips, any tap or Enter goes on; no stray focus)
+	var esc := UI.prompt("back")
+	esc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	corner.add_child(esc)
+	corner.add_child(skip)
+	root.add_child(corner)
 	_fade = ColorRect.new()
 	_fade.color = UI.C_VOID
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -176,7 +223,7 @@ func _next() -> void:
 	back.tween_property(_fade, "color:a", 0.0, FADE)
 	_switching = false
 	if G.arg("shots") != "" and G.flag("intro"):
-		await get_tree().create_timer(_len * 0.4).timeout
+		await get_tree().create_timer(_len * (0.92 if _shot == Story.INTRO_SHOTS.size() - 1 else 0.4)).timeout
 		await G.save_shot("intro_%d_%s.png" % [_shot, String(Story.INTRO_SHOTS[_shot]["scene"])])
 		_next.call_deferred()
 
