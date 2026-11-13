@@ -24,7 +24,9 @@ extends RefCounted
 ##            door to one side and one window beside it
 ##   "lift"   px the house stands on (default: the height of the terrace under its front, see
 ##            scripts/hub/view3d_build.gd "terraces"); "style" "sand": a house of the Sands (sandstone
-##            bands and sills, a flat roof behind a parapet, no timber posts, no jetty)
+##            bands and sills, a flat roof behind a parapet, no timber posts, no jetty): "wall" is then
+##            the carved band (hub_bsandwall) that tops each storey of plain brick (hub_bsandbrick)
+##   "storey" px: one storey's height (default: the wall art's own; a house of the Sands 56)
 
 const Kit = preload("res://scripts/hub/arch/kit.gd")
 const WalkLight = preload("res://scripts/fx/walk_light.gd")
@@ -95,9 +97,15 @@ func build(h: Dictionary, walk_top: float) -> void:
 	sand = String(h.get("style", "")) == "sand"
 	stone = Art.tex("hub_bsandcap" if sand else "hub_bstone")
 	beam = Art.tex("hub_bsandcap" if sand else "hub_bbeam")
-	var sh := wall.get_size().y                                     # one storey: the wall art's own height
+	var sh := float(h.get("storey", wall.get_size().y))              # one storey: the wall art's own height
 	var floors := int(h.get("floors", 2 if back <= walk_top + 4.0 else 1))
 	var upper := Art.tex(String(h.get("upper", UPPER.get(wall_id, wall_id))))
+	var band: Texture2D = null                                      # (the Sands: the wall art's carved band tops each storey)
+	if sand:
+		band = wall
+		wall = Art.tex("hub_bsandbrick")
+		upper = wall
+		sh = float(h.get("storey", 56.0))
 	var logs := wall_id.contains("log")
 	var gable := bool(h.get("gable", false)) and not sand
 	_roof_id = String(h.get("roof", "hub_roof_planks"))
@@ -127,8 +135,12 @@ func build(h: Dictionary, walk_top: float) -> void:
 		blk(stone, Vector3(dl - 3, 2.0, cz), Vector3(dr + 3, 4.5, cz + 7))    # the doorstep
 	else:
 		blk(stone, Vector3(dl - 3, 0.0, cz), Vector3(dr + 3, 2.5, cz + 6))    # (on a terrace: only the doorstep)
+	if band != null:
+		_band(band, x0, x1, cz, back, sh)
 	# --- the upper storey: jutting out over a timber band
 	if floors > 1:
+		if band != null:
+			_band(band, x0, x1, front, back, top)
 		blk(beam, Vector3(x0 - 1, sh, back), Vector3(x1 + 1, sh + BAND, front + (2.5 if sand else 1.0)), 0)
 		pan(upper, x0, front, x1, front, sh + BAND, top, Vector3(0, 0, 1))
 		for side: float in [-1.0, 1.0]:
@@ -303,6 +315,15 @@ func _gable_roof(cx: float, w: float, front: float, back: float, top: float, ris
 			pan(win, cx - wz.x * 0.5, front + 0.4, cx + wz.x * 0.5, front + 0.4, y0, y0 + wz.y, Vector3(0, 0, 1), "glass", true)
 			blk(stone, Vector3(cx - wz.x * 0.5 - 1.5, y0 - 2, front), Vector3(cx + wz.x * 0.5 + 1.5, y0, front + 3), 0)
 	blk(beam, Vector3(cx - 2.5, ridge - 1, zb - 1), Vector3(cx + 2.5, ridge + 3, zf + 1), Kit.BOTTOM)          # the ridge beam
+
+
+## The Sands: the top rows of the carved wall art (its coping and blue band) along the top of a storey,
+## laid just proud of the plain brick, on the front and both sides.
+func _band(tex: Texture2D, x0: float, x1: float, zf: float, zb: float, up: float) -> void:
+	var bh := 14.0
+	pan(tex, x0 - 0.3, zf + 0.3, x1 + 0.3, zf + 0.3, up - bh, up, Vector3(0, 0, 1))
+	pan(tex, x0 - 0.3, zf + 0.3, x0 - 0.3, zb, up - bh, up, Vector3(-1, 0, 0))
+	pan(tex, x1 + 0.3, zf + 0.3, x1 + 0.3, zb, up - bh, up, Vector3(1, 0, 0))
 
 
 ## A shop's long awning across the whole ground storey: a sloping slab of `roof` from just under the

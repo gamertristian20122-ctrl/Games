@@ -233,6 +233,19 @@
   ],
   "source": "Pixel Crawler - Castle Environment 0.3/Assets/Tiles.png"
  },
+ "hub_bsandbrick": {
+  "box": [
+   22,
+   212,
+   70,
+   226
+  ],
+  "size": [
+   48,
+   14
+  ],
+  "source": "Pixel Crawler - Desert/Assets/Ground.png"
+ },
  "hub_bsandcap": {
   "box": [
    16,
