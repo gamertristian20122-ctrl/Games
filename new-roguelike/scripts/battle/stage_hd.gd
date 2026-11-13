@@ -22,34 +22,36 @@ const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 
 ## Per stage look (stage.gd LOOKS): how the PC light differs. Missing keys fall back to "forest".
 ##   sun / sun_energy   the key light (the moon at night)      ambient / ambient_energy   the shade
-##   fog / fog_density  the air (volumetric fog)               fog_sun   how much the key light lights the air
+##   fog / fog_density  the air (volumetric fog; fog_aniso how much it scatters forwards)             fog_sun   how much the key light lights the air
 ##   exposure           tone exposure                          sky_top / sky_low / clouds   the sky
 ##   stars              0 = day sky, 1 = night sky with stars and a moon
 ##   wet                how much of the ground is wet (puddles that mirror the lights; 0 = dry)
 ##   top_rim            the cool edge of light along the top of every fighter, and its colour
 ##   fire_boost         fires and glowing stones burn this much hotter than in the flat look
+##   tame               by day: pale fighters (white robes, pale hair) are drawn a little less bright,
+##                      so in the full sun they do not burn white and bloom
 ##   spell              how strong spell light is here (by day less: the sun already fills the picture)
 const LOOK := {
-	"forest": {"sun": Color("ffcf8a"), "sun_energy": 3.6, "ambient": Color("8a7c8e"), "ambient_energy": 0.26,
-		"fog": Color("ffd9a0"), "fog_density": 0.016, "fog_sun": 1.8, "exposure": 1.15,
+	"forest": {"sun": Color("ffcf8a"), "sun_energy": 2.1, "ambient": Color("b09878"), "ambient_energy": 0.34,
+		"fog": Color("ffe2b8"), "fog_density": 0.005, "fog_sun": 0.8, "fog_aniso": 0.2, "exposure": 1.55,
 		"sky_top": Color("4a5a86"), "sky_low": Color("ffc27a"), "clouds": Color("c8906a"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.7},
+		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.7, "tame": 0.8},
 	"forest_night": {"sun": Color("9fb6ff"), "sun_energy": 1.25, "ambient": Color("38487a"), "ambient_energy": 0.30,
 		"fog": Color("6a84c0"), "fog_density": 0.024, "fog_sun": 0.55, "exposure": 1.35,
 		"sky_top": Color("050a18"), "sky_low": Color("16264a"), "clouds": Color("2a3654"), "stars": 1.0,
-		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0},
-	"desert": {"sun": Color("ffe0b0"), "sun_energy": 2.6, "ambient": Color("a89cb4"), "ambient_energy": 0.34,
-		"fog": Color("ffe4c0"), "fog_density": 0.008, "fog_sun": 0.6, "exposure": 1.0,
+		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0, "tame": 0.0},
+	"desert": {"sun": Color("ffe0b0"), "sun_energy": 1.7, "ambient": Color("a89cb4"), "ambient_energy": 0.26,
+		"fog": Color("ffe4c0"), "fog_density": 0.006, "fog_sun": 0.6, "fog_aniso": 0.2, "exposure": 1.45,
 		"sky_top": Color("6a8ac4"), "sky_low": Color("ffd8a0"), "clouds": Color("fff0dc"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.3, Color("fff4dc")], "fire_boost": 1.0, "spell": 0.5},
+		"wet": 0.0, "top_rim": [0.3, Color("fff4dc")], "fire_boost": 1.0, "spell": 0.5, "tame": 0.6},
 	"rock": {"sun": Color("ffb890"), "sun_energy": 1.2, "ambient": Color("6a4a5a"), "ambient_energy": 0.30,
 		"fog": Color("a04a2a"), "fog_density": 0.026, "fog_sun": 0.6, "exposure": 1.3,
 		"sky_top": Color("10070a"), "sky_low": Color("4a1a12"), "clouds": Color("3a1a16"), "stars": 0.3,
-		"wet": 0.25, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0},
+		"wet": 0.25, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0},
 }
 const SPELL_ENERGY := 6.0          ## a spell light at power 1 (the flat look's is 5 + 6 x power, without fog)
 const SPELL_FOG := 1.6             ## how much a spell light glows in the air
-const DOF_AMOUNT := 0.14           ## how strong the blur is far behind and right in front of the fighters
+const DOF_AMOUNT := 0.09           ## how strong the blur is far behind and right in front of the fighters
 const FOCUS_ROOM := 2.6            ## world units of sharp ground kept in front of and behind the fighters
 
 const SKY_CODE := "
@@ -194,7 +196,7 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	e.glow_intensity = 0.5
 	e.glow_strength = 1.0
 	e.glow_bloom = 0.0
-	e.glow_hdr_threshold = 1.0 if num("stars") > 0.5 or num("fire_boost") > 1.5 else 1.25    # (by day only real fire blooms, not white robes in the sun)
+	e.glow_hdr_threshold = 1.0 if num("stars") > 0.5 or num("fire_boost") > 1.5 else 2.2    # (by day only real fire blooms, not white robes in the sun)
 	e.glow_hdr_scale = 2.4
 	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
 	# the air: thin fog that the key light and every spell light really scatter in
@@ -204,7 +206,7 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	e.volumetric_fog_enabled = true
 	e.volumetric_fog_density = num("fog_density")
 	e.volumetric_fog_albedo = look["fog"]
-	e.volumetric_fog_anisotropy = 0.6
+	e.volumetric_fog_anisotropy = float(look.get("fog_aniso", 0.6))     # (by day low: looking into a low sun, strong forward scatter is a wall of haze)
 	e.volumetric_fog_length = 70.0
 	e.volumetric_fog_detail_spread = 1.4
 	e.volumetric_fog_ambient_inject = 0.25
@@ -233,7 +235,7 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	sun.light_energy = num("sun_energy")
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
-	sun.directional_shadow_max_distance = 70.0
+	sun.directional_shadow_max_distance = 60.0
 	sun.directional_shadow_blend_splits = true
 	sun.shadow_bias = 0.04
 	sun.shadow_normal_bias = 0.6
@@ -281,6 +283,7 @@ func fighter(sprite: MeshInstance3D) -> void:
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	var r: Array = look["top_rim"]
 	sprite.call("set_top_rim", float(r[0]), r[1])
+	(sprite.material_override as ShaderMaterial).set_shader_parameter("tame", num("tame"))
 
 
 ## SPELL LIGHT: a real light that flares up on a spot and fades, lighting the ground, the fighters
@@ -423,4 +426,4 @@ func focus(delta: float, people: Array) -> void:
 	attrs.dof_blur_near_distance = _band.x
 	attrs.dof_blur_near_transition = 3.0
 	attrs.dof_blur_far_distance = _band.y
-	attrs.dof_blur_far_transition = 9.0
+	attrs.dof_blur_far_transition = 16.0

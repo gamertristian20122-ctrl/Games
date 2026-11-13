@@ -469,8 +469,10 @@ func _flush() -> void:
 		var node := MultiMeshInstance3D.new()
 		node.multimesh = mm
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		if hd != null and not bool(b["flat"]) and bool(b["cast"]):
-			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON    # HD: real shadows, no flat copies
+		# HD: real shadows instead of flat copies, from the same things that throw a flat one (the far
+		# rows of the wood do not: with the low sun behind them each row would shade the next)
+		if hd != null and not bool(b["flat"]) and bool(b["cast"]) and bool(b["shadow"]):
+			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		add_child(node)
 		if bool(b["shadow"]) and not bool(b["flat"]) and hd == null:
 			var lean := shadow_basis()
