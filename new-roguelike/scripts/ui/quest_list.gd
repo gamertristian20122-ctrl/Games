@@ -11,6 +11,12 @@ const Bosses = preload("res://scripts/data/bosses.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 const WIDTH := 126.0
+## PC (not a phone): the story panel of the places you walk in is small and quiet, so it never
+## covers a quarter of the scene: no heading, letters at a smaller whole multiple of the pixel font
+## (`compact_scale`), a soft shade that fades out to the right instead of a box. On a phone it stays
+## as it was (the owner: text size on the phone is good as it is).
+const PC_WIDTH := 168.0
+const PC_TEXT := 0.72          ## the letters are about this much of their phone size (rounded to whole screen pixels)
 
 var in_camp := false
 var goal_only := false           ## the world map: only where to go next, so the list hides little of the map
@@ -36,7 +42,39 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	if _compact():
+		var shade := Gradient.new()
+		shade.offsets = PackedFloat32Array([0.0, 0.62, 1.0])
+		shade.colors = PackedColorArray([Color(0.03, 0.03, 0.05, 0.62), Color(0.03, 0.03, 0.05, 0.38), Color(0.03, 0.03, 0.05, 0.0)])
+		var grad := GradientTexture2D.new()
+		grad.gradient = shade
+		grad.width = 64
+		grad.height = 4
+		var plate := StyleBoxTexture.new()
+		plate.texture = grad
+		plate.content_margin_left = 4
+		plate.content_margin_right = 14
+		plate.content_margin_top = 2
+		plate.content_margin_bottom = 3
+		add_theme_stylebox_override("panel", plate)
+		get_viewport().size_changed.connect(_fit_scale)
+		_fit_scale()
 	refresh()
+
+
+## The walking places' panel on a PC (see PC_WIDTH).
+func _compact() -> bool:
+	return in_camp and not OS.has_feature("mobile") and not G.flag("touch")
+
+
+## Letters stay crisp: each pixel of the font covers a whole number of screen pixels.
+func _fit_scale() -> void:
+	var cs := get_viewport().get_final_transform().x.x if is_inside_tree() else 1.0
+	if cs <= 0.0:
+		return
+	var px := maxf(2.0, roundf(cs * PC_TEXT))
+	var k := minf(px / cs, 1.0)
+	scale = Vector2(k, k)
 
 
 func _process(delta: float) -> void:
@@ -94,13 +132,19 @@ func refresh() -> void:
 	for c in _box.get_children():
 		_box.remove_child(c)
 		c.queue_free()
-	var head := UI.label("Story" if in_camp and Tale.on() else "Quests", "Small")
-	head.add_theme_color_override("font_color", UI.C_FAINT)
-	_box.add_child(head)
+	var compact := _compact()
+	if not compact:
+		var head := UI.label("Story" if in_camp and Tale.on() else "Quests", "Small")
+		head.add_theme_color_override("font_color", UI.C_FAINT)
+		_box.add_child(head)
 	for line: Array in lines:
 		var lab := UI.label(String(line[0]), "Small")
 		lab.add_theme_color_override("font_color", line[1])
-		lab.custom_minimum_size.x = WIDTH
+		lab.custom_minimum_size.x = PC_WIDTH if compact else WIDTH
+		if compact:
+			# a thin dark outline instead of a box: it reads on bright ground and dark alike
+			lab.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.03, 0.85))
+			lab.add_theme_constant_override("outline_size", 2)
 		lab.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART       # a long line folds, it is never cut off
 		_box.add_child(lab)
 	visible = not lines.is_empty()

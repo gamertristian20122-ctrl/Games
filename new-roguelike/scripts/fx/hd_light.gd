@@ -35,10 +35,11 @@ const HD_SUN_NIGHT := 0.35          ## the moon
 const HD_AMBIENT_DAY := 0.14        ## the shade by day: deep, so the sun reads
 const HD_AMBIENT_NIGHT := 0.16
 const HD_LAMP := 2.8                ## lamps are this much stronger than in the flat look
+const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled this far towards amber (40%)
 const HD_LAMP_REACH := 2.5          ## HD: a lamp's light reaches this many times as far as its 2D picture
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
 const HD_FOG_DAY := 0.0035          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
-const HD_FOG_NIGHT := 0.012         ## ... a little thicker at night (halos round every lamp)
+const HD_FOG_NIGHT := 0.009         ## ... a little thicker at night (halos round every lamp)
 const HD_FOG_LENGTH := 40.0         ## the volumetric fog ends this far from the camera (else a wide view is a sheet of fog)
 const HD_DAPPLE := 1.6             ## how far apart sun and shade patches are (times the grade's "dapple": 0 on open sand)
 const HD_EXPOSURE_DAY := 0.95
@@ -131,6 +132,13 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	env.tonemap_exposure = HD_EXPOSURE_DAY
 	env.tonemap_agx_contrast = 1.35
 	env.tonemap_agx_white = 14.0            # a hot core keeps its hue (gold), it does not go to white at once
+	match G.arg("tone"):                    # test: compare tone curves (--tone=aces|filmic)
+		"aces":
+			env.tonemap_mode = Environment.TONE_MAPPER_ACES
+			env.tonemap_white = 6.0
+		"filmic":
+			env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+			env.tonemap_white = 6.0
 	env.ssao_enabled = true
 	env.ssao_radius = 0.9
 	env.ssao_intensity = 1.8
@@ -159,6 +167,13 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	env.volumetric_fog_detail_spread = 1.6
 	env.volumetric_fog_ambient_inject = 0.02    # the shade does not glow: only the sun and the lamps light the air
 	env.volumetric_fog_sky_affect = 0.0
+	# the ponds mirror what stands round them (screen-space reflections: only the water is smooth
+	# enough to show them, scripts/hub/view3d_water.gd)
+	env.ssr_enabled = true
+	env.ssr_max_steps = 72
+	env.ssr_fade_in = 0.12
+	env.ssr_fade_out = 1.6
+	env.ssr_depth_tolerance = 0.5
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.directional_shadow_max_distance = 90.0
@@ -224,26 +239,28 @@ func build_lamps(place: Dictionary) -> void:
 				flame = v._where_at(foot) + v._stood(Vector2(side, -27.0)) + Vector3(0.0, 0.0, 0.08)
 				three.position = flame + Vector3(0.0, -0.15, 0.45)
 				break
-		three.light_color = two.color
+		var warm := two.color.r > two.color.b
+		# (HD: a warm lamp is AMBER, not a pale cream that the tone curve turns white)
+		var colour := two.color.lerp(HD_LAMP_AMBER, 0.4) if warm and Hd.on() else two.color
+		three.light_color = colour
 		three.omni_range = 64.0 * two.texture_scale * PX * (HD_LAMP_REACH if Hd.on() else LAMP_REACH)
 		three.omni_attenuation = 1.4
 		three.shadow_enabled = false
 		if Hd.on():
-			three.light_volumetric_fog_energy = 1.3      # a halo of lit air round every lamp
+			three.light_volumetric_fog_energy = 0.8      # a halo of lit air round every lamp (more turns the air white)
 			three.light_size = 0.08
 			three.shadow_blur = 1.2
 			three.shadow_bias = 0.08
 			three.shadow_normal_bias = 1.0
 		v._world.add_child(three)
 		lamps.append([two, three])
-		var warm := two.color.r > two.color.b
 		var reach := 64.0 * two.texture_scale * PX * (HD_POOL_REACH if Hd.on() else 0.62)
 		var ground := Vector3(base.x * PX, v.build.height(base), base.y * PX + (0.3 if base == two.position else 0.15))
 		if ground_at != Vector2.INF:
 			ground = Vector3(ground_at.x * PX, v.build.height(ground_at), ground_at.y * PX + 0.2)
-		var pool := WalkLight.pool(ground, reach, two.color)
+		var pool := WalkLight.pool(ground, reach, colour)
 		v._world.add_child(pool)
-		var halo := WalkLight.halo(flame, clampf(reach * 0.55, 0.9, 2.4), two.color)
+		var halo := WalkLight.halo(flame, clampf(reach * 0.55, 0.9, 2.4), colour)
 		v._world.add_child(halo)
 		glows.append([two, pool.material_override, halo.material_override, warm, float(glows.size()) * 2.7])
 
@@ -371,7 +388,7 @@ func sync_light() -> void:
 		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f * (HD_LAMP * lerpf(0.55, 1.0, night) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
-		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.04, 0.7, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.04, 0.55, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
 		# (HD: the bloom and the lit fog make most of the glow; the painted halo only adds a little)
 		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.42, night) * f * (0.3 if Hd.on() else 1.0))
 	RenderingServer.global_shader_parameter_set(&"hh_lamp_on", clampf(0.3 + 1.2 * night, 0.3, 1.0) if outdoor else 1.0)
@@ -461,7 +478,8 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night)
 		var haze: Color = grade.get("haze", Color(1.0, 0.86, 0.62)) if not grade.is_empty() else Color(1.0, 0.86, 0.62)
 		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day)
-		env.volumetric_fog_albedo = haze.lerp(Color(0.55, 0.62, 0.80), night)
+		# (at night the air is a warm grey: the moon makes it blue, a lamp makes it amber, never white)
+		env.volumetric_fog_albedo = haze.lerp(Color(0.78, 0.74, 0.70), night)
 		sun.light_volumetric_fog_energy = lerpf(0.25, 0.7, day)
 		env.tonemap_exposure = lerpf(HD_EXPOSURE_NIGHT, HD_EXPOSURE_DAY, day) * float(grade.get("exposure", 1.0))
 	else:

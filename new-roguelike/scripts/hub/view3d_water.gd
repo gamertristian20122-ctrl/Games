@@ -57,8 +57,9 @@ uniform float day = 1.0;
 uniform vec3 deep : source_color = vec3(0.010, 0.040, 0.062);
 uniform vec3 shallow : source_color = vec3(0.030, 0.140, 0.175);
 uniform float chop = 0.022;              // how steep the ripples are
-uniform float glitter = 5.0;            // how bright the sparkles of the sun and the moon are
+uniform float glitter = 3.5;            // how bright the sparkles of the sun and the moon are
 uniform float streak = 2.2;             // how bright the lamps' streaks are
+uniform float mirror = 0.5;             // how much the water mirrors what stands round it (screen-space reflections)
 varying vec2 at;
 varying float spark;                    // this art pixel is one that sparkles just now
 varying float foam;
@@ -90,18 +91,23 @@ void fragment() {
 	foam = smoothstep(0.86, 0.92, edge) * (1.0 - smoothstep(0.95, 0.98, edge)) * step(0.95, lap + (edge - 0.9) * 3.0);
 	c = mix(c, vec3(0.42, 0.48, 0.48), foam * 0.6);
 	c = mix(c, vec3(0.20, 0.15, 0.09), smoothstep(0.95, 1.0, edge));
-	ALBEDO = c;
-	ROUGHNESS = 1.0;
-	SPECULAR = 0.2;
+	// a MIRROR (the screen-space reflections of the PC look): smooth open water reflects the houses,
+	// people and lamps on the far bank, broken up by the ripples' normals; foam and mud do not.
+	// (A mirror has no colour of its own in the light: the water's own deep colour is in EMISSION.)
+	float open_w = (1.0 - foam) * (1.0 - smoothstep(0.9, 0.97, edge));
+	ALBEDO = mix(c, vec3(mirror), open_w);
+	METALLIC = open_w;
+	ROUGHNESS = mix(1.0, 0.04, open_w);
+	SPECULAR = 0.5;
 	// a handful of art pixels sparkle at any moment, each for a blink
 	float seed = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
-	spark = step(0.965, fract(seed * 7.13 + TIME * (0.35 + seed * 0.5))) * (1.0 - smoothstep(0.88, 0.95, edge));
+	spark = step(0.982, fract(seed * 7.13 + TIME * (0.35 + seed * 0.5))) * (1.0 - smoothstep(0.88, 0.95, edge));
 	// the sky in the water, strongest where we look across it
 	float fres = 0.06 + 0.94 * pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 5.0);
 	// moving crests: thin lines of art pixels where the ripples run highest catch the sky
 	float crest = step(1.20, h0) * (1.0 - step(1.235, h0)) + step(0.80, h0) * (1.0 - step(0.82, h0)) * 0.5;
 	vec3 seen = mix(sky, vec3(0.30, 0.52, 0.62) * dot(sky, vec3(0.333)) * 1.6, 0.45);     // the sky, bluer in the water
-	EMISSION = (seen * (0.05 + 0.6 * fres + 0.45 * crest) * (0.35 + 0.65 * day) + c * 0.9 * day) * (1.0 - foam) * (1.0 - smoothstep(0.95, 1.0, edge));
+	EMISSION = (seen * (0.05 + 0.6 * fres + 0.45 * crest) * (0.35 + 0.65 * day) + c * mix(0.25, 0.9, day)) * (1.0 - foam) * (1.0 - smoothstep(0.95, 1.0, edge));
 	sun_share = sun_at(at);
 }
 void light() {
@@ -111,7 +117,7 @@ void light() {
 	float open = 1.0 - foam;
 	if (LIGHT_IS_DIRECTIONAL) {
 		// the sun's (or the moon's) path: a soft sheen, and in it single pixels that blaze
-		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * (pow(m, 80.0) * 0.3 + smoothstep(0.86, 0.97, m) * spark * glitter);
+		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * (pow(m, 80.0) * 0.3 + smoothstep(0.86, 0.97, m) * spark * glitter * (0.12 + 0.88 * day));
 	} else {
 		// a lamp: a long broken streak towards the camera, its brightest pixels sparkling
 		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * streak * pow(m, 12.0) * (0.6 + 1.4 * spark);

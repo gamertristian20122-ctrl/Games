@@ -351,7 +351,7 @@ func _flush(batches: Dictionary) -> void:
 			var quad := _unit.duplicate() as QuadMesh
 			quad.material = CardShader.card(b["tex"], b["uv"], b["tint"]) if pass_name == "at" else CardShader.shade(build.ground_params, b["tex"], b["uv"])
 			if pass_name == "at":
-				(quad.material as ShaderMaterial).set_shader_parameter("sway", CardShader.sway_of(b["tex"]))
+				CardShader.param(quad.material as ShaderMaterial, "sway", CardShader.sway_of(b["tex"]))
 			var mm := MultiMesh.new()
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.mesh = quad
@@ -418,12 +418,12 @@ func _sync_holder(entry: Dictionary, ysort: Node2D, stamp: int) -> void:
 		var sm: ShaderMaterial = shade.material_override
 		if mine["tex"] != tex:
 			mine["tex"] = tex
-			bm.set_shader_parameter("tex", tex)
+			CardShader.param(bm, "tex", tex)
 			CardShader.set_glow(bm, tex, bool(entry.get("person", false)))
 			sm.set_shader_parameter("tex", tex)
-		bm.set_shader_parameter("uv_rect", card["uv"])
+		CardShader.param(bm, "uv_rect", card["uv"])
 		sm.set_shader_parameter("uv_rect", card["uv"])
-		bm.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+		CardShader.param(bm, "tint", Vector3(tint.r, tint.g, tint.b))
 		body.transform = Transform3D(Basis(card["x"], card["y"], Vector3(0, 0, 1)), foot + (card["at"] as Vector3) + _up * (lift * PX) + Vector3(0.0, 0.0, i * 0.004))
 		shade.transform = _shade_transform(card, foot, lift)
 		if build.has_height and not build.shadow_ok(holder.position, (card["y"] as Vector3).length()):
