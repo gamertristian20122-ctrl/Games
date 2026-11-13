@@ -152,6 +152,7 @@ func build() -> void:
 	area.add_child(_version)
 
 	resized.connect(_fit)
+	area.resized.connect(_fit)          # the safe margin sizes the area a moment after the screen
 	_fit.call_deferred()
 	refresh()
 	UI.pop_in(_column, Vector2(-8, 0) if not _ph else Vector2(8, 0))
@@ -181,7 +182,7 @@ func _process(delta: float) -> void:
 
 
 func _fit() -> void:
-	if not is_instance_valid(_area):
+	if not is_instance_valid(_area) or _area.size.y < 20.0:
 		return
 	var a := _area.size
 	var px := UI.ui_px(self)
