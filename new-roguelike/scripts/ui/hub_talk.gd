@@ -324,6 +324,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _say_why(why: String) -> void:
 	_why.text = why
 	_why.visible = true
+	if is_instance_valid(_box) and _why.get_parent() == _box:
+		for c in _box.get_children():           # (phone: the reason takes the place of the words)
+			if c != _why and (c == _text or c is VBoxContainer):
+				(c as Control).visible = false
 	UI.pop_in(_why, Vector2(0, 2))
 	_place_choices.call_deferred()
 
@@ -373,16 +377,27 @@ func _show_choices() -> void:
 	_row_look(back, row_h, inner_w, fs)
 	back.add_theme_color_override("font_color", UI.C_DIM)
 	col.add_child(back)
-	_why = UI.label("", "Small", inner_w - 8.0)
-	_why.add_theme_font_size_override("font_size", 8 if ph else 10)
-	_why.add_theme_color_override("font_color", UI.C_BAD)
-	_why.visible = false
-	var why_row := MarginContainer.new()
-	why_row.add_theme_constant_override("margin_left", 6 if ph else 8)
-	why_row.add_theme_constant_override("margin_top", 2)
-	why_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	why_row.add_child(_why)
-	col.add_child(why_row)
+	if ph and is_instance_valid(_box):
+		# a phone has no room above the box for a reason line: it takes the box's words instead
+		var tx: float = _text.position.x if is_instance_valid(_text) else 8.0
+		_why = UI.label("", "Small", _box_rect.size.x - tx - 10.0)
+		_why.position = Vector2(tx, _g["text_y"])
+		_why.add_theme_font_size_override("font_size", 9)
+		_why.add_theme_constant_override("line_spacing", 0)
+		_why.add_theme_color_override("font_color", UI.C_BAD)
+		_why.visible = false
+		_box.add_child(_why)
+	else:
+		_why = UI.label("", "Small", inner_w - 8.0)
+		_why.add_theme_font_size_override("font_size", 8 if ph else 10)
+		_why.add_theme_color_override("font_color", UI.C_BAD)
+		_why.visible = false
+		var why_row := MarginContainer.new()
+		why_row.add_theme_constant_override("margin_left", 6 if ph else 8)
+		why_row.add_theme_constant_override("margin_top", 2)
+		why_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		why_row.add_child(_why)
+		col.add_child(why_row)
 	panel.resized.connect(_place_choices)
 	_place_choices.call_deferred()
 	if help != null:          # (during build() the strip is not made yet: help_pairs() says Choose then)
