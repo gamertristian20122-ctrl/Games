@@ -166,7 +166,7 @@ func build(place: Dictionary) -> void:
 		var node := MeshInstance3D.new()
 		node.mesh = plane
 		node.material_override = mat
-		node.position = Vector3(c.x * PX, 0.03 + v.build.height(c), c.y * PX)
+		node.position = Vector3(c.x * PX, 0.03 + v.build.height(c) + float(pond.get("lift", 0.0)) * PX / cos(deg_to_rad(v._pitch)), c.y * PX)
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.layers = WATER_LAYER               # (the HD key pool of light does not mirror in it: a white blaze)
 		v._world.add_child(node)

@@ -137,8 +137,8 @@ func rebuild() -> void:
 		moving[(r["node"] as Node).get_instance_id()] = true
 	var batches := {}
 	for holder in ysort.get_children():
-		if not (holder is Node2D):
-			continue
+		if not (holder is Node2D) or holder.has_meta("no3d"):
+			continue                                # (no3d: the 3D look builds it for real, scripts/hub/arch/sites.gd)
 		if moving.has(holder.get_instance_id()) or _has_animation(holder):
 			_live[holder.get_instance_id()] = {"node": holder, "cards": {}, "person": moving.has(holder.get_instance_id())}
 		else:
@@ -542,7 +542,7 @@ func _sync(_delta: float) -> void:
 	if ysort.get_child_count() != _known:
 		_known = ysort.get_child_count()
 		for holder in ysort.get_children():
-			if holder is Node2D and not _live.has(holder.get_instance_id()) and not _still.has(holder.get_instance_id()):
+			if holder is Node2D and not holder.has_meta("no3d") and not _live.has(holder.get_instance_id()) and not _still.has(holder.get_instance_id()):
 				_live[holder.get_instance_id()] = {"node": holder, "cards": {}, "person": _is_person(holder)}
 	var stamp := Engine.get_process_frames() + 1
 	for id: int in _live.keys():

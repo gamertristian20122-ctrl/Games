@@ -58,6 +58,10 @@ static func get_place(id: String) -> Dictionary:
 	var place := _base_place(id)
 	if id == "dustwatch" or id == "world":
 		_fit_sands(id, place)
+	if id == "dustwatch":
+		# folk round the camp fire on the dais, and two by the trader's awning
+		_extras(place, [["pc_bandit_scout", 292, 296, 1], ["pc_npc_tavern_a", 350, 294, -1], ["pc_royal_priest", 296, 318, 1],
+			["pc_bandit_tracker", 452, 262, -1], ["pc_npc_peasant_a", 466, 276, -1]])
 	# DEPTH (scripts/hub/view3d.gd): where the ground climbs, the hills, the water of each place
 	match id:
 		"elfwood":
@@ -144,13 +148,54 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	t["torches"] = torches
 	t["lights"] = lights
 	_market_town(t)
-	_lanterns(t, [Vector2(760, 310), Vector2(514, 474)])
+	# townsfolk in twos and threes at the shop doors and round the square (they only stand about)
+	_extras(t, [["pc_npc_tavern_b", 196, 186, 1], ["pc_scholar_cataloguer", 212, 190, -1],
+		["pc_npc_peasant_a", 552, 188, 1], ["pc_npc_tavern_a_hold", 568, 186, -1], ["pc_royal_priest", 560, 202, -1],
+		["pc_npc_tavern_a", 734, 188, 1], ["pc_scholar_director", 750, 190, -1],
+		["pc_royal_archer", 438, 230, 1], ["pc_npc_tavern_b_hold", 454, 234, -1],
+		["pc_npc_peasant_a", 372, 392, 1], ["pc_npc_tavern_b", 388, 396, -1]])
+	# (round two's fixer: no lamps on gibbets round the benches; the square is lit by its corner
+	# lamps and the watch-fire)
+	_lanterns(t, [Vector2(760, 310), Vector2(514, 474), Vector2(360, 400), Vector2(600, 400)])
+	# THE FOUNTAIN is built in stone in the 3D look (scripts/hub/arch/sites.gd _fountain): a low
+	# kerb round a basin of water (the "water" row marked "basin"), a short column with a bowl
+	t["fountain"] = {"at": Vector2(480, 322), "rx": 34.0, "rz": 22.0, "high": 7.0}
+	var water: Array = (t.get("water", []) as Array).duplicate()
+	water.append({"at": Vector2(480, 322), "radius": Vector2(30.0, 19.0), "lift": 5.0, "basin": true})
+	t["water"] = water
+	# the pale statue that poured into the mere beside the square's path goes (it stood up as a
+	# white billboard in the middle of the picture); the one at the far end of the mere stays
+	var anims: Array = []
+	for row: Array in t.get("anims", []):
+		if not (String(row[0]) == "hub_gspout" and float(row[1]) == 398.0):
+			anims.append(row)
+	t["anims"] = anims
 	# more kinds of grass and flowers lying in the grass
 	var scatter: Dictionary = (t["scatter"] as Dictionary).duplicate()
 	scatter["hub_gflower"] = [32, 36]
 	scatter["hub_gtuft"] = [4, 60]
 	t["scatter"] = scatter
 	return t
+
+
+## TOWNSFOLK (round two's fixer): people who only stand about, in twos and threes at doors and
+## round a fire, so a street is lived in. Each row: [sprite id, x, y, facing (1 right, -1 left)].
+## They are people in the 3D look (sharp, lit like people, seen through what hides them) but have
+## nothing to say: the knight is never offered a talk with them ("extra": true, hub.gd).
+const EXTRA_HANDS := {"pc_npc": "pc_hand_base_2", "pc_scholar": "pc_hand_library_6", "pc_royal": "pc_hand_castle_17",
+	"pc_bandit": "pc_hand_hideout_17", "pc_elf": "pc_hand_elf_23"}
+static func _extras(t: Dictionary, rows: Array) -> void:
+	var people: Array = t["people"]
+	for i in rows.size():
+		var r: Array = rows[i]
+		var sprite := String(r[0])
+		var hands := ""
+		if not sprite.ends_with("_hold"):
+			for k: String in EXTRA_HANDS:
+				if sprite.begins_with(k):
+					hands = EXTRA_HANDS[k]
+		people.append({"id": "extra_%d" % i, "name": "", "title": "", "sprite": sprite, "hands": hands,
+			"pos": Vector2(r[1], r[2]), "face": int(r[3]), "role": "chat", "text": "", "extra": true})
 
 
 ## WICKMERE AS A MARKET TOWN (set dressing): what a lived-in street leaves about, all of it the

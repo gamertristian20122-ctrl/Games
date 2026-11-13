@@ -259,6 +259,8 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		s.flip_h = p.size() > 5 and bool(p[5])          # (field 5: mirrored)
 		if String(p[0]) == "hub_slantern":
 			_lantern_glass(s)
+		if String(p[0]) == "hub_gfountain" and place.has("fountain") and _view != null:
+			s.set_meta("no3d", true)                # (the 3D look builds the fountain in stone: scripts/hub/arch/sites.gd)
 	# houses and water: the 3D look builds them as real things (scripts/hub/view3d.gd); the old
 	# flat look shows a house as the pack's flat pieces and water as a flat shape
 	if _view == null:
@@ -1118,7 +1120,7 @@ func _update_people(delta: float) -> void:
 		var walking := _stroll(p, delta, d)
 		if p["hands"] != null:
 			(p["hands"] as RefCounted).update(delta, walking, float(p["face"]))
-		if d < best_d:
+		if d < best_d and not bool(p["row"].get("extra", false)):       # (townsfolk who only stand about: nothing to say)
 			best_d = d
 			best = i
 		var mark: Label = p["mark"]
@@ -1152,7 +1154,7 @@ func _stroll(p: Dictionary, delta: float, hero_dist: float) -> bool:
 		if body.animation != "idle":
 			body.play("idle")
 		return false
-	if not bool(p["walks"]):
+	if not bool(p["walks"]) or bool(p["row"].get("extra", false)):
 		return false
 	var goal: Vector2 = p["goal"]
 	if node.position.distance_to(goal) < 1.0:

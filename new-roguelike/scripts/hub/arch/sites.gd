@@ -160,9 +160,49 @@ func _wickmere(place: Dictionary) -> void:
 	_shadow()
 	# the mere: a stone edge round it (open under the bridge), the bridge, the balustrade in front
 	for pond: Dictionary in place.get("water", []):
-		_mere_edge(pond["at"], pond["radius"], 262.0, 18.0)
+		if not bool(pond.get("basin", false)):
+			_mere_edge(pond["at"], pond["radius"], 262.0, 18.0)
 	_shadow()
 	_bridge(262.0, 434.0, 540.0, 26.0)
+	if place.has("fountain"):
+		_fountain(place["fountain"])
+
+
+## THE FOUNTAIN of the square (round two's fixer: the pack draws it from above, and stood up as a
+## card it was a pale tower three heroes tall): a low eight-sided stone kerb round a basin of water
+## (the place's "water" row with "basin": true, raised to the kerb's lip), a short column in the
+## middle with a stone bowl and a spout on top, about one hero tall.
+func _fountain(spec: Dictionary) -> void:
+	var c: Vector2 = spec["at"]
+	var rx := float(spec.get("rx", 34.0))
+	var rz := float(spec.get("rz", 24.0))
+	var high := float(spec.get("high", 7.0))
+	var t := 4.0                                         # the kerb's thickness
+	var ch := 10.0                                       # how much the corners are cut off
+	# the four sides
+	blk(stone, Vector3(c.x - rx + ch, 0, c.y - rz), Vector3(c.x + rx - ch, high, c.y - rz + t))
+	blk(stone, Vector3(c.x - rx + ch, 0, c.y + rz - t), Vector3(c.x + rx - ch, high, c.y + rz))
+	blk(stone, Vector3(c.x - rx, 0, c.y - rz + ch), Vector3(c.x - rx + t, high, c.y + rz - ch))
+	blk(stone, Vector3(c.x + rx - t, 0, c.y - rz + ch), Vector3(c.x + rx, high, c.y + rz - ch))
+	# the cut corners, in two steps each (an eight-sided kerb in blocks)
+	for sx: float in [-1.0, 1.0]:
+		for sz: float in [-1.0, 1.0]:
+			var x0 := c.x + sx * (rx - ch)
+			var z0 := c.y + sz * (rz - ch)
+			for k in 2:
+				var a := ch * (0.5 * k)
+				var bx := x0 + sx * a
+				var bz := z0 + sz * (ch - a - t)
+				blk(stone, Vector3(minf(bx, bx + sx * (ch * 0.5 + 0.5)), 0, minf(bz, bz + sz * t)), Vector3(maxf(bx, bx + sx * (ch * 0.5 + 0.5)), high, maxf(bz, bz + sz * t)))
+	# the coping: a lip a little proud of the kerb along the front
+	blk(stone, Vector3(c.x - rx + ch - 1, high, c.y + rz - t - 0.5), Vector3(c.x + rx - ch + 1, high + 1.5, c.y + rz + 0.5), 0)
+	# the column, its bowl and the spout
+	blk(stone, Vector3(c.x - 4, 0, c.y - 4), Vector3(c.x + 4, 16, c.y + 4))
+	blk(stone, Vector3(c.x - 12, 16, c.y - 9), Vector3(c.x + 12, 20, c.y + 9), 0)
+	blk(stone, Vector3(c.x - 9, 14, c.y - 6), Vector3(c.x + 9, 16, c.y + 6), 0)
+	blk(stone, Vector3(c.x - 2.5, 20, c.y - 2.5), Vector3(c.x + 2.5, 27, c.y + 2.5), 0)
+	blk(stone, Vector3(c.x - 3.5, 27, c.y - 3.5), Vector3(c.x + 3.5, 29, c.y + 3.5), 0)
+	_shadow()
 
 
 ## A garden wall from x0 to x1 with its face at z, a pier at each end.
