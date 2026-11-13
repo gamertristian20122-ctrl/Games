@@ -36,9 +36,9 @@ const GRADES := {
 	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 0.94,
 		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.44, "shafts": 0.45, "motes": 0.5, "dapple": 0.7, "exposure": 1.45, "ambient": 2.2},
 	"deepwood": {"warm": Vector3(1.0, 1.02, 0.94), "shade": Vector3(0.84, 0.96, 1.06), "punch": 1.10, "rich": 0.92,
-		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.48, "shafts": 0.35, "motes": 0.4, "dapple": 0.8, "exposure": 1.5, "ambient": 2.0},
-	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.7, "exposure": 1.25, "ambient": 1.5},
-	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4, "exposure": 1.2},
+		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.48, "shafts": 0.35, "motes": 0.4, "dapple": 0.8, "exposure": 1.8, "ambient": 3.2},
+	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.7, "exposure": 1.45, "ambient": 2.2},
+	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4, "exposure": 1.55, "ambient": 2.4},
 	# golden dawn: the land after its beacon is lit
 	"elfwood:lit": {"warm": Vector3(1.10, 1.01, 0.84), "shade": Vector3(1.02, 0.93, 0.86), "punch": 1.05, "rich": 1.0,
 		"haze": Color(1.0, 0.82, 0.55), "far": 0.30, "rim": 0.42, "shafts": 1.0, "motes": 1.0},

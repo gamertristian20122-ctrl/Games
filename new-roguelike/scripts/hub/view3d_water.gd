@@ -47,7 +47,9 @@ void fragment() {
 ## the sun or the moon as a glittering path of single pixels that sparkle and blaze into the bloom,
 ## each lamp as a broken bright streak on the water between it and the camera (its true mirror
 ## point, so it moves as you walk), and the sky at the far, grazing side (Fresnel). Soft broken
-## foam laps at the bank. Still no art: light and movement only.
+## foam laps at the bank. The open water is a MIRROR (metallic, smooth: the screen-space reflections
+## that scripts/fx/hd_light.gd turns on show the houses, people and lamps of the far bank in it,
+## broken by the ripples; `mirror` is how strong). Still no art: light and movement only.
 const HD_WATER_CODE := "
 shader_type spatial;
 render_mode cull_back;

@@ -10,11 +10,13 @@ extends RefCounted
 ##   sync_light()       every frame: the colour of the day, flicker, windows, beams
 ##   sync_view(...)     every frame, after the camera moved: the last pass and the patches of sun
 ## HD (Forward+ on PC, `Hd.on()`): the same place lit for real: a sun with soft shadow maps
-## (everything standing throws its shadow, houses and trees shade people), warm lamps whose nearest
-## few throw shadows too, AgX tone, SSAO and SSIL, wide bloom over a hot threshold so flames BLAZE,
-## thin volumetric fog that the sun's beams and the lamps' halos really cut through, and the
-## camera's own depth of field: blur far behind the people and in front of them, never ON them
-## (the band in focus is stretched every frame to hold every person in view, `_focus_band`).
+## (everything standing throws its shadow, houses and trees shade people) that is golden by day and
+## sinks low and amber at dusk, amber lamps with a real-light falloff (a hot pool, deep shade round
+## it) whose nearest few throw shadows too, ACES tone, SSAO and SSIL, bloom over a hot threshold so
+## flames BLAZE, thin volumetric fog plus a thicker band of air BEHIND the play (`_build_haze`) that
+## the sun's beams and the lamps' halos cut through, mirror water (SSR), and the camera's own depth
+## of field: blur far behind the people and in front of them, never ON them (the band in focus is
+## stretched every frame to hold every person in view, `_focus_band`).
 ## Without HD (the phone, `--nohd`) everything stays as it was: flat shadows and the blur pass.
 
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
@@ -139,16 +141,15 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 		# the exposure, for the people's shader (scripts/fx/card_shader.gd keeps them from burning white)
 		_exposure_ready = true
 		RenderingServer.global_shader_parameter_add(&"hh_exposure", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 1.0)
-	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	env.tonemap_exposure = HD_EXPOSURE_DAY
-	env.tonemap_agx_contrast = 1.35
-	env.tonemap_agx_white = 14.0            # a hot core keeps its hue (gold), it does not go to white at once
-	# ACES: hot lamps and fires keep their amber and orange far up the curve (AgX greys them to
-	# white), and the shade sinks deep: the blazing look of the reference pictures
+	# ACES: hot lamps and fires keep their amber and orange far up the curve (AgX, round one, greyed
+	# them to white), and the shade sinks deep: the blazing look of the reference pictures
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.tonemap_white = 6.0
-	if G.arg("tone") == "agx":              # test: the round-one tone curve, to compare
+	env.tonemap_exposure = HD_EXPOSURE_DAY
+	if G.arg("tone") == "agx":              # test: round one's tone curve, to compare
 		env.tonemap_mode = Environment.TONE_MAPPER_AGX
+		env.tonemap_agx_contrast = 1.35
+		env.tonemap_agx_white = 14.0
 	env.ssao_enabled = true
 	env.ssao_radius = 0.9
 	env.ssao_intensity = 1.8
