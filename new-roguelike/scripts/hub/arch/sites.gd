@@ -72,9 +72,14 @@ func build(place_id: String, place: Dictionary, the_shade: SurfaceTool) -> void:
 	for row: Dictionary in place.get("bridges", []):
 		_bridge(float(row["x"]), float(row["z0"]), float(row["z1"]), float(row.get("wide", 22.0)), bool(row.get("wood", false)))
 	for row: Dictionary in place.get("near", []):
+		if String(row.get("style", "")) == "sand":
+			_sand_parapet(float(row["z"]), row.get("runs", []), row.get("piers", []))
+			continue
 		_balustrade(float(row["z"]), row.get("runs", []))
 		for pier: Array in row.get("piers", []):
 			_pier(float(pier[0]), float(row["z"]) + 2.0, float(pier[1]))
+	if place.has("portico"):
+		_portico(place["portico"])
 	# (round three) a harbour: the sunk basin's quay, a jetty, a moored boat, coils of rope
 	for pond: Dictionary in place.get("water", []):
 		if bool(pond.get("quay", false)):
@@ -892,3 +897,88 @@ func _coil(at: Vector2) -> void:
 			kit.poly(rope, [p(i0.x, y1, i0.y), p(i1.x, y1, i1.y), p(e1.x, y1, e1.y), p(e0.x, y1, e0.y)], Vector3.UP)
 	kit.tint = Color.WHITE
 	_shadow()
+
+
+# ------------------------------------------------------------------ the Sunwell (round three)
+## A PORTICO of the Sands along the back of a court ("portico": {"x0", "x1", "z" the front of its
+## columns, "deep", "tall" the columns, "cols" how many, "door" an Art id for the opening in its back
+## wall, "banners"}): a stepped stylobate, square columns of sandstone courses with carved bases and
+## capitals, the carved blue band of the Sands as its entablature under a cornice, a back wall with the
+## doorway in the middle and banners between the columns. It stands where nobody walks (behind the
+## walk's top edge); the ground may climb behind it.
+func _portico(spec: Dictionary) -> void:
+	var brick := Art.tex("hub_bsandbrick")
+	var band := Art.tex("hub_bsandwall")
+	var cap := Art.tex("hub_bsandcap")
+	var x0 := float(spec["x0"])
+	var x1 := float(spec["x1"])
+	var z := float(spec["z"])
+	var deep := float(spec.get("deep", 30.0))
+	var tall := float(spec.get("tall", 56.0))
+	var cols := int(spec.get("cols", 7))
+	var zb := z - deep
+	var foot := 6.0
+	# the stylobate and two steps along its front
+	blk(cap, Vector3(x0 - 6, -4.0, zb - 2.0), Vector3(x1 + 6, foot, z + 5.0), Kit.BOTTOM)
+	blk(cap, Vector3(x0 - 9, -2.0, z + 5.0), Vector3(x1 + 9, foot - 2.5, z + 9.0), Kit.BOTTOM | Kit.BACK)
+	blk(cap, Vector3(x0 - 12, -2.0, z + 9.0), Vector3(x1 + 12, foot - 4.5, z + 13.0), Kit.BOTTOM | Kit.BACK)
+	# the back wall, its doorway, banners between the columns
+	var top := foot + tall
+	blk(brick, Vector3(x0, foot, zb), Vector3(x1, top, zb + 5.0), Kit.BOTTOM)
+	for side: float in [-1.0, 1.0]:
+		var xs := x0 if side < 0.0 else x1
+		blk(brick, Vector3(xs - 4.0, foot, zb), Vector3(xs + 4.0, top, z - 2.0), Kit.BOTTOM)          # the end walls
+	var door_id := String(spec.get("door", ""))
+	var cx := (x0 + x1) * 0.5
+	if door_id != "":
+		var door := Art.tex(door_id)
+		var ds := door.get_size()
+		kit.panel(door, p(cx - ds.x * 0.5, 0, zb + 5.3), p(cx + ds.x * 0.5, 0, zb + 5.3), foot * PX * vs, (foot + ds.y) * PX * vs, Vector3(0, 0, 1), "solid", true)
+	var step := (x1 - x0) / float(cols - 1)
+	if bool(spec.get("banners", true)):
+		var ban := Art.tex("hub_cbanner_0")
+		var bs := ban.get_size()
+		for i in cols - 1:
+			var bx := x0 + step * (i + 0.5)
+			if absf(bx - cx) < 40.0:
+				continue
+			kit.panel(ban, p(bx - bs.x * 0.5, 0, zb + 5.4), p(bx + bs.x * 0.5, 0, zb + 5.4), (top - 6.0 - bs.y) * PX * vs, (top - 6.0) * PX * vs, Vector3(0, 0, 1), "solid", true)
+	# the columns
+	for i in cols:
+		var x := x0 + step * i
+		blk(cap, Vector3(x - 6.0, foot, z - 7.0), Vector3(x + 6.0, foot + 4.0, z + 3.0), Kit.BOTTOM)          # the base
+		blk(brick, Vector3(x - 4.0, foot + 4.0, z - 5.0), Vector3(x + 4.0, top - 4.0, z + 1.0), Kit.BOTTOM | Kit.TOP)
+		blk(cap, Vector3(x - 6.5, top - 4.0, z - 7.5), Vector3(x + 6.5, top, z + 3.5), Kit.BOTTOM)          # the capital
+	# the entablature (the carved blue band), a cornice over it, a flat roof back to the wall
+	var bh := 14.0
+	blk(band, Vector3(x0 - 7.0, top, zb), Vector3(x1 + 7.0, top + bh, z + 4.0), Kit.BOTTOM, cap)
+	blk(cap, Vector3(x0 - 9.0, top + bh, zb - 2.0), Vector3(x1 + 9.0, top + bh + 3.0, z + 6.0), Kit.BOTTOM)
+	var x := x0 - 6.0
+	while x + 6.0 <= x1 + 7.0:
+		blk(cap, Vector3(x, top + bh + 3.0, z + 2.0), Vector3(x + 6.0, top + bh + 7.0, z + 6.0), Kit.BOTTOM)     # a crest of merlons
+		x += 13.0
+	_shadow()
+
+
+## A low parapet of the Sands along the near edge ("near" with "style": "sand"): sandstone courses
+## under a coping, square piers with a ball, where the camera looks over it into the court.
+func _sand_parapet(z: float, runs: Array, piers: Array) -> void:
+	var brick := Art.tex("hub_bsandbrick")
+	var cap := Art.tex("hub_bsandcap")
+	for r: Array in runs:
+		var x0 := float(r[0])
+		var x1 := float(r[1])
+		blk(brick, Vector3(x0, 0, z - 7), Vector3(x1, 12, z), Kit.BOTTOM)
+		blk(cap, Vector3(x0 - 1, 12, z - 8), Vector3(x1 + 1, 15, z + 1), Kit.BOTTOM)
+		var x := x0
+		while x <= x1 + 0.5:
+			blk(cap, Vector3(x - 4, 0, z - 9), Vector3(x + 4, 18, z + 2), Kit.BOTTOM)
+			x += maxf(30.0, (x1 - x0) / maxf(1.0, round((x1 - x0) / 48.0)))
+		_shadow()
+	for pier: Array in piers:
+		var px_ := float(pier[0])
+		var tall := float(pier[1])
+		blk(brick, Vector3(px_ - 7, 0, z - 13), Vector3(px_ + 7, tall, z + 1), Kit.BOTTOM)
+		blk(cap, Vector3(px_ - 9, tall, z - 15), Vector3(px_ + 9, tall + 3, z + 3), Kit.BOTTOM)
+		blk(cap, Vector3(px_ - 4, tall + 3, z - 10), Vector3(px_ + 4, tall + 9, z - 2), Kit.BOTTOM)
+		_shadow()

@@ -689,7 +689,7 @@ static func suncourt() -> Dictionary:
 		lights.append([Vector2(280, 180), Color(0.5, 0.6, 1.0), 1.2, 0.35])
 	if held:
 		lights.append([Vector2(206, 250), Color(1.0, 0.9, 0.62), 1.6, 0.9])     # the shard in her fist
-	var forest := {"top_gaps": [], "behind": [], "open": [Rect2(220, 390, 120, 90)],
+	var forest := {"top_gaps": [], "behind": [], "open": [Rect2(220, 390, 120, 90), Rect2(-60, 396, 680, 90), Rect2(120, 30, 320, 80)],
 		"big": ["hub_dstone_0", "hub_obelisk_2", "hub_dstone_1", "hub_tusk_1", "hub_dpillar_3", "hub_dbush_0"],
 		"side": ["hub_dpillar_0", "hub_dstone_1", "hub_dpillar_2", "hub_cactus_3"],
 		"low": ["hub_dshrub", "hub_dbush_2", "hub_dpot_0", "hub_dstone_2", "hub_dpot_1", "hub_dbush_2"],
@@ -698,13 +698,26 @@ static func suncourt() -> Dictionary:
 		"name": "The Sunwell", "size": Vector2(560, 420), "outdoor": true, "walk": Rect2(30, 110, 500, 280), "spawn": Vector2(280, 376),
 		"ground": "hub_sand", "tint": Color(1.0, 0.93, 0.80) if glow else Color(0.64, 0.68, 0.92),
 		"rise": {"from": 100.0, "over": 80.0, "height": 34.0},
-		"floor": [["hub_paving", Rect2(184, 144, 192, 160)]],
-		"terraces": [{"rect": Rect2(184, 144, 192, 160), "high": 6.0, "steps": [[280.0, 60.0]], "face": "hub_bsandcap", "top": "hub_paving"}],     # (round two: a dais)
-		"props": [["hub_obelisk_0", 150, 186, 12, 2], ["hub_obelisk_1", 410, 186, 12, 2], ["hub_obelisk_2", 96, 330, 12, 2], ["hub_obelisk_2", 464, 330, 12, 2],
-			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_3", 390, 290, 6, 2],
-			["hub_dpot_0", 230, 316, 5, 1], ["hub_dpot_1", 330, 318, 4, 1], ["hub_dchest", 448, 226, 10, 2], ["hub_dpot_1", 470, 236, 4, 1],
+		"floor": [["hub_paving", Rect2(184, 144, 192, 160)], ["hub_paving", Rect2(250, 304, 60, 100)]],
+		# (round three) the beacon on a court of three tiers; a paved way from the road up to it between
+		# pairs of obelisks; a portico of columns across the back (scripts/hub/arch/sites.gd _portico)
+		"terraces": [{"rect": Rect2(184, 144, 192, 160), "high": 6.0, "steps": [[280.0, 60.0]], "face": "hub_bsandcap", "top": "hub_paving"},
+			{"rect": Rect2(220, 154, 120, 88), "high": 12.0, "steps": [[280.0, 40.0]], "face": "hub_bsandcap", "top": "hub_paving"},
+			{"rect": Rect2(250, 164, 60, 42), "high": 18.0, "steps": [[280.0, 24.0]], "face": "hub_bsandcap", "top": "hub_paving"}],
+		"portico": {"x0": 120.0, "x1": 440.0, "z": 102.0, "deep": 24.0, "tall": 54.0, "cols": 9, "door": "hub_ddoor"},
+		"tour": [Vector2(280, 372), Vector2(300, 252)],
+		"near": [{"z": 426.0, "style": "sand", "runs": [[-40.0, 226.0], [334.0, 600.0]], "piers": [[236.0, 26.0], [324.0, 26.0]]}],
+		"decals": [["hub_sripple_2", 70, 270], ["hub_sripple_3", 470, 280], ["hub_sripple_1", 120, 390], ["hub_sripple_4", 440, 392]],
+		"props": [["hub_obelisk_0", 150, 186, 12, 2], ["hub_obelisk_1", 410, 186, 12, 2], ["hub_obelisk_2", 236, 340, 10, 2], ["hub_obelisk_2", 324, 340, 10, 2],
+			["hub_dpillar_0", 196, 150, 6, 2], ["hub_dpillar_1", 364, 150, 6, 2], ["hub_dpillar_2", 170, 290, 6, 2], ["hub_dpillar_2", 390, 290, 6, 2],
+			["hub_dpot_0", 222, 360, 5, 1], ["hub_dpot_1", 338, 362, 4, 1], ["hub_dchest", 448, 226, 10, 2], ["hub_dpot_1", 470, 236, 4, 1],
 			["hub_cactus_4", 70, 214, 8, 2], ["hub_cactus_3", 500, 214, 6, 2], ["hub_dtree_1", 74, 372, 5, 2], ["hub_dbush_1", 486, 372, 8, 3],
 			["hub_tusk_2", 120, 150, 6, 2],
+			# broken columns half sunk in the sand at the court's sides
+			["hub_dpillar_3", 100, 300, 6, 3], ["hub_dpillar_3", 462, 306, 6, 3], ["hub_dblock_1", 112, 308, 0, 1], ["hub_dblock_3", 450, 314, 0, 1],
+			["hub_dpillar_3", 62, 160, 6, 3], ["hub_dblock_0", 508, 166, 0, 1],
+			# urns along the parapet, past the near edge
+			["hub_dpot_0", 150, 432, 0, 1], ["hub_dpot_1", 196, 434, 0, 1], ["hub_dpot_0", 372, 434, 0, 1], ["hub_dpot_1", 420, 432, 0, 1],
 			# the beacon: a great stone with the fire bowl on top of it
 			["hub_dstone_0", 280, 190, 16, 3]],
 		"beacon": {"pos": Vector2(280, 186), "lit": glow, "lift": 24.0},
