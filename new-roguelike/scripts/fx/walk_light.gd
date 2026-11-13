@@ -336,8 +336,8 @@ static func halo(at: Vector3, size: float, colour: Color) -> MeshInstance3D:
 	mat.set_shader_parameter("colour", Vector3(colour.r, colour.g, colour.b))
 	if Hd.on():
 		# (HD: a deeper orange and softer, so the halo round a lamp reads amber, never white)
-		mat.set_shader_parameter("colour", Vector3(colour.r, colour.g * 0.72, colour.b * 0.45))
-		mat.set_shader_parameter("gain", 5.0)
+		mat.set_shader_parameter("colour", Vector3(colour.r, colour.g * 0.62, colour.b * 0.32))
+		mat.set_shader_parameter("gain", 3.4)
 	mat.render_priority = 6
 	var q := QuadMesh.new()
 	q.size = Vector2.ONE

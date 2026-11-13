@@ -51,6 +51,7 @@ const SOLID_BODY := Sprite3.SUN_PART + """
 uniform sampler2D tex : source_color, filter_nearest, repeat_enable;
 uniform float shine = 0.0;
 uniform float glass = 0.0;
+uniform float lamp_take = 1.0;          // how much lamplight it takes (a street lamp's own iron: little, so it stays dark round its glow)
 uniform vec3 glow_col : source_color = vec3(1.0, 0.64, 0.30);
 varying vec3 wn;
 varying vec2 foot;
@@ -87,7 +88,7 @@ void light() {
 		float bounce = 0.11 * (0.65 - 0.35 * ndl);
 		DIFFUSE_LIGHT += LIGHT_COLOR / PI * sun_share * (ATTENUATION * clamp(ndl * 0.75 + 0.25, 0.0, 1.0) + bounce);
 	} else {
-		DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * clamp(ndl * 0.85 + 0.2, 0.0, 1.05);
+		DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * clamp(ndl * 0.85 + 0.2, 0.0, 1.05) * lamp_take;
 	}
 	// glints of the lamps and the sun on window glass
 	vec3 hv = normalize(VIEW + LIGHT);
@@ -330,6 +331,8 @@ func build_houses(place: Dictionary) -> void:
 		if String(row[2]) == "glass":
 			mat.set_shader_parameter("glass", 1.0)
 			window_mats.append(mat)
+		if row[1] == Sites._iron:
+			mat.set_shader_parameter("lamp_take", 0.15)
 		var node := MeshInstance3D.new()
 		node.mesh = row[0]
 		node.material_override = mat

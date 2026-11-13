@@ -177,6 +177,24 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	# THE FOUNTAIN is built in stone in the 3D look (scripts/hub/arch/sites.gd _fountain): a low
 	# kerb round a basin of water (the "water" row marked "basin"), a short column with a bowl
 	t["fountain"] = {"at": Vector2(480, 322), "rx": 34.0, "rz": 22.0, "high": 7.0}
+	# and every lantern of the town is an iron street lamp in the 3D look (sites.gd _iron_lamp), not
+	# the pack's lantern on a timber arm
+	t["iron_lamps"] = true
+	# (the bunting hung from the top of the timber posts: it hangs from the iron lamps' caps now, which
+	# stand under where the lanterns hung)
+	var feet := {}
+	for row: Array in t["props"]:
+		if String(row[0]) == "hub_slantern":
+			feet[Vector2(row[1], row[2])] = -15.0 if (row.size() > 5 and bool(row[5])) else 15.0
+	var bunting: Array = []
+	for row: Array in t.get("bunting", []):
+		var r := row.duplicate()
+		for k in 2:
+			if feet.has(r[k]):
+				r[k] = (r[k] as Vector2) + Vector2(float(feet[r[k]]), 0.0)
+				r[2] = 34.0
+		bunting.append(r)
+	t["bunting"] = bunting
 	var water: Array = (t.get("water", []) as Array).duplicate()
 	water.append({"at": Vector2(480, 322), "radius": Vector2(30.0, 19.0), "lift": 5.0, "basin": true})
 	t["water"] = water

@@ -75,6 +75,10 @@ func build(place_id: String, place: Dictionary, the_shade: SurfaceTool) -> void:
 		_balustrade(float(row["z"]), row.get("runs", []))
 		for pier: Array in row.get("piers", []):
 			_pier(float(pier[0]), float(row["z"]) + 2.0, float(pier[1]))
+	if bool(place.get("iron_lamps", false)):
+		for row: Array in place.get("props", []):
+			if String(row[0]) == "hub_slantern":
+				_iron_lamp(Vector2(row[1], row[2]), row.size() > 5 and bool(row[5]))
 	match place_id:
 		"village":
 			_wickmere(place)
@@ -166,6 +170,32 @@ func _wickmere(place: Dictionary) -> void:
 	_bridge(262.0, 434.0, 540.0, 26.0)
 	if place.has("fountain"):
 		_fountain(place["fountain"])
+
+
+## AN IRON STREET LAMP (round two's fixer: the pack's lantern hangs from a timber arm, and fourteen
+## of them round a town square read as gallows): a slim dark iron post on a stone foot, straight
+## under the lantern's glass (hub.gd lays the glowing pane where the pack's lantern hung, 15 px to
+## the side and about 27 to 32 px up; the light is there too), a four-barred cage round the pane
+## and a peaked cap with a finial. `foot` is the pack lantern's foot spot, `flip` its mirroring.
+## Plain dark iron (one flat colour made by code) and the pack's stone.
+static var _iron: ImageTexture
+func _iron_lamp(foot: Vector2, flip: bool) -> void:
+	if _iron == null:
+		var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+		img.fill(Color("26242a"))
+		img.set_pixel(0, 0, Color("34313a"))
+		_iron = ImageTexture.create_from_image(img)
+	var x := foot.x + (-15.0 if flip else 15.0)
+	var z := foot.y
+	blk(stone, Vector3(x - 2.5, 0, z - 2.5), Vector3(x + 2.5, 3, z + 0.5))              # the stone foot
+	blk(_iron, Vector3(x - 1.0, 3, z - 1.5), Vector3(x + 1.0, 25, z - 0.5))             # the post
+	blk(_iron, Vector3(x - 3.5, 25, z - 3.0), Vector3(x + 3.5, 26.5, z + 1.0))          # the cage's floor
+	for dx: float in [-3.5, 2.5]:
+		blk(_iron, Vector3(x + dx, 26.5, z - 0.6), Vector3(x + dx + 1.0, 33, z + 0.4), 0)   # its bars, either side of the pane
+	blk(_iron, Vector3(x - 4.0, 33, z - 3.5), Vector3(x + 4.0, 34.5, z + 1.5), 0)       # the cap
+	blk(_iron, Vector3(x - 2.5, 34.5, z - 2.5), Vector3(x + 2.5, 36, z + 0.5), 0)
+	blk(_iron, Vector3(x - 0.5, 36, z - 1.5), Vector3(x + 0.5, 38.5, z - 0.5), 0)       # the finial
+	_shadow()
 
 
 ## THE FOUNTAIN of the square (round two's fixer: the pack draws it from above, and stood up as a

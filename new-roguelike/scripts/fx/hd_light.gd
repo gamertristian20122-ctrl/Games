@@ -458,7 +458,7 @@ func sync_light() -> void:
 			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
-		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.36, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.26, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
 		# (HD: the painted halo is a deep orange, so it carries the glow round a flame: the bloom of a
 		# light bright enough to bloom on its own comes out white)
 		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.03, 0.42, night) * f)

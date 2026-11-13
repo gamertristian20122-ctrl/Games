@@ -259,6 +259,8 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		s.flip_h = p.size() > 5 and bool(p[5])          # (field 5: mirrored)
 		if String(p[0]) == "hub_slantern":
 			_lantern_glass(s)
+			if bool(place.get("iron_lamps", false)) and _view != null:
+				s.set_meta("no3d", true)            # (the 3D look stands an iron street lamp there: scripts/hub/arch/sites.gd)
 		if String(p[0]) == "hub_gfountain" and place.has("fountain") and _view != null:
 			s.set_meta("no3d", true)                # (the 3D look builds the fountain in stone: scripts/hub/arch/sites.gd)
 	# houses and water: the 3D look builds them as real things (scripts/hub/view3d.gd); the old
