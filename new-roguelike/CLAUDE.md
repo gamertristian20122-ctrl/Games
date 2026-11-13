@@ -17,7 +17,7 @@ forward, and do the light blazing that you see in the photos."
   behind the play area and things between the camera and the play area.
 - Light should BLAZE: hot lamp and fire cores, warm pools on the ground, deep shade round them.
 - Same KIND of look as the references, never their characters, names, maps or UI. Still no AI art/audio.
-- See v0.25.0 for how the HD look is built.
+- See v0.25.0 for how the HD look is built, and v0.26.0 for fights and the next plan (the demo).
 
 ## Direction (set by the owner on 11 Nov 2026 — this overrules older sections below)
 The game is now a **story adventure in the spirit of old 2D adventure games**, not an endless roguelike:
@@ -1345,6 +1345,97 @@ lighting, composition and defects 5/10 each BEFORE round two's fixer (round one:
   gl_compatibility battle camera cuts the boss's head; all tuning on software Vulkan, never a real GPU.
 - **Steam "no AI":** unchanged rule. Art is the purchased packs + human-made CC0/CC-BY; light and geometry
   are code. The story words in tale.gd were written with AI help: the owner rewrites or discloses them.
+
+## v0.26.0 (13 Nov 2026): the HD look round three, and fights that move
+The owner: "make good fighting animations and good fighting graphics". Round three: four specialists
+(places, light, fight animation, fight graphics), a merge, three judges (look 5.5, battle 5.5, defects 5),
+and a fixer. Rules and battle numbers are unchanged. All tuning is still on software Vulkan only.
+
+**Places**
+- Wickmere harbour (south-west, where the mere was): a sunk stone basin with a quay wall, coping, bollards
+  and steps; a plank jetty you can walk on; a code-built moored boat (hull, wale, mast, furled sail, stays,
+  stern lantern); quay lamps; cargo and rope coils.
+  - Water row keys `"quay": true`, `"depth"`, `"lift"` (= depth - 8), `"stops"`, `"steps"`, `"bollards"`.
+    view3d_build.gd `quay_dip()` sinks the ground inside the wall only under the coping. hub.gd uses the
+    row's own `"stops"` instead of the automatic ones (they made invisible walls round the curved quay).
+  - places.gd `_harbour()` builds it; `quay_y(x, pad)` gives the wall's north edge.
+- House rows: `"tint"`, `"timber"`, `"roof_tint"`, `"bay"`, `"frame"`, `"lamp"`, `"stair"`, `"chimney_dx"`,
+  `"eave"`. Tints must be strong: the HD grade greys colour in shade. `kit.tint` multiplies in the SOLID
+  shader; always set it back to white.
+- Place keys: `"decks"`, `"jetty"`, `"boat"` (with `"free"` freeboard), `"coils"`, `"portico"`,
+  `"near"` rows with `"style": "sand"`, `"hearths"`, `"rugs"`, `"canopies"`, side-on `"bridges"` with
+  `"across": true`.
+- The Sunwell has a sandstone portico, a three-tier court, obelisk gate and parapet. Dustwatch has a dais
+  round the fire with rugs and a striped shade. The Elfwood footbridge crosses a stream side-on.
+
+**Light** (hd_light.gd, walk_light.gd, view3d_water.gd)
+- Lamp columns in the water: `water.sync(day, sky, lamps)` feeds `lamp_pos[8]`/`lamp_col[8]`.
+  `streak` 0.35 (higher makes white blobs). HD water sits 0.05 above the ground, over the lamp pools.
+- New GRADES keys `blue`, `fog`, `lamps`, `bounce`, `moon`, `lean` (a Vector3 sun lean; only float,
+  Vector3 and Color keys survive the blend). Each key must also exist in `default:night`.
+  New rows `village:night`, `dustwatch:night`, `suncourt:night`.
+- HD reads the true time of day (ignoring the place's `tint`) and blends grades by sqrt(day).
+- Lamps: `HD_LAMP_AMBER`, `HD_LAMP_REACH` 2.2, `HD_FIRE_REACH` 4.6, `HD_LAMP_DECAY` 2.0, fog energy 0.3.
+  Iron lamp pane 5x8 at `IRON_PANE_Y`. Moon shadows at 30%.
+- Lesson: the "milky" Sands came from volumetric fog lit by many lamps on pale sand plus orange SSIL
+  bounce, not from the tone curve.
+- Test flag `--pondlamps` puts three lamps on every pond's far bank.
+
+**Fight animation** (anim_moves.gd, anim_actor.gd, anim_trail.gd, anim_death.gd, anim_numbers.gd)
+- Wind-ups, dashes, sword arcs, hit-stop by damage, knock-back, pixel-shatter deaths, popping numbers,
+  hold Space to fast-forward, victory hops.
+- battle.gd `impact(e, opts)` is the ONE place a blow lands (opts "from", "part"/"parts", "fx", "launch").
+- Move a fighter's picture only through anim_actor numbers (`offset`, `kick`, `lift`, `squash`, `lean`,
+  `breath`), never by tweening node position/scale, or two tweens fight. `SQUASH_CAP` 0.06.
+- Unit keys from `_place`: "actor", "style", "colour", "sword", "blade", "hands".
+- Test flags `--animend`, `--animmana`, `--animfrail`, `--animplan=attack,slam,lunge`.
+- The packs have attack sheets only for bats and the ogre boss. Everyone else's attacks are code-moved
+  idle/run/hit/death poses plus code-drawn arcs.
+
+**Fight graphics** (fx_impact.gd, stage.gd, stage_hd.gd, FxKit)
+- Deep spell colours, streak sparks, element impacts (blade, fire, frost, storm, sun, wisps), dust,
+  ground marks. Hooks: battle.gd `_hit` → `stage.burst(..., element)` → `stage.impact`;
+  anim_moves `dust()` → `stage.dust`; slam and boss crash → `stage.flash`.
+- A shader uniform given a Vector3 is NOT converted from sRGB (only a Color is): use `FxKit.deep()`.
+- Under AgX, stacked bright additive orange goes peach: keep heat about 1.5-3.5 and let bloom blaze.
+- Big spell lights use `light_cull_mask` with `stage.FIGHTER_LAYER`: full light on the ground, 0.3x on
+  fighters (full light makes them flat and pastel).
+- HD FLOOD RULE: nothing white-hot may cover a fighter. Hit flash lifts toward white by half and keeps
+  the ink outline; flashes end on real time (`_later(..., real=true)`); sword trails are a thin crescent;
+  `tell()` uses `set_tint_flash` (dark red with a rim) instead of a pale flash.
+- `stage.fit_fov()` widens the battle camera on screens narrower than 2.22:1.
+
+**Tests and tools**
+- SHOT TIMING TRAP: software rendering runs at about 1 fps, so `--spellwait` shots catch only a frame or
+  two. Put `--fixed-fps 24` before `--` for spell shots.
+- Movies: `godot --path . --rendering-method forward_plus --rendering-driver vulkan --resolution 1280x576
+  --write-movie DIR/f.png --fixed-fps 20 --quit-after 190 -- --battle=story:deepwood --autobattle
+  --nosave --animmana --seed=5 --animplan=attack,slam,lunge`. Scan EVERY frame for bright pixels
+  (L ≥ 235) instead of trusting contact sheets. The movie maker crops the right edge.
+- `tools/shot.sh` waits up to 700 s (`SHOT_TIMEOUT`). `Sprite3.MAX_PEOPLE` is 32. People cards write
+  stencil 1, so the see-through copy shows only through scenery, not through other people.
+- Multi-line lambdas ending in `)` inside `tween_callback(...)` break the parse: use a method + `.bind()`.
+- Checks at the end: CHECK PASSED; `--uitour=tale` 28/28.
+
+**Limits left**
+- Never checked on a real GPU. Blows still double the pale pixels round fighters (mostly lit ground).
+- Village night shade is not fully blue; the Sands are still very orange; people at the frame edges in
+  Dustwatch are still soft (cause unknown).
+- Harbour: no open sea or horizon. Elfwood pond shows a white blob under the bridge lantern. The Sunwell's
+  beacon is not a light source.
+- The jump attack's landing flash was never seen in a render. The gl_compatibility camera can still cut
+  the boss's head on some screens.
+
+## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
+The owner wants grant/publisher money ($30-50k). Plan, in order:
+1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.
+2. A big GUI upgrade: menus, battle panel, health bars, story box, title screen, in the HD look.
+3. Polish and bug-hunt the demo slice only; check it on a real GPU PC.
+4. Trailer (60-90 s, recorded on a real PC), a ~10-slide pitch deck, a Steam page for wishlists.
+- The owner may later port to Unreal (a grant may ask). That is a full rewrite (about 43,000 lines of
+  GDScript); the art, audio, story and rules carry over. Check the Pixel Crawler licence allows any engine.
+- The story text is AI-written: the owner should rewrite it (at least the demo part) before Steam or
+  publishers.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
