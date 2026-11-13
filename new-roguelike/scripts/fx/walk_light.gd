@@ -10,6 +10,8 @@ extends RefCounted
 ## One world unit is 16 art pixels. Things drawn with blending use render_priority above 0 so the
 ## last pass does not hide them (scripts/battle/stage.gd, lesson 3).
 
+const Hd = preload("res://scripts/fx/hd.gd")
+
 ## The look of each land. Keys:
 ##   warm / shade   what bright / dark parts are tinted by     punch  contrast (1 = as painted)
 ##   rich           colour strength (1 = as painted)            haze   the colour of distance
@@ -238,7 +240,8 @@ static func _shader(which: String) -> Shader:
 		"halo":
 			if _halo_shader == null:
 				_halo_shader = Shader.new()
-				_halo_shader.code = HALO_CODE
+				# (HD: a glow is hidden by what stands in front of it: no lamp shining through a house)
+				_halo_shader.code = HALO_CODE.replace(", depth_test_disabled", "") if Hd.on() else HALO_CODE
 			return _halo_shader
 	if _shaft_shader == null:
 		_shaft_shader = Shader.new()

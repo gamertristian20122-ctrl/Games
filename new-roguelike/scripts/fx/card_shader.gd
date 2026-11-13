@@ -181,6 +181,8 @@ void fragment() {
 	AO_LIGHT_AFFECT = 0.2;
 #ifdef HERO
 	col = max((col - 0.16) * pop + 0.16, vec3(0.0));
+	// pale robes, faces and bandages are held under the bloom's threshold (never a white ghost)
+	col *= 1.0 / (1.0 + max(lum(col) - 0.62, 0.0) * 1.2);
 	// the top and side edges of the figure catch a thin warm rim (light from behind, as in the sun)
 	float up_e = 1.0 - a1.z;
 	float up2 = 1.0 - a2.z;

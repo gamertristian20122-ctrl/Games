@@ -258,6 +258,8 @@ func _build_flies(place: Dictionary) -> void:
 	var size: Vector2 = place["size"]
 	flies = CPUParticles3D.new()
 	flies.amount = clampi(int(size.x * size.y / 5000.0), 30, 160)
+	if Hd.on():
+		flies.amount = maxi(flies.amount / 3, 16)           # (HD: a few fine sparks, not dirt on the lens)
 	flies.lifetime = 7.0
 	flies.preprocess = 7.0
 	flies.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
@@ -285,7 +287,7 @@ func _build_flies(place: Dictionary) -> void:
 	m.disable_fog = true
 	m.render_priority = 10             # after the blur pass (see stage.gd, lesson 3)
 	var q := QuadMesh.new()
-	q.size = Vector2(0.16, 0.16)
+	q.size = Vector2(0.16, 0.16) if not Hd.on() else Vector2(0.07, 0.07)
 	q.material = m
 	flies.mesh = q
 	v._world.add_child(flies)
@@ -304,6 +306,9 @@ func _build_sky_fx(place: Dictionary) -> void:
 			else WalkLight.shafts(sky_fx, light_dir, 4, 12.0, 12.0, true)
 	if float(g["motes"]) > 0.0:
 		motes = WalkLight.motes(Vector3(9.0, 1.4, 6.0), dot())
+		if Hd.on():
+			motes.amount = 30
+			(motes.mesh as QuadMesh).size = Vector2(0.05, 0.05)
 		motes.position = Vector3(0.0, 1.5, 0.0)
 		sky_fx.add_child(motes)
 

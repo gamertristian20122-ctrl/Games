@@ -566,7 +566,9 @@ func _sync(_delta: float) -> void:
 	var target := Vector3(centre.x * PX, 0.6 + _height(centre), centre.y * PX)
 	var pool_at := Vector2(target.x, target.z)
 	if _outdoor:
-		target.z -= view_h * 0.14          # look a little past the knight: more of the distance, where the depth is
+		# look a little past the knight: more of the distance, where the depth is (HD: further, so the
+		# facades and roofs of the north side stand over the play and the knight is low in the middle)
+		target.z -= view_h * (0.27 if Hd.on() else 0.14)
 	var pitch := deg_to_rad(_pitch)
 	cam.position = target + Vector3(0.0, sin(pitch), cos(pitch)) * _dist
 	cam.look_at(target, Vector3.UP)
