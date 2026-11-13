@@ -34,6 +34,19 @@ func _ready() -> void:
 		scope = get_parent()
 
 
+## The mouse moves the focus (one highlight on a screen, never two): any focusable button of the
+## screen under the moving mouse takes the focus, also ones not made by UI.button().
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventMouseMotion) or Controls.using_touch or not is_instance_valid(scope) or not scope.is_visible_in_tree():
+		return
+	var vp := get_viewport()
+	var h: Control = vp.gui_get_hovered_control() if vp != null else null
+	while h != null and not (h is BaseButton) and scope.is_ancestor_of(h):
+		h = h.get_parent() as Control
+	if h is BaseButton and scope.is_ancestor_of(h) and h.focus_mode != Control.FOCUS_NONE and not h.has_focus() and h.is_visible_in_tree():
+		h.grab_focus()
+
+
 func _target(c: Control) -> Vector2:
 	var r := c.get_global_rect()
 	return Vector2(r.position.x - gap, r.position.y + r.size.y * 0.5)

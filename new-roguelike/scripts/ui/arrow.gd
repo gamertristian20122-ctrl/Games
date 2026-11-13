@@ -1,27 +1,35 @@
 extends Button
-## Arrow: a button that shows a small pixel triangle instead of text (previous / next hero,
-## minus / plus in Settings). The triangle is drawn from plain rectangles.
+## Arrow: a button that shows a small chevron instead of text (previous / next hero, minus / plus in
+## Settings, "< Normal >" choices). Parchment normally, gold when focused or hovered, faint when
+## disabled. The chevron is a code-drawn mark (two smooth strokes on an ink under-stroke).
 
 const UI = preload("res://scripts/ui/theme.gd")
 
 ## -1 points left, +1 points right.
 var direction := 1
-var arrow_size := 5
+## Half the chevron's height in UI px.
+var arrow_size := 4
 
 
 func _init() -> void:
 	theme_type_variation = "Flat"
-	custom_minimum_size = Vector2(22, 22)
+	custom_minimum_size = Vector2(18, 18) if not UI.is_phone() else Vector2(22, 22)
 	UI.juice(self)
+	set_meta("no_flame", true)          # the chevron lights up itself; no flame beside it
+	focus_entered.connect(queue_redraw)
+	focus_exited.connect(queue_redraw)
+	mouse_entered.connect(queue_redraw)
+	mouse_exited.connect(queue_redraw)
 
 
 func _draw() -> void:
-	var colour := UI.C_FAINT if disabled else (UI.C_GOLD if is_hovered() or has_focus() or button_pressed else UI.C_BONE)
-	var c := (size / 2.0).round()
-	# a stack of 1 px columns, tallest at the back, a single pixel at the tip
-	for i in arrow_size:
-		var h := (arrow_size - i) * 2 - 1
-		var x := c.x + direction * (i - arrow_size / 2.0)
-		if direction < 0:
-			x -= 1.0
-		draw_rect(Rect2(roundf(x), c.y - (h - 1) / 2.0 - 0.5, 1, h), colour)
+	var lit := not disabled and (is_hovered() or has_focus() or button_pressed)
+	var colour := UI.C_FAINT if disabled else (UI.C_GOLD if lit else UI.C_PARCH)
+	var c := size / 2.0
+	var s := float(arrow_size)
+	var d := float(direction)
+	var pts := PackedVector2Array([c + Vector2(-d * s * 0.5, -s), c + Vector2(d * s * 0.5, 0), c + Vector2(-d * s * 0.5, s)])
+	draw_polyline(pts, Color(UI.C_INK, 0.8), 3.2, true)
+	draw_polyline(pts, colour, 1.6, true)
+	if lit:
+		draw_circle(c + Vector2(d * s * 0.5, 0), 1.0, Color(UI.C_EMBER, 0.8), true, -1.0, true)
