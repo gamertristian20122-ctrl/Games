@@ -145,7 +145,8 @@ func _ready() -> void:
 	_title = UI.label("Hollow Hill", "Banner")
 	_title.add_theme_font_size_override("font_size", 18 if ph else 34)
 	UI.style_title(_title, UI.C_GOLD, Color("7a4a12"))
-	_title.add_theme_constant_override("outline_size", 5)
+	_title.add_theme_constant_override("outline_size", 5 if not ph else 3)
+	_title.add_theme_constant_override("shadow_offset_y", 2 if not ph else 1)
 	_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_title.anchor_top = 0.2
 	_title.anchor_bottom = 0.2
