@@ -25,6 +25,7 @@ DESERT = ("Pixel_Crawler_-_Desert.zip", "Assets/")        # the desert camp and 
 FORGE = ("Pixel_Crawler_-_Forge_1.2.zip", "Assets/")     # the mountain camp
 GARDEN = ("Pixel_Crawler_-_Garden_Environment.zip", "Assets/")           # the town: cobbles, fountain, statues, cypresses, flowers
 CASTLE = ("Pixel_Crawler_-_Castle_Environment_0.3.zip", "Assets/")       # the town: potted trees, banners, busts
+HIDE = ("Pixel_Crawler_-_Hideout_1.0.zip", "Assets/")                    # street dressing: barrels, a sack, a notice board
 
 # (name, pack, file ending, region x0 y0 x1 y1, gap px that still joins two islands, smallest piece px)
 ISLANDS = [
@@ -62,6 +63,14 @@ ISLANDS = [
     ("gtuft", GARDEN, "Tiles.png", (0, 380, 64, 400), 0, 4),
     ("cbust", CASTLE, "Tiles.png", (272, 72, 368, 160), 1, 60),
     ("ccandle", CASTLE, "Tiles.png", (336, 160, 400, 192), 1, 10),
+    # SET DRESSING (dense streets, woods and the desert town): round bushes in four colours, ferns,
+    # reeds and foxgloves, bare dead trees, the hideout's barrels, the wind's ripples on the sand
+    ("vbush", FREE, "Props/Static/Vegetation.png", (192, 0, 384, 144), 1, 60),
+    ("vbig", FREE, "Props/Static/Vegetation.png", (0, 97, 192, 144), 1, 60),
+    ("vplant", FREE, "Props/Static/Vegetation.png", (64, 146, 240, 190), 0, 20),
+    ("vdead", FREE, "Props/Static/Vegetation.png", (160, 296, 252, 337), 1, 30),
+    ("sbarrel", HIDE, "Tiles.png", (182, 306, 290, 400), 1, 200),
+    ("sripple", DESERT, "Sand.png", (0, 0, 288, 160), 2, 40),
 ]
 # (name, pack, file ending, x, y, w, h): plain rectangles (ground tiles are opaque, islands cannot find them)
 RECTS = [
@@ -150,6 +159,8 @@ _cache = {}
 # (name, pack, file ending, x, y, w, h, (hole x0, y0, x1, y1) inside the piece): a rectangle with a hole cleared
 OPENED = [
     ("ghedge_arch", GARDEN, "Tiles.png", 96, 100, 80, 80, (16, 40, 64, 80)),
+    # the lamp post with a lantern on its arm: a second lantern stands on the ground beside its foot (removed)
+    ("slantern", FREE, "Props/Static/Furniture.png", 144, 446, 48, 50, (33, 35, 48, 50)),
 ]
 
 
@@ -182,6 +193,35 @@ TRIMMED = [
     # world dressing (v0.24.0) from the Garden pack: a clipped hedge and the hedge arch (the pergola reads
     # wrong as an upright card, so it is not cut)
     ("ghedge", GARDEN, "Tiles.png", 16, 320, 64, 32),
+    # SET DRESSING: what a market street and a desert town leave about (Free Pack farm and furniture,
+    # Castle crates and table, Hideout sack and boards, Dungeon pennants)
+    ("ssack_0", FREE, "Props/Static/Farm.png", 256, 0, 16, 16), ("ssack_1", FREE, "Props/Static/Farm.png", 272, 0, 16, 16),
+    ("ssack_2", FREE, "Props/Static/Farm.png", 256, 16, 16, 16), ("ssack_3", FREE, "Props/Static/Farm.png", 272, 16, 16, 16),
+    ("scrate_0", FREE, "Props/Static/Farm.png", 288, 8, 16, 24), ("scrate_1", FREE, "Props/Static/Farm.png", 304, 8, 16, 24),
+    ("sveg_0", FREE, "Props/Static/Farm.png", 160, 0, 16, 32), ("sveg_1", FREE, "Props/Static/Farm.png", 160, 32, 16, 32),
+    ("sveg_2", FREE, "Props/Static/Farm.png", 160, 64, 16, 32), ("sveg_3", FREE, "Props/Static/Farm.png", 160, 96, 16, 32),
+    ("sveg_4", FREE, "Props/Static/Farm.png", 160, 128, 16, 32), ("sveg_5", FREE, "Props/Static/Farm.png", 160, 160, 16, 32),
+    ("sveg_6", FREE, "Props/Static/Farm.png", 160, 192, 16, 32),
+    ("strough", FREE, "Props/Static/Farm.png", 320, 16, 48, 16), ("sbox", FREE, "Props/Static/Farm.png", 352, 32, 16, 16),
+    ("scrate_2", FREE, "Props/Static/Furniture.png", 720, 72, 16, 24), ("scrate_3", FREE, "Props/Static/Furniture.png", 736, 72, 16, 24),
+    ("sbarrel_f", FREE, "Props/Static/Furniture.png", 752, 72, 16, 24), ("spot", FREE, "Props/Static/Furniture.png", 768, 72, 16, 24),
+    ("sjug", FREE, "Props/Static/Furniture.png", 784, 72, 16, 24), ("sbucket", FREE, "Props/Static/Furniture.png", 768, 8, 16, 24),
+    ("sposts", FREE, "Props/Static/Furniture.png", 176, 420, 64, 26), ("spost", FREE, "Props/Static/Furniture.png", 144, 420, 14, 26),
+    ("scrate_4", CASTLE, "Tiles.png", 334, 4, 18, 30), ("scrate_5", CASTLE, "Tiles.png", 351, 0, 17, 34),
+    ("stable", CASTLE, "Tiles.png", 366, 10, 52, 40),
+    ("ssack_4", HIDE, "Tiles.png", 270, 104, 22, 26), ("snotice", HIDE, "Tiles.png", 350, 182, 36, 62), ("ssign", HIDE, "Tiles.png", 383, 182, 18, 62),
+    ("sbanner_0", FREE, "Props/Static/Dungeon_Props.png", 64, 68, 16, 26), ("sbanner_1", FREE, "Props/Static/Dungeon_Props.png", 80, 68, 16, 26),
+    ("sbanner_2", FREE, "Props/Static/Dungeon_Props.png", 96, 68, 16, 26),
+    # a desert camp's bedrolls, a cushion, a ring of fire stones, a shelf of crates, a work table (Hideout)
+    ("sbed_0", HIDE, "Tiles.png", 278, 57, 20, 34), ("sbed_1", HIDE, "Tiles.png", 310, 57, 20, 34), ("scush", HIDE, "Tiles.png", 293, 97, 22, 15),
+    ("sring", HIDE, "Tiles.png", 276, 166, 38, 36), ("sshelf", HIDE, "Tiles.png", 290, 119, 44, 41), ("sbench", HIDE, "Tiles.png", 356, 133, 40, 40),
+    # the round bushes' three smaller sizes stand touching in the sheet: cut row by row
+    ("vbushs_0", FREE, "Props/Static/Vegetation.png", 0, 0, 48, 32), ("vbushs_1", FREE, "Props/Static/Vegetation.png", 48, 0, 48, 32),
+    ("vbushs_2", FREE, "Props/Static/Vegetation.png", 96, 0, 48, 32), ("vbushs_3", FREE, "Props/Static/Vegetation.png", 144, 0, 48, 32),
+    ("vbushm_0", FREE, "Props/Static/Vegetation.png", 0, 33, 48, 31), ("vbushm_1", FREE, "Props/Static/Vegetation.png", 48, 33, 48, 31),
+    ("vbushm_2", FREE, "Props/Static/Vegetation.png", 96, 33, 48, 31), ("vbushm_3", FREE, "Props/Static/Vegetation.png", 144, 33, 48, 31),
+    ("vbushl_0", FREE, "Props/Static/Vegetation.png", 0, 65, 48, 31), ("vbushl_1", FREE, "Props/Static/Vegetation.png", 48, 65, 48, 31),
+    ("vbushl_2", FREE, "Props/Static/Vegetation.png", 96, 65, 48, 31), ("vbushl_3", FREE, "Props/Static/Vegetation.png", 144, 65, 48, 31),
 ]
 
 
