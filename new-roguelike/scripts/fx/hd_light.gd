@@ -37,9 +37,9 @@ const HD_SUN_COLOUR_DAY := Color(1.0, 0.86, 0.64)   ## and in the full afternoon
 const HD_SUN_NIGHT := 0.35          ## the moon
 const HD_AMBIENT_DAY := 0.19        ## the shade by day: deep, so the sun reads (but faces in shade still read)
 const HD_AMBIENT_NIGHT := 0.16
-const HD_LAMP := 1.0                ## lamps are this much stronger than in the flat look (2.8 burned the ground white)
+const HD_LAMP := 1.2                ## lamps are this much stronger than in the flat look (2.8 burned the ground white)
 const HD_LAMP_DECAY := 1.9          ## HD: how fast a lamp's light falls off (2 = as real light: a hot pool, deep shade round it)
-const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled this far towards amber (40%)
+const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled this far towards amber (half way)
 const HD_LAMP_REACH := 2.5          ## HD: a lamp's light reaches this many times as far as its 2D picture
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
 const HD_FOG_DAY := 0.0016          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
@@ -141,6 +141,10 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 		# the exposure, for the people's shader (scripts/fx/card_shader.gd keeps them from burning white)
 		_exposure_ready = true
 		RenderingServer.global_shader_parameter_add(&"hh_exposure", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 1.0)
+		# the last pass's grade, for the see-through copies of scenery that are drawn AFTER it (they
+		# copy its dark corners, its dark foreground and its tint, so they match what is round them)
+		RenderingServer.global_shader_parameter_add(&"hh_grade", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4.ZERO)
+		RenderingServer.global_shader_parameter_add(&"hh_tint", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4.ONE)
 	# ACES: hot lamps and fires keep their amber and orange far up the curve (AgX, round one, greyed
 	# them to white), and the shade sinks deep: the blazing look of the reference pictures
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
@@ -255,7 +259,7 @@ func build_lamps(place: Dictionary) -> void:
 				break
 		var warm := two.color.r > two.color.b
 		# (HD: a warm lamp is AMBER, not a pale cream that the tone curve turns white)
-		var colour := two.color.lerp(HD_LAMP_AMBER, 0.4) if warm and Hd.on() else two.color
+		var colour := two.color.lerp(HD_LAMP_AMBER, 0.5) if warm and Hd.on() else two.color
 		three.light_color = colour
 		three.omni_range = 64.0 * two.texture_scale * PX * (HD_LAMP_REACH if Hd.on() else LAMP_REACH)
 		three.omni_attenuation = HD_LAMP_DECAY if Hd.on() else 1.4
@@ -601,7 +605,13 @@ func _focus_band(delta: float, dist: float, target: Vector3, people: Array, mat:
 	attrs.dof_blur_amount = HD_DOF if v._outdoor else HD_ROOM_DOF
 	# whatever stands nearer than the walking area (between the camera and the play) is put in shade,
 	# cooler and greyer: a dark blurred frame round the lit middle, as in a real photograph
-	mat.set_shader_parameter("fore_z", minf(fore_z, _band.x + 0.4) if fore_z > 0.0 else 0.0)
+	var fz := minf(fore_z, _band.x + 0.4) if fore_z > 0.0 else 0.0
+	mat.set_shader_parameter("fore_z", fz)
+	var warm: Vector3 = mat.get_shader_parameter("warm")
+	var shade: Vector3 = mat.get_shader_parameter("shade")
+	var tint := (warm + shade) * 0.5
+	RenderingServer.global_shader_parameter_set(&"hh_grade", Vector4(float(mat.get_shader_parameter("rim")), fz, 0.0, 0.0))
+	RenderingServer.global_shader_parameter_set(&"hh_tint", Vector4(tint.x, tint.y, tint.z, 1.0))
 	# the haze of the last pass begins where the blur begins
 	var mid := (_band.x + _band.y) * 0.5
 	mat.set_shader_parameter("focus", mid)

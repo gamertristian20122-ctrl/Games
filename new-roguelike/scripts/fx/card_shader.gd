@@ -74,7 +74,7 @@ static func card_code(hero: bool, ghost := false) -> String:
 
 
 const HD_CARD_BODY := "
-const float GHOST_MIN = 0.32;                                   // how much of a faded picture is left at its most
+const float GHOST_MIN = 0.28;                                   // how much of a faded picture is left at its most
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec3 tint : source_color = vec3(1.0);
@@ -95,6 +95,10 @@ uniform float hot = 0.0;                                        // how far the g
 uniform float by_night = 0.0;                                   // 1 = a lamp: dim by day, full at dusk and night
 global uniform float hh_lamp_on;                                // (set every frame by scripts/fx/hd_light.gd)
 global uniform float hh_exposure;                               // the camera's exposure now (scripts/fx/hd_light.gd)
+#ifdef GHOST
+global uniform vec4 hh_grade;                                   // the last pass: x = dark corners, y = where the foreground begins
+global uniform vec4 hh_tint;                                    // the last pass: its middle tint
+#endif
 global uniform sampler2D hh_people : filter_nearest;            // where the people are (Sprite3.set_people)
 global uniform int hh_people_n;
 varying float shadow_pass;
@@ -234,6 +238,15 @@ void fragment() {
 	sun_share = sun_at(foot);
 #ifdef GHOST
 	ALPHA = mix(1.0, GHOST_MIN, fade);
+	// the copy is drawn after the last pass (which only sees solid things), so it copies the last
+	// pass's grade itself: its tint, its dark corners and the shade of the foreground (in linear light)
+	vec2 q = SCREEN_UV - 0.5;
+	float vig = 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * hh_grade.x;
+	float fz2 = -VERTEX.z;
+	float fore = hh_grade.y > 0.0 ? 1.0 - smoothstep(hh_grade.y - 2.5, hh_grade.y - 0.2, fz2) : 0.0;
+	vec3 graded = pow(max(hh_tint.rgb * vig * mix(vec3(1.0), vec3(0.40, 0.42, 0.47), fore), vec3(0.0)), vec3(2.2));
+	ALBEDO *= graded;
+	EMISSION *= graded;
 #endif
 }
 void light() {
@@ -358,15 +371,15 @@ static func card(tex: Texture2D, uv: Vector4, tint: Color, hero := false) -> Sha
 	if hero and Hd.on():
 		mat.set_shader_parameter("rim", HERO_RIM)
 	elif Hd.on():
-		# scenery: its see-through copy for the people behind it (drawn before the last pass, so it
-		# is graded with everything else: render_priority below the last pass's 0)
+		# scenery: its see-through copy for the people behind it (drawn after the last pass, which
+		# only sees solid things and would paint over it: render_priority above the last pass's 0)
 		var ghost := ShaderMaterial.new()
 		if not _hd_shaders.has("ghost"):
 			var sh := Shader.new()
 			sh.code = card_code(false, true)
 			_hd_shaders["ghost"] = sh
 		ghost.shader = _hd_shaders["ghost"]
-		ghost.render_priority = -1
+		ghost.render_priority = 1
 		mat.next_pass = ghost
 	param(mat, "tex", tex)
 	param(mat, "uv_rect", uv)

@@ -200,6 +200,9 @@ func _ready() -> void:
 			_tour = [(place["fire"] as Vector2) + Vector2(0, 40), (place["fire"] as Vector2) + Vector2(60, -60)]
 		else:
 			_tour = [_hero.position + Vector2(0, 14)]
+		if G.arg("tourat") != "":         # test: --tourat=x,y : the knight walks there, one picture (hub_4.png)
+			var xy := G.arg("tourat").split(",")
+			_tour = [Vector2(float(xy[0]), float(xy[1]))]
 
 
 ## Things the story shows by itself when you arrive: the opening (once, in your room), the Druid's
