@@ -819,7 +819,7 @@ func spell(who: Dictionary, id: String, impacts: Array, colour: Color) -> void:
 			var at: Vector3 = who["home"]
 			for i in 3:
 				get_tree().create_timer(0.07 * i, false).timeout.connect(func() -> void:
-					stage.call("ground_glow", at, Color(colour.r, colour.g, colour.b, 0.85 - 0.2 * i), 4.0 + 3.0 * i, 0.6, true))
+					stage.call("ground_glow", at, Color(colour.r, colour.g, colour.b, 0.55 - 0.15 * i), 4.0 + 3.0 * i, 0.6, true))
 			b.call("shake", 0.4)
 			for e: Dictionary in impacts:
 				var dist := ((e["target"]["home"] as Vector3) - at).length()

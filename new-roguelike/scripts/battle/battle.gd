@@ -136,6 +136,10 @@ func _ready() -> void:
 	if G.flag("animfrail"):
 		for u: Dictionary in fight.party:      # test: the defeat, quickly (a look only)
 			u["hp"] = 1
+	if G.flag("animmana"):
+		for u: Dictionary in fight.party:      # test: mana for every skill of --animplan (a look only)
+			u["max_mp"] = 999
+			u["mp"] = 999
 	var party: Array = fight.party
 	var foes: Array = fight.foes
 	for i in party.size():
@@ -1052,10 +1056,10 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 		_show_fx(target)
 	elif _speed <= 4.0:
 		var c: Color = who.get("colour", Color.WHITE) if not who.is_empty() else Color.WHITE
-		stage.call("burst", at, c.lerp(Color.WHITE, 0.4), minf((0.55 + 0.9 * ratio + (0.5 if crit else 0.0)) * weight + 0.15, 1.6), 0.0, "", node)
+		stage.call("burst", at, c.lerp(Color.WHITE, 0.4), minf((0.55 + 0.9 * ratio + (0.5 if crit else 0.0)) * weight + 0.15, 1.6 if crit else 1.3), 0.0, "", node)
 	# the flash (gold on a crit), and the pack's own hit animation
 	# (the flash shines by itself only a little: a big picture flashing hot blooms into a white blob)
-	node.call("set_flash", 1.0, Color(1.0, 0.85, 0.45) if crit else Color.WHITE, (0.45 if Hd.on() else 0.3) * (0.5 if big_one else 1.0))
+	node.call("set_flash", 1.0 if crit else (0.55 if big_one else 0.8), Color(1.0, 0.85, 0.45) if crit else Color.WHITE, (0.45 if Hd.on() else 0.3) * (0.5 if big_one else 1.0))
 	_later(0.05 if not crit else 0.09, node, func(n: Node) -> void: n.call("set_flash", 0.0))
 	if Art.has_anim(String(target["sprite"]), "hit") and int(target["hp"]) > 0:
 		node.call("play", "hit")
@@ -1255,6 +1259,10 @@ func _float(unit: Dictionary, text: String, colour: Color, opts: Dictionary = {}
 	if a != null:
 		top = a.call("centre", float(unit["top"])) + Vector3(0.0, float(unit["top"]) * 0.5, 0.0)
 	var p: Vector2 = _on_ui(top + Vector3(0.0, 0.35, 0.0))
+	# (never off the screen, nor under the words and the boss's bar at the top: a tall boss's head
+	# can be out of the picture)
+	var room: Vector2 = _root.size
+	p = Vector2(clampf(p.x, 24.0, maxf(room.x - 24.0, 24.0)), clampf(p.y, 58.0 if not _boss_bar.is_empty() else 46.0, maxf(room.y - 30.0, 60.0)))
 	var o := opts.duplicate()
 	if not text.is_valid_int() and not text.begins_with("+"):
 		o["word"] = true
