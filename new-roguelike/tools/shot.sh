@@ -23,7 +23,7 @@ if [ "${GL:-0}" = "1" ]; then
 else
 	RENDER=(--rendering-method forward_plus --rendering-driver vulkan)
 fi
-timeout 400 xvfb-run -a -s "-screen 0 1600x720x24" "${GODOT:-godot}" --path . "${RENDER[@]}" \
+timeout ${SHOT_TIMEOUT:-700} xvfb-run -a -s "-screen 0 1600x720x24" "${GODOT:-godot}" --path . "${RENDER[@]}" \
 	--resolution 1600x720 -- --hub="$PLACE" --nosave --shots="$OUT" "$@" 2>&1 \
 	| grep -E "SCRIPT ERROR|SHADER ERROR|^E |\[light\]" || true
 ls "$OUT"/hub_*.png 2>/dev/null

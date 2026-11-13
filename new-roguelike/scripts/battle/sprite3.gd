@@ -148,7 +148,7 @@ static var tall := 1.0
 static var _sun_ready := false
 static var _dapple: ImageTexture
 ## HD walking places: where the people are on the screen (see set_people)
-const MAX_PEOPLE := 16
+const MAX_PEOPLE := 32          ## (round three: 16 dropped the extras of a busy place from the sharp mask)
 static var _people_img: Image
 static var _people_tex: ImageTexture
 
