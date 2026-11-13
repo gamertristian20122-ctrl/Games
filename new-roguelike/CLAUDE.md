@@ -3,7 +3,21 @@
 **Hollow Hill** (the owner picked this name on 11 Nov 2026; it was "Cursebait" before, and the repo
 folder, the APK key file and the Android package id `com.cursebait.game` keep the old word so updates
 still install) is an original
-Android-first pixel-art game made in **Godot 4.7.2** (GL Compatibility, landscape, GDScript only).
+pixel-art game made in **Godot 4.7.2** (GDScript only, landscape). Since 13 Nov 2026 the target is **PC / Steam**
+in **Forward+** (the HD look); Android still exports with GL Compatibility (`rendering_method.mobile`).
+
+## Direction since 13 Nov 2026: PC / STEAM FIRST, the HD look (this overrules older sections below)
+The owner sent four pictures from a famous studio game in the "pixel sprites in a lit 3D diorama" style
+(lamp-lit town street at dusk, night battle with a big glowing spell, harbour at dusk, forest campfire
+clearing) and said: "Don't care about the phone ... get as close to that quality as possible." Then:
+"the blurriness is so strong that I can't see the characters, so bring the characters in the background
+forward, and do the light blazing that you see in the photos."
+- Target is PC/Steam in Forward+. The phone build must still EXPORT and RUN, but its look no longer leads.
+- Every character must stay sharp and readable wherever they stand. Blur belongs only to scenery far
+  behind the play area and things between the camera and the play area.
+- Light should BLAZE: hot lamp and fire cores, warm pools on the ground, deep shade round them.
+- Same KIND of look as the references, never their characters, names, maps or UI. Still no AI art/audio.
+- See v0.25.0 for how the HD look is built.
 
 ## Direction (set by the owner on 11 Nov 2026 — this overrules older sections below)
 The game is now a **story adventure in the spirit of old 2D adventure games**, not an endless roguelike:
@@ -1209,6 +1223,60 @@ in parallel, one area each, then were merged.
 - **Next, most useful first:** dress Dustwatch with the Desert pieces; move the lamp post that stands in
   the middle of Wickmere's south path; the owner plays a build on the phone (speed with the new light);
   chapter three (Cinder Mountains, Grukk; fix the rock monsters' hp, see v0.23.0).
+
+## v0.25.0 (13 Nov 2026): the HD look on PC (Forward+), round one
+Ten agents (foundation, 3 specialists in worktrees, merge, set dresser, 3 judges, fixer). Judges scored
+the look 4/10 for lighting, composition and defects BEFORE the fixer's pass. Everything HD asks `Hd.on()`.
+- **Renderer:** project.godot `rendering_method="forward_plus"`, `.mobile="gl_compatibility"`,
+  `rendering_device/fallback_to_opengl3=true`. `Hd.on()` (scripts/fx/hd.gd) is true only in forward_plus,
+  not headless, and not with `--nohd` (to compare looks). Phone / compatibility look is unchanged.
+- **Pictures:** `./tools/shot.sh <place> <dir> [--clock=0.7] [--nohd]` (`GL=1` for the phone renderer).
+  Forward+ on this container uses software Vulkan (lavapipe) under xvfb: about 80-150 s a run.
+  Battle flags: `--battle=story:<id> --shotspell=storm|firebolt|sunbolt|sunflare|frost`, `--shotintro`.
+- **Module map (view3d.gd was split):**
+  - `scripts/hub/view3d.gd` core: setup, rebuild, cards, words, camera, `_is_person()`, `_person_row()`,
+    `_contact_blob` (soft shadow under people). Holds `build`, `water`, `light`.
+  - `scripts/hub/view3d_build.gd` ground, height, `build_houses()` (runs `scripts/hub/arch/`), `_cast`, `_smoke`.
+  - `scripts/hub/arch/` (NOT `build/`: build folders are git-ignored): `kit.gd` mesh kit (pack pieces at
+    true pixel size, `_tri` fixes winding from the wanted normal), `house.gd` (one `"houses"` row; keys
+    `floors` 1-3, `upper`, `balcony`, `awning`), `sites.gd` (kerbs, walls, bridge, stalls, bunting per place
+    id; positions tied to the current layouts). Tall things only where nobody walks behind them.
+  - `scripts/hub/view3d_water.gd` `HD_WATER_CODE` (ripples, glitter and lamp streaks in `SPECULAR_LIGHT`;
+    ripple `chop` about 0.02 or the pond turns to frost). No SSR yet.
+  - `scripts/fx/card_shader.gd` how sprites are drawn: `CARD_CODE` (phone), `HD_CARD_BODY` (normals worked
+    out from the sprite's own pixels: `bevel`, `relief`, `round_body`), HERO block for people (no fog, rim on
+    the sun's side, pale pixels held under bloom), `hot`/`hot_col`/`by_night` glow. Call
+    `CardShader.set_glow(mat, tex, hero)` whenever a card's texture changes.
+  - `scripts/fx/hd_light.gd` all HD light: `HD_*` constants at the top (HD_LEAN low sun, HD_SUN_COLOUR,
+    HD_FOG_LENGTH, HD_EXPOSURE_DAY/NIGHT, HD_LAMP_REACH, HD_POOL_REACH, HD_DAPPLE, HD_DOF), `build_lamps`,
+    `build_air`, `_sync_hd`, `sync_view` / `_focus_band` (depth of field). `_sync_hd` resets glow_bloom,
+    glow_hdr_threshold and fog_enabled every frame because `sync_light` writes the phone values first.
+  - `scripts/fx/walk_light.gd` GRADES gained `"dapple"` (leaf patches; 0 = none) and `"exposure"` (HD
+    multiplier). POST_CODE only grades in HD (no blur), with `fore_z` darkening what is nearer than the
+    walk area's bottom edge. `shafts(..., wide_back)` gives the soft HD beams.
+  - `scripts/battle/stage_hd.gd` battles in HD: `LOOK` table per stage look (sun, ambient, fog, fog_aniso,
+    exposure, sky, wet, top_rim, fire_boost, spell, tame; missing keys fall back to "forest"), `AIM_HD`
+    camera further back. `sprite3.gd hd_code()` holds the fighters' HD shader.
+- **What HD does:** AgX tone (white 14), SSAO, SSIL 0.5, glow over a hot threshold (no bloom veil), thin
+  volumetric fog, low amber sun with soft PCSS shadows, real shadows from every card, house and roof (cards
+  pushed away from the light in the shadow pass, scaled by 1-UV.y so feet stay planted), the 4 nearest lamps
+  cast shadows, iron lanterns (`hub_slantern`) with gold glass that blazes after dusk (`hh_lamp_on` 0.3 by
+  day, 1 at night), camera DOF whose sharp band holds every visible person. Scenery in front of a person
+  drops to a screen-door of about 34% (`hh_people`, `hh_people_n` set by `Sprite3.set_people`).
+- **Global shader uniforms** (registered in `Sprite3.ensure_sun`): `hh_lamp_on`, `hh_people`, `hh_people_n`.
+- **Props:** a 6th prop field means mirrored. Every `hub_slantern` gets a glowing glass pane (hub.gd
+  `_lantern_glass`); its light sits at foot + (16, -33). places.gd `_lanterns()` turns hub_post torches into
+  lanterns. Set-dressing pieces: `hub_s*` props (sacks, crates, barrels, `sveg_*`, tables, pennants,
+  bedrolls, fire ring), `hub_v*` plants (colours 0 green, 1 olive, 2 amber, 3 rust). Place keys `"stalls"`
+  and `"bunting"`; a stall needs a `"blocks"` Rect2. A place's `"tour"` sets where test pictures are taken.
+- **Lessons:** custom post shaders read depth 0..1 in Forward+ and -1..1 in Compatibility (branch on
+  `CURRENT_RENDERER`; this was the "everything is blurred" bug). A card with an OmniLight inside it needs a
+  full light wrap. Additive spell art in FRONT of a target washes it out: put it just behind. Strong forward
+  fog looking into a low sun becomes a brown wall (fog_aniso about 0.2 by day). `LIGHT_COLOR` already
+  includes pi. A double quote inside a shader string in a .gd file breaks the parse.
+- **Limits after round one:** Wickmere is a park with gaps, not a wall of facades; Dustwatch has no houses
+  inside its wall; Elfwood has no set piece; no terraces; battle fighters small (about 65 px) and no sky;
+  the screen-door dither is visible; only tuned on software Vulkan, never on a real GPU.
 
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
