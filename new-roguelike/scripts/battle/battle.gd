@@ -758,7 +758,10 @@ func _show_fx(target: Dictionary) -> void:
 			G.quit(0))
 	match String(_fx[1]):
 		"pillar":
-			stage.call("pillar", target["home"], colour, 0.5 + 0.25 * power)
+			var width := 0.5 + 0.25 * power
+			if Hd.on():
+				width = maxf(width, float(target["wide"]) * 2.4)    # (HD: it stands behind the one hit, so it must be wider to glow round it)
+			stage.call("pillar", target["home"], colour, width)
 			stage.call("burst", at, colour, power)
 		"rise":
 			stage.call("burst", (target["home"] as Vector3) + Vector3(0.0, 0.2, 0.15), colour, power, 1.6)
