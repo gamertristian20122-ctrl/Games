@@ -20,7 +20,7 @@ const AIM := Vector3(0.0, -0.9, 0.6)
 ## the middle of the picture, the night (or the warm evening) sky shows over the wood behind them,
 ## and the menus sit in the corners round them (battle.gd). See stage_hd.gd for the scenery.
 const AIM_HD := Vector3(0.0, 2.0, 0.3)
-const CAM_HD := Vector3(0.0, 4.3, 24.5)
+const CAM_HD := Vector3(0.0, 4.1, 20.5)
 
 ## One row per place a fight can happen in. Colours are the mood; pieces are pack ids.
 const LOOKS := {
@@ -42,7 +42,7 @@ const LOOKS := {
 		"small": ["hub_tuft_0", "hub_tuft_2", "hub_tuft_4", "hub_tuft_6", "hub_tuft_14", "hub_flower_13", "hub_flower_15", "hub_flower_1"],
 		"tall": ["hub_plant_0", "hub_plant_2", "hub_plant_3", "hub_plant_5", "hub_plant_1"],
 		"flat": ["hub_patch_0", "hub_patch_1"],
-		"features": [["hub_rune_0", Vector3(-7.0, 0.0, -4.3), false, 0.3], ["hub_statue_1", Vector3(4.6, 0.0, -4.4), true, 0.0], ["hub_stump_0", Vector3(0.4, 0.0, -3.6), false, 0.0]],
+		"features": [["hub_rune_0", Vector3(-11.8, 0.0, -4.6), false, 0.3], ["hub_statue_1", Vector3(11.6, 0.0, -4.8), true, 0.0], ["hub_stump_0", Vector3(0.4, 0.0, -3.6), false, 0.0]],
 		"spark": Color(1.0, 0.9, 0.6), "spark_power": 0.9,
 		"key": [Color("ffc870"), 0.85, 1.0],
 	},
@@ -62,7 +62,7 @@ const LOOKS := {
 		"small": ["hub_tuft_0", "hub_tuft_2", "hub_tuft_4", "hub_tuft_6", "hub_tuft_14", "hub_flower_13", "hub_flower_15", "hub_flower_1"],
 		"tall": ["hub_plant_0", "hub_plant_2", "hub_plant_3", "hub_plant_5", "hub_plant_1"],
 		"flat": ["hub_patch_0", "hub_patch_1"],
-		"features": [["hub_rune_0", Vector3(-7.0, 0.0, -4.3), false, 0.4, Color("58e8d0"), 2.2], ["hub_statue_1", Vector3(4.6, 0.0, -4.4), true, 0.0]],
+		"features": [["hub_rune_0", Vector3(-1.8, 0.0, -5.6), false, 0.4, Color("58e8d0"), 2.2], ["hub_statue_1", Vector3(11.6, 0.0, -4.8), true, 0.0]],
 		"glowers": ["hub_shroom_0", "hub_shroom_1", "hub_shroom_2"],
 		"spark": Color(0.85, 1.0, 0.45), "spark_power": 1.6,
 		"key": [Color("ffa860"), 1.0, 1.0],
@@ -85,7 +85,7 @@ const LOOKS := {
 		"small": ["hub_dgrass_0", "hub_dgrass_1", "hub_dgrass_2", "hub_dgrass_3", "hub_dpebble_0", "hub_dpebble_1", "hub_dblock_2"],
 		"tall": ["hub_cactus_5", "hub_dgrass_0", "hub_dbush_2"],
 		"flat": [],
-		"features": [["hub_tusk_0", Vector3(-6.6, 0.0, -4.2), false, 0.0], ["hub_tusk_1", Vector3(5.4, 0.0, -4.6), true, 0.0], ["hub_dpillar_0", Vector3(0.6, 0.0, -4.4), false, 0.0]],
+		"features": [["hub_tusk_0", Vector3(-11.6, 0.0, -4.6), false, 0.0], ["hub_tusk_1", Vector3(11.6, 0.0, -4.8), true, 0.0], ["hub_dpillar_0", Vector3(0.6, 0.0, -4.4), false, 0.0]],
 		"spark": Color(1.0, 0.9, 0.7), "spark_power": 0.6,
 		"key": [Color("fff0c8"), 0.7, 1.0],
 	},
@@ -105,7 +105,7 @@ const LOOKS := {
 		"small": ["hub_dpebble_0", "hub_dpebble_1", "hub_dblock_2", "hub_dblock_3", "hub_dgrass_2"],
 		"tall": ["hub_dbush_2", "hub_dtree_1"],
 		"flat": [],
-		"features": [["hub_fbust", Vector3(-6.4, 0.0, -4.4), false, 0.0], ["hub_fbroken", Vector3(5.2, 0.0, -4.6), true, 0.0]],
+		"features": [["hub_fbust", Vector3(-11.4, 0.0, -4.6), false, 0.0], ["hub_fbroken", Vector3(11.4, 0.0, -4.8), true, 0.0]],
 		"spark": Color(1.0, 0.55, 0.25), "spark_power": 1.6,
 		"key": [Color("ff8a40"), 1.0, 1.0],
 	},
@@ -601,7 +601,8 @@ func _scenery_common(dim: Color) -> void:
 			prop(_pick("small"), at, rng.randf() < 0.5, 0.01, false)
 	# a fire, where the place has one: the old ring in the middle of the back
 	if look.has("fire"):
-		var fire_at := Vector3(0.6, 0.0, -3.4)
+		# (HD: out of the gap between the two sides, so a spell lands in the open, not beside a fire)
+		var fire_at := Vector3(-11.0, 0.0, -5.2) if hd != null else Vector3(0.6, 0.0, -3.4)
 		stand("hub_fire_a", fire_at, false, "idle", false)
 		var flame := stand("hub_flame", fire_at + Vector3(0.0, 0.35, 0.03), false, "idle", false)
 		var boost := float(hd.call("num", "fire_boost")) if hd != null else 1.0
@@ -939,15 +940,37 @@ func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, ar
 var _pillar_now := false            ## (HD: a burst that goes with a column makes no whirl of its own)
 
 
+## HD: the pillar's picture: a soft bell across and a fade towards the top (light made by code: a
+## column of light with no hard sides).
+static var _pillar_img_tex: ImageTexture
+static func _pillar_tex() -> ImageTexture:
+	if _pillar_img_tex == null:
+		var img := Image.create(32, 64, false, Image.FORMAT_RGBA8)
+		for y in 64:
+			var up := float(y) / 63.0                       # 0 = the top of the column
+			var tall := smoothstep(0.0, 0.55, up) * (0.55 + 0.45 * up)
+			for x in 32:
+				var across := 1.0 - absf((float(x) + 0.5) / 16.0 - 1.0)
+				var bell := across * across * (3.0 - 2.0 * across)
+				img.set_pixel(x, y, Color(1, 1, 1, clampf(bell * bell * tall, 0.0, 1.0)))
+		_pillar_img_tex = ImageTexture.create_from_image(img)
+	return _pillar_img_tex
+
+
 ## A column of light that stands on a spot for a moment (lightning, a pillar of fire, a blessing).
 func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0, fighter: Node3D = null, style: String = "") -> void:
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
 	g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
-	var across := GradientTexture2D.new()
-	across.gradient = g
-	across.width = 32
-	across.height = 4
+	var across: Texture2D
+	if hd != null:
+		across = _pillar_tex()
+	else:
+		var gt := GradientTexture2D.new()
+		gt.gradient = g
+		gt.width = 32
+		gt.height = 4
+		across = gt
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -961,7 +984,7 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0,
 	var q := QuadMesh.new()
 	q.size = Vector2(width, height)
 	if hd != null:
-		q.size.x = 0.55              # (HD: only a thin white-hot core; the whirl round it is the width)
+		q.size.x = 1.4               # (HD: a soft bell across: a hot core, no hard sides; the whirl round it is the width)
 	var beam := MeshInstance3D.new()
 	beam.mesh = q
 	beam.material_override = m
@@ -981,11 +1004,13 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0,
 		# sparks spiralling up it, a light high in the column behind him
 		var radius := maxf(width / 2.4 * 0.62, 1.05)     # (never thinner than a man is tall: the reference blaze is huge)
 		hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, 2.6, height * 0.9, radius, fighter, 1.2, style)
-		hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.7)
+		hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.7, 0.35)     # (its wide reach would light a veil of air in front of him)
 		hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.8, 0.9, 0.0)     # (the ground before him: a hot pool; no glowing air in front of him)
 		ground_glow(Vector3(at.x, 0.0, at.z + 0.9), Color(colour.r, colour.g, colour.b, 0.75), 4.6, 1.2)
 		var white_hot := colour.lerp(Color.WHITE, 0.55)
-		ground_glow(Vector3(at.x, 0.0, at.z - 0.2), Color(white_hot.r * 1.6, white_hot.g * 1.6, white_hot.b * 1.6, 0.9), 2.0, 0.9)     # (the white-hot foot of the column)
+		ground_glow(Vector3(at.x, 0.0, at.z - 0.6), Color(white_hot.r * 1.6, white_hot.g * 1.6, white_hot.b * 1.6, 0.9), 2.0, 0.9)     # (the white-hot foot of the column, behind his feet)
+		ground_glow(Vector3(at.x, 0.0, at.z + 0.4), Color(colour.r, colour.g, colour.b, 0.6), 7.5, 1.4)      # (the spell floods the ground round him)
+		ground_glow(Vector3(at.x, 0.0, at.z), Color(colour.r * 1.3, colour.g * 1.3, colour.b * 1.3, 0.8), 2.6, 0.7, true)     # (a splash ring where it lands)
 		_pillar_now = true
 		get_tree().create_timer(0.05).timeout.connect(func() -> void: _pillar_now = false)
 		return

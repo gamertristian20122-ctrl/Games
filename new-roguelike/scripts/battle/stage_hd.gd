@@ -38,7 +38,7 @@ const LOOK := {
 	"forest": {"sun": Color("ffcf8a"), "sun_energy": 2.1, "ambient": Color("8a7458"), "ambient_energy": 0.24,
 		"fog": Color("ffe2b8"), "fog_density": 0.0028, "fog_sun": 0.55, "fog_aniso": 0.2, "exposure": 1.5,
 		"sky_top": Color("3a4a78"), "sky_low": Color("ffb860"), "clouds": Color("b07850"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.7, "tame": 0.8, "beam": 0.07,
+		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 1.0, "tame": 0.8, "beam": 0.07,
 		"pool": [Color("ffc87a"), 2.2]},
 	"forest_night": {"sun": Color("9fb6ff"), "sun_energy": 1.25, "ambient": Color("38487a"), "ambient_energy": 0.30,
 		"fog": Color("6a84c0"), "fog_density": 0.012, "fog_sun": 0.4, "exposure": 1.35,
@@ -55,7 +55,7 @@ const LOOK := {
 		"wet": 0.0, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0, "beam": 0.0},
 }
 const SPELL_ENERGY := 6.0          ## a spell light at power 1 (the flat look's is 5 + 6 x power, without fog)
-const SPELL_FOG := 1.6             ## how much a spell light glows in the air
+const SPELL_FOG := 0.9             ## how much a spell light glows in the air
 const DOF_AMOUNT := 0.09           ## how strong the blur is far behind and right in front of the fighters
 const FOCUS_ROOM := 2.6            ## world units of sharp ground kept in front of and behind the fighters
 
@@ -331,7 +331,7 @@ func spell_light(at: Vector3, colour: Color, power: float, life: float, air: flo
 	l.position = at
 	l.light_color = colour
 	l.light_energy = 0.0
-	l.omni_range = 7.0 + 3.0 * power
+	l.omni_range = 12.0 + 4.0 * power             # (the ground and the whole party are lit by it)
 	l.omni_attenuation = 1.2
 	l.light_size = 0.4
 	l.light_volumetric_fog_energy = SPELL_FOG * (0.6 + 0.4 * power) * num("spell") * air
@@ -340,7 +340,7 @@ func spell_light(at: Vector3, colour: Color, power: float, life: float, air: flo
 	l.shadow_normal_bias = 1.0
 	l.shadow_blur = 1.4
 	s.add_child(l)
-	var peak := SPELL_ENERGY * (0.6 + 0.5 * power) * num("spell")
+	var peak := SPELL_ENERGY * (0.6 + 0.5 * power) * num("spell") * 1.6
 	var tw: Tween = s.create_tween()
 	tw.tween_property(l, "light_energy", peak, 0.05)
 	tw.tween_property(l, "light_energy", peak * 0.55, life * 0.35).set_trans(Tween.TRANS_SINE)
@@ -464,6 +464,7 @@ uniform float sharp = 5.0;
 uniform float front = 0.3;
 uniform float body_k = 1.0;
 uniform vec4 hold = vec4(-1.0);
+uniform vec4 hold2 = vec4(-1.0);        // somebody else standing inside the whirl (also kept clear)
 uniform float seed = 0.0;
 varying float hy0;
 varying vec2 ring;
@@ -515,12 +516,16 @@ void fragment() {
 		vec2 sc = SCREEN_UV;
 		float inside = smoothstep(hold.x - 0.012, hold.x + 0.006, sc.x) * (1.0 - smoothstep(hold.z - 0.006, hold.z + 0.012, sc.x))
 			* smoothstep(hold.y - 0.02, hold.y + 0.01, sc.y) * (1.0 - smoothstep(hold.w - 0.01, hold.w + 0.02, sc.y));
-		k *= 1.0 - 0.9 * inside;
+		float inside2 = smoothstep(hold2.x - 0.012, hold2.x + 0.006, sc.x) * (1.0 - smoothstep(hold2.z - 0.006, hold2.z + 0.012, sc.x))
+			* smoothstep(hold2.y - 0.02, hold2.y + 0.01, sc.y) * (1.0 - smoothstep(hold2.w - 0.01, hold2.w + 0.02, sc.y));
+		k *= 1.0 - 0.9 * max(inside, inside2);
 	}
 	// a body of light under the strands, hottest at the foot, so it reads as a volume
 	float body = (0.05 + 0.42 * pow(1.0 - hy, 2.6)) * body_k;
 	float v = (strand * mix(1.6, 0.7, hy) + body) * edge * fade * k * alpha;
-	vec3 c = mix(col, vec3(1.0), clamp(smoothstep(0.5, 1.0, strand) * 0.4 + pow(1.0 - hy, 6.0) * 0.35, 0.0, 1.0));
+	// (a deep saturated colour: mixed towards white the tone curve made the whole column cream; only
+	// the hottest strands and the foot lean to a warm pale)
+	vec3 c = mix(col, vec3(1.0, 0.78, 0.5) * max(max(col.r, col.g), col.b), clamp(smoothstep(0.6, 1.0, strand) * 0.25 + pow(1.0 - hy, 6.0) * 0.2, 0.0, 1.0));
 	ALBEDO = c * heat;
 	ALPHA = clamp(v, 0.0, 1.0);
 }
@@ -552,9 +557,13 @@ shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, shadows_disabled;
 uniform vec3 col : source_color = vec3(0.5, 0.8, 1.0);
 uniform float heat = 4.0;
+uniform vec4 hold = vec4(-1.0);         // the one hit, on the screen (0..1): no spark crosses in front of him
+uniform float hold_z = -1000.0;         // ... and how far from the camera his feet are (world z)
 varying float fade;
+varying float near_z;
 void vertex() {
 	vec3 mid = MODEL_MATRIX[3].xyz;
+	near_z = mid.z;
 	vec3 axis = MODEL_MATRIX[1].xyz;
 	float len = length(axis);
 	fade = COLOR.a;
@@ -573,7 +582,10 @@ void fragment() {
 	float across = clamp(1.0 - abs(UV.x * 2.0 - 1.0), 0.0, 1.0);
 	float along = clamp(1.0 - UV.y, 0.0, 1.0);                 // 1 at the head (the way it flies), 0 at the tail
 	float v = pow(across, 2.5) * smoothstep(0.0, 0.7, along) * (1.0 - smoothstep(0.85, 1.0, along)) * fade;
-	ALBEDO = mix(col, vec3(1.0), pow(across, 6.0) * 0.8) * heat;
+	vec2 sc = SCREEN_UV;
+	float inside = step(hold.x, sc.x) * step(sc.x, hold.z) * step(hold.y, sc.y) * step(sc.y, hold.w);
+	v *= 1.0 - 0.85 * inside * step(hold_z + 0.15, near_z);
+	ALBEDO = mix(col, vec3(1.0, 0.8, 0.55), pow(across, 6.0) * 0.5) * heat;
 	ALPHA = clamp(v, 0.0, 1.0);
 }
 "
@@ -627,6 +639,11 @@ func screen_box(fighter: Node3D) -> Vector4:
 ## `style`: "storm" = bolts of lightning out of the sky into it; "" = shards of light flung up round it.
 func vortex(at: Vector3, colour: Color, power: float, height: float, radius: float, fighter: Node3D = null, life: float = 1.15, style: String = "") -> void:
 	var hold := screen_box(fighter)
+	var hold2 := Vector4(-1.0, -1.0, -1.0, -1.0)
+	for p: Node3D in s._people:
+		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 4.5:
+			hold2 = screen_box(p)
+			break
 	# (deep, saturated colour: the tone curve turns hot light white by itself; mixed with white
 	# first, the whole column came out a pale grey-white)
 	var hot := Color.from_hsv(colour.h, minf(colour.s * 1.4 + 0.1, 1.0), colour.v)
@@ -634,8 +651,8 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 		# [bottom radius, top radius, height share, strands round, turns, spin, thinness, heat, near half, body]
 		[radius * 0.45, radius * 0.6, 1.0, 4.0, 0.6, 0.7, 2.0, 3.6, 0.25, 1.6],
 		[radius * 0.8, radius * 1.15, 1.0, 6.0, 1.3, 0.9, 4.0, 3.0, 0.3, 0.8],
-		[radius * 1.05, radius * 2.6, 0.85, 10.0, -0.8, -1.3, 9.0, 2.4, 0.2, 0.2],
-		[radius * 1.4, radius * 3.3, 0.5, 14.0, 0.5, 1.8, 12.0, 1.8, 0.12, 0.08],
+		[radius * 1.05, radius * 2.0, 0.85, 10.0, -0.8, -1.3, 9.0, 2.4, 0.1, 0.2],
+		[radius * 1.4, radius * 2.4, 0.5, 14.0, 0.5, 1.8, 12.0, 1.8, 0.06, 0.08],
 	]
 	for i in layers.size():
 		var row: Array = layers[i]
@@ -659,6 +676,7 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 		m.set_shader_parameter("front", float(row[8]))
 		m.set_shader_parameter("body_k", float(row[9]))
 		m.set_shader_parameter("hold", hold)
+		m.set_shader_parameter("hold2", hold2)
 		m.set_shader_parameter("seed", randf() * 10.0)
 		m.set_shader_parameter("grow", 0.0)
 		var node := MeshInstance3D.new()
@@ -674,28 +692,29 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 		tw.tween_method(func(v: float) -> void: m.set_shader_parameter("alpha", v), 1.0, 0.0, life * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.tween_callback(node.queue_free)
 	# sparks that wind up the whirl, and a spray of them from its foot
-	_streaks(at + Vector3(0.0, 0.2, 0.0), colour, power, height, radius, true)
-	_streaks(at + Vector3(0.0, 0.3, 0.0), colour, power, height, radius, false)
+	_streaks(at + Vector3(0.0, 0.2, 0.0), colour, power, height, radius, true, hold)
+	_streaks(at + Vector3(0.0, 0.3, 0.0), colour, power, height, radius, false, hold)
 	motes(at, colour, power, height, radius)
+	motes(at, colour, power * 0.8, height * 1.3, radius * 1.6)       # (a second, wider cloud: the glitter all round the blaze)
 	if style == "storm":
 		# lightning out of the sky into the column, forking as it comes
 		for i in 3:
 			var top := at + Vector3(randf_range(-3.5, 3.5), height * 1.6, randf_range(-4.0, -2.5))     # (behind: a tall one leans back by the stand-up tilt)
 			bolt(top, at + Vector3(randf_range(-0.3, 0.3), 0.05, -1.5), colour.lerp(Color.WHITE, 0.3), randf_range(0.16, 0.26), life * 0.55, i * life * 0.12, 3, 6.0)
-	shards(at, colour, height, radius, int(6 + 2 * power), life)
+	shards(at, colour, height, radius, int(12 + 4 * power), life)
 	if fighter != null and is_instance_valid(fighter) and fighter.has_method("spell_hold"):
 		fighter.call("spell_hold", colour.lerp(Color.WHITE, 0.4), 1.6, life)
 		hold_glow(fighter, life + 0.25)
 	# (anybody else standing inside the whirl keeps his own shape too)
 	for p: Node3D in s._people:
-		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 3.0:
+		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 4.5:
 			hold_glow(p, life + 0.25)
 
 
 ## Crisp streaks of light: `up` = climbing the whirl in a spiral; else a spray out of its foot.
-func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: float, up: bool) -> void:
+func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: float, up: bool, hold := Vector4(-1.0, -1.0, -1.0, -1.0)) -> void:
 	var sp := Sparks.new()
-	var n := int(clampf((54.0 if up else 40.0) * power, 30.0, 170.0))
+	var n := int(clampf((108.0 if up else 80.0) * power, 60.0, 340.0))
 	sp.centre = at
 	if up:
 		sp.spin = 15.0
@@ -707,7 +726,10 @@ func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: f
 		sp.pull = 4.0
 		sp.grav = Vector3(0.0, -9.0, 0.0)
 		sp.drag = 2.2
-	sp.start(n, _streak_mat(colour.lerp(Color.WHITE, 0.2), 5.0 * num("spell") + 1.0))
+	var sm := _streak_mat(colour, 5.0 * num("spell") + 1.0)
+	sm.set_shader_parameter("hold", hold)
+	sm.set_shader_parameter("hold_z", at.z)
+	sp.start(n, sm)
 	for i in n:
 		var a := randf() * TAU
 		var r := radius * (randf_range(0.6, 1.1) if up else randf_range(0.1, 0.6))

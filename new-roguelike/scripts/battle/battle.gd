@@ -31,8 +31,10 @@ const Hd = preload("res://scripts/fx/hd.gd")
 ## night) onto the clearing: where it looks first, relative to where it ends up.
 const SKY_LOOK := Vector3(0.0, 15.0, -16.0)
 
-const PARTY_AT := [Vector3(-2.6, 0.0, 0.7), Vector3(-4.8, 0.0, -0.9), Vector3(-5.4, 0.0, 1.8), Vector3(-7.2, 0.0, 0.2)]
-const FOES_AT := [Vector3(2.2, 0.0, 0.9), Vector3(4.5, 0.0, -0.9), Vector3(6.4, 0.0, 1.1), Vector3(7.8, 0.0, -1.4)]
+## Each side stands in a deep diagonal (front near the middle and the camera, the rest stepping back
+## and out), with a broad open floor between them where the spells land.
+const PARTY_AT := [Vector3(-3.2, 0.0, 1.9), Vector3(-5.8, 0.0, -0.4), Vector3(-8.3, 0.0, -2.4), Vector3(-10.0, 0.0, 1.0)]
+const FOES_AT := [Vector3(3.2, 0.0, 1.9), Vector3(5.8, 0.0, -0.4), Vector3(8.3, 0.0, -2.4), Vector3(10.0, 0.0, 1.0)]
 const PX := 1.0 / 16.0
 
 var spot := 0                      ## which roamer of scripts/data/roamers.gd started it
@@ -109,7 +111,7 @@ func _ready() -> void:
 		_place(party[i], PARTY_AT[i], false)
 	for i in foes.size():
 		# a boss stands alone in the middle of its side
-		_place(foes[i], Vector3(3.9, 0.0, 0.2) if bool(foes[i].get("boss", false)) else FOES_AT[i], true)
+		_place(foes[i], Vector3(4.6, 0.0, 0.4) if bool(foes[i].get("boss", false)) else FOES_AT[i], true)
 	_build_screen()
 	_marker = stage.call("ground_glow", Vector3.ZERO, Color(1.0, 0.82, 0.4, 0.75), 1.25, 0.0, true)
 	_marker.visible = false
