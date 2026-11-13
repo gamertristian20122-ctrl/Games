@@ -409,6 +409,8 @@ static func set_glow(mat: ShaderMaterial, tex: Texture2D, hero := false) -> void
 		hot = 0.92
 	elif path.contains("hub_fire"):
 		hot = 0.7
+	elif path.contains("hub_flava"):
+		hot = 0.85              # (molten rock burns orange-red, never a pale pink sheet)
 	param(mat, "hot", hot)
 	param(mat, "by_night", by_night)
 	param(mat, "lamp_take", 0.25 if path.contains("hub_slantern") else 1.0)

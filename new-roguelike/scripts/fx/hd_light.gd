@@ -286,6 +286,10 @@ func build_lamps(place: Dictionary) -> void:
 		var warm := two.color.r > two.color.b
 		# (HD: a warm lamp is AMBER, not a pale cream that the tone curve turns white)
 		var colour := two.color.lerp(HD_LAMP_AMBER, 0.5) if warm and Hd.on() else two.color
+		if Hd.on() and not warm:
+			# (HD: a cool rune or water light is a deep cyan-blue, never a pale white that blows out
+			# whatever stands under it: a footbridge lit by one burned white)
+			colour = Color(colour.r * 0.55, colour.g * 0.85, colour.b)
 		three.light_color = colour
 		three.omni_range = 64.0 * two.texture_scale * PX * (HD_LAMP_REACH if Hd.on() else LAMP_REACH)
 		three.omni_attenuation = HD_LAMP_DECAY if Hd.on() else 1.4
@@ -416,6 +420,12 @@ func sync_light() -> void:
 	if outdoor and is_instance_valid(hub._sky_node):
 		sky = (hub._sky_node as CanvasModulate).color
 	var bright := clampf((sky.g - 0.55) / 0.45, 0.0, 1.0)           # 1 by day, 0 in the middle of the night
+	if Hd.on() and outdoor:
+		# (HD: the time of day, not the place's own tint: the deep wood's blue tint made its noon
+		# count as dusk, so its sun, its key pool and its grade were half the night's all day;
+		# in HD the grade's own rows darken a dark place)
+		var own: Color = hub.place.get("tint", Color(0.80, 0.86, 0.92))         # (hub.gd DUSK)
+		bright = clampf((sky.g * 0.86 / maxf(own.g, 0.05) - 0.55) / 0.45, 0.0, 1.0)
 	if outdoor:
 		# By day (the owner's reference picture): a low golden sun that falls in patches, deep warm
 		# shade between them, a pool of light where the knight stands. By night: even, cool, dark.
@@ -446,7 +456,9 @@ func sync_light() -> void:
 		_sync_hd(sky, outdoor)
 	for mat: ShaderMaterial in v.build.window_mats:
 		mat.set_shader_parameter("shine", lerpf(1.25, 0.1, day) * (2.2 if Hd.on() else 1.0))       # windows glow when it is dark
-	grade = WalkLight.grade(hub.place_id, outdoor, day, lit())
+	# (HD: the land's grade keeps its day look well into the evening: dusk is the golden hour, not
+	# the first half of the night; the woods at dusk read as night when blended evenly)
+	grade = WalkLight.grade(hub.place_id, outdoor, sqrt(day) if Hd.on() else day, lit())
 	var t := Time.get_ticks_msec() / 1000.0
 	var night := 1.0 - day
 	for i in lamps.size():
@@ -459,7 +471,7 @@ func sync_light() -> void:
 		# (HD: a big fire is not brighter in the middle than a lamp, it only reaches further: its heat
 		# is spread by its size, so the square round it is a warm glow, not a white floodlight)
 		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f \
-			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) * float(grade.get("lamps", 1.0)) if Hd.on() else 1.0)
+			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) * float(grade.get("lamps", 1.0)) * (1.0 if bool(g[3]) else 0.7) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
 		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.26, night) * (1.0 if bool(g[3]) else 0.35) * float(grade.get("lamps", 1.0)) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
@@ -681,6 +693,9 @@ func _aim_key(dist: float, pool_at: Vector2) -> void:
 	key.spot_angle = rad_to_deg(atan(dist * 0.36 / reach))
 	key.spot_range = reach * 1.6
 	var strength := float(grade.get("key", 0.0)) * day if v._outdoor else 0.0
-	key.light_energy = strength
-	key.light_color = sun.light_color
-	key.visible = strength > 0.01
+	# (by night a faint moon-blue pool instead, so the knight and whoever stands by him still read
+	# in the darkest wood: GRADES "moon")
+	var moon := float(grade.get("moon", 0.0)) * (1.0 - day) if v._outdoor else 0.0
+	key.light_energy = strength + moon
+	key.light_color = sun.light_color.lerp(Color(0.55, 0.66, 1.0), moon / maxf(strength + moon, 0.001))
+	key.visible = strength + moon > 0.01
