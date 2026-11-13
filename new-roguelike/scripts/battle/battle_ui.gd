@@ -201,7 +201,11 @@ class Card extends Control:
 			if glow > 0.0:
 				draw_line(Vector2(-2, 2), Vector2(-2, size.y - 2), Color(UI.C_EMBER, glow), 1.5)
 			ink_text_(UI.font_bold, Vector2(2, 11), String(unit["name"]), 8, name_col)
-			ink_text_(UI.font_num, Vector2(w - 2, 11), "%d" % int(unit["hp"]), 8, hp_col, HORIZONTAL_ALIGNMENT_RIGHT)
+			var hp_s := "%d" % int(unit["hp"])
+			ink_text_(UI.font_num, Vector2(w - 2, 11), hp_s, 8, hp_col, HORIZONTAL_ALIGNMENT_RIGHT)
+			# (and the mana, small and blue, left of the health: a caster reads it without opening Skills)
+			var mp_x := w - 2.0 - UI.font_num.get_string_size(hp_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x - 5.0
+			ink_text_(UI.font_num, Vector2(mp_x, 11), "%d" % int(unit["mp"]), 7, UI.C_MP_A.lerp(Color.WHITE, 0.25), HORIZONTAL_ALIGNMENT_RIGHT)
 			return
 		# an ember glow spilling out under the acting card
 		if glow > 0.0:

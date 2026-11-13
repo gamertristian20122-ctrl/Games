@@ -122,15 +122,7 @@ func _header() -> Control:
 
 ## A Back button for the mouse at the bottom left (keys and pads have Esc / B).
 func _add_back_button() -> void:
-	var back := UI.button("Back", on_back, "", "")
-	back.name = "Back"
-	back.focus_mode = Control.FOCUS_NONE
-	back.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	back.offset_left = 18
-	back.offset_right = 18 + 56
-	back.offset_top = -UI.row_h - 9
-	back.offset_bottom = -9
-	add_child(back)
+	add_child(UI.mouse_back(on_back))
 
 
 func help_pairs() -> Array:

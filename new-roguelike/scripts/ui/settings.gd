@@ -6,6 +6,7 @@ extends "res://scripts/ui/screen.gd"
 ## HD GUI: the veil and one centred glass panel (420 UI px on a PC, the whole width on a phone).
 
 const SettingRow = preload("res://scripts/ui/setting_row.gd")
+const Display = preload("res://scripts/ui/display.gd")
 const UI_SIZES := [["small", "Small"], ["normal", "Normal"], ["large", "Large"]]
 const VEIL_GAIN := 2.4
 
@@ -53,7 +54,11 @@ func build() -> void:
 				r.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				line.add_child(r)
 	else:
-		for r: Control in [vib, look, lefty, shake]:
+		# (a PC has no vibration and no thumb sticks: those two rows are the phone's; it gets
+		# Display and VSync instead)
+		vib.queue_free()
+		lefty.queue_free()
+		for r: Control in [look, shake]:
 			list.add_child(r)
 	# Easy / Normal / Hard (the numbers are G.DIFFICULTY); it counts from the next level you enter
 	var hard := SettingRow.new()
@@ -79,6 +84,17 @@ func build() -> void:
 			Sfx.play("ui_click")
 			UI.refit_all())
 		list.add_child(size_row)
+		var disp := SettingRow.new()
+		disp.options = Display.MODES.map(func(m: Array) -> String: return String(m[1]))
+		disp.setup("choice", "Display", 1 if String(Save.setting("display")) == "full" else 0)
+		disp.changed.connect(func(v: Variant) -> void:
+			Save.set_setting("display", String(Display.MODES[int(v)][0]))
+			Sfx.play("ui_click")
+			Display.apply(true))
+		list.add_child(disp)
+		var vs := _row("toggle", "VSync", "vsync")
+		vs.changed.connect(func(_v: Variant) -> void: Display.apply(true))
+		list.add_child(vs)
 	list.add_child(UI.spacer(0, 6 if not _ph else 2))
 	var pair := UI.hbox(8 if not _ph else 4)
 	list.add_child(pair)
@@ -122,15 +138,7 @@ func _header() -> Control:
 
 ## A Back button for the mouse at the bottom left (keys and pads have Esc / B).
 func _add_back_button() -> void:
-	var back := UI.button("Back", on_back, "", "")
-	back.name = "Back"
-	back.focus_mode = Control.FOCUS_NONE
-	back.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	back.offset_left = 18
-	back.offset_right = 18 + 56
-	back.offset_top = -UI.row_h - 9
-	back.offset_bottom = -9
-	add_child(back)
+	add_child(UI.mouse_back(on_back))
 
 
 func help_pairs() -> Array:

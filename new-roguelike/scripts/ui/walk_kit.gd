@@ -32,10 +32,12 @@ class Base extends Control:
 ## hairline fading upward on its right. clip_contents keeps the glow inside the well.
 class Portrait extends Base:
 	var sprite_id := ""
-	var k := 3.0
+	var k := 2.0                ## UI px per sprite px (2 on a PC: close to the world's own pixel size)
 	var glow := true
+	var bob := true             ## a slow idle breath (1 UI px)
 	var _tex: Texture2D
 	var _used := Rect2()
+	var _t := 0.0
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -44,34 +46,55 @@ class Portrait extends Base:
 
 	func setup(id: String, per_px: float) -> void:
 		sprite_id = id
-		k = per_px
+		# (the whole figure at one whole scale, the same pixel size for everybody, rather than a
+		# big crop cut off at the waist)
+		k = minf(per_px, 2.0)
 		_tex = null
 		if id != "" and Art.has(id):
 			_tex = Art.tex(id)
 			_used = UI.used_rect(id)
-			# a wide figure gets a smaller whole scale so it is not cut at the sides
-			while k > 1.0 and _used.size.x * k > size.x + 2.0 and size.x > 0.0:
+			while k > 1.0 and size.x > 0.0 and (_used.size.x * k > size.x - 4.0 or _used.size.y * k > size.y - 6.0):
 				k -= 1.0
+		set_process(bob and not UI.instant)
+		queue_redraw()
+
+	func _process(delta: float) -> void:
+		_t += delta
 		queue_redraw()
 
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_RESIZED and sprite_id != "":
-			setup(sprite_id, k if size.x <= 0.0 else (2.0 if UI.is_phone() else 3.0))
+			setup(sprite_id, 2.0)
 
 	func _draw() -> void:
 		var r := Rect2(Vector2.ZERO, size)
-		draw_rect(r, Color(0.0, 0.0, 0.02, 0.35))
+		var ci := get_canvas_item()
+		# a dark well with a warm lamp behind the figure, darker towards the edges (vignette)
+		UI.rs_vgrad(ci, r, Color(0.06, 0.05, 0.08, 0.55), Color(0.01, 0.01, 0.03, 0.75))
 		if glow:
-			var at := Vector2(r.size.x * 0.5, r.size.y * 0.42)
-			var big := minf(r.size.x, r.size.y) * 0.47
+			var at := Vector2(r.size.x * 0.5, r.size.y * 0.46)
+			var big := minf(r.size.x, r.size.y) * 0.5
 			for i in 7:
-				draw_circle(at, big * (1.0 - float(i) / 8.0), Color(1.0, 0.72, 0.42, 0.035), true, -1.0, true)
-		if _tex == null:
-			return
-		var rows := minf(_used.size.y, floorf(r.size.y / k))
-		var src := Rect2(_used.position, Vector2(_used.size.x, rows))
-		var dst := Rect2(roundf((r.size.x - _used.size.x * k) * 0.5), r.size.y - rows * k, _used.size.x * k, rows * k)
-		draw_texture_rect_region(_tex, dst, src)
+				draw_circle(at, big * (1.0 - float(i) / 8.0), Color(1.0, 0.70, 0.40, 0.04), true, -1.0, true)
+		if _tex != null:
+			var lift := 0.0
+			if bob and not UI.instant:
+				lift = roundf(0.5 + 0.5 * sin(_t * 2.2))           # breathes up one UI px and back
+			var rows := minf(_used.size.y, floorf((r.size.y - 4.0) / k))
+			var src := Rect2(_used.position + Vector2(0, _used.size.y - rows), Vector2(_used.size.x, rows))
+			var dst := Rect2(roundf((r.size.x - _used.size.x * k) * 0.5), r.size.y - 4.0 - rows * k - lift, _used.size.x * k, rows * k)
+			# a soft shadow under the feet
+			draw_circle(Vector2(r.size.x * 0.5, r.size.y - 4.0), _used.size.x * k * 0.32, Color(0, 0, 0, 0.35), true, -1.0, true)
+			draw_texture_rect_region(_tex, dst, src)
+		# the brass frame: a hairline with cut corners and darker inner edges
+		for i in 4:
+			var e := float(i) * 2.0
+			draw_rect(Rect2(Vector2(e, e), r.size - Vector2(e, e) * 2.0), Color(0, 0, 0, 0.16 - i * 0.035), false, 2.0)
+		var c := 4.0
+		var pts := PackedVector2Array([Vector2(c, 0.5), Vector2(r.size.x - c, 0.5), Vector2(r.size.x - 0.5, c), Vector2(r.size.x - 0.5, r.size.y - c),
+			Vector2(r.size.x - c, r.size.y - 0.5), Vector2(c, r.size.y - 0.5), Vector2(0.5, r.size.y - c), Vector2(0.5, c), Vector2(c, 0.5)])
+		draw_polyline(pts, Color(UI.C_BRASS, 0.75), 1.0, true)
+		UI.rs_lozenge(ci, Vector2(r.size.x * 0.5, 0.5), 2.5, UI.C_BRASS, 0.0)
 
 
 # ------------------------------------------------------------------ page dots and the chevron
@@ -399,11 +422,17 @@ class Coins extends Base:
 		var fs := 9 if ph else 13
 		var r := 3.5 if ph else 5.0
 		var ci := get_canvas_item()
-		UI.rs_hgrad(ci, Rect2(Vector2.ZERO, size), Color(UI.C_WASH, 0.0), Color(UI.C_WASH, 0.55))
+		UI.rs_hgrad(ci, Rect2(Vector2.ZERO, size), Color(UI.C_WASH, 0.0), Color(UI.C_WASH, 0.45))
 		var s := str(maxi(value, 0))
 		var tw := _tw(UI.font_num, fs, s)
 		var right := size.x - (8.0 if ph else 16.0)
 		var cy := roundf(size.y * 0.5)
+		# a framed chip round the coin and the number (glass with a brass hairline)
+		var chip_w := tw + r * 2.0 + (14.0 if ph else 22.0)
+		var chip_h := (13.0 if ph else 20.0)
+		var chip := Rect2(Vector2(right + (4.0 if ph else 7.0) - chip_w, cy - chip_h * 0.5), Vector2(chip_w, chip_h))
+		var g := UI.glass(0.0, 0.0, Color(UI.C_BRASS, 0.55))
+		g.draw(ci, chip)
 		var base := roundf(cy + UI.font_num.get_ascent(fs) * 0.5 - 1.0)
 		_say(self, UI.font_num, fs, Vector2(right - tw, base), s, UI.C_PARCH, 3)
 		var cc := Vector2(right - tw - r - (4.0 if ph else 6.0), cy)

@@ -945,6 +945,35 @@ static func button(text: String, action: Callable = Callable(), kind: String = "
 	return b
 
 
+## The mouse's Back on a PC screen: a small framed glass button with a chevron, bottom left
+## (keys and pads use Esc / B, which the help strip shows). It never takes the keyboard focus.
+static func mouse_back(action: Callable) -> Button:
+	_apply_tier()
+	var back := Button.new()
+	back.text = "\u2039  Back"
+	back.name = "Back"
+	back.focus_mode = Control.FOCUS_NONE
+	back.add_theme_font_override("font", font_body)
+	back.add_theme_font_size_override("font_size", size_body)
+	back.add_theme_color_override("font_color", C_DIM)
+	back.add_theme_color_override("font_hover_color", C_GOLD)
+	back.add_theme_color_override("font_pressed_color", C_GOLD)
+	var n := glass(9.0, 2.0, C_BRASS_DIM)
+	var h := glass(9.0, 2.0, Color(C_GOLD, 0.8))
+	for st: String in ["normal", "focus", "disabled"]:
+		back.add_theme_stylebox_override(st, n)
+	for st: String in ["hover", "pressed", "hover_pressed"]:
+		back.add_theme_stylebox_override(st, h)
+	back.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	back.offset_left = 16
+	back.offset_right = 16 + 66
+	back.offset_top = -row_h - 12
+	back.offset_bottom = -12
+	juice(back)
+	back.pressed.connect(action)
+	return back
+
+
 ## Makes any button squash when pressed and spring back when released, and makes the mouse move
 ## the focus onto it (one highlight on a screen, never two).
 static func juice(b: BaseButton) -> void:

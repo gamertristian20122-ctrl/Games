@@ -203,17 +203,7 @@ func _on_tab(id: String) -> void:
 
 ## A Back button for the mouse at the bottom left (keys and pads have Esc / B).
 func _add_back_button() -> void:
-	var back := UI.button("Back", on_back, "", "")
-	back.name = "Back"
-	back.focus_mode = Control.FOCUS_NONE
-	back.custom_minimum_size = Vector2(56, UI.row_h)
-	back.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	back.offset_left = 18
-	back.offset_top = -UI.row_h - 9
-	back.offset_bottom = -9
-	back.offset_right = 18 + 56
-	back.icon = null
-	add_child(back)
+	add_child(UI.mouse_back(on_back))
 
 
 ## Q / E and LB / RB turn the pages (only on this screen); a right click goes back.
@@ -274,21 +264,48 @@ func _portrait_column() -> Control:
 		left.add_child(holder)
 		_reset = UI.button("Take points back", _ask_reset)
 		_reset.add_theme_font_size_override("font_size", UI.size_small + 1)
+		# (a real framed button, not a loose line of text)
+		var n := UI.glass(10.0, 2.0, UI.C_BRASS_DIM)
+		var f := UI.glass(10.0, 2.0, Color(UI.C_GOLD, 0.85))
+		for st: String in ["normal", "disabled"]:
+			_reset.add_theme_stylebox_override(st, n)
+		for st: String in ["hover", "pressed", "hover_pressed", "focus"]:
+			_reset.add_theme_stylebox_override(st, f)
+		_reset.custom_minimum_size = Vector2(130, UI.row_h)
 		holder.add_child(_reset)
 	left.add_child(UI.spacer(0, 8))
 	return left
 
 
-## The warm glow and the oval shadow under the knight.
+## The warm glow, a round stone plinth with a brass rim that the knight stands on, and his level
+## on a brass badge on its front (all drawn by code).
 func _draw_stage() -> void:
-	var c := Vector2(roundf(_stage.size.x * 0.5), roundf(_stage.size.y - 18.0))
+	var c := Vector2(roundf(_stage.size.x * 0.5), roundf(_stage.size.y - 26.0))
 	var r := minf(_stage.size.x * 0.48, 78.0)
 	for i in 9:
 		_stage.draw_circle(c + Vector2(0, -r * 0.55), r - i * r / 9.0, Color(1.0, 0.72, 0.42, 0.028))
-	_stage.draw_set_transform(c + Vector2(0, 1), 0.0, Vector2(1.0, 0.28))
-	_stage.draw_circle(Vector2.ZERO, 30.0, Color(0, 0, 0, 0.38))
-	_stage.draw_circle(Vector2.ZERO, 22.0, Color(0, 0, 0, 0.2))
+	var pw := 46.0          # the plinth's half width
+	var squash := 0.26
+	var face := 9.0         # how tall its front is
+	# the front of the drum: dark stone, lit a little at the middle
+	var front := Rect2(c.x - pw, c.y, pw * 2.0, face)
+	UI.rs_vgrad(_stage.get_canvas_item(), front, Color(0.16, 0.15, 0.19, 0.95), Color(0.05, 0.05, 0.07, 0.95))
+	_stage.draw_set_transform(c + Vector2(0, face), 0.0, Vector2(1.0, squash))
+	_stage.draw_circle(Vector2.ZERO, pw, Color(0.05, 0.05, 0.07, 0.95), true, -1.0, true)
+	_stage.draw_set_transform(c, 0.0, Vector2(1.0, squash))
+	_stage.draw_circle(Vector2.ZERO, pw, Color(0.20, 0.19, 0.23, 1.0), true, -1.0, true)
+	_stage.draw_circle(Vector2.ZERO, pw * 0.82, Color(0.25, 0.23, 0.27, 1.0), true, -1.0, true)
+	_stage.draw_arc(Vector2.ZERO, pw - 0.5, 0.0, TAU, 48, Color(UI.C_BRASS, 0.85), 1.5 / squash * 0.5, true)
+	_stage.draw_circle(Vector2(0, 2), 22.0, Color(0, 0, 0, 0.35), true, -1.0, true)
 	_stage.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_stage.draw_line(Vector2(c.x - pw, c.y + face - 0.5), Vector2(c.x + pw, c.y + face - 0.5), Color(UI.C_BRASS, 0.5), 1.0)
+	# the level badge on the drum's front
+	var lv := "LV %d" % Rpg.level()
+	var fs := 9
+	var tw := UI.font_bold.get_string_size(lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var badge := Rect2(roundf(c.x - tw * 0.5 - 7.0), c.y + 1.0, roundf(tw + 14.0), 13.0)
+	UI.glass(0.0, 0.0, Color(UI.C_GOLD, 0.9)).draw(_stage.get_canvas_item(), badge)
+	_stage.draw_string(UI.font_bold, Vector2(badge.position.x + 7.0, badge.position.y + 10.0), lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, UI.C_GOLD)
 
 
 ## The knight as he looks now: three UI px to one art pixel, standing on the glow.
@@ -300,7 +317,7 @@ func _show() -> void:
 	var hero := Heroes.by_id("knight")
 	var holder := Node2D.new()
 	holder.scale = Vector2(3, 3)
-	holder.position = Vector2(roundf(_stage.size.x / 2.0), roundf(_stage.size.y - 18.0))
+	holder.position = Vector2(roundf(_stage.size.x / 2.0), roundf(_stage.size.y - 26.0))
 	holder.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_stage.add_child(holder)
 	var weapon := HeroLook.make_weapon(hero)

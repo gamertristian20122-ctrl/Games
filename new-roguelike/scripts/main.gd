@@ -14,6 +14,7 @@ extends Node
 ##   --safe=l,t,r,b     pretend the phone has a notch this many game pixels deep on each side
 ##   --fonts=<dir>      try display.ttf / body.ttf from a folder outside the project
 
+const Display = preload("res://scripts/ui/display.gd")
 const UI = preload("res://scripts/ui/theme.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 
@@ -87,6 +88,7 @@ func _ready() -> void:
 	if safe.size() == 4:
 		UI.fake_safe = Vector4(safe[0], safe[1], safe[2], safe[3])
 	UI.font_dir_override = G.arg("fonts")
+	Display.apply()
 	_build_layers()
 	G.run_ended.connect(_on_run_ended)
 	G.note_found.connect(_on_note_found)
@@ -777,6 +779,12 @@ func open_hub_pause() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# F11 or Alt+Enter: fullscreen on / off (PC)
+	if event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_F11
+			or (event.alt_pressed and (event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER))):
+		Display.toggle()
+		get_viewport().set_input_as_handled()
+		return
 	# the gamepad's B button also means "back" while a menu is open
 	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_B and not _stack.is_empty():
 		_back()

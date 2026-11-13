@@ -1642,6 +1642,11 @@ func _end_screen(outcome: String, summary: Dictionary, lines: Array, _head: Stri
 			UI.pop_out(c, false)
 	var room: Vector2 = _root.size
 	var won := outcome == "win"
+	# (the cards under the panel show the level the party has NOW, not the one it came in with)
+	for card: Control in _cards:
+		if is_instance_valid(card) and int(card.get("level")) != Rpg.level():
+			card.set("level", Rpg.level())
+			card.queue_redraw()
 	var banner: Control = BUI.Banner.new()
 	banner.call("setup", "Victory" if won else "Fallen", UI.C_GOLD if won else Color(0.80, 0.40, 0.36),
 		Color(0.45, 0.25, 0.05, 0.6) if won else Color(0.2, 0.0, 0.0, 0.6))
@@ -1710,9 +1715,9 @@ func _victory_rows(col: VBoxContainer, summary: Dictionary, lines: Array) -> voi
 		var tag := PanelContainer.new()
 		tag.add_theme_stylebox_override("panel", UI.box("tag"))
 		tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var tl := UI.label("Level up", "Head")
-		tl.add_theme_font_size_override("font_size", 7 if _ph else 9)
-		tl.add_theme_color_override("font_color", UI.C_EMBER)
+		var tl := UI.label("Level %d" % Rpg.level() if levels > 0 else "Level up", "Head")
+		tl.add_theme_font_size_override("font_size", 7 if _ph else 10)
+		tl.add_theme_color_override("font_color", UI.C_GOLD)
 		tag.add_child(tl)
 		tag.modulate.a = 0.0
 		row.add_child(tag)
@@ -1730,7 +1735,7 @@ func _victory_rows(col: VBoxContainer, summary: Dictionary, lines: Array) -> voi
 	coins.add_child(cl)
 	for line: String in lines:
 		if line.begins_with("Level "):
-			var ll := UI.label(line.replace("!  ", "!   "), "Good")
+			var ll := UI.label(line.replace("!  ", "!   "), "Gold")
 			ll.add_theme_font_size_override("font_size", 8 if _ph else 11)
 			ll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			ll.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1776,8 +1781,13 @@ func _count_up(xp: Label, bar: Control, tag: Control, gain: int, from: float, to
 	if levels == 0:
 		tb.tween_method(func(v: float) -> void: bar.call("set_value", v, 1.0, false), from, to, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		return
+	# a level up: the bar fills to the top, flashes and holds there a moment (LEVEL n pops), then
+	# rolls over and fills again from empty to what is left over
 	tb.tween_method(func(v: float) -> void: bar.call("set_value", v, 1.0, false), from, 1.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tb.tween_callback(_level_up_tag.bind(tag))
+	tb.tween_property(bar, "modulate", Color(1.8, 1.6, 1.2), 0.06)
+	tb.tween_property(bar, "modulate", Color.WHITE, 0.35)
+	tb.tween_interval(0.35)
 	tb.tween_method(func(v: float) -> void: bar.call("set_value", v, 1.0, false), 0.0, to, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 

@@ -165,13 +165,20 @@ class StoryLine extends Control:
 		if UI.is_phone():
 			return {"head": 7, "body": 9, "line": 10, "small": 7, "x": 6.0, "head_y": 9.0, "rule_y": 12.0, "rule_w": 92.0,
 				"text_y": 21.0, "wrap": 150.0, "wash": Vector2(190, 36), "loz": 2.0, "outline": 2}
-		return {"head": 9, "body": 13, "line": 14, "small": 10, "x": 16.0, "head_y": 18.0, "rule_y": 23.0, "rule_w": 184.0,
-			"text_y": 39.0, "wrap": 262.0, "wash": Vector2(330, 66), "loz": 2.5, "outline": 3}
+		return {"head": 11, "body": 13, "line": 14, "small": 10, "x": 18.0, "head_y": 20.0, "rule_y": 26.0, "rule_w": 200.0,
+			"text_y": 42.0, "wrap": 262.0, "wash": Vector2(360, 70), "loz": 2.5, "outline": 3}
 
 	func set_text(h: String, g: String, more: Array) -> void:
 		UI._load_fonts()
+		var news := goal != "" and g != goal
 		head = h.to_upper()
 		goal = g
+		if news and is_inside_tree() and not UI.instant:
+			# a new step of the story: the line fades in again, with a short gold glint
+			modulate = Color(1.6, 1.35, 0.9, 0.0)
+			var tw := create_tween()
+			tw.tween_property(self, "modulate", Color(1.6, 1.35, 0.9, 1.0), 0.25)
+			tw.tween_property(self, "modulate", Color.WHITE, 0.6)
 		extra = more
 		var s := _sizes()
 		_goal_lines = _wrap(goal, int(s["body"]), float(s["wrap"]))
@@ -203,8 +210,19 @@ class StoryLine extends Control:
 		var s := _sizes()
 		var ci := get_canvas_item()
 		var wash: Vector2 = s["wash"]
-		UI.rs_hgrad(ci, Rect2(Vector2.ZERO, Vector2(wash.x, size.y)), Color(UI.C_WASH, 0.80), Color(UI.C_WASH, 0.0))
+		# the scrim: a soft dark corner, strong at the top left and fading out to the right AND down,
+		# so the words read on a bright square as well as in the dark wood
+		var strips := 10
+		var tall := size.y + (10.0 if UI.is_phone() else 18.0)
+		for i in strips:
+			var k := float(i) / float(strips)
+			var a := 0.86 * (1.0 - k * k)
+			UI.rs_hgrad(ci, Rect2(Vector2(0.0, tall * k), Vector2(wash.x * (1.0 - 0.25 * k), tall / strips)), Color(UI.C_WASH, a), Color(UI.C_WASH, 0.0))
 		var x: float = s["x"]
+		# a brass tick down the left of the words
+		var tick_top: float = float(s["rule_y"]) + (3.0 if UI.is_phone() else 5.0)
+		var tick_bot: float = size.y - (2.0 if UI.is_phone() else 4.0)
+		UI.rs_rule(ci, Vector2(x - (4.0 if UI.is_phone() else 8.0), tick_top), Vector2(x - (4.0 if UI.is_phone() else 8.0), tick_bot), Color(UI.C_BRASS, 0.8), Color(UI.C_BRASS, 0.0), 1.0)
 		var ol: int = s["outline"]
 		if head != "":
 			var hs := int(s["head"])
