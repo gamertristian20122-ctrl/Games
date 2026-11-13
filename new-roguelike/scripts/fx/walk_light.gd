@@ -31,13 +31,20 @@ const Hd = preload("res://scripts/fx/hd.gd")
 ##                  the lamp-lit parts carry colour; the woods keep more of their green)
 ##   gold           HD: how far greens are turned towards olive and gold (the woods of the
 ##                  reference pictures have no candy green: every leaf is olive in gold light)
+##   blue           HD: how far the shade turns a deep dusk blue (amber light, blue shade: the
+##                  sands at dusk would otherwise be one sheet of orange)
+##   fog            HD: how thick the air is here (times the time of day's; open desert air is
+##                  clear, so its lamps light pools on the sand, not a milky veil)
+##   lamps          HD: how strong the lamps and fires are here (pale sand throws their light
+##                  back far more than grass and cobbles)
+##   bounce         HD: how much light bounces off the ground into the shade (pale sand: orange shade)
 ## Rows: "<place>" (by day), "<place>:night", "<place>:lit" (after its land's beacon is lit),
 ## "default", "default:night", "indoors". A missing key is taken from "default" / "default:night".
 const GRADES := {
 	"default": {"warm": Vector3(1.06, 1.01, 0.90), "shade": Vector3(1.0, 0.93, 0.88), "punch": 1.07, "rich": 0.97,
-		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 1.2, "sun": 1.0, "dull": 0.35},
+		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 1.2, "sun": 1.0, "dull": 0.35, "blue": 0.0, "fog": 1.0, "lamps": 1.0, "bounce": 1.0},
 	"default:night": {"warm": Vector3(1.10, 1.0, 0.86), "shade": Vector3(0.84, 0.94, 1.16), "punch": 1.06, "rich": 0.95,
-		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45},
+		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45, "blue": 0.3, "fog": 1.0, "lamps": 1.0, "bounce": 1.0},
 	# Wickmere at dusk: honey light on the stones, plum shade
 	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25, "rich": 0.85, "gold": 0.25, "dull": 0.5},
 	# the dark road (before the beacon): greener, cooler shade, thicker air, few beams
@@ -56,8 +63,11 @@ const GRADES := {
 	"glade:lit": {"warm": Vector3(1.10, 1.01, 0.85), "haze": Color(1.0, 0.84, 0.58), "shafts": 1.0, "motes": 1.0},
 	"beacon:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the Sands: hot pale dust before the beacon, deep amber after it
-	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.96, 0.90, 0.96), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0},
-	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0},
+	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.92, 0.92, 1.04), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0, "blue": 0.25, "fog": 0.6, "lamps": 0.8, "bounce": 0.6},
+	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0, "blue": 0.25, "fog": 0.6, "lamps": 0.8, "bounce": 0.6},
+	# the sands by night: clear air, a blue moonlit plain, the lamps and fires in small amber pools
+	"dustwatch:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},
+	"suncourt:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},
 	"dustwatch:lit": {"warm": Vector3(1.12, 1.0, 0.82), "haze": Color(1.0, 0.78, 0.50), "shafts": 1.0, "motes": 1.0},
 	"suncourt:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the world map: a wide view, so the distance matters most
@@ -126,6 +136,7 @@ uniform float linear_in = 0.0;    // 1 = the picture is linear light (HD, Forwar
 uniform float fore_z = 0.0;       // HD: things nearer than this (view distance) are the dark foreground (0 = none)
 uniform float gold = 0.0;         // HD: greens turned towards olive and gold (GRADES gold)
 uniform float dull = 0.35;        // HD: how grey the shade goes (GRADES dull)
+uniform float blue = 0.0;         // HD: how far the shade turns dusk blue (GRADES blue)
 const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
@@ -215,6 +226,9 @@ void fragment() {
 	float gk = gold * max(col.g - col.r, 0.0);
 	col.g -= gk * 0.6;
 	col.r += gk * 0.25;
+	// dusk: the light stays amber and the shade turns a deep blue (the sky's light in it)
+	float bk = blue * (1.0 - smoothstep(0.06, 0.5, l));
+	col = mix(col, vec3(l) * vec3(0.55, 0.76, 1.45), bk);
 #endif
 	col = mix(col, col * warm, smoothstep(0.25, 0.9, l));
 	col = mix(col, col * shade, 1.0 - smoothstep(0.0, 0.3, l));

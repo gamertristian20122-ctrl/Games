@@ -61,7 +61,7 @@ var env: Environment
 var sun: DirectionalLight3D
 var key: SpotLight3D               ## HD: the one big warm pool of light where the knight is (GRADES "key")
 var post: MeshInstance3D
-var lamps: Array = []              ## [PointLight2D, OmniLight3D]
+var lamps: Array = []              ## [PointLight2D, OmniLight3D, flame (world), colour]
 var glows: Array = []              ## per lamp: [PointLight2D, pool material, halo material, warm?, seed]
 var windows: Array = []            ## [pool material, halo material]: window light that falls on the street at night
 var flies: CPUParticles3D
@@ -199,14 +199,17 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x, -1.0, HD_LEAN.y), Vector3.UP)
 	sun.shadow_bias = 0.02
 	sun.shadow_normal_bias = 0.2               # (0.6 lifted a figure's shadow off its feet)
-	sun.shadow_blur = 0.9
-	sun.light_angular_distance = 1.6            # soft edges that widen away from the thing that throws them
+	# (soft edges that widen away from the thing that throws them; the penumbra is sampled by a
+	# disc turned at random per pixel, and with no TAA to average it a wide one is grainy sand:
+	# narrower and less blurred, the soft edge stays a smooth gradient and contact shadows stay crisp)
+	sun.shadow_blur = 0.6
+	sun.light_angular_distance = 0.9
 	sun.light_volumetric_fog_energy = 0.7
 	RenderingServer.directional_shadow_atlas_set_size(4096, true)
 	# (the soft edges are a disc of samples turned at random per pixel: few samples = grain; a PC
 	# affords the most, so the penumbras are smooth gradients, not sand)
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_ULTRA)
-	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
+	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_ULTRA)
 	# THE KEY POOL (as in the reference pictures: one big warm pool of light where the people stand,
 	# the frame round it sinking into shade): a soft wide spot from high up on the sun's side,
 	# following the spot the camera looks at (sync_view), with real shadows
@@ -294,7 +297,7 @@ func build_lamps(place: Dictionary) -> void:
 			three.shadow_bias = 0.08
 			three.shadow_normal_bias = 1.0
 		v._world.add_child(three)
-		lamps.append([two, three])
+		lamps.append([two, three, flame, colour])
 		var reach := 64.0 * two.texture_scale * PX * (HD_POOL_REACH if Hd.on() else 0.62)
 		if Hd.on():
 			reach = minf(reach, 4.5)        # (a painted pool as wide as a big fire's reach lay over the whole clearing at night as a pale sheet; the real light does the rest)
@@ -443,7 +446,6 @@ func sync_light() -> void:
 		_sync_hd(sky, outdoor)
 	for mat: ShaderMaterial in v.build.window_mats:
 		mat.set_shader_parameter("shine", lerpf(1.25, 0.1, day) * (2.2 if Hd.on() else 1.0))       # windows glow when it is dark
-	v.water.sync(day, sky)
 	grade = WalkLight.grade(hub.place_id, outdoor, day, lit())
 	var t := Time.get_ticks_msec() / 1000.0
 	var night := 1.0 - day
@@ -457,14 +459,21 @@ func sync_light() -> void:
 		# (HD: a big fire is not brighter in the middle than a lamp, it only reaches further: its heat
 		# is spread by its size, so the square round it is a warm glow, not a white floodlight)
 		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f \
-			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) if Hd.on() else 1.0)
+			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) * float(grade.get("lamps", 1.0)) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
-		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.26, night) * (1.0 if bool(g[3]) else 0.35) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.26, night) * (1.0 if bool(g[3]) else 0.35) * float(grade.get("lamps", 1.0)) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
 		# (HD: the painted halo is a deep orange, so it carries the glow round a flame: the bloom of a
 		# light bright enough to bloom on its own comes out white)
 		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.03, 0.42, night) * f)
 	RenderingServer.global_shader_parameter_set(&"hh_lamp_on", clampf(0.3 + 1.2 * night, 0.3, 1.0) if outdoor else 1.0)
+	# the water: the sky in it, and (HD) a column of light under every lamp near it
+	var in_water: Array = []
+	if Hd.on():
+		for pair: Array in lamps:
+			if is_instance_valid(pair[0]) and is_instance_valid(pair[1]) and bool((pair[0] as PointLight2D).color.r > (pair[0] as PointLight2D).color.b):
+				in_water.append([pair[2], pair[3], (pair[1] as OmniLight3D).light_energy])
+	v.water.sync(day, sky, in_water)
 	var dark_k := night if outdoor else 0.0
 	for i in windows.size():
 		var w: Array = windows[i]
@@ -511,6 +520,7 @@ func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool
 		mat.set_shader_parameter("rich", grade["rich"])
 		mat.set_shader_parameter("gold", float(grade.get("gold", 0.0)))
 		mat.set_shader_parameter("dull", float(grade.get("dull", 0.35)))
+		mat.set_shader_parameter("blue", float(grade.get("blue", 0.0)))
 		mat.set_shader_parameter("rim", float(grade["rim"]) * (1.2 if Hd.on() else 1.0))
 		# HD: the camera's blur melts the distance; the haze only tints it (else a milky veil)
 		mat.set_shader_parameter("far", float(grade["far"]) * (0.32 if Hd.on() else 1.0))
@@ -566,14 +576,18 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		var amber := HD_SUN_COLOUR_DAY.lerp(HD_SUN_COLOUR, clampf(night * 1.8, 0.0, 1.0))
 		sun.light_color = sky.lerp(amber, 0.7).lerp(Color(0.62, 0.72, 1.0), smoothstep(0.55, 1.0, night))
 		env.ambient_light_energy = lerpf(HD_AMBIENT_NIGHT, HD_AMBIENT_DAY, day) * float(grade.get("ambient", 1.0))
-		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night)
+		# (dusk: the shade takes the blue of the evening sky, the light stays amber)
+		var dusk := 1.0 - absf(night * 2.0 - 1.0)
+		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night).lerp(Color(0.36, 0.48, 0.95), dusk * 0.6)
+		env.ssil_intensity = 0.5 * float(grade.get("bounce", 1.0))
 		var haze: Color = grade.get("haze", Color(1.0, 0.86, 0.62)) if not grade.is_empty() else Color(1.0, 0.86, 0.62)
-		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day)
+		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day) * float(grade.get("fog", 1.0))
 		# (at night the air is a warm grey: the moon makes it blue, a lamp makes it amber, never white)
 		env.volumetric_fog_albedo = haze.lerp(Color(0.78, 0.74, 0.70), night)
 		sun.light_volumetric_fog_energy = lerpf(0.25, 1.6, day)      # (the air is thin except in the band behind the play)
 		env.tonemap_exposure = lerpf(HD_EXPOSURE_NIGHT, HD_EXPOSURE_DAY, day) * float(grade.get("exposure", 1.0))
 	else:
+		env.ssil_intensity = 0.5
 		if not is_equal_approx(_sun_low, 1.0):
 			_sun_low = 1.0
 			sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x, -1.0, HD_LEAN.y), Vector3.UP)
