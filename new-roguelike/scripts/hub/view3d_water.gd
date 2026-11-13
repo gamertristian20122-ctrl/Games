@@ -56,9 +56,9 @@ uniform vec3 sky : source_color = vec3(0.6, 0.75, 0.9);
 uniform float day = 1.0;
 uniform vec3 deep : source_color = vec3(0.010, 0.040, 0.062);
 uniform vec3 shallow : source_color = vec3(0.030, 0.140, 0.175);
-uniform float chop = 0.022;              // how steep the ripples are
+uniform float chop = 0.013;              // how steep the ripples are
 uniform float glitter = 3.5;            // how bright the sparkles of the sun and the moon are
-uniform float streak = 2.2;             // how bright the lamps' streaks are
+uniform float streak = 3.0;             // how bright the lamps' streaks are
 uniform float mirror = 0.5;             // how much the water mirrors what stands round it (screen-space reflections)
 varying vec2 at;
 varying float spark;                    // this art pixel is one that sparkles just now
@@ -107,7 +107,7 @@ void fragment() {
 	// moving crests: thin lines of art pixels where the ripples run highest catch the sky
 	float crest = step(1.20, h0) * (1.0 - step(1.235, h0)) + step(0.80, h0) * (1.0 - step(0.82, h0)) * 0.5;
 	vec3 seen = mix(sky, vec3(0.30, 0.52, 0.62) * dot(sky, vec3(0.333)) * 1.6, 0.45);     // the sky, bluer in the water
-	EMISSION = (seen * (0.05 + 0.6 * fres + 0.45 * crest) * (0.35 + 0.65 * day) + c * mix(0.25, 0.9, day)) * (1.0 - foam) * (1.0 - smoothstep(0.95, 1.0, edge));
+	EMISSION = (seen * (0.05 + 0.6 * fres + 0.12 * crest) * (0.35 + 0.65 * day) + c * mix(0.25, 0.9, day)) * (1.0 - foam) * (1.0 - smoothstep(0.95, 1.0, edge));
 	sun_share = sun_at(at);
 }
 void light() {
@@ -120,7 +120,7 @@ void light() {
 		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * (pow(m, 80.0) * 0.3 + smoothstep(0.86, 0.97, m) * spark * glitter * (0.12 + 0.88 * day));
 	} else {
 		// a lamp: a long broken streak towards the camera, its brightest pixels sparkling
-		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * streak * pow(m, 12.0) * (0.6 + 1.4 * spark);
+		SPECULAR_LIGHT += ATTENUATION * LIGHT_COLOR * open * streak * pow(m, 28.0) * (0.6 + 1.4 * spark);
 	}
 }
 "
