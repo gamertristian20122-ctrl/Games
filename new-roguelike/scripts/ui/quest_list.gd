@@ -214,10 +214,13 @@ class StoryLine extends Control:
 		# so the words read on a bright square as well as in the dark wood
 		var strips := 10
 		var tall := size.y + (10.0 if UI.is_phone() else 18.0)
+		# (owner's phone photo) the panel sits inside the notch's safe area: start the scrim at the
+		# screen's own edge, or the strip left of the panel shows as a hard dark block
+		var lead := maxf(global_position.x, 0.0) + 2.0
 		for i in strips:
 			var k := float(i) / float(strips)
 			var a := 0.86 * (1.0 - k * k)
-			UI.rs_hgrad(ci, Rect2(Vector2(0.0, tall * k), Vector2(wash.x * (1.0 - 0.25 * k), tall / strips)), Color(UI.C_WASH, a), Color(UI.C_WASH, 0.0))
+			UI.rs_hgrad(ci, Rect2(Vector2(-lead, tall * k), Vector2(lead + wash.x * (1.0 - 0.25 * k), tall / strips)), Color(UI.C_WASH, a), Color(UI.C_WASH, 0.0))
 		var x: float = s["x"]
 		# a brass tick down the left of the words
 		var tick_top: float = float(s["rule_y"]) + (3.0 if UI.is_phone() else 5.0)

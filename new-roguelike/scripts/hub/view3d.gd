@@ -593,6 +593,9 @@ func _keep_clear(copy: Control) -> void:
 	var fade := 1.0
 	if r.position.y < band and (r.position.x < room.x * 0.5 or r.end.x > room.x * 0.78):
 		fade = clampf((r.position.y - band * 0.6) / (band * 0.4), 0.0, 1.0)
+	if UI.is_phone() and r.end.x > room.x * 0.86 and r.position.y < room.y * 0.62:
+		# the phone's pause / level / TALK buttons down the right edge: slide the name left of them
+		copy.position.x = minf(copy.position.x, room.x * 0.86 - copy.size.x)
 	if r.end.y > room.y - cut.w - pad:
 		fade = minf(fade, clampf((room.y - cut.w - r.position.y) / maxf(r.size.y, 1.0) - 0.5, 0.0, 1.0))
 	copy.modulate.a = fade
