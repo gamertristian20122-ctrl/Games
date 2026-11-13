@@ -182,13 +182,17 @@ The owner: "turn it into an RPG ... like a 2D Zelda, slightly open world". It st
 ## Toolchain (a fresh cloud container needs these)
 - Godot 4.7.2 as `godot` on PATH, Android export templates in
   `~/.local/share/godot/export_templates/4.7.2.stable/`
-- Android SDK at `/usr/lib/android-sdk` (platform-tools, build-tools 35, platform 35), JDK 17 at
-  `/usr/lib/jvm/java-17-openjdk-amd64`, both set in `~/.config/godot/editor_settings-4.7.tres`
+- Android SDK at `/root/Android/Sdk` (platform-tools, build-tools 35.0.0, platform 35), JDK 21 at
+  `/usr/lib/jvm/java-21-openjdk-amd64`, both set in `~/.config/godot/editor_settings-4.7.tres` (13 Nov 2026;
+  older notes said /usr/lib/android-sdk and JDK 17). Setup used: cmdline-tools from dl.google.com
+  (repository2-3.xml names the zip) into `/root/Android/Sdk/cmdline-tools/latest`, then
+  `sdkmanager --licenses` and `sdkmanager "platform-tools" "build-tools;35.0.0" "platforms;android-35"`, and
+  only `templates/android*` + `version.txt` from Godot_v4.7.2-stable_export_templates.tpz (1.3 GB download).
 - `xvfb-run` for screenshots, `ffmpeg`, Python 3 with Pillow
 - Installing all of it in a fresh container takes about 5 minutes: Godot and the export templates (only
   the `android*` files are needed) from the godotengine/godot GitHub release, Android command-line
   tools from dl.google.com + `sdkmanager`, `apt-get install openjdk-17-jdk-headless`.
-- The APK is 64-bit only (`architectures/arm64-v8a` in `export_presets.cfg`), about 42 MB: the owner's
+- The APK is 64-bit only (`architectures/arm64-v8a` in `export_presets.cfg`), about 42 MB (v0.25.1: 49 MB): the owner's
   phone could not download the 69 MB two-architecture build.
 - The signing key is `keystore/cursebait.keystore` (alias and password in `keystore/key.env`, read by
   `tools/build_apk.sh`). Every APK must be signed with this same key or phones refuse to update.
