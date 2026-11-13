@@ -122,6 +122,7 @@ static var size_title := 20      ## screen titles
 static var size_banner := 24     ## the place banner
 static var size_display := 40    ## VICTORY / FALLEN
 static var size_key := 9         ## the letter on a key cap
+static var cap_h := 12.0         ## a key cap's height
 static var line_body := 15       ## line height for body text
 static var line_talk := 18
 static var cut := 3.0            ## panel corner cut
@@ -142,9 +143,9 @@ static var fake_safe := Vector4.ZERO
 
 const SIZES := {
 	"pc": {"body": 12, "talk": 14, "small": 10, "name": 12, "num": 12, "head": 13, "title": 20, "banner": 24,
-		"display": 40, "key": 9, "line_body": 15, "line_talk": 18, "cut": 3.0, "row": 19.0},
+		"display": 40, "key": 9, "cap": 12, "line_body": 15, "line_talk": 18, "cut": 3.0, "row": 19.0},
 	"phone": {"body": 10, "talk": 10, "small": 8, "name": 9, "num": 9, "head": 9, "title": 13, "banner": 13,
-		"display": 24, "key": 8, "line_body": 12, "line_talk": 12, "cut": 2.0, "row": 20.0},
+		"display": 24, "key": 7, "cap": 9, "line_body": 12, "line_talk": 12, "cut": 2.0, "row": 20.0},
 }
 
 
@@ -176,6 +177,7 @@ static func _apply_tier() -> void:
 	size_banner = s["banner"]
 	size_display = s["display"]
 	size_key = s["key"]
+	cap_h = s["cap"]
 	line_body = s["line_body"]
 	line_talk = s["line_talk"]
 	cut = s["cut"]

@@ -30,7 +30,7 @@ func _ready() -> void:
 	_wash = UI.wash("right" if corner == "bottom_left" else ("both" if corner == "bottom_center" else "left"), 0.6)
 	add_child(_wash)
 	_row = HBoxContainer.new()
-	_row.add_theme_constant_override("separation", 12)
+	_row.add_theme_constant_override("separation", 12 if not UI.is_phone() else 8)
 	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_row)
 	Controls.device_changed.connect(func(_t: bool) -> void: _place.call_deferred())
@@ -64,7 +64,7 @@ func _place() -> void:
 	var host := get_parent() as Control
 	var area := host.size if host != null else UI.screen_size(self)
 	var w := _row.get_combined_minimum_size().x
-	var h := 14.0
+	var h := UI.cap_h + 2.0
 	var x := area.x - margin.x - w
 	var y := area.y - margin.y - h
 	match corner:

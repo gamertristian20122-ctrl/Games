@@ -49,7 +49,7 @@ func _refresh() -> void:
 	_cap = cap_text(kind, pad)
 	_round = pad and _cap.length() <= 1
 	visible = not Controls.using_touch
-	custom_minimum_size = Vector2(_width(), 14.0)
+	custom_minimum_size = Vector2(_width(), UI.cap_h + 2.0)
 	size = custom_minimum_size
 	queue_redraw()
 
@@ -62,8 +62,8 @@ func cap_width() -> float:
 	UI._load_fonts()
 	var tw := UI.font_num.get_string_size(_cap, HORIZONTAL_ALIGNMENT_LEFT, -1, UI.size_key).x
 	if _round:
-		return 13.0
-	return maxf(tw + 7.0, 12.0)
+		return UI.cap_h + 1.0
+	return maxf(tw + UI.cap_h * 0.58, UI.cap_h)
 
 
 func _width() -> float:
@@ -74,7 +74,7 @@ func _width() -> float:
 
 
 func _draw() -> void:
-	draw_cap(self, Vector2(0, (size.y - 12.0) * 0.5), _cap, _round)
+	draw_cap(self, Vector2(0, (size.y - UI.cap_h) * 0.5), _cap, _round)
 	if verb != "":
 		var x := cap_width() + 4.0
 		var base := Vector2(x, roundf(size.y * 0.5 + UI.font_body.get_ascent(_vs()) * 0.5 - 1.0))
@@ -83,20 +83,21 @@ func _draw() -> void:
 		draw_string(UI.font_body, base, verb, HORIZONTAL_ALIGNMENT_LEFT, -1, _vs(), verb_colour)
 
 
-## Draws one cap with its top-left at `at` (12 UI px tall). Returns its width.
+## Draws one cap with its top-left at `at` (UI.cap_h tall: 12 UI px PC, 9 phone). Returns its width.
 static func draw_cap(c: CanvasItem, at: Vector2, text: String, round_cap: bool) -> float:
 	UI._load_fonts()
 	var ks := UI.size_key
 	var tw := UI.font_num.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, ks).x
-	var w := 13.0 if round_cap else maxf(tw + 7.0, 12.0)
-	var r := Rect2(at, Vector2(w, 12.0))
+	var h := UI.cap_h
+	var w := h + 1.0 if round_cap else maxf(tw + h * 0.58, h)
+	var r := Rect2(at, Vector2(w, h))
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.92, 0.88, 0.80, 0.92)
-	sb.set_corner_radius_all(7 if round_cap else 3)
+	sb.set_corner_radius_all(int(ceilf(h * 0.55)) if round_cap else int(maxf(h * 0.25, 2.0)))
 	sb.border_color = Color(0.3, 0.26, 0.2)
-	sb.border_width_bottom = 2
+	sb.border_width_bottom = 2 if h >= 11.0 else 1
 	sb.anti_aliasing = true
 	c.draw_style_box(sb, r)
-	var base := Vector2(r.position.x, roundf(r.position.y + 6.0 + UI.font_num.get_ascent(ks) * 0.5 - 1.5))
+	var base := Vector2(r.position.x, roundf(r.position.y + h * 0.5 + UI.font_num.get_ascent(ks) * 0.5 - 1.5))
 	c.draw_string(UI.font_num, base, text, HORIZONTAL_ALIGNMENT_CENTER, w, ks, UI.C_INK)
 	return w

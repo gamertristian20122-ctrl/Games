@@ -6,6 +6,8 @@ extends Node
 ## Run it at 1280x720 (16:9) and 1600x720 (20:9 phone) and LOOK at the pictures.
 ## When you add a screen or a HUD state, add a step for it in _run_tour().
 ##
+## --uitour=kit draws every widget of the HD GUI kit (scripts/ui/theme.gd, scripts/ui/kit/) on one
+## board over a walking place and saves kit.png (add --uiphone for the phone grid).
 ## A second mode, --uitour=flow, plays the real game's whole flow with key presses (title ->
 ## hero select -> run -> pause -> settings -> death -> try again -> give up -> menu) and prints
 ## "[flow] ok ..." or "[flow] FAIL ..." for every step. Use it after changing main.gd.
@@ -29,6 +31,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if G.arg("uitour") == "tale":
 		_run_tale.call_deferred()
+	elif G.arg("uitour") == "kit":
+		_run_kit.call_deferred()
 	elif G.arg("uitour") == "flow":
 		_run_flow.call_deferred()
 	else:
@@ -238,6 +242,7 @@ func _run_tour() -> void:
 	main.call("top_screen").call("close_dialog")
 
 	# ---- the pause menu over a walking place (HD GUI: Esc no longer goes straight to the title)
+	Controls.call("_set_touch", false, false)       # keyboard again (the touch test above left touch on)
 	await main.call("show_hub", "village")
 	await _settle(1.0)
 	main.call("open_hub_pause")
@@ -800,3 +805,138 @@ func _run_tale() -> void:
 	_check("chapter two is done: step 14 and the watch's coins", Tale.step() == 14 and Save.hub_get("bank:coins") == coins + 90)
 	print("[tale] done: %d checks, %d failed, knight level %d" % [_count, _fails, Rpg.level()])
 	G.quit(1 if _fails > 0 else 0)
+
+
+# ------------------------------------------------------------------ the kit board (--uitour=kit)
+## Every widget of the HD GUI kit on one board over Wickmere, to look at (kit.png).
+func _run_kit() -> void:
+	await main.call("show_hub", "village")
+	await _settle(1.5)
+	var layer := CanvasLayer.new()
+	layer.layer = G.LAYER_MENU + 1
+	add_child(layer)
+	var root := UI.attach(layer)
+	root.theme = UI.theme()
+	var W := root.size.x
+	var H := root.size.y
+	var ph := UI.is_phone()
+	var k := 0.5 if ph else 1.0        # the phone grid is half as big
+
+	# left: a menu panel with rows (icons, a disabled row with its reason), a Big button, tabs
+	var panel := UI.panel("panel")
+	panel.position = Vector2(14, 40) * k + Vector2(0, 0)
+	panel.custom_minimum_size.x = 160 * (0.8 if ph else 1.0)
+	root.add_child(panel)
+	var col := UI.vbox(1)
+	panel.add_child(col)
+	col.add_child(UI.label("Aldous", "Head"))
+	var rows: Array[Button] = []
+	for pair: Array in [["Attack", UI.ICON_ATTACK], ["Skills", UI.icon_or([UI.ICON_BOOK, UI.ICON_SKILLS])],
+			["Guard", UI.icon_or([UI.ICON_SHIELD, UI.ICON_GUARD])], ["Flee", UI.icon_or([UI.ICON_BOOT, UI.ICON_FLEE])]]:
+		var b := UI.button(String(pair[0]))
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.icon = Art.tex(String(pair[1]))
+		col.add_child(b)
+		rows.append(b)
+	rows[3].disabled = true
+	col.add_child(HSeparator.new())
+	col.add_child(UI.label("A boss blocks the way out.", "Small", 130 * (0.8 if ph else 1.0)))
+	var big := UI.button("Continue", Callable(), "Big")
+	root.add_child(big)
+	big.position = Vector2(14 * k, H - 14 * k - 26)
+	big.size = Vector2(120, 26)
+	var tabs := UI.hbox(14)
+	tabs.position = Vector2(W * 0.40, 10 * k)
+	root.add_child(tabs)
+	for i in 4:
+		var t := UI.button(["Stats", "Gear", "Skills", "Party"][i], Callable(), "Tab")
+		t.disabled = i == 0
+		tabs.add_child(t)
+	var mini := UI.button("+", Callable(), "Mini")
+	mini.position = Vector2(W * 0.40, 34 * k)
+	root.add_child(mini)
+
+	# middle: bars (full, a fresh loss, low, mana, XP, a foe tag, the boss bar)
+	var bx := W * 0.40
+	var by := 60.0 * k
+	for spec: Array in [["hp", 46, 46, false], ["hp", 21, 38, true], ["hp", 8, 46, false], ["mp", 14, 20, false],
+			["xp", 124, 200, false], ["foe", 18, 32, false]]:
+		var b2 := UI.bar(String(spec[0]), 32.0 if spec[0] == "foe" else 90.0 * k + 30.0)
+		root.add_child(b2)
+		b2.position = Vector2(bx, by)
+		if spec[3]:
+			b2.call("set_value", 38, 38, false)
+			b2.call("set_value", spec[1], spec[2], true)
+		else:
+			b2.call("set_value", spec[1], spec[2], false)
+		var l := UI.label("%s %d/%d%s" % [spec[0], spec[1], spec[2], "  low" if b2.call("is_low") else ""], "Small")
+		l.position = Vector2(bx + 130 * k + 6, by - 6)
+		root.add_child(l)
+		by += 14.0 * k + 4.0
+	var boss := UI.bar("boss", 200.0 * k + 40.0)
+	root.add_child(boss)
+	boss.position = Vector2(W * 0.5 - boss.size.x * 0.5, H * 0.45)
+	boss.call("set_value", 0.55, 1.0, false)
+	var bname := UI.label("Old Bramblejaw", "HudHead")
+	bname.position = boss.position + Vector2(0, -18 * (0.7 if ph else 1.0))
+	root.add_child(bname)
+
+	# medallions: your side, a monster, the one acting, one knocked out
+	var mx := W * 0.40
+	for spec: Array in [["pc_knight", UI.C_STEEL, true, false, 13.0], ["pc_elf_ranger", UI.C_FOE, false, false, 9.0],
+			["pc_scholar_censor", UI.C_STEEL, false, false, 11.0], ["pc_elf_hunter", UI.C_FOE, false, true, 9.0]]:
+		var m := UI.medallion(String(spec[0]), float(spec[4]) * (0.65 if ph else 1.0), spec[1], spec[2])
+		m.call("set_ko", spec[3])
+		root.add_child(m)
+		m.position = Vector2(mx, H * 0.55)
+		mx += m.custom_minimum_size.x + 4
+
+	# right: plates, a well, a danger plate, a card with gold edge
+	var x2 := W * 0.72
+	var y2 := 40.0 * k
+	for kind: String in ["plate", "well", "danger", "gold", "card"]:
+		var p := UI.panel(kind)
+		p.position = Vector2(x2, y2)
+		var lab := UI.label(kind.capitalize() if kind != "plate" else "Captain Hale", "Head" if kind == "plate" else "")
+		p.add_child(lab)
+		root.add_child(p)
+		y2 += 30.0 * k + 6.0
+
+	# bottom: prompts (keyboard, then pad), a wash with outlined text, a lozenge, a rule, a coin
+	var pr := UI.hbox(10)
+	pr.position = Vector2(W * 0.40, H * 0.70)
+	root.add_child(pr)
+	for kind: String in ["confirm", "back", "talk", "knight", "page"]:
+		pr.add_child(UI.prompt(kind, kind.capitalize()))
+	Controls.last_pad = true
+	var pr2 := UI.hbox(10)
+	pr2.position = Vector2(W * 0.40, H * 0.70 + 18)
+	root.add_child(pr2)
+	for kind: String in ["confirm", "back", "talk", "knight", "page"]:
+		pr2.add_child(UI.prompt(kind, kind.capitalize()))
+	Controls.last_pad = false
+	var wash := UI.wash("right", 0.8)
+	wash.position = Vector2(0, H * 0.40)
+	wash.size = Vector2(220 * k + 60, 30 * k + 6)
+	root.add_child(wash)
+	var on_world := UI.label("Find Captain Hale", "Hud")
+	on_world.position = wash.position + Vector2(14, 6 * k)
+	root.add_child(on_world)
+	var loz := UI.lozenge(3.0, UI.C_GOLD, 20.0)
+	loz.position = Vector2(W * 0.5 - loz.custom_minimum_size.x * 0.5, H * 0.33)
+	root.add_child(loz)
+	var c := UI.coin(5.0)
+	c.position = Vector2(W - 60, 8)
+	root.add_child(c)
+	var coins := UI.label("120", "Num")
+	coins.position = Vector2(W - 46, 4)
+	root.add_child(coins)
+	var help := UI.help_strip([["confirm", "Choose"], ["page", "Page"], ["back", "Back"]])
+	root.add_child(help)
+	var fl := UI.flame(root)
+	root.add_child(fl)
+	rows[1].grab_focus()
+	await _settle(0.6)
+	await G.save_shot("kit.png")
+	print("[kit] grid %s, %s px per UI px, phone %s" % [root.size, root.get("px"), ph])
+	G.quit(0)
