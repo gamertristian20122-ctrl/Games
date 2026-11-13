@@ -13,6 +13,9 @@ var ring := UI.C_STEEL
 var active := false
 var ko := false
 var tint := Color.WHITE
+## "round" (your side) or "foe": a monster's coin sits in an inked diamond, so friend and foe
+## differ by shape as well as by the ring's colour.
+var shape := "round"
 var _tex: Texture2D
 var _region := Rect2()
 
@@ -43,6 +46,19 @@ func set_sprite(id: String) -> void:
 	queue_redraw()
 
 
+## The part of the sprite shown, snapped so that one sprite pixel is a whole number of screen
+## pixels (crisp faces, the same pixel size on every coin), a little tighter rather than looser.
+func _face_region() -> Rect2:
+	if _region.size.x <= 0.0:
+		return _region
+	var p := UI.ui_px(self)
+	var px := 2.0 * radius * p
+	var k := maxf(ceilf(px / _region.size.x - 0.15), 1.0)
+	var side := px / k
+	var c := _region.get_center()
+	return Rect2(c - Vector2.ONE * side * 0.5, Vector2.ONE * side)
+
+
 func set_active(on: bool) -> void:
 	active = on
 	queue_redraw()
@@ -55,6 +71,13 @@ func set_ko(on: bool) -> void:
 
 func _draw() -> void:
 	var at := size * 0.5
+	if shape == "foe":
+		var d := radius + 3.2
+		var dia := PackedVector2Array([at + Vector2(0, -d), at + Vector2(d, 0), at + Vector2(0, d), at + Vector2(-d, 0)])
+		draw_colored_polygon(PackedVector2Array([at + Vector2(0, -d - 1.5), at + Vector2(d + 1.5, 0), at + Vector2(0, d + 1.5), at + Vector2(-d - 1.5, 0)]), Color(UI.C_INK, 0.95))
+		draw_colored_polygon(dia, Color(0.16, 0.06, 0.06))
+		dia.append(dia[0])
+		draw_polyline(dia, Color(ring, 0.5) if ko else ring, 1.0, true)
 	if active:
 		for i in 5:
 			draw_circle(at, radius + 2.0 + i * 1.6, Color(UI.C_EMBER, 0.10 - i * 0.018), true, -1.0, true)
@@ -62,6 +85,7 @@ func _draw() -> void:
 	draw_circle(at, radius, Color(0.12, 0.13, 0.18), true, -1.0, true)
 	if _tex != null:
 		var full := _tex.get_size()
+		var reg := _face_region()
 		var pts := PackedVector2Array()
 		var uvs := PackedVector2Array()
 		var cols := PackedColorArray()
@@ -70,7 +94,7 @@ func _draw() -> void:
 			var ang := TAU * i / 32.0
 			var d := Vector2(cos(ang), sin(ang))
 			pts.append(at + d * (radius - 0.5))
-			uvs.append((_region.position + (d * 0.5 + Vector2(0.5, 0.5)) * _region.size) / full)
+			uvs.append((reg.position + (d * 0.5 + Vector2(0.5, 0.5)) * reg.size) / full)
 			cols.append(face)
 		draw_polygon(pts, cols, uvs, _tex)
 	draw_arc(at, radius, 0, TAU, 40, Color(ring, 0.5) if ko else ring, 1.6 if active else 1.0, true)

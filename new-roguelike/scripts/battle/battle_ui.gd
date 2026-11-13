@@ -96,6 +96,7 @@ class Card extends Control:
 		button.set_meta("no_flame", true)
 		for state: String in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
 			button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+		UI.juice(button)          # (the mouse over a card aims at it while a heal is aimed)
 		add_child(button)
 		size = Vector2(150.0, H_PHONE if is_phone else H_PC)
 		refresh(false)
@@ -274,8 +275,24 @@ class Rail extends Control:
 			var r: float = (8.0 if i == 0 else 6.0) if is_phone else (13.0 if i == 0 else 9.0)
 			var ring := UI.C_STEEL if String(u["side"]) == "party" else UI.C_FOE
 			var m := UI.medallion(String(u["sprite"]), r, ring, i == 0, u.get("tint", Color.WHITE))
+			if String(u["side"]) != "party":
+				m.set("shape", "foe")
 			m.position = (Vector2(x, y) - m.custom_minimum_size * 0.5).round()
 			holder.add_child(m)
+			if i == 1 and not is_phone:
+				# who comes next: a small NEXT above the second coin
+				var nx := Label.new()
+				nx.text = "NEXT"
+				nx.add_theme_font_override("font", UI.font_bold)
+				nx.add_theme_font_size_override("font_size", 8)
+				nx.add_theme_color_override("font_color", UI.C_GOLD)
+				nx.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.9))
+				nx.add_theme_constant_override("outline_size", 3)
+				nx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				nx.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				nx.size = Vector2(30, 10)
+				nx.position = Vector2(x - 15.0, y - r - 15.0).round()
+				holder.add_child(nx)
 			end_x = x + r
 			if is_phone:
 				x += (r + 10.0) if i == 0 else 14.0
@@ -308,9 +325,9 @@ class Rail extends Control:
 			return
 		UI.rs_rule(ci, Vector2(28, 26), Vector2(28 + 175, 26), Color(UI.C_BRASS, 0.8), Color(UI.C_BRASS, 0.0))
 		if round_no > 0:
-			var s := "ROUND %d" % round_no
-			draw_string_outline(UI.font_head, Vector2(15, 50), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, 3, Color(UI.C_INK, 0.85))
-			draw_string(UI.font_head, Vector2(15, 50), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, UI.C_DIM)
+			var s := "ROUND  %d" % round_no
+			draw_string_outline(UI.font_bold, Vector2(14, 51), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, 3, Color(UI.C_INK, 0.85))
+			draw_string(UI.font_bold, Vector2(14, 51), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, UI.C_GOLD.lerp(UI.C_DIM, 0.4))
 
 
 # ------------------------------------------------------------------ the words at the top

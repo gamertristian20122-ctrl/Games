@@ -54,8 +54,9 @@ func build() -> void:
 	head.custom_minimum_size.y = 14 if ph else 20
 	head.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	left.add_child(head)
-	var resume := UI.button("Resume", func() -> void: send("resume"), "Big")
-	resume.custom_minimum_size.y = 22 if ph else 26
+	var resume := UI.button("Resume", func() -> void: send("resume"))
+	resume.custom_minimum_size.y = 20 if ph else UI.row_h + 3.0
+	resume.add_theme_color_override("font_color", UI.C_GOLD)
 	left.add_child(resume)
 	_knight = UI.button(_knight_text(), func() -> void: send("knight"))
 	_knight.custom_minimum_size.y = 20 if ph else UI.row_h + 3.0
@@ -188,10 +189,12 @@ func _build_walking() -> void:
 	var rule := UI.rule(120, UI.C_BRASS, "both")
 	rule.custom_minimum_size = Vector2(0, 7 if not ph else 4)
 	col.add_child(rule)
-	var resume := UI.button("Resume", func() -> void: send("resume"), "Big")
-	resume.custom_minimum_size.y = 26
+	# (one face for every row: Resume is first and gold; focus is the brass bar and the flame)
+	var resume := UI.button("Resume", func() -> void: send("resume"))
+	resume.custom_minimum_size.y = (UI.row_h + 3.0) if not ph else 20.0
+	resume.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	resume.add_theme_color_override("font_color", UI.C_GOLD)
 	col.add_child(resume)
-	col.add_child(UI.spacer(0, 2 if not ph else 0))
 	_knight = UI.button(_knight_text(), func() -> void: send("knight"))
 	var settings := UI.button("Settings", func() -> void: send("settings"))
 	var title := UI.button("Title", func() -> void:

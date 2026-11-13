@@ -817,7 +817,9 @@ static func _load_fonts() -> void:
 	pixel_fonts = false
 
 
-## One of the HD fonts, smooth: greyscale antialiasing, light hinting, sub-pixel placement.
+## One of the HD fonts, smooth: greyscale antialiasing, NO hinting, sub-pixel placement. (The UI
+## grid's glyphs are made at exactly the screen's size (ui_root.gd sets the oversampling); hinting
+## at that size snapped Cinzel's hairlines away and squeezed the spaces between words.)
 static func _hd_font(file_name: String) -> FontFile:
 	var path := HD_DIR + file_name
 	if not ResourceLoader.exists(path):
@@ -826,7 +828,7 @@ static func _hd_font(file_name: String) -> FontFile:
 	if f == null:
 		return null
 	f.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
-	f.hinting = TextServer.HINTING_LIGHT
+	f.hinting = TextServer.HINTING_NONE
 	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	return f
 

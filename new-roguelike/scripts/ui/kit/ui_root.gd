@@ -33,6 +33,14 @@ func fit() -> void:
 	stretch = g.y
 	if is_instance_valid(layer):
 		layer.scale = Vector2.ONE * (px / stretch)
+	# Text is drawn on the UI grid, so its glyphs are made at px (one glyph pixel = one screen
+	# pixel). Left to the stretch, they were made at `stretch` and shrunk with nearest sampling,
+	# which dropped the hairlines of the Cinzel heads (the E bars, the T crossbar) on PC.
+	var vp := get_tree().root
+	if vp != null and not bool(ui.call("is_phone")):
+		vp.oversampling_override = px
+	elif vp != null:
+		vp.oversampling_override = 0.0
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	position = Vector2.ZERO
 	size = (Vector2(get_tree().root.size) / px).floor()

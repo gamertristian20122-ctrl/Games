@@ -13,7 +13,7 @@ const PRESETS := {
 	"mp": {"a": UI.C_MP_A, "b": UI.C_MP_B, "h": 4.0, "h_phone": 3.0, "pulse": false},
 	"xp": {"a": UI.C_XP_A, "b": UI.C_XP_B, "h": 4.0, "h_phone": 4.0, "pulse": false},
 	"boss": {"a": UI.C_HP_A, "b": UI.C_HP_B, "h": 6.0, "h_phone": 4.0, "pulse": false, "caps": true},
-	"foe": {"a": UI.C_HP_A, "b": UI.C_HP_B, "h": 3.0, "h_phone": 2.0, "pulse": false},
+	"foe": {"a": UI.C_HP_A, "b": UI.C_HP_B, "h": 4.0, "h_phone": 3.0, "pulse": false, "caps": true, "plate": true},
 }
 const HOLD := 0.35          ## the lost part waits ...
 const DRAIN := 0.45         ## ... then drains this fast
@@ -25,6 +25,7 @@ var col_a := UI.C_HP_A
 var col_b := UI.C_HP_B
 var pulse := true
 var caps := false
+var plate := false          ## a dark backing plate with a brass rim behind the whole bar (monsters' bars)
 var value := 1.0
 var max_value := 1.0
 var _shown := 1.0           ## the fill drawn (ratio)
@@ -46,6 +47,7 @@ func setup(which: String, width: float = 60.0) -> void:
 	col_b = p["b"]
 	pulse = bool(p.get("pulse", false))
 	caps = bool(p.get("caps", false))
+	plate = bool(p.get("plate", false))
 	var h: float = p["h_phone"] if UI.is_phone() else p["h"]
 	custom_minimum_size = Vector2(width, h)
 	size = custom_minimum_size
@@ -120,6 +122,21 @@ func _draw() -> void:
 	if r.size.x < 2.0 or r.size.y < 1.0:
 		return
 	var ci := get_canvas_item()
+	if plate:
+		# (over the busy, lit ground a monster's bar sits on its own small dark plate)
+		var back := StyleBoxFlat.new()
+		back.bg_color = Color(0.02, 0.02, 0.035, 0.82)
+		back.set_corner_radius_all(int(ceilf(r.size.y * 0.5 + 2.0)))
+		back.border_color = Color(UI.C_BRASS_DIM, 0.9)
+		back.set_border_width_all(1)
+		back.expand_margin_left = 7
+		back.expand_margin_right = 7
+		back.expand_margin_top = 2
+		back.expand_margin_bottom = 2
+		back.shadow_color = Color(0, 0, 0, 0.35)
+		back.shadow_size = 2
+		back.anti_aliasing = true
+		back.draw(ci, r)
 	var well := StyleBoxFlat.new()
 	well.bg_color = Color(0.01, 0.012, 0.02, 0.85)
 	well.set_corner_radius_all(int(ceilf(r.size.y * 0.5)))

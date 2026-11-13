@@ -108,6 +108,8 @@ var _track := 0.0                  ## the camera leaning towards where the actio
 var _track_at := Vector3.ZERO
 var _track_zoom := 0.0             ## + moves in, - pulls back (a boss's big move)
 var _track_id := 0
+var _lean := 0.0                   ## PC: the camera slides left (world units) so the orders panel never hides the one choosing
+var _lean_want := 0.0
 var _stop_k := 1.0                 ## the hit-stop's share of the time scale
 var _ff := 1.0                     ## and the fast-forward's
 var _hold_t := 0.0
@@ -345,6 +347,7 @@ func _build_screen() -> void:
 		for state: String in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
 			button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
 		button.size = Vector2(40, 60)
+		UI.juice(button)          # (while aiming, the mouse over a monster moves the brackets onto it)
 		_root.add_child(button)
 		var bar := UI.bar("foe", 22.0 if _ph else 32.0)
 		bar.call("set_value", float(unit["hp"]), float(unit["max_hp"]), false)
@@ -482,6 +485,36 @@ func _place_menu() -> void:
 		var ws := _warn.get_combined_minimum_size()
 		_warn.size = Vector2(_menu.size.x if not _ph else ws.x, ws.y)
 		_warn.position = Vector2(_menu.position.x if not _ph else _menu.position.x + _menu.size.x - ws.x, _menu.position.y - 6.0 - ws.y).round()
+
+
+## PC: how far the camera must slide (world units) so the orders panel clears the fighter who is
+## choosing, without pushing the furthest monster off the right edge. Kept while aiming (the
+## panel is shut then) so the picture does not swing back and forth; 0 when nobody is choosing.
+func _want_lean() -> void:
+	if _ph or _acting.is_empty() or String(_acting.get("side", "")) != "party" or _over:
+		_lean_want = 0.0
+		return
+	if not _menu.visible:
+		return
+	var stand: Vector3 = (_acting["actor"] as Node).call("at") if _acting.get("actor") != null else (_acting["home"] as Vector3)
+	var ppu := absf(_on_ui(stand + Vector3(1.0, 0.0, 0.0)).x - _on_ui(stand).x)
+	if ppu < 1.0:
+		return
+	var r := _sprite_rect(_acting)
+	var panel := Rect2(_menu.position, _menu.size)
+	if r.end.y < panel.position.y + 4.0:
+		_lean_want = 0.0
+		return
+	var base_left := r.position.x - _lean * ppu
+	var need := (panel.end.x + 10.0 - base_left) / ppu
+	# room on the right: the rightmost living monster keeps a margin from the edge
+	var room := 3.0
+	for u: Dictionary in fight.call("alive", fight.foes):
+		var fr := _sprite_rect(u)
+		var fppu := absf(_on_ui((u["home"] as Vector3) + Vector3(1.0, 0.0, 0.0)).x - _on_ui(u["home"]).x)
+		if fppu >= 1.0:
+			room = minf(room, (_root.size.x - 12.0 - (fr.end.x - _lean * fppu)) / fppu)
+	_lean_want = clampf(need, 0.0, maxf(room, 0.0))
 
 
 ## A boss gets its name and a long bar at the top middle of the screen.
@@ -1884,6 +1917,11 @@ func _process(delta: float) -> void:
 	var glide := Vector3(-1.6, 2.2, 6.5) * _intro * _intro - Vector3(0.0, 1.4, 4.2) * _push
 	var pos := _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + glide
 	var look: Vector3 = stage.aim + Vector3(0.0, 0.5, 0.0) * _push + SKY_LOOK * _sky
+	# (PC: while you choose, the picture slides right just enough that the panel clears the one
+	# whose turn it is; it slides back when the turn is played)
+	_lean = lerpf(_lean, _lean_want, 1.0 - exp(-6.0 * real))
+	pos.x -= _lean
+	look.x -= _lean
 	# the camera leans towards the action (a jump, a boss's blow) and PUNCHES IN on a crit or a
 	# finishing blow; the shake goes on top of all of it
 	if _track > 0.0:
@@ -1911,7 +1949,9 @@ func _ui_frame() -> void:
 	_arrow.visible = not _turn_unit.is_empty() and not _over and String(_turn_unit.get("side", "")) == "party" and _aim == ""
 	if _arrow.visible:
 		var r := _sprite_rect(_turn_unit)
-		_arrow.position = Vector2(r.get_center().x, r.position.y - (3.0 if _ph else 5.0)).round()
+		# (never up among the turn-order coins: the chevron stays under the rail's bottom)
+		var rail_bottom := float(_rail.position.y) + float(_rail.size.y) + 8.0
+		_arrow.position = Vector2(r.get_center().x, maxf(r.position.y - (3.0 if _ph else 5.0), rail_bottom)).round()
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
 		var b: Button = tag["button"]
@@ -1920,7 +1960,9 @@ func _ui_frame() -> void:
 		b.size = r.size.round()
 		var bar: Control = tag["bar"]
 		bar.visible = int(u["hp"]) > 0 and not bool(u.get("boss", false)) and not is_same(u, aimed) and not _over
-		bar.position = Vector2(r.get_center().x - bar.size.x * 0.5, r.position.y - (4.0 if _ph else 6.0) - bar.size.y).round()
+		# (under the feet, on the ground line: every monster's bar sits at the same height above
+		# its own shadow, whatever the shape of its head)
+		bar.position = Vector2(r.get_center().x - bar.size.x * 0.5, r.end.y + (3.0 if _ph else 5.0)).round()
 	_brackets.set("shown", not aimed.is_empty())
 	if not aimed.is_empty():
 		_brackets.set("box", _sprite_rect(aimed).grow(3.0 if not _ph else 2.0))
@@ -1935,13 +1977,18 @@ func _ui_frame() -> void:
 		var ps: Vector2 = _plate.size
 		var room: Vector2 = _root.size
 		var min_y := float(_ribbon.position.y) + float(_ribbon.call("band_h")) + 4.0
-		_plate.position = Vector2(clampf(box.get_center().x - ps.x * 0.5, 4.0, room.x - ps.x - 4.0),
-			maxf(box.position.y - (6.0 if _ph else 10.0) - ps.y, min_y)).round()
+		var py := maxf(box.position.y - 10.0 - ps.y, min_y)
+		if _ph:
+			# (the phone's monsters stand close: over the head the plate covered the next one's
+			# bar and body, so there it goes under the feet, where the bar was)
+			py = minf(box.end.y + 3.0, room.y - ps.y - 2.0)
+		_plate.position = Vector2(clampf(box.get_center().x - ps.x * 0.5, 4.0, room.x - ps.x - 4.0), py).round()
 	else:
 		_plate_key = ""
 	for card: Control in _cards:
 		card.call("set_targeted", _aim == "friend" and is_same(card.get("unit"), aimed))
 	_place_menu()
+	_want_lean()
 	if _acting.is_empty():
 		_set_help("" if _over or _intro > 0.0 else ("fast" if _ff > 1.0 else "fight"))
 

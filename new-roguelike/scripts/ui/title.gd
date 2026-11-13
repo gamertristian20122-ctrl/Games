@@ -12,7 +12,8 @@ const Heroes = preload("res://scripts/data/heroes.gd")
 ## The one line under the game's name: what makes this game different.
 const TAGLINE := "Four seals are breaking under the hill."
 
-var _name_label: Label
+var _name_label: Control           ## the Logo
+var _rule: Control
 var _tag_label: Label
 var _column: VBoxContainer
 var _glow: Control
@@ -83,6 +84,106 @@ class Motes extends Control:
 			draw_rect(Rect2(p, Vector2(1, 1)) if m.z < 6.0 else Rect2(p, Vector2(2, 2)) , Color(warm, a * 0.7))
 
 
+## THE LOGO in the house language: the name in Cinzel capitals, filled with a brass gradient
+## (pale gold at the top, deep bronze at the foot, a bright band a third of the way down), on an
+## ink outline and a soft drop; under it a brass rule with a lozenge. All drawn by code.
+class Logo extends Control:
+	const UI = preload("res://scripts/ui/theme.gd")
+	const FILL := """
+shader_type canvas_item;
+uniform vec4 top_col : source_color = vec4(1.0, 0.95, 0.76, 1.0);
+uniform vec4 band_col : source_color = vec4(1.0, 0.86, 0.52, 1.0);
+uniform vec4 foot_col : source_color = vec4(0.62, 0.38, 0.16, 1.0);
+uniform float y0 = 0.0;
+uniform float y1 = 40.0;
+varying float ly;
+void vertex() {
+	ly = VERTEX.y;
+}
+void fragment() {
+	float a = texture(TEXTURE, UV).a * COLOR.a;
+	float t = clamp((ly - y0) / max(y1 - y0, 1.0), 0.0, 1.0);
+	vec3 c = t < 0.38 ? mix(top_col.rgb, band_col.rgb, t / 0.38) : mix(band_col.rgb, foot_col.rgb, (t - 0.38) / 0.62);
+	COLOR = vec4(c, a);
+}
+"""
+	var text := ""
+	var font_size := 40
+	var font: Font
+	var rule := true
+	var _fill: Control
+	var _mat: ShaderMaterial
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fill = Control.new()
+		_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var sh := Shader.new()
+		sh.code = FILL
+		_mat = ShaderMaterial.new()
+		_mat.shader = sh
+		_fill.material = _mat
+		_fill.draw.connect(_draw_fill)
+		add_child(_fill)
+
+	func setup(t: String, size_px: int) -> void:
+		text = t.to_upper()
+		font_size = size_px
+		var fv := FontVariation.new()
+		fv.base_font = (UI.font_head as FontVariation).base_font if UI.font_head is FontVariation else UI.font_head
+		fv.variation_opentype = {"wght": 760}
+		fv.spacing_glyph = maxi(int(roundf(size_px * 0.06)), 1)
+		font = fv
+		var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		custom_minimum_size = Vector2(ceilf(w) + 8.0, ceilf(font.get_height(font_size)) + (12.0 if rule else 4.0))
+		size = custom_minimum_size
+		_fill.size = size
+		queue_redraw()
+		_fill.queue_redraw()
+
+	func _base() -> Vector2:
+		return Vector2(4.0, roundf(font.get_ascent(font_size)) + 1.0)
+
+	func _draw() -> void:
+		if font == null:
+			return
+		var at := _base()
+		var o := maxi(int(roundf(font_size / 9.0)), 2)
+		draw_string_outline(font, at + Vector2(0, roundf(font_size * 0.07)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, o + 4, Color(0.08, 0.02, 0.0, 0.45))
+		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, o, Color(UI.C_INK, 0.92))
+		if rule:
+			var y := size.y - 5.0
+			var ci := get_canvas_item()
+			var mid := size.x * 0.5
+			UI.rs_rule(ci, Vector2(mid - 8.0, y), Vector2(4.0, y), Color(UI.C_BRASS, 0.95), Color(UI.C_BRASS, 0.0))
+			UI.rs_rule(ci, Vector2(mid + 8.0, y), Vector2(size.x - 4.0, y), Color(UI.C_BRASS, 0.95), Color(UI.C_BRASS, 0.0))
+			UI.rs_lozenge(ci, Vector2(mid, y), 3.5, UI.C_EMBER, 0.0)
+
+	func _draw_fill() -> void:
+		if font == null:
+			return
+		var at := _base()
+		# the gradient runs from the tops of the capitals to the baseline
+		_mat.set_shader_parameter("y0", at.y - font.get_ascent(font_size) * 0.72)
+		_mat.set_shader_parameter("y1", at.y)
+		_fill.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
+
+
+## A thin brass rule down the left of the menu with a lozenge at each end: it holds the rows together.
+class MenuRule extends Control:
+	const UI = preload("res://scripts/ui/theme.gd")
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var ci := get_canvas_item()
+		var x := roundf(size.x * 0.5) + 0.5
+		UI.rs_rule(ci, Vector2(x, 4.0), Vector2(x, size.y * 0.5), Color(UI.C_BRASS, 0.2), Color(UI.C_BRASS, 0.7))
+		UI.rs_rule(ci, Vector2(x, size.y * 0.5), Vector2(x, size.y - 4.0), Color(UI.C_BRASS, 0.7), Color(UI.C_BRASS, 0.2))
+		UI.rs_lozenge(ci, Vector2(x, 3.0), 2.5, UI.C_BRASS, 0.0)
+		UI.rs_lozenge(ci, Vector2(x, size.y - 3.0), 2.5, UI.C_BRASS, 0.0)
+
+
 ## The game's name comes from the project settings, so renaming the game renames the title.
 static func game_name() -> String:
 	return String(ProjectSettings.get_setting("application/config/name", "Game")).replace(" (working title)", "").strip_edges()
@@ -115,14 +216,10 @@ func build() -> void:
 	safe.add_child(area)
 	_area = area
 
-	# the name: the pixel logo font (Alkhemikal) at a whole multiple of 16 screen pixels
-	_name_label = Label.new()
-	_name_label.text = game_name()
-	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_name_label.add_theme_font_override("font", UI.font_logo)
-	_name_label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	UI.style_title(_name_label, Color(0.98, 0.86, 0.58), UI.C_BLOOD)
+	# the name: the logo lockup (Cinzel in a brass gradient, ink outline, brass rule; sized in _fit)
+	_name_label = Logo.new()
 	area.add_child(_name_label)
+	_name_label.call("setup", game_name(), 40 if not _ph else 22)
 
 	_tag_label = UI.label(TAGLINE if G.flag("oldstory") else "The beacons are dark. The nights grow long.", "Body")
 	_tag_label.add_theme_font_size_override("font_size", 13 if not _ph else UI.size_small)
@@ -131,19 +228,28 @@ func build() -> void:
 	_tag_label.add_theme_constant_override("outline_size", 3)
 	area.add_child(_tag_label)
 
-	_column = UI.vbox(2 if not _ph else 3)
+	_column = UI.vbox(1 if not _ph else 3)
 	area.add_child(_column)
-	var play := UI.button("Play", func() -> void: send("play"), "Big", "ui_start")
-	play.custom_minimum_size = Vector2(150 if not _ph else 104, 28 if not _ph else 26)
-	_column.add_child(play)
-	_column.add_child(UI.spacer(0, 4 if not _ph else 0))
-	for row: Array in [["Collection", "collection"], ["Settings", "settings"], ["Credits", "credits"], ["Quit", ""]]:
+	if not _ph:
+		_rule = MenuRule.new()
+		area.add_child(_rule)
+	# every row in one face (Alegreya): the focus is shown by the brass bar and the flame only.
+	# The old roguelike's Collection is only offered with the old story (--oldstory).
+	var rows: Array = [["Play", "play"]]
+	if G.flag("oldstory"):
+		rows.append(["Collection", "collection"])
+	rows.append_array([["Settings", "settings"], ["Credits", "credits"], ["Quit", ""]])
+	var play: Button = null
+	for row: Array in rows:
 		var what: String = row[1]
-		var b := UI.button(row[0], (func() -> void: send(what)) if what != "" else _ask_quit)
-		b.custom_minimum_size = Vector2(150 if not _ph else 104, 22 if not _ph else 20)
+		var b := UI.button(row[0], (func() -> void: send(what)) if what != "" else _ask_quit, "", "ui_start" if what == "play" else "ui_click")
+		b.custom_minimum_size = Vector2(150 if not _ph else 104, 24 if not _ph else 20)
 		if not _ph:
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			b.add_theme_font_size_override("font_size", 13)
+			b.add_theme_font_size_override("font_size", 15 if what == "play" else 13)
+		if what == "play":
+			b.add_theme_color_override("font_color", UI.C_GOLD)
+			play = b
 		_column.add_child(b)
 	default_focus = play
 
@@ -185,26 +291,27 @@ func _fit() -> void:
 	if not is_instance_valid(_area) or _area.size.y < 20.0:
 		return
 	var a := _area.size
-	var px := UI.ui_px(self)
-	var logo := _logo_size(a.y * (0.12 if not _ph else 0.16), px)
-	_name_label.add_theme_font_size_override("font_size", int(logo))
-	_name_label.add_theme_constant_override("outline_size", maxi(int(roundf(logo / 10.0)), 2))
-	_name_label.add_theme_constant_override("shadow_outline_size", maxi(int(roundf(logo / 8.0)), 2))
-	var name_size := _name_label.get_minimum_size()
+	var want := int(roundf(a.y * (0.115 if not _ph else 0.13)))
+	if int(_name_label.get("font_size")) != want:
+		_name_label.call("setup", game_name(), want)
+	var name_size := _name_label.get_combined_minimum_size()
 	var tag_size := _tag_label.get_minimum_size()
 	var col_size := _column.get_combined_minimum_size()
 	if _ph:
 		# the phone: the name centred at the top, the menu on the right (the thumb's side)
 		_name_label.position = Vector2(roundf((a.x - name_size.x) * 0.5), 0)
-		_tag_label.position = Vector2(roundf((a.x - tag_size.x) * 0.5), roundf(name_size.y - 3.0))
+		_tag_label.position = Vector2(roundf((a.x - tag_size.x) * 0.5), roundf(name_size.y + 1.0))
 		_column.position = Vector2(roundf(a.x - col_size.x - 2.0), roundf(maxf((a.y - col_size.y) * 0.5 + 14.0, name_size.y + tag_size.y + 4.0)))
 	else:
 		# a PC: the name in the left third at 0.3 of the height, the tagline and the menu under it
 		var left := 34.0
 		var name_y := roundf(a.y * 0.30 - name_size.y * 0.6)
 		_name_label.position = Vector2(left, name_y)
-		_tag_label.position = Vector2(left + 3.0, roundf(name_y + name_size.y + 2.0))
+		_tag_label.position = Vector2(left + 4.0, roundf(name_y + name_size.y + 3.0))
 		_column.position = Vector2(left, roundf(_tag_label.position.y + tag_size.y + 22.0))
+		if is_instance_valid(_rule):
+			_rule.position = Vector2(left - 16.0, _column.position.y - 2.0)
+			_rule.size = Vector2(6.0, col_size.y + 4.0)
 		if is_instance_valid(_wash):
 			_wash.size.x = maxf(name_size.x + left + 120.0, size.x * 0.5)
 	_column.size = col_size
