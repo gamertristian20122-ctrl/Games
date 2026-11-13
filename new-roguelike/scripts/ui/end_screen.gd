@@ -1,5 +1,7 @@
 extends "res://scripts/ui/screen.gd"
-## End screen: shown when a run is over, for both a death and a win.
+## End screen: shown when a run is over, for both a death and a win (OLD dungeon runs only).
+## HD GUI: restyled to the glass look (veil, a panel with the big word, a card with the numbers);
+## what it shows and does is unchanged.
 ## It shows the summary the world sent with G.run_ended (floor, time, kills, coins, items),
 ## anything that was unlocked during the run, and the buttons Try again / Menu.
 
@@ -17,22 +19,39 @@ var _rack_rows := 2
 
 
 func build() -> void:
-	var safe := UI.safe_margin(self, 6)
-	add_child(safe)
-	var cols := UI.hbox(8)
-	safe.add_child(cols)
+	var ph := UI.is_phone()
+	veil().call("set_gain", 2.4)
+	var outer: Control
+	if ph:
+		outer = UI.safe_margin(self, 6)
+	else:
+		outer = CenterContainer.new()
+		outer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(outer)
+	var cols := UI.hbox(8 if ph else 14)
+	if not ph:
+		cols.custom_minimum_size = Vector2(580, 200)
+	outer.add_child(cols)
 
 	# left: the big word, one line about what happened, and the two buttons
-	var left := UI.vbox(4)
-	left.custom_minimum_size.x = 112
-	cols.add_child(left)
+	var left_panel := UI.panel("panel")
+	left_panel.custom_minimum_size.x = 112 if ph else 190
+	cols.add_child(left_panel)
+	var left := UI.vbox(4 if ph else 6)
+	left_panel.add_child(left)
 	var in_level := String(summary.get("level", "")) != ""
 	var whole := not in_level or bool(summary.get("final", false))       # only the last level is the Victory
-	var title := UI.label(("Victory" if whole else "Cleared") if victory else "Fallen", "Title")
-	UI.style_title(title, UI.C_GOLD if victory else UI.C_RED, Color("7a4a12") if victory else Color("5a1626"))
-	UI.fit_title(title, 112.0)
+	var title := UI.label(("Victory" if whole else "Cleared") if victory else "Fallen", "Display")
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UI.style_title(title, UI.C_GOLD if victory else UI.C_BAD, Color("7a4a12") if victory else Color("5a1626"))
+	title.add_theme_font_size_override("font_size", UI.size_title if ph else 32)
 	left.add_child(title)
-	var line := UI.label(_story(), "", 100.0)
+	var orn := UI.lozenge(3.0, UI.C_GOLD if victory else UI.C_FOE, 30.0)
+	orn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	left.add_child(orn)
+	var line := UI.label(_story(), "Small" if ph else "", 100.0 if ph else 170.0)
+	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	left.add_child(line)
 	left.add_child(UI.spacer(0, 0, true))
 	var again := UI.button("Try again", func() -> void: send("retry"), "Big", "ui_start")
@@ -40,6 +59,7 @@ func build() -> void:
 	left.add_child(again)
 	var menu := UI.button("Camp", func() -> void: send("menu"))
 	menu.custom_minimum_size.y = 22
+	menu.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	left.add_child(menu)
 	default_focus = again
 	if in_level and victory:
@@ -48,7 +68,7 @@ func build() -> void:
 		default_focus = menu
 
 	# right: the numbers, the items, and anything new
-	var panel := UI.panel("panel")
+	var panel := UI.panel("card")
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cols.add_child(panel)
 	var inner := UI.vbox(5)
@@ -69,7 +89,8 @@ func build() -> void:
 		var k := UI.label(pair[0], "Small")
 		k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		t.add_child(k)
-		var v := UI.label(pair[1], "Head")
+		var v := UI.label(pair[1], "Num")
+		v.add_theme_font_size_override("font_size", UI.size_num + (0 if UI.is_phone() else 4))
 		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		if pair[0] == "Coins":
 			v.add_theme_color_override("font_color", UI.C_GOLD)
@@ -88,7 +109,7 @@ func build() -> void:
 		var value: Variant = summary[pair[1]]
 		var cell := UI.hbox(3)
 		cell.add_child(UI.label(pair[0], "Small"))
-		cell.add_child(UI.label(str(value.size()) if value is Array else str(int(value))))
+		cell.add_child(UI.label(str(value.size()) if value is Array else str(int(value)), "Num"))
 		extras.add_child(cell)
 	if extras.get_child_count() > 0:
 		inner.add_child(extras)
@@ -116,7 +137,7 @@ func build() -> void:
 		var text := ", ".join(names)
 		if unlocks.size() > names.size():
 			text += " and %d more" % (unlocks.size() - names.size())
-		var box := UI.panel("tag")
+		var box := UI.panel("gold")
 		var v := UI.vbox(0)
 		box.add_child(v)
 		v.add_child(UI.label("Unlocked", "Gold"))

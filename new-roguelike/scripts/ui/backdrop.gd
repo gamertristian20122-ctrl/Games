@@ -51,14 +51,23 @@ func _ready() -> void:
 	_layout()
 
 
+## HD GUI: the backdrop lives on the UI grid (UI px), which on a PC is about twice as fine as the
+## game's 180 px grid; the picture is scaled by a whole number so it still fills the same share of
+## the screen with whole pixels (2 on a phone, 4 at 360 UI px tall).
+func _zoom() -> float:
+	return maxf(ZOOM, roundf(ZOOM * size.y / 180.0))
+
+
 func _layout() -> void:
-	var spot := Vector2(roundf(size.x * hero_x), 134.0)
-	_scene.position = (spot - HERO_FEET * ZOOM).round()
+	var z := _zoom()
+	_scene.scale = Vector2(z, z)
+	var spot := Vector2(roundf(size.x * hero_x), roundf(134.0 * size.y / 180.0))
+	_scene.position = (spot - HERO_FEET * z).round()
 
 
 ## Where the hero's feet are on screen (other screens line things up with it).
 func hero_spot() -> Vector2:
-	return _scene.position + HERO_FEET * ZOOM
+	return _scene.position + HERO_FEET * _zoom()
 
 
 ## One picture of the crypt's Pixel Crawler tile set (the same pieces and loader the rooms use).
