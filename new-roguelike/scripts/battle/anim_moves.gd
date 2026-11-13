@@ -327,17 +327,24 @@ func blade_attack(who: Dictionary, e: Dictionary, swings: int) -> void:
 	sword_to(who, 78.0, 0.13, Tween.TRANS_BACK)
 	await _pause(0.13)
 	await dash(who, _front_of(who, target) - (who["home"] as Vector3), 0.15)
+	# (every other attack starts with a rising cut instead of a falling one: no two look the same)
+	var first := int(who.get("cuts", 0))
+	who["cuts"] = first + 1
+	if first % 2 == 1:
+		var s: Node3D = who.get("sword")
+		if s != null:
+			sword_to(who, -128.0, 0.06)
 	for i in swings:
-		await swing(who, e, i, swings)
+		await swing(who, e, i, swings, first % 2)
 	await _pause(0.12)
 	await back_home(who, 0.24)
 
 
 ## One swing of the knight's sword, the blow landing in the middle of it. A combo's swings go
 ## down and up by turns; `n` swings share the blow (battle.gd counts its number up).
-func swing(who: Dictionary, e: Dictionary, i: int, n: int) -> void:
+func swing(who: Dictionary, e: Dictionary, i: int, n: int, flip: int = 0) -> void:
 	var d := _dir(who)
-	var down := i % 2 == 0
+	var down := (i + flip) % 2 == 0
 	var from := 78.0 if down else -128.0
 	var to := -128.0 if down else 62.0
 	var s: Node3D = who.get("sword")

@@ -618,6 +618,24 @@ func _refresh_one(u: Dictionary) -> void:
 		_drain(_boss_bar["fill"], _boss_bar["lost"], float(_boss_bar["width"]) * maxf(float(u["hp"]), 0.0) / float(u["max_hp"]))
 
 
+## Your side's row in the corner jolts and flashes red when that fighter is hit (you see who it was
+## at a glance, even with your eyes on the menu).
+func _row_jolt(u: Dictionary, ratio: float) -> void:
+	for row: Dictionary in _party_rows:
+		if not is_same(row["unit"], u):
+			continue
+		var b: Button = row["button"]
+		var tw := b.create_tween()
+		b.modulate = Color(1.0, 0.45, 0.4)
+		tw.tween_property(b, "modulate", Color.WHITE, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		var name_label: Label = row["name"]
+		var kick := 2.0 + 4.0 * ratio
+		var tl := name_label.create_tween()
+		for i in 4:
+			tl.tween_property(name_label, "position:x", name_label.position.x + kick * (1.0 if i % 2 == 0 else -1.0) * (1.0 - i * 0.22), 0.03)
+		tl.tween_property(name_label, "position:x", name_label.position.x, 0.03)
+
+
 ## A bar falls to its new length at once; a pale piece behind it shows what was lost, then drains.
 func _drain(fill: ColorRect, lost: ColorRect, width: float) -> void:
 	width = maxf(width, 0.0)
@@ -1091,6 +1109,8 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 			_combo[key] = l
 	if last:
 		_refresh_one(target)
+		if String(target["side"]) == "party":
+			_row_jolt(target, ratio)
 	# the feel: freeze and shake by how much it took, a punch-in on a crit or a finishing blow
 	if _speed <= 4.0:
 		var trauma := (0.16 + 0.85 * ratio + (0.25 if crit else 0.0) + (0.15 if dead else 0.0)) * weight
