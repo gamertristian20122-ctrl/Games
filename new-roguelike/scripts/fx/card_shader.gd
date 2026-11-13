@@ -55,6 +55,13 @@ void light() {
 ## The HERO variant is for every person, monster and the knight: never in the fog, a little more
 ## light and contrast, and a thin rim of warm light along its top and sides (from the picture's own
 ## alpha, so the pixel art is untouched), so people far from the camera still read at a glance.
+## SPRITES IN THE LIGHT (HD): each pixel gets a normal worked out by the shader from the picture's
+## own pixels (alpha edges over three pixels = a rounded bevel, its light and dark = relief, the
+## card bowed like a drum; constant over an art pixel, so the light steps stay crisp and no art is
+## drawn or smoothed). Lamps light the side that faces them and leave the far side in shade, edges
+## turned to the sun or a lamp catch a hard rim, bright grey pixels (steel) glint, and the bottom
+## edge of every shape and the feet sit in a little ambient shade (AO). People get a softer wrap so
+## they never go dark on their far side.
 static func card_code(hero: bool) -> String:
 	return "shader_type spatial;\nrender_mode cull_disabled, specular_disabled" + (", fog_disabled" if hero else "") + ";\n" \
 		+ ("#define HERO\n" if hero else "") + Sprite3.SUN_PART + HD_CARD_BODY
@@ -71,8 +78,14 @@ uniform float rim = 0.0;                                        // HERO: how bri
 uniform vec3 rim_col : source_color = vec3(1.0, 0.85, 0.62);
 uniform float pop = 1.12;                                       // HERO: contrast
 uniform float boost = 1.18;                                     // HERO: a little more light than the scenery
+uniform float bevel = 1.25;                                     // how round a picture's edges are (from its alpha)
+uniform float relief = 0.55;                                    // how much its own light and dark raise and sink it
+uniform float round_body = 0.32;                                // the whole picture bowed like a drum
 varying vec2 foot;
-varying vec3 card_side;
+varying vec3 card_r;                                            // view space: the picture's right (UV.x)
+varying vec3 card_u;                                            // view space: the picture's up
+varying float tilt;                                             // 0 = this pixel faces the camera, 1 = a steep edge
+varying float metal;                                            // bright grey pixels (steel, silver): glints
 void vertex() {
 	float top = 1.0 - UV.y;
 	VERTEX.x += sin(TIME * 0.9 + MODEL_MATRIX[3].x * 1.7 + MODEL_MATRIX[3].z * 0.9) * sway * top * top;
@@ -84,24 +97,63 @@ void vertex() {
 		VERTEX = (inverse(MODEL_MATRIX) * vec4(w, 1.0)).xyz;
 	}
 	foot = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+	card_r = (MODELVIEW_MATRIX * vec4(1.0, 0.0, 0.0, 0.0)).xyz;
+	card_u = (MODELVIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz;
 }
 float alpha_at(vec2 uv) {
 	if (uv.x < uv_rect.x || uv.y < uv_rect.y || uv.x > uv_rect.x + uv_rect.z || uv.y > uv_rect.y + uv_rect.w) { return 0.0; }
-	return texture(tex, uv).a;
+	return step(0.5, texture(tex, uv).a);
 }
+vec4 px_at(vec2 uv) {
+	if (uv.x < uv_rect.x || uv.y < uv_rect.y || uv.x > uv_rect.x + uv_rect.z || uv.y > uv_rect.y + uv_rect.w) { return vec4(0.0); }
+	return texture(tex, uv);
+}
+float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 void fragment() {
 	vec2 uv = uv_rect.xy + UV * uv_rect.zw;
 	vec4 c = texture(tex, uv);
 	if (c.a < 0.5) { discard; }
 	vec3 col = c.rgb * tint;
+	vec2 tx = 1.0 / vec2(textureSize(tex, 0));
+	// THE PICTURE'S OWN NORMAL, worked out from its pixels (nothing is drawn): every pixel is
+	// tilted towards the nearest edge of the figure (its alpha, over three pixels), a little up or
+	// down by its own light and dark (bright = raised), and the whole card is bowed like a drum.
+	// It is the same over a whole art pixel, so the light falls on it in crisp pixel steps.
+	vec4 l1 = px_at(uv - vec2(tx.x, 0.0));
+	vec4 r1 = px_at(uv + vec2(tx.x, 0.0));
+	vec4 u1 = px_at(uv - vec2(0.0, tx.y));
+	vec4 d1 = px_at(uv + vec2(0.0, tx.y));
+	vec4 a1 = step(0.5, vec4(l1.a, r1.a, u1.a, d1.a));
+	vec4 a2 = vec4(alpha_at(uv - vec2(tx.x * 2.0, 0.0)), alpha_at(uv + vec2(tx.x * 2.0, 0.0)), alpha_at(uv - vec2(0.0, tx.y * 2.0)), alpha_at(uv + vec2(0.0, tx.y * 2.0)));
+	vec4 a3 = vec4(alpha_at(uv - vec2(tx.x * 3.0, 0.0)), alpha_at(uv + vec2(tx.x * 3.0, 0.0)), alpha_at(uv - vec2(0.0, tx.y * 3.0)), alpha_at(uv + vec2(0.0, tx.y * 3.0)));
+	vec4 a = a1 * 0.45 + a2 * 0.35 + a3 * 0.2;                  // left, right, up, down: how solid each way
+	vec2 g = vec2(a.x - a.y, a.w - a.z) * bevel;
+	float me = lum(c.rgb);
+	vec4 h = mix(vec4(me), vec4(lum(l1.rgb), lum(r1.rgb), lum(u1.rgb), lum(d1.rgb)), a1);
+	g += vec2(h.x - h.y, h.w - h.z) * relief;
+	g.x += (UV.x * 2.0 - 1.0) * round_body;
+	vec3 n = normalize(vec3(g, 1.0));
+	tilt = 1.0 - n.z;
+	vec3 f = NORMAL;
+	if (dot(f, VIEW) < 0.0) { f = -f; }
+	vec3 r = normalize(card_r - f * dot(card_r, f));
+	vec3 up = card_u - f * dot(card_u, f) - r * dot(card_u, r);
+	up = dot(up, up) > 1e-4 ? normalize(up) : cross(f, r);
+	NORMAL = normalize(r * n.x + up * n.y + f * n.z);
+	// steel and silver (bright, grey) catch hard little glints of every light
+	float sat = max(max(c.r, c.g), c.b) - min(min(c.r, c.g), c.b);
+	metal = smoothstep(0.42, 0.62, me) * (1.0 - smoothstep(0.10, 0.22, sat));
+	// a little shade under every shape and at the feet (ambient only; the lights decide the rest)
+	float under = 1.0 - a1.w;
+	AO = clamp(1.0 - 0.32 * under - 0.22 * (1.0 - smoothstep(0.0, 0.22, 1.0 - UV.y)), 0.0, 1.0);
+	AO_LIGHT_AFFECT = 0.2;
 #ifdef HERO
 	col = max((col - 0.16) * pop + 0.16, vec3(0.0));
-	vec2 tx = 1.0 / vec2(textureSize(tex, 0));
 	// the top and side edges of the figure catch a thin warm rim (light from behind, as in the sun)
-	float up = 1.0 - step(0.5, alpha_at(uv - vec2(0.0, tx.y)));
-	float up2 = 1.0 - step(0.5, alpha_at(uv - vec2(0.0, tx.y * 2.0)));
-	float sides = 1.0 - step(0.5, min(alpha_at(uv - vec2(tx.x, 0.0)), alpha_at(uv + vec2(tx.x, 0.0))));
-	float edge = clamp(max(up, sides * 0.75) + up2 * 0.35, 0.0, 1.0) * smoothstep(0.15, 0.55, 1.0 - UV.y);
+	float up_e = 1.0 - a1.z;
+	float up2 = 1.0 - a2.z;
+	float sides = 1.0 - min(a1.x, a1.y);
+	float edge = clamp(max(up_e, sides * 0.75) + up2 * 0.35, 0.0, 1.0) * smoothstep(0.15, 0.55, 1.0 - UV.y);
 	EMISSION = col * shine + rim_col * rim * edge + col * 0.05 * rim;
 #else
 	EMISSION = col * shine;
@@ -109,13 +161,28 @@ void fragment() {
 	ALBEDO = col;
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(foot);
-	card_side = TANGENT;
 }
 void light() {
-	float side = (UV.x * 2.0 - 1.0) * dot(normalize(card_side), LIGHT);
-	float lamp = 0.35 * (1.0 + 0.55 * side) * (1.15 - 0.3 * (1.0 - UV.y));
-	float sun = sun_share * (1.0 + 0.22 * side);
-	vec3 add = ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun : max(lamp, 0.0));
+	float ndl = dot(NORMAL, LIGHT);
+	float lit;
+	if (LIGHT_IS_DIRECTIONAL) {
+		// the sun lights the whole face (a card is never in its own shade), and the edges that
+		// turn towards it catch it hard: the rim of light round everything when the sun is behind
+		lit = sun_share * (0.8 + 0.25 * clamp(ndl * 0.5 + 0.5, 0.0, 1.0) + tilt * max(ndl, 0.0) * 1.1);
+	} else {
+		// a lamp lights the side of a figure that faces it, and leaves the far side in shade
+#ifdef HERO
+		float wrap = clamp((ndl + 0.9) / 1.9, 0.0, 1.0);
+#else
+		// (things that glow themselves, flames and lamp glass, take their own light from all sides)
+		float w = shine > 0.0 ? 6.0 : 0.75;
+		float wrap = clamp((ndl + w) / (1.0 + w), 0.0, 1.0);
+#endif
+		lit = 0.62 * wrap * (1.15 - 0.3 * (1.0 - UV.y)) + tilt * max(ndl, 0.0) * 0.9;
+	}
+	vec3 add = ATTENUATION * LIGHT_COLOR / PI * lit;
+	// glints on steel: a hard little highlight where the light bounces into the eye
+	add += ATTENUATION * LIGHT_COLOR * metal * pow(max(dot(reflect(-LIGHT, NORMAL), VIEW), 0.0), 14.0) * (LIGHT_IS_DIRECTIONAL ? 0.9 : 1.6);
 #ifdef HERO
 	add *= boost;
 #endif
