@@ -11,7 +11,7 @@ extends RefCounted
 ## Row keys (all optional but "at" and "wall"):
 ##   "at" Vector2 (middle of the front, px) "wide" 96 "deep" 56 "wall" "roof" "rise" 30 "gable" false
 ##   "door" "windows" "win_dx" 30 "win_up" 12 "chimney" false
-##   "floors" 1 or 2 (default: 2 where nobody walks behind the house, else 1, so a tall house never
+##   "floors" 1, 2 or 3 (default: 2 where nobody walks behind the house, else 1, so a tall house never
 ##            hides a person); "upper" the upper storey's wall art; "balcony" (default: a wide
 ##            two-storey house); "awning" the pent roof over the door (default: where it fits)
 
@@ -112,6 +112,10 @@ func build(h: Dictionary, walk_top: float) -> void:
 		for side: float in [-1.0, 1.0]:
 			var x := cx + side * w
 			pan(upper, x, front, x, back, sh + BAND, top, Vector3(side, 0, 0))
+		# (a third storey: another timber band between the upper two; nobody walks behind the north row)
+		for f in range(2, floors):
+			var y := sh * f + BAND * (f - 1)
+			blk(beam, Vector3(x0 - 1, y, back), Vector3(x1 + 1, y + BAND, front + 1.5), 0)
 	# --- timber corner posts (a log house has its own corner logs)
 	if not logs:
 		for side: float in [-1.0, 1.0]:
@@ -138,6 +142,8 @@ func build(h: Dictionary, walk_top: float) -> void:
 				xs = [-wide / 3.0, 0.0, wide / 3.0]
 			for dx: float in xs:
 				_window(win, cx + dx, front, y0, true, false)
+				for f in range(2, floors):
+					_window(win, cx + dx, front, y0 + (sh + BAND) * (f - 1), f % 2 == 0, false)
 			if balcony:
 				_balcony(cx, front, sh + BAND, door)
 	# --- the roof

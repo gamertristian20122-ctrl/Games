@@ -669,6 +669,8 @@ func _prop(id: String, at: Vector2, solid: float, below: float) -> Sprite2D:
 	var sz := s.texture.get_size()
 	s.offset = Vector2(-floorf(sz.x * 0.5), -sz.y + below)        # a negative `below` lifts the picture above its base
 	s.position = at
+	if id.begins_with("hub_bloom_"):
+		s.scale = Vector2(0.7, 0.7)      # (the giant trumpet flowers stood taller than the knight: scale broke)
 	_ysort.add_child(s)
 	if solid > 0.0:
 		_solids.append([at - Vector2(0, solid * 0.4), solid])

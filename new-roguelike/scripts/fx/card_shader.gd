@@ -186,7 +186,12 @@ void fragment() {
 	// the top and side edges of the figure catch a thin warm rim (light from behind, as in the sun)
 	float up_e = 1.0 - a1.z;
 	float up2 = 1.0 - a2.z;
-	float sides = 1.0 - min(a1.x, a1.y);
+	// (the side edges catch it only on the side the low sun comes from, the right of the screen;
+	// the far side keeps only a breath of it: no sticker outline all round)
+	bool to_right = card_r.x >= 0.0;
+	float right_open = 1.0 - (to_right ? a1.y : a1.x);
+	float left_open = 1.0 - (to_right ? a1.x : a1.y);
+	float sides = max(right_open, left_open * 0.25);
 	float edge = clamp(max(up_e, sides * 0.75) + up2 * 0.35, 0.0, 1.0) * smoothstep(0.15, 0.55, 1.0 - UV.y);
 	// (and a little light of its own, so a person in deep shade still reads: bring them forward)
 	EMISSION = col * shine + rim_col * rim * edge + col * 0.24 * rim;

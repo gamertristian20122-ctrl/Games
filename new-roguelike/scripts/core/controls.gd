@@ -40,7 +40,8 @@ var bot_aim := Vector2.ZERO
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	using_touch = OS.has_feature("mobile") or DisplayServer.is_touchscreen_available() or G.flag("touch")     # --touch: show the phone buttons in test pictures
+	# (a PC with a touch screen, a Steam Deck, shows them only once it is really touched)
+	using_touch = OS.has_feature("mobile") or G.flag("touch")     # --touch: show the phone buttons in test pictures
 	get_window().window_input.connect(_watch_device)
 
 
