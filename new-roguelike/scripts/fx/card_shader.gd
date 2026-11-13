@@ -81,6 +81,15 @@ uniform float boost = 1.18;                                     // HERO: a littl
 uniform float bevel = 1.25;                                     // how round a picture's edges are (from its alpha)
 uniform float relief = 0.55;                                    // how much its own light and dark raise and sink it
 uniform float round_body = 0.32;                                // the whole picture bowed like a drum
+// BLAZE (things that glow): a hot glow keeps its colour (gold, orange), only its brightest pixels
+// stay a pale core, so the tone curve does not turn a lamp into a cold white tube
+uniform vec3 hot_col : source_color = vec3(1.0, 0.52, 0.16);
+uniform float hot = 0.0;                                        // how far the glow is pushed to hot_col
+uniform float by_night = 0.0;                                   // 1 = a lamp: dim by day, full at dusk and night
+global uniform float hh_lamp_on;                                // (set every frame by scripts/fx/hd_light.gd)
+global uniform sampler2D hh_people : filter_nearest;            // where the people are (Sprite3.set_people)
+global uniform int hh_people_n;
+varying float shadow_pass;
 varying vec2 foot;
 varying vec3 card_r;                                            // view space: the picture's right (UV.x)
 varying vec3 card_u;                                            // view space: the picture's up
@@ -96,6 +105,7 @@ void vertex() {
 		w += normalize(away) * shadow_push;
 		VERTEX = (inverse(MODEL_MATRIX) * vec4(w, 1.0)).xyz;
 	}
+	shadow_pass = IN_SHADOW_PASS ? 1.0 : 0.0;
 	foot = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 	card_r = (MODELVIEW_MATRIX * vec4(1.0, 0.0, 0.0, 0.0)).xyz;
 	card_u = (MODELVIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz;
@@ -113,6 +123,28 @@ void fragment() {
 	vec2 uv = uv_rect.xy + UV * uv_rect.zw;
 	vec4 c = texture(tex, uv);
 	if (c.a < 0.5) { discard; }
+#ifndef HERO
+	// PEOPLE COME FIRST: where this picture stands in front of somebody, it is thinned out to a
+	// screen-door of about a third of its pixels, so the person shows through (never in the
+	// shadow pass: the shadow stays whole)
+	if (shadow_pass < 0.5 && hh_people_n > 0) {
+		float fz = -VERTEX.z;
+		bool cover = false;
+		for (int i = 0; i < hh_people_n; i++) {
+			vec4 pr = texelFetch(hh_people, ivec2(i, 0), 0);
+			if (SCREEN_UV.x > pr.x && SCREEN_UV.x < pr.z && SCREEN_UV.y > pr.y && SCREEN_UV.y < pr.w) {
+				vec4 pd = texelFetch(hh_people, ivec2(i, 1), 0);
+				float t = (SCREEN_UV.y - pr.y) / max(pr.w - pr.y, 1e-4);
+				cover = cover || fz < mix(pd.y, pd.x, t) - 0.3;
+			}
+		}
+		if (cover) {
+			ivec2 q = ivec2(FRAGCOORD.xy) % 4;
+			int b4[16] = int[](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+			if (float(b4[q.y * 4 + q.x]) / 16.0 > 0.34) { discard; }
+		}
+	}
+#endif
 	vec3 col = c.rgb * tint;
 	vec2 tx = 1.0 / vec2(textureSize(tex, 0));
 	// THE PICTURE'S OWN NORMAL, worked out from its pixels (nothing is drawn): every pixel is
@@ -154,9 +186,12 @@ void fragment() {
 	float up2 = 1.0 - a2.z;
 	float sides = 1.0 - min(a1.x, a1.y);
 	float edge = clamp(max(up_e, sides * 0.75) + up2 * 0.35, 0.0, 1.0) * smoothstep(0.15, 0.55, 1.0 - UV.y);
-	EMISSION = col * shine + rim_col * rim * edge + col * 0.05 * rim;
+	// (and a little light of its own, so a person in deep shade still reads: bring them forward)
+	EMISSION = col * shine + rim_col * rim * edge + col * 0.24 * rim;
 #else
-	EMISSION = col * shine;
+	float core = smoothstep(0.86, 0.97, me);
+	vec3 glow_c = mix(col, hot_col * max(me, 0.55) * 1.25, hot * (1.0 - 0.75 * core));
+	EMISSION = glow_c * shine * mix(1.0, hh_lamp_on, by_night);
 #endif
 	ALBEDO = col;
 	ROUGHNESS = 1.0;
@@ -278,8 +313,29 @@ static func card(tex: Texture2D, uv: Vector4, tint: Color, hero := false) -> Sha
 	mat.set_shader_parameter("tex", tex)
 	mat.set_shader_parameter("uv_rect", uv)
 	mat.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
-	mat.set_shader_parameter("shine", shine_of(tex))
+	set_glow(mat, tex, hero)
 	return mat
+
+
+## How a picture glows (its shine; HD: gold and orange, not white; lamps dim by day). Called again
+## whenever a moving card changes its picture (scripts/hub/view3d.gd).
+static func set_glow(mat: ShaderMaterial, tex: Texture2D, hero := false) -> void:
+	mat.set_shader_parameter("shine", shine_of(tex))
+	if not Hd.on() or hero or tex == null:
+		return
+	var path := tex.resource_path
+	var hot := 0.0
+	var by_night := 0.0
+	var hot_col := Vector3(1.0, 0.52, 0.16)
+	if tex.resource_name == "hub_lampglass":
+		hot = 0.7
+		by_night = 1.0
+	elif path.contains("hub_flame") or path.contains("hub_fire"):
+		hot = 0.55
+		hot_col = Vector3(1.0, 0.45, 0.12)
+	mat.set_shader_parameter("hot", hot)
+	mat.set_shader_parameter("by_night", by_night)
+	mat.set_shader_parameter("hot_col", hot_col)
 
 
 ## A flat shadow's material: the ground under it, darker (`ground_params` = the floor's settings).
@@ -298,11 +354,11 @@ static func shine_of(tex: Texture2D) -> float:
 	if tex == null:
 		return 0.0
 	var path := tex.resource_path
-	var blaze := 2.8 if Hd.on() else 1.0      # HD: hot cores far over the bloom's threshold, so flames BLAZE
+	var blaze := 2.0 if Hd.on() else 1.0      # HD: hot cores far over the bloom's threshold, so flames BLAZE
 	if path.contains("hub_flame"):
 		return 2.4 * blaze
 	if tex.resource_name == "hub_lampglass":
-		return 2.6 * blaze       # the glass of a lamp post
+		return 2.6 * (2.2 if Hd.on() else 1.0)       # the glass of a lamp post (HD: gold, see card() "hot")
 	if path.contains("hub_fire") or path.contains("hub_flava") or path.contains("hub_rune"):
 		return 0.5 * (2.4 if Hd.on() else 1.0)
 	if path.contains("hub_win"):

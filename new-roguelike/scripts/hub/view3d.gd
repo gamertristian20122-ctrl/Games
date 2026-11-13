@@ -419,7 +419,7 @@ func _sync_holder(entry: Dictionary, ysort: Node2D, stamp: int) -> void:
 		if mine["tex"] != tex:
 			mine["tex"] = tex
 			bm.set_shader_parameter("tex", tex)
-			bm.set_shader_parameter("shine", CardShader.shine_of(tex))
+			CardShader.set_glow(bm, tex, bool(entry.get("person", false)))
 			sm.set_shader_parameter("tex", tex)
 		bm.set_shader_parameter("uv_rect", card["uv"])
 		sm.set_shader_parameter("uv_rect", card["uv"])
@@ -433,6 +433,38 @@ func _sync_holder(entry: Dictionary, ysort: Node2D, stamp: int) -> void:
 			(cards[id]["body"] as Node).queue_free()
 			(cards[id]["shade"] as Node).queue_free()
 			cards.erase(id)
+
+
+## HD: where a person is on the screen (for Sprite3.set_people): the rect round all their cards,
+## a few px wider, and the view distance of their feet and of their head.
+func _person_row(entry: Dictionary, rows: Array) -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var to_view := cam.global_transform.affine_inverse()
+	var lo := Vector2.INF
+	var hi := -Vector2.INF
+	var foot_z := -INF
+	var head_z := INF
+	var any := false
+	for card: Dictionary in (entry["cards"] as Dictionary).values():
+		var body: MeshInstance3D = card["body"]
+		if not body.visible:
+			continue
+		var b := body.global_transform.basis
+		var o := body.global_transform.origin
+		for k: Vector2 in [Vector2(-0.5, -0.5), Vector2(0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.5, 0.5)]:
+			var p := o + b.x * k.x + b.y * k.y
+			if cam.is_position_behind(p):
+				continue
+			var at := cam.unproject_position(p)
+			lo = lo.min(at)
+			hi = hi.max(at)
+			any = true
+		foot_z = maxf(foot_z, -(to_view * (o - b.y * 0.5)).z)
+		head_z = minf(head_z, -(to_view * (o + b.y * 0.5)).z)
+	if not any or lo.x > vp.x or lo.y > vp.y or hi.x < 0.0 or hi.y < 0.0:
+		return
+	var pad := Vector2(4.0, 4.0)
+	rows.append([Rect2((lo - pad) / vp, (hi - lo + pad * 2.0) / vp), foot_z, head_z])
 
 
 # ------------------------------------------------------------------ words
@@ -511,8 +543,11 @@ func _sync(_delta: float) -> void:
 	cam.look_at(target, Vector3.UP)
 	var people: Array = []
 	if Hd.on():
+		var rows: Array = []
 		for id: int in _live:
 			if bool(_live[id].get("person", false)) and is_instance_valid(_live[id]["node"]):
 				people.append(_where(_live[id]["node"]))
+				_person_row(_live[id], rows)
+		Sprite3.set_people(rows)
 	light.sync_view(_delta, _dist, target, centre, pool_at, people)
 	_sync_words(zoom)

@@ -137,6 +137,7 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	t["torches"] = torches
 	t["lights"] = lights
 	_market_town(t)
+	_lanterns(t, [Vector2(760, 310), Vector2(514, 474)])
 	# more kinds of grass and flowers lying in the grass
 	var scatter: Dictionary = (t["scatter"] as Dictionary).duplicate()
 	scatter["hub_gflower"] = [32, 36]
@@ -200,6 +201,37 @@ static func _market_town(t: Dictionary) -> void:
 	# the near edge: dark shrubs and a cypress past the south edge, nearer the camera than anyone
 	props.append_array([["hub_vbig_0", 60, 572, 0, 2], ["hub_gcypress_1", 404, 578, 0, 0], ["hub_vbig_3", 640, 574, 0, 2],
 		["hub_vbig_1", 760, 576, 0, 2], ["hub_gcypress_0", 900, 580, 0, 0]])
+
+
+## IRON LANTERNS (fixer pass, 13 Nov 2026): every bare lamp post of the town (a wooden stick with
+## a glowing square on top) becomes the pack's lantern on an arm (hub_slantern); the lantern hangs
+## towards the middle of the town (row field 5: mirrored). The flat glass of a "torches" spot goes;
+## hub.gd lays a glowing glass over the lantern of every hub_slantern instead, and the light moves
+## onto that glass (LANTERN_GLASS). Lamps at `drop` are taken away (the ones that stood alone in grass).
+const LANTERN_GLASS := Vector2(15, -33)      ## the light of a hub_slantern, from its foot (x mirrored with it)
+static func _lanterns(t: Dictionary, drop: Array) -> void:
+	var props: Array = t["props"]
+	var torches: Array = t["torches"]
+	var lights: Array = t["lights"]
+	var mid := float((t["size"] as Vector2).x) * 0.5
+	for i in range(props.size() - 1, -1, -1):
+		var row: Array = props[i]
+		var at := Vector2(row[1], row[2])
+		if String(row[0]) != "hub_post" or not torches.has(at):
+			continue
+		torches.erase(at)
+		var flip := at.x > mid
+		var light_at := at + Vector2(-LANTERN_GLASS.x if flip else LANTERN_GLASS.x, LANTERN_GLASS.y)
+		for k in range(lights.size() - 1, -1, -1):
+			if (lights[k] as Array)[0] == at - Vector2(0, 40):
+				if drop.has(at):
+					lights.remove_at(k)
+				else:
+					(lights[k] as Array)[0] = light_at
+		if drop.has(at):
+			props.remove_at(i)
+		else:
+			props[i] = ["hub_slantern", at.x, at.y, 2, 0, flip]
 
 
 static func _base_place(id: String) -> Dictionary:

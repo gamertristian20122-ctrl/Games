@@ -116,6 +116,10 @@ static var _hd_shaders := {}          ## HD: false = scenery, true = fighter (se
 static var tall := 1.0
 static var _sun_ready := false
 static var _dapple: ImageTexture
+## HD walking places: where the people are on the screen (see set_people)
+const MAX_PEOPLE := 16
+static var _people_img: Image
+static var _people_tex: ImageTexture
 
 var frames: SpriteFrames
 var anim := "idle"
@@ -143,6 +147,27 @@ static func ensure_sun() -> void:
 	RenderingServer.global_shader_parameter_add(&"hh_dapple", RenderingServer.GLOBAL_VAR_TYPE_SAMPLER2D, _dapple)
 	RenderingServer.global_shader_parameter_add(&"hh_dapple_set", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(0.03, 0.0, 0.0, 0.0))
 	RenderingServer.global_shader_parameter_add(&"hh_pool", RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(0.0, 0.0, 10.0, 0.0))
+	# how lit the lamps of a walking place are (HD lamp glass: dim by day, full after dusk)
+	RenderingServer.global_shader_parameter_add(&"hh_lamp_on", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 1.0)
+	_people_img = Image.create(MAX_PEOPLE, 2, false, Image.FORMAT_RGBAF)
+	_people_tex = ImageTexture.create_from_image(_people_img)
+	RenderingServer.global_shader_parameter_add(&"hh_people", RenderingServer.GLOBAL_VAR_TYPE_SAMPLER2D, _people_tex)
+	RenderingServer.global_shader_parameter_add(&"hh_people_n", RenderingServer.GLOBAL_VAR_TYPE_INT, 0)
+
+
+## PEOPLE COME FIRST (HD walking places, scripts/fx/card_shader.gd): `rows` = one per person in
+## view, [Rect2 on the screen (0..1), view distance of the feet, view distance of the head]. A
+## standing picture that is nearer the camera than somebody and covers them there is drawn thinned
+## out (screen-door), so nobody is ever hidden behind a flower, a stall or a lamp.
+static func set_people(rows: Array) -> void:
+	ensure_sun()
+	var n := mini(rows.size(), MAX_PEOPLE)
+	for i in n:
+		var r: Rect2 = rows[i][0]
+		_people_img.set_pixel(i, 0, Color(r.position.x, r.position.y, r.end.x, r.end.y))
+		_people_img.set_pixel(i, 1, Color(float(rows[i][1]), float(rows[i][2]), 0.0, 0.0))
+	_people_tex.update(_people_img)
+	RenderingServer.global_shader_parameter_set(&"hh_people_n", n)
 
 
 ## Sets the patches of sun for everything on screen. strength 0 = even light (night, indoors).

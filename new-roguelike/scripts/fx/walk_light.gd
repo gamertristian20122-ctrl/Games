@@ -15,22 +15,24 @@ extends RefCounted
 ##   rich           colour strength (1 = as painted)            haze   the colour of distance
 ##   far            how much distance fades into the haze       rim    how dark the corners get
 ##   shafts         beams of sun (0 none, 1 full)               motes  dust in the sun (0 to 1)
+##   dapple         HD: soft patches of leaf shade on the ground (0 = none: open sand, a square;
+##                  the real shadow maps do the shade there; 1 = under thick leaves)
 ## Rows: "<place>" (by day), "<place>:night", "<place>:lit" (after its land's beacon is lit),
 ## "default", "default:night", "indoors". A missing key is taken from "default" / "default:night".
 const GRADES := {
 	"default": {"warm": Vector3(1.06, 1.01, 0.90), "shade": Vector3(1.0, 0.93, 0.88), "punch": 1.07, "rich": 0.97,
-		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8},
+		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5},
 	"default:night": {"warm": Vector3(1.10, 1.0, 0.86), "shade": Vector3(0.84, 0.94, 1.16), "punch": 1.06, "rich": 0.95,
-		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0},
+		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0},
 	# Wickmere at dusk: honey light on the stones, plum shade
-	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26},
+	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25},
 	# the dark road (before the beacon): greener, cooler shade, thicker air, few beams
 	"elfwood": {"warm": Vector3(1.03, 1.02, 0.92), "shade": Vector3(0.88, 0.97, 1.04), "punch": 1.09, "rich": 0.94,
-		"haze": Color(0.70, 0.80, 0.70), "far": 0.38, "rim": 0.52, "shafts": 0.45, "motes": 0.5},
+		"haze": Color(0.82, 0.76, 0.52), "far": 0.38, "rim": 0.52, "shafts": 0.45, "motes": 0.5, "dapple": 0.9},
 	"deepwood": {"warm": Vector3(1.0, 1.02, 0.94), "shade": Vector3(0.84, 0.96, 1.06), "punch": 1.10, "rich": 0.92,
-		"haze": Color(0.52, 0.66, 0.62), "far": 0.44, "rim": 0.56, "shafts": 0.35, "motes": 0.4},
-	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6},
-	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5},
+		"haze": Color(0.62, 0.66, 0.50), "far": 0.44, "rim": 0.56, "shafts": 0.35, "motes": 0.4, "dapple": 1.0},
+	"glade": {"warm": Vector3(1.03, 1.02, 0.94), "shade": Vector3(0.88, 0.96, 1.08), "haze": Color(0.66, 0.80, 0.82), "far": 0.34, "shafts": 0.6, "dapple": 0.8},
+	"beacon": {"warm": Vector3(1.05, 1.0, 0.92), "shade": Vector3(0.90, 0.92, 1.06), "haze": Color(0.80, 0.78, 0.76), "far": 0.36, "shafts": 0.5, "dapple": 0.4},
 	# golden dawn: the land after its beacon is lit
 	"elfwood:lit": {"warm": Vector3(1.10, 1.01, 0.84), "shade": Vector3(1.02, 0.93, 0.86), "punch": 1.05, "rich": 1.0,
 		"haze": Color(1.0, 0.82, 0.55), "far": 0.30, "rim": 0.42, "shafts": 1.0, "motes": 1.0},
@@ -38,16 +40,16 @@ const GRADES := {
 	"glade:lit": {"warm": Vector3(1.10, 1.01, 0.85), "haze": Color(1.0, 0.84, 0.58), "shafts": 1.0, "motes": 1.0},
 	"beacon:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the Sands: hot pale dust before the beacon, deep amber after it
-	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.96, 0.90, 0.96), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6},
-	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4},
+	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.96, 0.90, 0.96), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0},
+	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0},
 	"dustwatch:lit": {"warm": Vector3(1.12, 1.0, 0.82), "haze": Color(1.0, 0.78, 0.50), "shafts": 1.0, "motes": 1.0},
 	"suncourt:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the world map: a wide view, so the distance matters most
-	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.42, "rim": 0.40, "shafts": 0.55, "motes": 0.3},
+	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.42, "rim": 0.40, "shafts": 0.55, "motes": 0.3, "dapple": 0.0},
 	"world:night": {"haze": Color(0.16, 0.22, 0.38), "far": 0.45},
 	# rooms: candle warmth, soft brown shade
 	"indoors": {"warm": Vector3(1.09, 0.99, 0.84), "shade": Vector3(0.96, 0.88, 0.90), "punch": 1.05, "rich": 0.98,
-		"haze": Color(0.32, 0.20, 0.14), "far": 0.0, "rim": 0.50, "shafts": 0.0, "motes": 0.0},
+		"haze": Color(0.32, 0.20, 0.14), "far": 0.0, "rim": 0.50, "shafts": 0.0, "motes": 0.0, "dapple": 0.0},
 }
 
 ## Which land a place belongs to, for "lit" (Tale.lit(land)).
@@ -105,6 +107,7 @@ uniform float far = 0.3;          // how much the distance fades into the haze
 uniform float sky_glow = 0.0;     // a soft bright band at the top of the picture (the low sun)
 uniform float blur_on = 1.0;      // 0 = no blur here (HD: the camera's own depth of field does it)
 uniform float linear_in = 0.0;    // 1 = the picture is linear light (HD, Forward+): grade it as seen
+uniform float fore_z = 0.0;       // HD: things nearer than this (view distance) are the dark foreground (0 = none)
 const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
@@ -158,6 +161,9 @@ void fragment() {
 	// distance: the far part of the picture melts into the air
 	float deep = smoothstep(focus + sharp, focus + falloff * 3.2, zc);
 	col = mix(col, haze * (0.75 + 0.25 * l), deep * far);
+	// the foreground (between the camera and the play): in shade, cooler, less colour
+	float fore = fore_z > 0.0 ? 1.0 - smoothstep(fore_z - 2.5, fore_z - 0.2, zc) : 0.0;
+	col = mix(col, mix(vec3(l), col, 0.55) * vec3(0.40, 0.42, 0.47), fore);
 	// the low sun just over the top of the picture
 	col += haze * sky_glow * pow(1.0 - SCREEN_UV.y, 3.0) * 0.35;
 	vec2 q = SCREEN_UV - 0.5;
@@ -204,12 +210,13 @@ render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, 
 uniform vec3 colour : source_color = vec3(1.0, 0.85, 0.55);
 uniform float strength = 0.1;
 uniform float seed = 0.0;
+uniform float soft = 0.0;          // 1 = a wide soft beam: a bell across, no streaks (HD)
 void fragment() {
 	float across = 1.0 - abs(UV.x * 2.0 - 1.0);
-	across = smoothstep(0.0, 0.9, across);
+	across = mix(smoothstep(0.0, 0.9, across), across * across * (3.0 - 2.0 * across), soft);
 	float along = smoothstep(1.0, 0.72, UV.y) * smoothstep(0.0, 0.5, UV.y);
 	float breathe = 0.75 + 0.25 * sin(TIME * 0.35 + seed * 6.1);
-	float streak = 0.75 + 0.25 * sin(UV.x * 17.0 + seed * 3.0 + TIME * 0.2);
+	float streak = mix(0.75 + 0.25 * sin(UV.x * 17.0 + seed * 3.0 + TIME * 0.2), 1.0, soft);
 	ALBEDO = colour * across * along * breathe * streak * strength;
 }
 "
@@ -273,7 +280,9 @@ static func halo(at: Vector3, size: float, colour: Color) -> MeshInstance3D:
 
 ## `count` beams of sun falling along `light_dir` (the way the sun's light travels), spread over a
 ## patch `spread` units wide round the parent's origin. The parent follows the camera.
-static func shafts(parent: Node3D, light_dir: Vector3, count: int, spread: float, length: float) -> Array:
+## `wide_back` (HD): fewer, wide, very soft beams, only in the band BEHIND the play (never between
+## the camera and the people), with no streaks.
+static func shafts(parent: Node3D, light_dir: Vector3, count: int, spread: float, length: float, wide_back := false) -> Array:
 	var up := -light_dir.normalized()
 	var side := Vector3(1.0, 0.0, 0.0)
 	side = (side - up * side.dot(up)).normalized()
@@ -287,7 +296,7 @@ static func shafts(parent: Node3D, light_dir: Vector3, count: int, spread: float
 		mat.set_shader_parameter("seed", float(i) * 1.37)
 		mat.render_priority = 5
 		var q := QuadMesh.new()
-		var wide := rng.randf_range(0.9, 2.4)
+		var wide := rng.randf_range(4.0, 7.0) if wide_back else rng.randf_range(0.9, 2.4)
 		q.size = Vector2(wide, length)
 		var m := MeshInstance3D.new()
 		m.mesh = q
@@ -295,6 +304,9 @@ static func shafts(parent: Node3D, light_dir: Vector3, count: int, spread: float
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		m.extra_cull_margin = length
 		var foot := Vector3(rng.randf_range(-spread, spread), 0.0, rng.randf_range(-spread * 0.6, spread * 0.4))
+		if wide_back:
+			foot = Vector3((float(i) / maxf(count - 1, 1) - 0.5) * spread * 1.6 + rng.randf_range(-1.5, 1.5), 0.0, rng.randf_range(-spread * 0.9, -spread * 0.45))
+			mat.set_shader_parameter("soft", 1.0)
 		m.transform = Transform3D(Basis(side, up, face), foot + up * (length * 0.5))
 		parent.add_child(m)
 		out.append(mat)

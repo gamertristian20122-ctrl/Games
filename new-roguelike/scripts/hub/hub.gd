@@ -251,7 +251,10 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_zoom = float(place.get("zoom", 1.0))
 	_k = float(place.get("hero_scale", 1.0))
 	for p: Array in place.get("props", []):
-		_prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
+		var s := _prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
+		s.flip_h = p.size() > 5 and bool(p[5])          # (field 5: mirrored)
+		if String(p[0]) == "hub_slantern":
+			_lantern_glass(s)
 	# houses and water: the 3D look builds them as real things (scripts/hub/view3d.gd); the old
 	# flat look shows a house as the pack's flat pieces and water as a flat shape
 	if _view == null:
@@ -709,6 +712,27 @@ func _lamp_glass() -> ImageTexture:
 		_glass_tex = ImageTexture.create_from_image(img)
 		_glass_tex.resource_name = "hub_lampglass"
 	return _glass_tex
+
+
+## The glass of the pack's hanging lantern (hub_slantern, 43 x 46): a small glowing pane laid over
+## its glass (art pixels 34-38 x 16-20), a pixel in front of it so it is drawn over it. The 3D look
+## makes it blaze (scripts/fx/card_shader.gd shine_of) and puts the lamp's light on it.
+static var _lantern_tex: ImageTexture
+func _lantern_glass(lantern: Sprite2D) -> void:
+	if _lantern_tex == null:
+		var img := Image.create(5, 5, false, Image.FORMAT_RGBA8)
+		img.fill(Color("ffc46a"))
+		img.fill_rect(Rect2i(1, 1, 3, 3), Color("ffd98a"))
+		img.fill_rect(Rect2i(2, 1, 1, 3), Color("fff0c0"))
+		_lantern_tex = ImageTexture.create_from_image(img)
+		_lantern_tex.resource_name = "hub_lampglass"
+	var glass := Sprite2D.new()
+	glass.texture = _lantern_tex
+	glass.centered = false
+	glass.position = lantern.position + Vector2(0, 1)
+	var left := 34.0 if not lantern.flip_h else 43.0 - 39.0
+	glass.offset = lantern.offset + Vector2(left, 16.0 - 1.0)
+	_ysort.add_child(glass)
 
 
 ## A beacon of the story (scripts/data/tale.gd): the fire bowl on its stone. Dark, it is cold
