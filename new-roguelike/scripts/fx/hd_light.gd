@@ -42,7 +42,7 @@ const HD_LAMP_REACH := 2.5          ## HD: a lamp's light reaches this many time
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
 const HD_FOG_DAY := 0.0016          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
 const HD_FOG_NIGHT := 0.009         ## ... a little thicker at night (halos round every lamp)
-const HD_HAZE_DAY := 0.035          ## the sunlit air behind the play by day (times the grade's "shafts")
+const HD_HAZE_DAY := 0.09           ## the sunlit air behind the play by day (times the grade's "shafts")
 const HD_HAZE_NIGHT := 0.012        ## ... and at night
 const HD_FOG_LENGTH := 40.0         ## the volumetric fog ends this far from the camera (else a wide view is a sheet of fog)
 const HD_DAPPLE := 1.6             ## how far apart sun and shade patches are (times the grade's "dapple": 0 on open sand)
@@ -52,6 +52,7 @@ const HD_DOF := 0.22                ## how strong the depth of field is (0 = non
 const HD_ROOM_DOF := 0.06
 
 static var _dot_tex: GradientTexture2D
+static var _exposure_ready := false
 
 var v                              ## the view (scripts/hub/view3d.gd; untyped: its members are read by name)
 var env: Environment
@@ -133,6 +134,10 @@ func setup() -> void:
 
 ## HD: the real light of a PC (see the top of this file).
 func _setup_hd(post_mat: ShaderMaterial) -> void:
+	if not _exposure_ready:
+		# the exposure, for the people's shader (scripts/fx/card_shader.gd keeps them from burning white)
+		_exposure_ready = true
+		RenderingServer.global_shader_parameter_add(&"hh_exposure", RenderingServer.GLOBAL_VAR_TYPE_FLOAT, 1.0)
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
 	env.tonemap_exposure = HD_EXPOSURE_DAY
 	env.tonemap_agx_contrast = 1.35
@@ -166,7 +171,7 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	env.fog_enabled = false
 	env.volumetric_fog_enabled = true
 	env.volumetric_fog_density = HD_FOG_DAY
-	env.volumetric_fog_anisotropy = 0.62
+	env.volumetric_fog_anisotropy = 0.4         # (the sun comes from behind and to the side: some light must scatter sideways to the eye)
 	env.volumetric_fog_length = HD_FOG_LENGTH
 	env.volumetric_fog_detail_spread = 1.6
 	env.volumetric_fog_ambient_inject = 0.02    # the shade does not glow: only the sun and the lamps light the air
@@ -512,7 +517,7 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		# full day: a golden afternoon sun; towards dusk it sinks to deep amber; the moon is blue
 		var amber := HD_SUN_COLOUR_DAY.lerp(HD_SUN_COLOUR, clampf(night * 1.8, 0.0, 1.0))
 		sun.light_color = sky.lerp(amber, 0.7).lerp(Color(0.62, 0.72, 1.0), smoothstep(0.55, 1.0, night))
-		env.ambient_light_energy = lerpf(HD_AMBIENT_NIGHT, HD_AMBIENT_DAY, day)
+		env.ambient_light_energy = lerpf(HD_AMBIENT_NIGHT, HD_AMBIENT_DAY, day) * float(grade.get("ambient", 1.0))
 		env.ambient_light_color = Color(0.62, 0.56, 0.62).lerp(Color(0.42, 0.50, 0.78), night)
 		var haze: Color = grade.get("haze", Color(1.0, 0.86, 0.62)) if not grade.is_empty() else Color(1.0, 0.86, 0.62)
 		env.volumetric_fog_density = lerpf(HD_FOG_NIGHT, HD_FOG_DAY, day)
@@ -530,6 +535,7 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 	# NO MILKY VEIL: sync_light() sets the flat look's bloom and depth mist each frame; in HD the
 	# bloom is only for what burns over the threshold (no blurred copy of the whole picture added on
 	# top) and the volumetric fog is the only air (the depth mist would wash out the shade again)
+	RenderingServer.global_shader_parameter_set(&"hh_exposure", env.tonemap_exposure)
 	env.glow_bloom = 0.0
 	env.glow_hdr_threshold = 1.15
 	env.fog_enabled = false

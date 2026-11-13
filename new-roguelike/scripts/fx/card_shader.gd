@@ -94,6 +94,7 @@ uniform vec3 hot_col : source_color = vec3(1.0, 0.52, 0.16);
 uniform float hot = 0.0;                                        // how far the glow is pushed to hot_col
 uniform float by_night = 0.0;                                   // 1 = a lamp: dim by day, full at dusk and night
 global uniform float hh_lamp_on;                                // (set every frame by scripts/fx/hd_light.gd)
+global uniform float hh_exposure;                               // the camera's exposure now (scripts/fx/hd_light.gd)
 global uniform sampler2D hh_people : filter_nearest;            // where the people are (Sprite3.set_people)
 global uniform int hh_people_n;
 varying float shadow_pass;
@@ -261,7 +262,11 @@ void light() {
 	// glints on steel: a hard little highlight where the light bounces into the eye
 	add += ATTENUATION * LIGHT_COLOR * metal * pow(max(dot(reflect(-LIGHT, NORMAL), VIEW), 0.0), 14.0) * (LIGHT_IS_DIRECTIONAL ? 0.9 : 1.6);
 #ifdef HERO
-	add *= boost;
+	// people are lit as if the camera were not opened up for a dark place (the woods open it to 1.7:
+	// a pale elf in the sun went white), and the brightest light on them rolls off softly, so a
+	// face or a white robe keeps its pixels instead of burning into the bloom
+	add *= boost * clamp(1.3 / max(hh_exposure, 0.01), 0.62, 1.0);
+	add /= 1.0 + max(dot(add, vec3(0.333)) - 0.45, 0.0) * 0.9;
 #endif
 	DIFFUSE_LIGHT += add;
 }
