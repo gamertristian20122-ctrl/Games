@@ -1278,6 +1278,70 @@ the look 4/10 for lighting, composition and defects BEFORE the fixer's pass. Eve
   inside its wall; Elfwood has no set piece; no terraces; battle fighters small (about 65 px) and no sky;
   the screen-door dither is visible; only tuned on software Vulkan, never on a real GPU.
 
+## v0.25.1 (13 Nov 2026): the HD look, round two
+Eight agents (places, battles, light specialists in worktrees, merge, 3 judges, fixer). Judges scored
+lighting, composition and defects 5/10 each BEFORE round two's fixer (round one: 4/10 each).
+- **Places (data + `scripts/hub/arch/`):**
+  - Wickmere: one north frontage of nine shops on a raised terrace with steps; awnings, hanging signs, flower
+    boxes, goods at the doors; the square paved to the south road; a 3D stone fountain (sites.gd `_fountain`);
+    3D iron street lamps (sites.gd `_iron_lamp`), bunting hangs from their caps; a stone balustrade with gate
+    piers is the near edge. Dustwatch: four sandstone shop houses inside the wall, the plaza a raised dais.
+    Elfwood: a camp (fire, logs, bedrolls, packs, lantern) and a pool with a plank footbridge behind it.
+    Deepwood, Glade, Beacon, Sunwell and the world map each had their worst composition problem fixed.
+  - **Near-edge rule:** the camera looks down at 35 degrees, so a piece past the walk area's bottom edge
+    hides about 1.7x its height of ground. Near pieces stay low (25 px or less, about 50 px past the edge);
+    tall leaf masses only outside the walk's x range or 120 px or more past the edge. An "open" Rect2 across
+    y size.y-6 switches off the forest builder's bottom rows.
+  - **House row keys:** `"shop": "wide"` (+ `"shop_roof"`), `"sign"`, `"sign_side"`, `"boxes"`, `"door_dx"`,
+    `"win_xs"`, `"up_xs"`, `"lift"`, `"storey"`, `"style": "sand"` (plain hub_bsandbrick storeys under the
+    carved band, flat roof behind a parapet).
+  - **Place keys:** `"terraces"` [{rect, high, steps:[[x, wide]], face, top}] (walkable, `height()` lifts
+    cards), `"bridges"` (decorative only), `"near"` (balustrade + piers), `"fountain"`, `"iron_lamps"` (the
+    matching prop sprites get meta `no3d` and view3d skips them). Water rows take `"basin"` and `"lift"`.
+    People rows with `"extra": true` are never offered as talk and never stroll.
+  - Stacked giant trees: hub_froots_* with hub_ftrunk_* on top (same x, y; field 4 = -102), only where
+    nobody walks behind. check.sh does NOT test walking-place layouts.
+- **Light (walking places):**
+  - Tone is ACES (white 6) in walking places (`--tone=agx` compares). Battles keep their own AgX in
+    stage_hd.gd: a tone change in one does not reach the other.
+  - Lamps and fires burn amber: `hot_col` is LINEAR (1, 0.22, 0.04), not source_color; above about R 2
+    after exposure ACES turns any colour white, so blaze comes from saturation plus the painted orange
+    halo, not more energy. Lamp glass is a computed pane (hub.gd `_flame_pane`). Pool decals stay small and
+    steep in HD (additive pools dominate dark scenes). The SOLID shader has `lamp_take` (0.15 for iron).
+  - People come first: each person card has an XRAY `next_pass` (render_priority 1, no depth test) that
+    shows them at 55% only where something nearer hides them; scenery stays whole.
+  - Godot's DOF does only the FAR blur in HD (HD_DOF 0.3). The near blur and tilt-shift bands (bottom 22%,
+    top 12%) are in `WalkLight.post_code(true)` (`HD_POST`), masked per person by `people_mask()`.
+  - `HdLight.key`: a warm SpotLight3D with shadows follows the knight from the sun's side (`_aim_key`,
+    per-land GRADES `key`); it leaves out render layer 2 (`WATER_LAYER`) or it mirrors as a white blaze.
+  - GRADES keys added: `ambient` (must also exist in `default:night`), `gold`, `dull`, `key`, `sun`, and
+    `elfwood:night`, `deepwood:night`, `glade:night` rows. New constants: HD_LAMP_DECAY, HD_LAMP_AMBER,
+    HD_SUN_COLOUR_DAY, HD_HAZE_DAY, HD_HAZE_NIGHT. A haze FogVolume sits behind the play area.
+  - Globals `hh_exposure`, `hh_grade`, `hh_tint` (registered in `hd_light._setup_hd`). **Last-pass trap:**
+    in HD anything see-through needs render_priority above 0 or the last pass erases it; it then misses the
+    grade, so copy it with `hh_grade` / `hh_tint`. Set card settings with `CardShader.param(mat, key, value)`.
+  - Water: SSR on, ponds are dark mirrors (METALLIC 0.2 + Fresnel), sparkles only in a light's streak.
+  - Story panel on PC: compact, with a solid backing (`ui/quest_list.gd`).
+- **Battles (HD):** camera `stage.gd CAM_HD` / `AIM_HD` (closer), sky band visible, HD menus fitted by
+  `battle.gd _fit_ui`. Sides stand in diagonals (PARTY_AT, FOES_AT); stage features at x +-11. LOOK keys
+  `pool`, `sky_glow`, `beam`. Spell kit in stage_hd.gd: `vortex()`, `bolt()`, `shards()`, `motes()`,
+  `Sparks`, `hold_glow()`. The target gets a dark ink edge; bloom is kept off fighters with
+  `Environment.glow_map` (Forward+ only). `--spellwait=0.3` gives a fairer mid-spell picture.
+- **Lessons:** a double quote in a shader comment inside a .gd string breaks the parse (happened twice):
+  run `godot --headless --check-only --script res://<file>` before a slow render; `godot --headless --quit`
+  does NOT compile hd_light.gd. `pow()` of a value interpolation can push below 0 gives NaN, which bloom
+  spreads into black squares: clamp first. A varying written in `vertex()` can't be reassigned in
+  `fragment()`. Two Forward+ shot runs at once hit shot.sh's 400 s timeout: run them one at a time.
+- **Checked:** check.sh CHECK PASSED; `--uitour=tale` 28/28 (gl_compatibility); all 8 places reachable
+  (scratch layout checker); no SHADER/SCRIPT errors in Forward+. APK NOT built (no Android SDK here).
+- **Still furthest from the references:** facades are one tone and less layered than the reference street;
+  Wickmere's south half is gardens; no harbour/sea; Sunwell has no set piece; Dustwatch at dusk is milky;
+  the Elfwood footbridge runs front to back (not side-on, not walkable); spell sparks are dots not streaks;
+  the battle firebolt reads gold not deep orange; night battle ground is dark grass, not pale gravel; the
+  gl_compatibility battle camera cuts the boss's head; all tuning on software Vulkan, never a real GPU.
+- **Steam "no AI":** unchanged rule. Art is the purchased packs + human-made CC0/CC-BY; light and geometry
+  are code. The story words in tale.gd were written with AI help: the owner rewrites or discloses them.
+
 ## What's next (written 11 Nov 2026, after v0.4.0)
 Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the next passes, most useful first:
 0. Grow the camp: more quests and rewards worth wanting, walking NPCs, more of the unused cut pieces
