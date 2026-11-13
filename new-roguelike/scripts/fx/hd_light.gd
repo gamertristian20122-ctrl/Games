@@ -429,7 +429,10 @@ func sync_light() -> void:
 		var two := pair[0] as PointLight2D
 		var g: Array = glows[i]
 		var f := WalkLight.flicker(t, float(g[4]), bool(g[3]))
-		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f * (HD_LAMP * lerpf(0.55, 1.0, night) if Hd.on() else 1.0)
+		# (HD: a big fire is not brighter in the middle than a lamp, it only reaches further: its heat
+		# is spread by its size, so the square round it is a warm glow, not a white floodlight)
+		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f \
+			* (HD_LAMP * lerpf(0.55, 1.0, night) / sqrt(maxf(two.texture_scale, 1.0)) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
 		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.22, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
