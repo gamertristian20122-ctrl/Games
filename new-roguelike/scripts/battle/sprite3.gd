@@ -41,6 +41,10 @@ uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform float flip = 0.0;
 uniform vec3 tint : source_color = vec3(1.0);
 uniform float flash = 0.0;
+uniform vec3 flash_col : source_color = vec3(1.0);   // the colour of a hit flash (white; gold on a crit, red on a wind-up)
+uniform float flash_glow = 0.0;                 // how much the flash shines by itself (reads in the dark)
+uniform float dissolve = 0.0;                   // 0 = whole .. 1 = gone: the picture burns away pixel by pixel
+uniform vec3 dissolve_col : source_color = vec3(1.0, 0.55, 0.2);
 uniform float shine = 0.0;
 uniform float sway = 0.0;
 uniform float rim = 0.0;                        // a thin edge of light on the side the key light comes from
@@ -58,8 +62,19 @@ void fragment() {
 	if (flip > 0.5) { uv.x = 1.0 - uv.x; }
 	vec4 c = texture(tex, uv);
 	if (c.a < 0.5) { discard; }
+	float burn_edge = 0.0;
+	if (dissolve > 0.0) {
+		// one random number per ART pixel (the burn keeps the pixel grid), the top a little first
+		vec2 texel = floor(uv * vec2(textureSize(tex, 0)));
+		float h = fract(sin(dot(texel, vec2(12.9898, 78.233))) * 43758.5453);
+		float d = h * 0.7 + uv.y * 0.3;
+		if (d < dissolve * 1.08) { discard; }
+		burn_edge = 1.0 - smoothstep(0.0, 0.09, d - dissolve * 1.08);
+	}
 	ALBEDO = mix(c.rgb * tint, vec3(1.0), flash);
+	ALBEDO *= mix(vec3(1.0), flash_col, min(flash * 4.0, 1.0));
 	EMISSION = c.rgb * shine;
+	EMISSION += flash_col * flash * flash_glow + dissolve_col * burn_edge * 2.5;
 	if (rim > 0.0) {
 		// RIM LIGHT: the pack draws a dark one-pixel outline, so the lit edge is the first pixel
 		// INSIDE it: its neighbour towards the light (above, or the light's side) is outline and the
@@ -289,8 +304,42 @@ func spell_hold(colour: Color, strength: float, seconds: float) -> void:
 		_mat.set_shader_parameter("spell_rim", v * strength), 1.0, 0.0, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 
-func set_flash(v: float) -> void:
+func set_flash(v: float, colour: Color = Color.WHITE, glow: float = -1.0) -> void:
 	_mat.set_shader_parameter("flash", v)
+	_mat.set_shader_parameter("flash_col", Vector3(colour.r, colour.g, colour.b))
+	# (a flash shines by itself a little, so a hit reads even in deep night shade)
+	_mat.set_shader_parameter("flash_glow", glow if glow >= 0.0 else (0.9 if Hd.on() else 0.35))
+
+
+## Burns the picture away pixel by pixel (0 = whole, 1 = gone) with a glowing edge of `colour`
+## (a fallen monster; scripts/battle/anim_death.gd).
+func set_dissolve(v: float, colour: Color = Color(1.0, 0.55, 0.2)) -> void:
+	_mat.set_shader_parameter("dissolve", v)
+	_mat.set_shader_parameter("dissolve_col", Vector3(colour.r, colour.g, colour.b))
+
+
+## The frame on show now (the picture the death's pixels are taken from).
+func texture_now() -> Texture2D:
+	return _mat.get_shader_parameter("tex") as Texture2D
+
+
+func is_flipped() -> bool:
+	var f: Variant = _mat.get_shader_parameter("flip")
+	return f != null and float(f) > 0.5
+
+
+## Seconds one play of `name` takes as this picture plays it (0 when it has no such animation).
+func anim_length(name: String) -> float:
+	if frames == null or not frames.has_animation(name):
+		return 0.0
+	return float(frames.get_frame_count(name)) / maxf(frames.get_animation_speed(name), 0.01)
+
+
+## How many frames `name` has, and its frame rate (to time a blow to the pack's own hit frame).
+func anim_fps(name: String) -> float:
+	if frames == null or not frames.has_animation(name):
+		return 10.0
+	return frames.get_animation_speed(name)
 
 
 func height() -> float:
