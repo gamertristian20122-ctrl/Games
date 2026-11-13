@@ -57,6 +57,7 @@ var _cam_home := Vector3.ZERO
 var _t := 0.0
 var _tier := 0
 var _fx: Array = []                ## the look of the skill being shown now (battles.gd FX), [] = a plain blow
+var _fx_id := ""                   ## and that skill's id (HD: a storm brings lightning)
 var _trauma := 0.0                 ## how shaken the camera is, 0 to 1 (see _feel)
 var _shake_t := 0.0
 var _xp_bonus := 0                ## a battle of the story may give XP of its own on top
@@ -732,6 +733,7 @@ func _play(events: Array) -> void:
 				_say("%s: %s!" % [String(e["who"]["name"]), String(e["skill"]["name"])])
 				Sfx.play("ui_start", -6.0)
 				_fx = Battles.FX.get(String(e["skill"].get("id", "")), [])
+				_fx_id = String(e["skill"].get("id", ""))
 				await _step(e["who"], 0.5)
 			"hit":
 				var who: Dictionary = e["who"]
@@ -805,7 +807,7 @@ func _show_fx(target: Dictionary) -> void:
 			var width := 0.5 + 0.25 * power
 			if Hd.on():
 				width = maxf(width, float(target["wide"]) * 2.4)    # (HD: it stands behind the one hit, so it must be wider to glow round it)
-			stage.call("pillar", target["home"], colour, width, 9.0, target["node"])
+			stage.call("pillar", target["home"], colour, width, 9.0, target["node"], _fx_id)
 			stage.call("burst", at, colour, power, 0.0, "", target["node"])
 		"rise":
 			stage.call("burst", (target["home"] as Vector3) + Vector3(0.0, 0.2, 0.15), colour, power, 1.6)
@@ -1062,6 +1064,7 @@ func _take_shot() -> void:
 		# test: --shotspell=<skill id of battles.gd FX> writes battle_spell.png in the middle of that
 		# spell's light, landing on the first monster (a look only: nothing in the fight changes)
 		_fx = Battles.FX.get(G.arg("shotspell", ""), [])
+		_fx_id = G.arg("shotspell", "")
 		_menu.visible = false
 		_show_fx(fight.foes[0])
 		_feel(fight.foes[0], "large")

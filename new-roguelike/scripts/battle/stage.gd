@@ -914,7 +914,9 @@ func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, ar
 	if hd != null:
 		# HD: a real light that flares and fades, glows in the air, and (big ones) throws shadows;
 		# a blazing core of light; the big ones a whirl of sparks too
-		hd.call("spell_light", at + Vector3(0.0, 1.0, 1.1), colour, power, 0.5 + 0.15 * power)
+		hd.call("spell_light", at + Vector3(0.0, 1.0, 1.1), colour, power, 0.5 + 0.15 * power, 0.3)     # (little glowing air: it stands in front of the one hit)
+		if fighter != null and power >= 1.4:
+			hd.call("hold_glow", fighter, 0.6 + 0.1 * power)     # (the bloom never veils the one hit)
 		# (the hot core stands behind the one hit, at his middle: his body hides it, it shines round him)
 		hd.call("core", Vector3(at.x, maxf(at.y, height_at(at.z) + 0.6), at.z - 0.8), colour, 0.7 + 0.3 * power, 0.25 + 0.06 * power)
 		if power >= 2.0 and rise <= 0.0 and not _pillar_now:
@@ -937,7 +939,7 @@ var _pillar_now := false            ## (HD: a burst that goes with a column make
 
 
 ## A column of light that stands on a spot for a moment (lightning, a pillar of fire, a blessing).
-func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0, fighter: Node3D = null) -> void:
+func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0, fighter: Node3D = null, style: String = "") -> void:
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
 	g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
@@ -977,9 +979,9 @@ func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0,
 		# HD: THE BLAZE (stage_hd.gd vortex): a whirl of winding streaks of light round the one hit,
 		# sparks spiralling up it, a light high in the column behind him
 		var radius := maxf(width / 2.4 * 0.62, 0.6)
-		hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, 2.6, height * 0.9, radius, fighter, 1.2)
+		hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, 2.6, height * 0.9, radius, fighter, 1.2, style)
 		hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.7)
-		hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.8, 0.9)     # (the ground before him: a hot pool)
+		hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.8, 0.9, 0.0)     # (the ground before him: a hot pool; no glowing air in front of him)
 		ground_glow(Vector3(at.x, 0.0, at.z + 0.6), Color(colour.r, colour.g, colour.b, 0.5), 3.4, 1.1)
 		_pillar_now = true
 		get_tree().create_timer(0.05).timeout.connect(func() -> void: _pillar_now = false)
