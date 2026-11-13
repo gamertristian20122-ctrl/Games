@@ -1849,6 +1849,26 @@ func _take_shot() -> void:
 		_cycle(1)
 		await get_tree().create_timer(0.5).timeout
 		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_target.png"))
+		on_back()
+		await get_tree().create_timer(0.2).timeout
+	if G.flag("shotheal"):
+		# test: --shotheal writes battle_heal.png while the one acting aims a heal at a friend
+		for sk: Dictionary in _acting.get("skills", []):
+			if sk.has("heal"):
+				_waiting_skill = sk
+				_ask_target("friend", "Tap who gets it.")
+				break
+		await get_tree().create_timer(0.5).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_heal.png"))
+		on_back()
+		await get_tree().create_timer(0.2).timeout
+	if G.flag("shotwarn"):
+		# test: --shotwarn writes battle_warn.png with the boss's "Guard!" plate over the orders (a look only)
+		_show_commands()
+		_warn_on = true
+		(_warn.get_child(0) as Label).text = "%s draws back for a great blow at everybody. Guard!" % String(fight.foes[0]["name"])
+		await get_tree().create_timer(0.4).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_warn.png"))
 	G.quit(0)
 
 
