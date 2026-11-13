@@ -717,30 +717,48 @@ func _lamp_glass() -> ImageTexture:
 	if _glass_tex == null:
 		var img := Image.create(6, 8, false, Image.FORMAT_RGBA8)
 		img.fill(Color("3a2414"))
-		img.fill_rect(Rect2i(1, 1, 4, 6), Color("ffd98a"))
-		img.fill_rect(Rect2i(2, 2, 2, 4), Color("fff4cf"))
+		_flame_pane(img, Vector2i(1, 1), 4, 6)
 		_glass_tex = ImageTexture.create_from_image(img)
 		_glass_tex.resource_name = "hub_lampglass"
 	return _glass_tex
 
 
-## The glass of the pack's hanging lantern (hub_slantern, 43 x 46): a small glowing pane laid over
-## its glass (art pixels 34-38 x 16-20), a pixel in front of it so it is drawn over it. The 3D look
+## A lamp's glass with a small flame behind it, filled in flat colours by code (like the other flat
+## shapes the code draws): a smoky dark top, deep amber sides, an orange flame up the middle and a
+## pale one-pixel heart low in it. The 3D look makes it blaze (card_shader.gd set_glow "hot").
+static func _flame_pane(img: Image, at: Vector2i, w: int, h: int) -> void:
+	var mid := at.x + (w - 1) / 2
+	for y in h:
+		var t := float(y) / float(maxi(h - 1, 1))          # 0 at the top, 1 at the bottom
+		for x in w:
+			var c := Color("a04e14")
+			var centre := x == mid or (w % 2 == 0 and x == mid + 1)
+			if y == 0:
+				c = Color("5a2a0c")
+			elif y == h - 1:
+				c = Color("d07a2a") if centre else Color("6a3010")
+			elif centre:
+				c = Color("ffd890") if t >= 0.6 and t < 0.78 else (Color("f09a34") if t >= 0.35 else Color("d0701e"))
+			elif t >= 0.35:
+				c = Color("b85a18")
+			img.set_pixel(at.x + x, at.y + y, c)
+
+
+## The glass of the pack's hanging lantern (hub_slantern, 43 x 46): a small glowing pane laid
+## between the posts of its cage (art pixels 35-37 x 15-19), a pixel in front of it so it is drawn over it. The 3D look
 ## makes it blaze (scripts/fx/card_shader.gd shine_of) and puts the lamp's light on it.
 static var _lantern_tex: ImageTexture
 func _lantern_glass(lantern: Sprite2D) -> void:
 	if _lantern_tex == null:
-		var img := Image.create(5, 5, false, Image.FORMAT_RGBA8)
-		img.fill(Color("ffc46a"))
-		img.fill_rect(Rect2i(1, 1, 3, 3), Color("ffd98a"))
-		img.fill_rect(Rect2i(2, 1, 1, 3), Color("fff0c0"))
+		var img := Image.create(3, 5, false, Image.FORMAT_RGBA8)
+		_flame_pane(img, Vector2i(0, 0), 3, 5)
 		_lantern_tex = ImageTexture.create_from_image(img)
 		_lantern_tex.resource_name = "hub_lampglass"
 	var glass := Sprite2D.new()
 	glass.texture = _lantern_tex
 	glass.centered = false
 	glass.position = lantern.position + Vector2(0, 1)
-	var left := 34.0 if not lantern.flip_h else 43.0 - 39.0
+	var left := 35.0 if not lantern.flip_h else 43.0 - 38.0
 	glass.offset = lantern.offset + Vector2(left, 16.0 - 1.0)
 	_ysort.add_child(glass)
 

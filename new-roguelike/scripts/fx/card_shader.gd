@@ -90,9 +90,10 @@ uniform float relief = 0.55;                                    // how much its 
 uniform float round_body = 0.32;                                // the whole picture bowed like a drum
 // BLAZE (things that glow): a hot glow keeps its colour (gold, orange), only its brightest pixels
 // stay a pale core, so the tone curve does not turn a lamp into a cold white tube
-uniform vec3 hot_col : source_color = vec3(1.0, 0.52, 0.16);
+uniform vec3 hot_col = vec3(1.0, 0.22, 0.04);                  // (linear light, not a picked colour)
 uniform float hot = 0.0;                                        // how far the glow is pushed to hot_col
 uniform float by_night = 0.0;                                   // 1 = a lamp: dim by day, full at dusk and night
+uniform float lamp_take = 1.0;                                  // how much lamplight it takes (a lantern's own cage: little, so it stays dark iron round the glow)
 global uniform float hh_lamp_on;                                // (set every frame by scripts/fx/hd_light.gd)
 global uniform float hh_exposure;                               // the camera's exposure now (scripts/fx/hd_light.gd)
 #ifdef GHOST
@@ -107,6 +108,10 @@ varying vec3 card_r;                                            // view space: t
 varying vec3 card_u;                                            // view space: the picture's up
 varying float tilt;                                             // 0 = this pixel faces the camera, 1 = a steep edge
 varying float metal;                                            // bright grey pixels (steel, silver): glints
+#ifdef HERO
+varying float rim_w;                                            // how much of a rim this pixel is (0 = none)
+varying vec3 rim_n;                                             // which way that rim faces (view space)
+#endif
 void vertex() {
 	float top = 1.0 - UV.y;
 	VERTEX.x += sin(TIME * 0.9 + MODEL_MATRIX[3].x * 1.7 + MODEL_MATRIX[3].z * 0.9) * sway * top * top;
@@ -206,18 +211,21 @@ void fragment() {
 	col = max((col - 0.16) * pop + 0.16, vec3(0.0));
 	// pale robes, faces and bandages are held under the bloom's threshold (never a white ghost)
 	col *= 1.0 / (1.0 + max(lum(col) - 0.62, 0.0) * 1.2);
-	// the top and side edges of the figure catch a thin warm rim (light from behind, as in the sun)
-	float up_e = 1.0 - a1.z;
-	float up2 = 1.0 - a2.z;
-	// (the side edges catch it only on the side the low sun comes from, the right of the screen;
-	// the far side keeps only a breath of it: no sticker outline all round)
+	// THE RIM (a light, see light()): the pack draws a dark one-pixel outline, so the lit edge is the
+	// first pixel INSIDE it: its neighbour that way is outline and the one past that is open air.
+	// The outline itself stays dark (no pale sticker border). Top and both sides each get their own
+	// direction, and light() lights only the edges that face a light, in that light's own colour
+	// and shadow (none in the shade, none from a moon that is not there).
+	vec4 inner = a1 * (vec4(1.0) - a2);                          // left, right, up, down
 	bool to_right = card_r.x >= 0.0;
-	float right_open = 1.0 - (to_right ? a1.y : a1.x);
-	float left_open = 1.0 - (to_right ? a1.x : a1.y);
-	float sides = max(right_open, left_open * 0.25);
-	float edge = clamp(max(up_e, sides * 0.75) + up2 * 0.35, 0.0, 1.0) * smoothstep(0.15, 0.55, 1.0 - UV.y);
+	float e_right = to_right ? inner.y : inner.x;
+	float e_left = to_right ? inner.x : inner.y;
+	float top_k = smoothstep(0.15, 0.55, 1.0 - UV.y);
+	vec2 e2 = vec2(e_right - e_left, inner.z) * top_k;
+	rim_w = clamp(length(e2), 0.0, 1.0) * smoothstep(0.06, 0.25, me);
+	rim_n = rim_w > 0.0 ? normalize(r * e2.x + up * e2.y + f * 0.35) : f;
 	// (and a little light of its own, so a person in deep shade still reads: bring them forward)
-	EMISSION = col * shine + rim_col * rim * edge + col * 0.24 * rim;
+	EMISSION = col * shine + col * 0.12;
 #else
 	vec3 glow_c = col;
 	float glow_k = 1.0;
@@ -225,11 +233,19 @@ void fragment() {
 		// how hot each pixel burns comes from the artist's own light and dark: dark red at the
 		// edges, orange in the body, a gold-white core only in the brightest pixels (so a flame
 		// reads as a FLAME, not a white blob, after the tone curve and the bloom)
+		// The fire colour is SATURATED at every brightness (green and blue stay a small share of
+		// red), because the tone curve turns any light whose three colours all run hot into white;
+		// only the one or two palest pixels (a lamp's wick, a flame's heart) burn towards pale gold.
 		float heat = smoothstep(0.25, 0.85, max(max(col.r, col.g), col.b) * 0.5 + me * 0.5);
-		vec3 fire = mix(hot_col * 0.8, mix(hot_col, vec3(1.0, 0.80, 0.50), 0.75), heat * heat);
-		glow_c = mix(col, fire * (0.45 + 0.9 * heat), hot);
+		vec3 fire = hot_col * (0.3 + 0.7 * heat);
+		float core = smoothstep(0.86, 1.0, heat) * mix(0.3, 1.0, smoothstep(0.6, 0.88, me));
+		fire = mix(fire, vec3(1.0, 0.72, 0.40) * 1.6, core);
+		glow_c = mix(col, fire, hot);
 		// only warm or bright pixels burn (embers, flame, glass), never the grey stones of a fire pit
 		glow_k = max(smoothstep(0.12, 0.35, col.r - col.b), smoothstep(0.72, 0.88, me));
+		// (what glows is lit by its own fire, not by the light falling on it: a pale glass lit by
+		// its own lamp would add a white sheen over the amber)
+		col *= 1.0 - 0.8 * hot * glow_k;
 	}
 	EMISSION = glow_c * glow_k * shine * mix(1.0, hh_lamp_on, by_night);
 #endif
@@ -268,7 +284,7 @@ void light() {
 		lit = 0.62 * wrap * (1.15 - 0.3 * (1.0 - UV.y)) + tilt * max(ndl, 0.0) * 0.9;
 #ifndef HERO
 		// a flame or a lamp's glass makes its own light: the lamp inside it would wash it white
-		lit *= shine > 0.0 ? 0.2 : 1.0;
+		lit *= shine > 0.0 ? 0.2 : lamp_take;
 #endif
 	}
 	vec3 add = ATTENUATION * LIGHT_COLOR / PI * lit;
@@ -279,7 +295,15 @@ void light() {
 	// a pale elf in the sun went white), and the brightest light on them rolls off softly, so a
 	// face or a white robe keeps its pixels instead of burning into the bloom
 	add *= boost * clamp(1.3 / max(hh_exposure, 0.01), 0.62, 1.0);
-	add /= 1.0 + max(dot(add, vec3(0.333)) - 0.45, 0.0) * 0.9;
+	if (LIGHT_IS_DIRECTIONAL) {
+		add /= 1.0 + max(dot(add, vec3(0.333)) - 0.45, 0.0) * 0.9;
+	} else {
+		// a fire or a lamp right beside somebody: each light rolls off on its own, so a face one
+		// tile from a camp fire stays a mid-tone and keeps its colour
+		add /= 1.0 + lum(add) * 1.5;
+	}
+	// the rim: the edges that face this light catch it (a light from behind, as in the sun)
+	add += ATTENUATION * LIGHT_COLOR / PI * rim * rim_w * max(dot(rim_n, LIGHT), 0.0) * (LIGHT_IS_DIRECTIONAL ? 2.2 * sun_share : 1.2);
 #endif
 	DIFFUSE_LIGHT += add;
 }
@@ -333,7 +357,7 @@ void fragment() {
 }
 " + SUN_LIGHT
 
-const HERO_RIM := 0.55                ## HD: how bright the rim light on people is (0 = none)
+const HERO_RIM := 0.3                 ## HD: how bright the rim light on people is (0 = none)
 ## HD: do standing pictures throw real shadows? (The flat "shade" copies are drawn only when not.)
 static func casts() -> GeometryInstance3D.ShadowCastingSetting:
 	return GeometryInstance3D.SHADOW_CASTING_SETTING_ON if Hd.on() else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -404,15 +428,17 @@ static func set_glow(mat: ShaderMaterial, tex: Texture2D, hero := false) -> void
 	var path := tex.resource_path
 	var hot := 0.0
 	var by_night := 0.0
-	var hot_col := Vector3(1.0, 0.52, 0.16)
+	var hot_col := Vector3(1.0, 0.22, 0.04)
 	if tex.resource_name == "hub_lampglass":
-		hot = 0.7
+		hot = 1.0
 		by_night = 1.0
-	elif path.contains("hub_flame") or path.contains("hub_fire"):
+	elif path.contains("hub_flame"):
+		hot = 0.92
+	elif path.contains("hub_fire"):
 		hot = 0.7
-		hot_col = Vector3(1.0, 0.45, 0.12)
 	param(mat, "hot", hot)
 	param(mat, "by_night", by_night)
+	param(mat, "lamp_take", 0.25 if path.contains("hub_slantern") else 1.0)
 	param(mat, "hot_col", hot_col)
 
 
@@ -432,11 +458,12 @@ static func shine_of(tex: Texture2D) -> float:
 	if tex == null:
 		return 0.0
 	var path := tex.resource_path
-	var blaze := 2.0 if Hd.on() else 1.0      # HD: hot cores far over the bloom's threshold, so flames BLAZE
+	# (HD: over the bloom's threshold, so flames BLAZE, but no further: past it the tone curve turns
+	# every colour white; the heat is in the saturated colour, see set_glow "hot")
 	if path.contains("hub_flame"):
-		return 2.4 * blaze
+		return 2.4 * (0.7 if Hd.on() else 1.0)
 	if tex.resource_name == "hub_lampglass":
-		return 2.6 * (2.2 if Hd.on() else 1.0)       # the glass of a lamp post (HD: gold, see card() "hot")
+		return 2.6 * (0.75 if Hd.on() else 1.0)      # the glass of a lamp post (HD: amber, see set_glow "hot")
 	if path.contains("hub_fire") or path.contains("hub_flava") or path.contains("hub_rune"):
 		return 0.5 * (2.4 if Hd.on() else 1.0)
 	if path.contains("hub_win"):

@@ -38,9 +38,9 @@ const HD_SUN_NIGHT := 0.35          ## the moon
 const HD_AMBIENT_DAY := 0.19        ## the shade by day: deep, so the sun reads (but faces in shade still read)
 const HD_AMBIENT_NIGHT := 0.16
 const HD_LAMP := 1.2                ## lamps are this much stronger than in the flat look (2.8 burned the ground white)
-const HD_LAMP_DECAY := 1.9          ## HD: how fast a lamp's light falls off (2 = as real light: a hot pool, deep shade round it)
+const HD_LAMP_DECAY := 1.4          ## HD: how fast a lamp's light falls off (steep near the flame, then a long warm tail)
 const HD_LAMP_AMBER := Color(1.0, 0.56, 0.24)   ## HD: warm lamps and fires are pulled this far towards amber (half way)
-const HD_LAMP_REACH := 2.5          ## HD: a lamp's light reaches this many times as far as its 2D picture
+const HD_LAMP_REACH := 3.5          ## HD: a lamp's light reaches this many times as far as its 2D picture
 const HD_POOL_REACH := 1.0          ## HD: its warm pool on the ground (the flat look: 0.62)
 const HD_FOG_DAY := 0.0016          ## volumetric fog: very thin by day (no milky veil; beams only far off), ...
 const HD_FOG_NIGHT := 0.009         ## ... a little thicker at night (halos round every lamp)
@@ -167,7 +167,7 @@ func _setup_hd(post_mat: ShaderMaterial) -> void:
 	env.glow_normalized = false
 	for i in 7:
 		env.set_glow_level(i, [0.0, 0.25, 0.6, 0.9, 1.0, 0.9, 0.6][i])
-	env.glow_intensity = 0.42
+	env.glow_intensity = 0.5
 	env.glow_strength = 1.0
 	env.glow_bloom = 0.0
 	env.glow_hdr_threshold = 1.0
@@ -432,12 +432,13 @@ func sync_light() -> void:
 		# (HD: a big fire is not brighter in the middle than a lamp, it only reaches further: its heat
 		# is spread by its size, so the square round it is a warm glow, not a white floodlight)
 		(pair[1] as OmniLight3D).light_energy = two.energy * LAMP_ENERGY * f \
-			* (HD_LAMP * lerpf(0.55, 1.0, night) / sqrt(maxf(two.texture_scale, 1.0)) if Hd.on() else 1.0)
+			* (HD_LAMP * lerpf(0.55, 1.0, night) / pow(maxf(two.texture_scale, 1.0), 0.25) if Hd.on() else 1.0)
 		# by day a lamp barely shows on sunny ground; after dark it makes a warm circle
 		# (HD: a big hot golden puddle after dusk, against the deep shade round it)
-		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.22, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
-		# (HD: the bloom and the lit fog make most of the glow; the painted halo only adds a little)
-		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.10, 0.42, night) * f * (0.3 if Hd.on() else 1.0))
+		(g[1] as ShaderMaterial).set_shader_parameter("strength", two.energy * (lerpf(0.02, 0.45, night) if Hd.on() else lerpf(0.10, 0.55, night)) * f)
+		# (HD: the painted halo is a deep orange, so it carries the glow round a flame: the bloom of a
+		# light bright enough to bloom on its own comes out white)
+		(g[2] as ShaderMaterial).set_shader_parameter("strength", two.energy * lerpf(0.03, 0.42, night) * f)
 	RenderingServer.global_shader_parameter_set(&"hh_lamp_on", clampf(0.3 + 1.2 * night, 0.3, 1.0) if outdoor else 1.0)
 	var dark_k := night if outdoor else 0.0
 	for i in windows.size():
@@ -559,13 +560,15 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 	env.glow_hdr_threshold = 1.15
 	env.fog_enabled = false
 	env.volumetric_fog_ambient_inject = 0.02
-	# the nearest lamps throw real shadows (a shadow map each costs, so only a few)
+	# the nearest lamps throw real shadows (a shadow map each costs, so only a few); a big fire
+	# always does, so the people round a camp fire throw long shadows outwards
 	var at: Vector3 = v.cam.global_position
 	var order: Array = []
 	for i in lamps.size():
 		var three: OmniLight3D = lamps[i][1]
 		if is_instance_valid(three):
-			order.append([three.global_position.distance_squared_to(at), three])
+			var big := is_instance_valid(lamps[i][0]) and (lamps[i][0] as PointLight2D).texture_scale > 1.5
+			order.append([three.global_position.distance_squared_to(at) - (100000.0 if big else 0.0), three])
 	order.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 	for i in order.size():
 		(order[i][1] as OmniLight3D).shadow_enabled = i < HD_SHADOW_LAMPS

@@ -185,12 +185,14 @@ shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, shadows_disabled;
 uniform vec3 colour : source_color = vec3(1.0, 0.7, 0.4);
 uniform float strength = 1.0;
+uniform float steep = 0.0;        // HD: 0 = the old soft bell; 1 = a hot middle with a long warm tail (real light)
 void fragment() {
-	vec2 p = floor(UV * 48.0) / 48.0 - 0.5;          // in steps, so it sits with the pixel art
+	vec2 p = floor(UV * 64.0) / 64.0 - 0.5;          // in steps, so it sits with the pixel art
 	float d = length(p) * 2.0;
 	float f = 1.0 - smoothstep(0.0, 1.0, d);
 	f = f * f * (0.55 + 0.45 * f);
-	ALBEDO = colour * f * strength * 2.5;
+	float e = (exp(-d * 4.2) * 0.8 + exp(-d * 1.6) * 0.2) * (1.0 - smoothstep(0.75, 1.0, d));
+	ALBEDO = colour * mix(f, e, steep) * strength * 2.5;
 }
 "
 ## The soft glow round a flame, standing in the air and always facing the camera.
@@ -199,6 +201,7 @@ shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, depth_test_disabled, fog_disabled, shadows_disabled;
 uniform vec3 colour : source_color = vec3(1.0, 0.7, 0.4);
 uniform float strength = 1.0;
+uniform float gain = 3.4;
 void vertex() {
 	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
 	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0), vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0), vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0), vec4(0.0, 0.0, 0.0, 1.0));
@@ -206,7 +209,7 @@ void vertex() {
 void fragment() {
 	float d = length(UV - 0.5) * 2.0;
 	float f = exp(-d * d * 4.5) * (1.0 - smoothstep(0.8, 1.0, d));
-	ALBEDO = colour * f * strength * 3.4;
+	ALBEDO = colour * f * strength * gain;
 }
 "
 ## A beam of sun: soft at both sides, fading out at the ground and in the sky, with dust in it.
@@ -256,6 +259,7 @@ static func pool(at: Vector3, radius: float, colour: Color) -> MeshInstance3D:
 	var mat := ShaderMaterial.new()
 	mat.shader = _shader("pool")
 	mat.set_shader_parameter("colour", Vector3(colour.r, colour.g, colour.b))
+	mat.set_shader_parameter("steep", 1.0 if Hd.on() else 0.0)
 	mat.render_priority = 4
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * radius * 2.0
@@ -272,6 +276,10 @@ static func halo(at: Vector3, size: float, colour: Color) -> MeshInstance3D:
 	var mat := ShaderMaterial.new()
 	mat.shader = _shader("halo")
 	mat.set_shader_parameter("colour", Vector3(colour.r, colour.g, colour.b))
+	if Hd.on():
+		# (HD: a deeper orange and softer, so the halo round a lamp reads amber, never white)
+		mat.set_shader_parameter("colour", Vector3(colour.r, colour.g * 0.72, colour.b * 0.45))
+		mat.set_shader_parameter("gain", 5.0)
 	mat.render_priority = 6
 	var q := QuadMesh.new()
 	q.size = Vector2.ONE
