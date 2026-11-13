@@ -12,6 +12,11 @@ extends Node3D
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 const Hd = preload("res://scripts/fx/hd.gd")
 const StageHd = preload("res://scripts/battle/stage_hd.gd")
+const FxImpact = preload("res://scripts/battle/fx_impact.gd")
+const FxKit = preload("res://scripts/battle/fx_kit.gd")
+## Fighters are also on this render layer: a spell's big ground light leaves them out (they get a
+## gentler light of their own), so the clearing floods with colour and the one hit keeps his own.
+const FIGHTER_LAYER := 1 << 9
 const PX := 1.0 / 16.0
 ## What the camera looks at. Low, so the fighters stand in the upper half of the screen and the
 ## menus along the bottom never cover them.
@@ -128,6 +133,9 @@ var _shadow_shader: Shader
 var hd: RefCounted                 ## HD only (Forward+ on PC): the real light, see stage_hd.gd
 var _people: Array = []            ## every fighter on the stage (HD: the depth of field keeps them sharp)
 var aim := AIM                     ## what the camera looks at (battle.gd moves the camera round it)
+var fx: RefCounted                 ## the element impacts, dust, flashes and marks (fx_impact.gd)
+var _tallest := 0.0                ## the tallest fighter (the phone's camera widens to fit a boss)
+var _tag_t := 0.0
 
 const POST_CODE := "
 shader_type spatial;
@@ -148,6 +156,7 @@ uniform vec3 haze : source_color = vec3(1.0, 0.85, 0.6);
 uniform float show_depth = 0.0;
 uniform float blur_on = 1.0;     // 0 = no blur here (HD: the camera's own depth of field does it)
 uniform float linear_in = 0.0;   // 1 = the picture is linear light (HD, Forward+): grade it as seen
+uniform float gold = 0.0;        // turns greens towards olive gold (the golden-clearing look)
 const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
@@ -192,6 +201,8 @@ void fragment() {
 	col = pow(max(col, vec3(0.0)), vec3(punch));
 	l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(l), col, rich);
+	float gg = gold * max(col.g - col.r, 0.0);
+	col += vec3(gg * 0.3, -gg * 0.6, -gg * 0.1);
 	col = mix(col, col * warm, smoothstep(0.25, 0.9, l));          // the tint of the light
 	col = mix(col, col * shade, 1.0 - smoothstep(0.0, 0.3, l));    // the tint of the shade
 	col = mix(col, haze, lift * (1.0 - l));                                         // soft, hazy shade
@@ -275,6 +286,7 @@ func build(look_name: String = "forest", seed_value: int = 11) -> void:
 	if Hd.on():
 		hd = StageHd.new(self)
 		hd.call("setup", look_name)
+	fx = FxImpact.new(self)
 	Sprite3.ensure_sun()
 	# patches of sun on the day stages (see sprite3.gd SUN_PART), a pool of light on the fighters
 	Sprite3.set_sun(float(look.get("patches", 0.0)), 6.0, Vector2(seed_value * 0.37, seed_value * 0.11), Vector2(0.0, 0.0), 13.0, 1.0)
@@ -523,8 +535,14 @@ func stand(id: String, at: Vector3, faces_left: bool = false, anim: String = "id
 		# (the light stands between the two sides: each side is lit on the edge that faces the middle)
 		s.set_rim(float(key[1]), key[0], float(key[2]) * (1.0 if at.x < 0.0 else -1.0))
 		_people.append(s)
+		s.layers |= FIGHTER_LAYER
 		if hd != null:
 			hd.call("fighter", s)
+		else:
+			# the phone's camera stands close: a tall boss's head went out of the top of the picture.
+			# It widens to fit the tallest fighter (the HD camera already shows a boss whole).
+			_tallest = maxf(_tallest, at.y + float(s.call("height")))
+			cam.fov = 30.0 + clampf((_tallest - 2.8) * 6.0, 0.0, 8.0)
 	s.set_flip(faces_left)
 	return s
 
@@ -587,7 +605,7 @@ func _scenery() -> void:
 ## and the out-of-focus things near the camera.
 func _scenery_common(dim: Color) -> void:
 	# trodden earth where the fighters stand
-	if not (look.get("flat", []) as Array).is_empty():
+	if not (look.get("flat", []) as Array).is_empty() and not (hd != null and float(hd.call("earth")) > 0.0):
 		var wide := 1.3 if hd != null else 1.0      # (HD: a broader trodden clearing, lit by the pool of light)
 		for i in (15 if hd != null else 7):
 			prop(_pick("flat"), Vector3(rng.randf_range(-7.5, 7.5) * wide, 0.012 + i * 0.002, rng.randf_range(-2.6, 2.4) * wide), false, 0.0, false, Color.WHITE, 0.0, true, rng.randf() * TAU)
@@ -874,70 +892,76 @@ func fx_anim(id: String, at: Vector3, colour: Color = Color.WHITE, size: float =
 
 
 # ------------------------------------------------------------------ blows and spells
-## A burst of glowing sparks and a flash of coloured light on a spot (a blow landing, a spell).
-## `power` 1 = a plain blow; a big spell is 2 to 3. All of it is light and particles, no art.
+## THE PUBLIC CALLS for blows and spells (battle.gd, and anything that animates a fight):
+##   impact(at, element, power, fighter)  an element's own impact: "blade" (sword sparks and a slash),
+##        "fire", "frost", "storm" (lightning, the whole stage flashes), "sun" (holy rays), "dark",
+##        "poison", "nature", "heal". `at` = the middle of the one hit, power 1 = a plain blow.
+##   dust(at, power)                      dust kicked up from the ground at `at` (a dash, a landing,
+##        a heavy blow); power 0.5 = a step, 1 = a dash, 2 = a slam
+##   flash(colour, power, life, stutter)  the whole stage lit for a moment
+##   mark(at, kind, radius, life)         "scorch" / "frost" / "blight" lingering on the ground
+##   element_of(colour, skill_id)         which element a battles.gd FX colour or skill id is
+## burst() and pillar() (what battle.gd _show_fx calls today) use all of these by themselves.
+func impact(at: Vector3, element: String, power: float = 1.0, fighter: Node3D = null) -> void:
+	fx.call("impact", at, element, power, fighter)
+
+
+func dust(at: Vector3, power: float = 1.0) -> void:
+	fx.call("dust", at, power)
+
+
+func flash(colour: Color, power: float = 1.0, life: float = 0.5, stutter: bool = false) -> void:
+	fx.call("flash", colour, power, life, stutter)
+
+
+func mark(at: Vector3, kind: String, radius: float, life: float = 3.0, glow: Color = Color(-1, 0, 0)) -> void:
+	fx.call("mark", at, kind, radius, life, glow)
+
+
+func element_of(colour: Color, style: String = "", rise: float = 0.0) -> String:
+	return String(fx.call("element_of", colour, style, rise))
+
+
+## A blow or a spell landing on a spot: the pack's effect art (blows, fire, heals), a pool of light
+## on the ground, and the element's own impact (impact()). `power` 1 = a plain blow; a big spell is
+## 2 to 3. `fighter` = the one hit (held clear of the blaze in HD).
 func burst(at: Vector3, colour: Color, power: float = 1.0, rise: float = 0.0, art: String = "", fighter: Node3D = null) -> void:
-	# the pack's own effect art on top of the sparks, and the light it throws on the ground
 	var ground := Vector3(at.x, 0.0, at.z)
+	var element := element_of(colour, _pillar_style if _pillar_now else "", rise)
 	if art == "":
 		art = "fx_sparkle_magic" if rise > 0.0 else ("fx_explosion" if power >= 2.2 else "fx_hit")
 	var big := art == "fx_explosion"
 	# (HD: a big one's art plays just BEHIND the one hit: drawn over him it washed him out)
 	var art_z := -0.5 if hd != null and power >= 1.4 else 0.3
-	if not (hd != null and _pillar_now):      # (HD: a column's whirl of light is its art)
+	# the pack's own effect art for blows, fire and heals; the other elements are light of their own
+	# (HD: a column's whirl of light is its art)
+	if ["blade", "fire", "heal"].has(element) and not (hd != null and _pillar_now):
 		fx_anim(art, at + Vector3(0.0, (0.35 if big else 0.0) + rise * 0.3, art_z), colour.lerp(Color.WHITE, 0.35),
 		(1.1 if big else 1.25 + 0.2 * power) * (2.4 if rise > 0.0 else 1.0), 22.0 if big else 26.0, 1.3 + 0.2 * power)
 	ground_glow(ground, Color(colour.r, colour.g, colour.b, 0.55 + 0.1 * power), 1.0 + 0.55 * power, 0.35 + 0.12 * power)
 	if power >= 1.4:
 		ground_glow(ground, Color(colour.r, colour.g, colour.b, 0.8), 1.4 + 0.7 * power, 0.42 + 0.06 * power, true)
-	var p := CPUParticles3D.new()
-	p.one_shot = true
-	p.explosiveness = 0.9
-	p.amount = int(clampf(14.0 * power, 8.0, 60.0))
-	p.lifetime = 0.5 + 0.12 * power
-	p.position = at
-	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = 0.2 + 0.1 * power
-	p.direction = Vector3(0.0, 1.0, 0.0)
-	p.spread = 180.0 if rise <= 0.0 else 28.0
-	p.gravity = Vector3(0.0, -4.0 if rise <= 0.0 else 1.5, 0.0)
-	p.initial_velocity_min = 1.2 + rise
-	p.initial_velocity_max = 2.8 + 1.2 * power + rise * 2.0
-	p.scale_amount_min = 0.5
-	p.scale_amount_max = 1.2 + 0.25 * power
-	p.color_ramp = _fade_ramp()
-	var q := QuadMesh.new()
-	q.size = Vector2(0.16, 0.16)
-	q.material = _spark_material(colour * 2.4)
-	p.mesh = q
-	add_child(p)
-	p.emitting = true
-	get_tree().create_timer(p.lifetime + 0.3).timeout.connect(p.queue_free)
+	impact(at, element, power, fighter)
+	if element == "blade" and power >= 2.0:
+		flash(Color(1.0, 0.9, 0.75), 0.35 * power, 0.3)          # a heavy blow lights the clearing
 	if hd != null:
-		# HD: a real light that flares and fades, glows in the air, and (big ones) throws shadows;
-		# a blazing core of light; the big ones a whirl of sparks too
-		hd.call("spell_light", at + Vector3(0.0, 1.0, 1.1), colour, power, 0.5 + 0.15 * power, 0.3)     # (little glowing air: it stands in front of the one hit)
 		if fighter != null and power >= 1.4:
 			hd.call("hold_glow", fighter, 0.6 + 0.1 * power)     # (the bloom never veils the one hit)
 		# (the hot core stands behind the one hit, at his middle: his body hides it, it shines round him)
-		hd.call("core", Vector3(at.x, maxf(at.y, height_at(at.z) + 0.6), at.z - 0.8), colour, 0.7 + 0.3 * power, 0.25 + 0.06 * power)
-		if power >= 2.0 and rise <= 0.0 and not _pillar_now:
+		if element != "blade":
+			hd.call("core", Vector3(at.x, maxf(at.y, height_at(at.z) + 0.6), at.z - 0.8), colour, 0.7 + 0.3 * power, 0.25 + 0.06 * power)
+		if power >= 2.0 and rise <= 0.0 and not _pillar_now and not ["blade", "nature"].has(element):
 			# a big spell that is not a column: a short whirl of light round the one hit
 			var w := 0.7
 			if fighter != null and (fighter as MeshInstance3D).mesh is QuadMesh:
 				w = maxf(((fighter as MeshInstance3D).mesh as QuadMesh).size.x * 0.42, 0.6)
-			hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, power, 3.4 + 0.4 * power, w, fighter, 0.95)
-		elif power >= 2.0:
+			hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, power, 3.4 + 0.4 * power, w, fighter, 0.95, element)
+		elif power >= 2.0 and rise > 0.0:
 			hd.call("swirl", Vector3(at.x, 0.1, at.z), colour, power, 4.0 + rise)
-		return
-	var l := lamp(at + Vector3(0.0, 0.4, 0.6), colour, 0.0, 6.0 + 2.5 * power)
-	var tw := create_tween()
-	tw.tween_property(l, "light_energy", 5.0 + 6.0 * power, 0.05)
-	tw.tween_property(l, "light_energy", 0.0, 0.35 + 0.08 * power)
-	tw.tween_callback(l.queue_free)
 
 
 var _pillar_now := false            ## (HD: a burst that goes with a column makes no whirl of its own)
+var _pillar_style := ""             ## and the column's skill id (its burst then knows its element)
 
 
 ## HD: the pillar's picture: a soft bell across and a fade towards the top (light made by code: a
@@ -957,63 +981,68 @@ static func _pillar_tex() -> ImageTexture:
 	return _pillar_img_tex
 
 
-## A column of light that stands on a spot for a moment (lightning, a pillar of fire, a blessing).
-func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0, fighter: Node3D = null, style: String = "") -> void:
-	var g := Gradient.new()
-	g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
-	g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
-	var across: Texture2D
-	if hd != null:
-		across = _pillar_tex()
-	else:
-		var gt := GradientTexture2D.new()
-		gt.gradient = g
-		gt.width = 32
-		gt.height = 4
-		across = gt
+func _pillar_quad(at: Vector3, colour: Color, hot: float, width: float, height: float, z: float, life: float, tex: Texture2D) -> void:
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	m.albedo_texture = across
-	var hot := (1.6 + 0.8 * float(hd.call("num", "spell"))) if hd != null else 2.0       # (HD: far over the bloom's threshold, so it BLAZES)
+	m.albedo_texture = tex
 	m.albedo_color = Color(colour.r * hot, colour.g * hot, colour.b * hot, 0.0)
 	m.disable_fog = true
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.render_priority = 11
 	var q := QuadMesh.new()
 	q.size = Vector2(width, height)
-	if hd != null:
-		q.size.x = 1.4               # (HD: a soft bell across: a hot core, no hard sides; the whirl round it is the width)
 	var beam := MeshInstance3D.new()
 	beam.mesh = q
 	beam.material_override = m
 	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# (HD: just BEHIND the one it lands on, so its body stands dark and sharp against the light)
-	# (a tall one leans back by the stand-up tilt: the beam stands behind its TOP too, so it never
-	# veils its upper body)
-	beam.position = at + Vector3(0.0, height * 0.5, -1.2 if hd != null else 0.05)
+	beam.position = at + Vector3(0.0, height * 0.5, z)
 	add_child(beam)
 	var tw := create_tween()
 	tw.tween_property(m, "albedo_color:a", 0.9, 0.05)
-	tw.tween_property(beam, "scale:x", 0.25, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.parallel().tween_property(m, "albedo_color:a", 0.0, 0.32)
+	tw.tween_property(beam, "scale:x", 0.25, life).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(m, "albedo_color:a", 0.0, life)
 	tw.tween_callback(beam.queue_free)
-	if hd != null:
-		# HD: THE BLAZE (stage_hd.gd vortex): a whirl of winding streaks of light round the one hit,
-		# sparks spiralling up it, a light high in the column behind him
-		var radius := maxf(width / 2.4 * 0.62, 1.05)     # (never thinner than a man is tall: the reference blaze is huge)
-		hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, 2.6, height * 0.9, radius, fighter, 1.2, style)
-		hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.7, 0.35)     # (its wide reach would light a veil of air in front of him)
-		hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.8, 0.9, 0.0)     # (the ground before him: a hot pool; no glowing air in front of him)
-		ground_glow(Vector3(at.x, 0.0, at.z + 0.9), Color(colour.r, colour.g, colour.b, 0.75), 4.6, 1.2)
-		var white_hot := colour.lerp(Color.WHITE, 0.55)
-		ground_glow(Vector3(at.x, 0.0, at.z - 0.6), Color(white_hot.r * 1.6, white_hot.g * 1.6, white_hot.b * 1.6, 0.9), 2.0, 0.9)     # (the white-hot foot of the column, behind his feet)
-		ground_glow(Vector3(at.x, 0.0, at.z + 0.4), Color(colour.r, colour.g, colour.b, 0.6), 7.5, 1.4)      # (the spell floods the ground round him)
-		ground_glow(Vector3(at.x, 0.0, at.z), Color(colour.r * 1.3, colour.g * 1.3, colour.b * 1.3, 0.8), 2.6, 0.7, true)     # (a splash ring where it lands)
-		_pillar_now = true
-		get_tree().create_timer(0.05).timeout.connect(func() -> void: _pillar_now = false)
+
+
+## A column of light that stands on a spot for a moment (lightning, a pillar of fire, a blessing).
+## `style` = the skill's id (battles.gd FX keys; "storm" brings lightning, "firebolt" fire ...).
+func pillar(at: Vector3, colour: Color, width: float = 0.9, height: float = 9.0, fighter: Node3D = null, style: String = "") -> void:
+	_pillar_now = true
+	_pillar_style = style
+	get_tree().create_timer(0.05).timeout.connect(func() -> void: _pillar_now = false)
+	if hd == null:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+		var gt := GradientTexture2D.new()
+		gt.gradient = g
+		gt.width = 32
+		gt.height = 4
+		_pillar_quad(at, colour, 2.0, width, height, 0.05, 0.32, gt)
 		return
+	# HD: the column stands just BEHIND the one it lands on, so his body stands dark and sharp against
+	# the light (a tall one leans back by the stand-up tilt: the beam stands behind his TOP too).
+	# A deep coloured body of light and a thin white-hot heart (one cream slab read gold, not fire).
+	var deep := FxKit.deep(colour, 1.3).linear_to_srgb()
+	var k := float(hd.call("num", "spell"))
+	_pillar_quad(at, deep, 0.6 + 0.3 * k, 2.2, height, -1.2, 0.36, _pillar_tex())
+	_pillar_quad(at, colour.lerp(Color(1.0, 0.95, 0.75), 0.5), 0.7 + 0.4 * k, 0.45, height * 0.9, -1.25, 0.24, _pillar_tex())
+	# THE BLAZE (stage_hd.gd vortex): a whirl of winding streaks of light round the one hit, sparks
+	# spiralling up it, a light high in the column behind him
+	var flood := FxKit.deep(colour, 1.4).linear_to_srgb()
+	var radius := maxf(width / 2.4 * 0.7, 1.25)     # (never thinner than a man is tall: the reference blaze is huge)
+	var element := element_of(colour, style)
+	hd.call("vortex", Vector3(at.x, height_at(at.z), at.z), colour, 2.8, height * 0.95, radius, fighter, 1.25, element)
+	hd.call("spell_light", at + Vector3(0.0, 3.2, -1.2), colour, 1.0, 0.75, 0.35)     # (its wide reach would light a veil of air in front of him)
+	hd.call("spell_light", at + Vector3(0.0, 0.8, 1.6), colour, 0.9, 0.95, 0.0)     # (the ground before him: a hot pool; no glowing air in front of him)
+	ground_glow(Vector3(at.x, 0.0, at.z + 0.9), Color(flood.r, flood.g, flood.b, 0.6), 4.8, 1.25)
+	var white_hot := colour.lerp(Color.WHITE, 0.3)
+	ground_glow(Vector3(at.x, 0.0, at.z - 0.6), Color(white_hot.r * 1.3, white_hot.g * 1.3, white_hot.b * 1.3, 0.85), 1.7, 0.9)     # (the white-hot foot of the column, behind his feet)
+	ground_glow(Vector3(at.x, 0.0, at.z + 0.4), Color(flood.r, flood.g, flood.b, 0.45), 8.5, 1.5)      # (the spell floods the ground round him)
+	ground_glow(Vector3(at.x, 0.0, at.z), Color(colour.r * 1.3, colour.g * 1.3, colour.b * 1.3, 0.8), 2.6, 0.7, true)     # (a splash ring where it lands)
+	ground_glow(Vector3(at.x, 0.0, at.z), Color(colour.r, colour.g, colour.b, 0.6), 4.2, 1.0, true)
 
 
 ## The last pass over the whole picture: blur away from the fighters, warm lights and cool shade,
@@ -1042,6 +1071,9 @@ func _post() -> void:
 		# HD: the camera's own depth of field blurs (stage_hd.gd focus); this pass only grades
 		mat.set_shader_parameter("blur_on", 0.0)
 		mat.set_shader_parameter("linear_in", 1.0)
+		mat.set_shader_parameter("gold", float(hd.call("num", "gold")))
+		if hd.call("num", "punch") > 0.0:
+			mat.set_shader_parameter("punch", float(hd.call("num", "punch")))
 	var q := QuadMesh.new()
 	q.size = Vector2(2.0, 2.0)
 	post = MeshInstance3D.new()
@@ -1055,6 +1087,10 @@ func _post() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	_tag_t -= delta
+	if _tag_t <= 0.0:
+		_tag_t = 0.5
+		_tag_fighters()
 	if hd != null:
 		hd.call("focus", delta, _people)
 	if _fire != null:
@@ -1063,3 +1099,12 @@ func _process(delta: float) -> void:
 	for i in _beams.size():
 		var m: StandardMaterial3D = _beams[i].material_override
 		m.albedo_color.a = _beam_alpha * (1.0 + 0.4 * sin(_t * 0.4 + i * 1.9))
+
+
+## Every fighter's pieces (hands, sword, added after stand()) go on FIGHTER_LAYER with his body.
+func _tag_fighters() -> void:
+	for p: Node3D in _people:
+		if not is_instance_valid(p):
+			continue
+		for c: Node in p.find_children("*", "VisualInstance3D", true, false):
+			(c as VisualInstance3D).layers |= FIGHTER_LAYER

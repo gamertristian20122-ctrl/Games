@@ -19,6 +19,7 @@ extends RefCounted
 ## All numbers to tune by eye are in LOOK (per stage look) and the constants below.
 
 const Sprite3 = preload("res://scripts/battle/sprite3.gd")
+const FxKit = preload("res://scripts/battle/fx_kit.gd")
 
 ## Per stage look (stage.gd LOOKS): how the PC light differs. Missing keys fall back to "forest".
 ##   sun / sun_energy   the key light (the moon at night)      ambient / ambient_energy   the shade
@@ -34,25 +35,33 @@ const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 ##   pool               [colour, strength]: a broad soft light from high above on the clearing where
 ##                      they fight, so the stage is lit and the wood round it falls into deep shade
 ##                      (the moonlit ground of the night-battle picture, the golden clearing by day)
+##   earth / earth_gain / earth_tint   how much of the clearing is trodden earth and gravel (the
+##                      pack's dirt tile, made paler by `earth_gain`; pebbles picked out per art
+##                      pixel), so the moon makes it pale and the spells light it like the reference
+##   gold / punch       the last pass: greens turned towards olive gold, and contrast (deeper shade)
 const LOOK := {
-	"forest": {"sun": Color("ffcf8a"), "sun_energy": 2.1, "ambient": Color("8a7458"), "ambient_energy": 0.24,
-		"fog": Color("ffe2b8"), "fog_density": 0.0028, "fog_sun": 0.55, "fog_aniso": 0.2, "exposure": 1.5,
-		"sky_top": Color("3a4a78"), "sky_low": Color("ffb860"), "clouds": Color("b07850"), "stars": 0.0,
+	"forest": {"sun": Color("ffbe68"), "sun_energy": 2.5, "ambient": Color("6e5034"), "ambient_energy": 0.17,
+		"fog": Color("ffc488"), "fog_density": 0.0016, "fog_sun": 0.5, "fog_aniso": 0.2, "exposure": 1.42,
+		"sky_top": Color("3a4a78"), "sky_low": Color("ffa848"), "clouds": Color("b07040"), "stars": 0.0,
 		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 1.0, "tame": 0.8, "beam": 0.07,
-		"pool": [Color("ffc87a"), 2.2]},
+		"pool": [Color("ffb860"), 2.6], "earth": 1.0, "earth_gain": 3.0, "earth_tint": Color(1.0, 0.86, 0.66),
+		"gold": 0.55, "punch": 1.16},
 	"forest_night": {"sun": Color("9fb6ff"), "sun_energy": 1.25, "ambient": Color("38487a"), "ambient_energy": 0.30,
 		"fog": Color("6a84c0"), "fog_density": 0.012, "fog_sun": 0.4, "exposure": 1.35,
 		"sky_top": Color("03060f"), "sky_low": Color("0f1a33"), "clouds": Color("1b2440"), "stars": 1.0, "sky_glow": Vector3(0.28, 0.14, -0.95),
 		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0, "tame": 0.0, "beam": 0.0,
-		"pool": [Color("a8bcff"), 3.4]},
+		"pool": [Color("a8bcff"), 3.6], "earth": 1.0, "earth_gain": 4.6, "earth_tint": Color(0.86, 0.9, 1.0),
+		"gold": 0.0, "punch": 1.08},
 	"desert": {"sun": Color("ffe0b0"), "sun_energy": 1.7, "ambient": Color("a89cb4"), "ambient_energy": 0.26,
 		"fog": Color("ffe4c0"), "fog_density": 0.006, "fog_sun": 0.6, "fog_aniso": 0.2, "exposure": 1.45,
 		"sky_top": Color("6a8ac4"), "sky_low": Color("ffd8a0"), "clouds": Color("fff0dc"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.3, Color("fff4dc")], "fire_boost": 1.0, "spell": 0.5, "tame": 0.6, "beam": 0.0},
+		"wet": 0.0, "top_rim": [0.3, Color("fff4dc")], "fire_boost": 1.0, "spell": 0.5, "tame": 0.6, "beam": 0.0,
+		"earth": 0.0, "gold": 0.0, "punch": 1.1},
 	"rock": {"sun": Color("ffb890"), "sun_energy": 1.2, "ambient": Color("6a4a5a"), "ambient_energy": 0.30,
 		"fog": Color("a04a2a"), "fog_density": 0.026, "fog_sun": 0.6, "exposure": 1.3,
 		"sky_top": Color("10070a"), "sky_low": Color("4a1a12"), "clouds": Color("3a1a16"), "stars": 0.3,
-		"wet": 0.0, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0, "beam": 0.0},
+		"wet": 0.0, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0, "beam": 0.0,
+		"earth": 0.0, "gold": 0.0},
 }
 const SPELL_ENERGY := 6.0          ## a spell light at power 1 (the flat look's is 5 + 6 x power, without fog)
 const SPELL_FOG := 0.9             ## how much a spell light glows in the air
@@ -121,12 +130,44 @@ float sun_at(vec2 where) {
 }
 GROUND_PART
 uniform float wet = 0.0;
+uniform sampler2D earth_tex : source_color, filter_nearest, repeat_enable;
+uniform float earth = 0.0;
+uniform float earth_gain = 3.0;
+uniform vec3 earth_tint : source_color = vec3(1.0);
+uniform vec4 earth_area = vec4(0.4, -0.2, 12.5, 5.4);    // the trodden clearing: centre x, z and its half sizes
 varying float puddle;
+float ehash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
+// trodden earth and gravel: the pack's dirt tile, each 2-unit cell turned at random, greyed and made
+// paler; single art pixels picked out as pebbles (lit on top, shaded on the pixel under them)
+vec3 earth_colour(vec2 where) {
+	vec2 g = where / 2.0;
+	vec2 id = floor(g);
+	vec2 f = fract(g);
+	float h = ehash(id);
+	if (h > 0.5) { f.x = 1.0 - f.x; }
+	if (fract(h * 7.0) > 0.5) { f.y = 1.0 - f.y; }
+	vec3 c = texture(earth_tex, f).rgb;
+	float l = dot(c, vec3(0.299, 0.587, 0.114));
+	c = mix(c, vec3(l), 0.45) * earth_tint * earth_gain;
+	vec2 ap = floor(where * 16.0);
+	float stone = step(0.9, ehash(ap));
+	float under = step(0.9, ehash(ap + vec2(0.0, -1.0))) * (1.0 - stone);
+	float grit = ehash(ap * 0.5 + 3.0);
+	return c * (1.0 + stone * 0.6 - under * 0.35 + (grit - 0.5) * 0.12);
+}
+float earth_mask(vec2 where) {
+	vec2 wq = floor(where * 16.0) / 16.0;
+	vec2 q = (wq - earth_area.xy) / earth_area.zw;
+	float n = texture(hh_dapple, wq * 0.13 + vec2(0.2, 0.6)).r;
+	float edge = 1.0 - smoothstep(0.55, 1.0, length(q) + (n - 0.5) * 0.6);
+	return step(ehash(wq * 16.0 + 7.0) * 0.8 + 0.1, edge) * earth;
+}
 void vertex() {
 	at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 }
 void fragment() {
 	vec3 c = ground_colour(at);
+	if (earth > 0.0) { c = mix(c, earth_colour(at), earth_mask(at)); }
 	float n = texture(hh_dapple, at * 0.09 + vec2(0.31, 0.17)).r;
 	float m = texture(hh_dapple, at * 0.21 + vec2(0.7, 0.2)).r;
 	puddle = smoothstep(0.78 - wet * 0.1, 0.80 - wet * 0.1, n * 0.85 + m * 0.15) * step(0.01, wet);
@@ -300,7 +341,18 @@ func ground_material(params: Dictionary) -> ShaderMaterial:
 	for k: String in params:
 		mat.set_shader_parameter(k, params[k])
 	mat.set_shader_parameter("wet", num("wet"))
+	if num("earth") > 0.0:
+		mat.set_shader_parameter("earth_tex", Art.tex("hub_dirt"))
+		mat.set_shader_parameter("earth", num("earth"))
+		mat.set_shader_parameter("earth_gain", num("earth_gain"))
+		var et: Color = look.get("earth_tint", Color.WHITE)
+		mat.set_shader_parameter("earth_tint", et)
 	return mat
+
+
+## How much of the clearing is trodden earth (0 = none; stage.gd then lays its dark patches).
+func earth() -> float:
+	return num("earth")
 
 
 ## A small light of the place (the fire, a glowing stone): it glows in the air and, if `shadows`,
@@ -327,20 +379,29 @@ func fighter(sprite: MeshInstance3D) -> void:
 ## `air` scales how much it glows in the fog (0 for a light in front of a fighter: lit air between him
 ## and the camera is a veil over him).
 func spell_light(at: Vector3, colour: Color, power: float, life: float, air: float = 1.0) -> void:
+	var peak := SPELL_ENERGY * (0.6 + 0.5 * power) * num("spell") * 1.15
+	# (the ground and the scenery: the full flood; the fighters are left out of this one)
+	_one_light(at, colour, power, life, peak * 1.25, air * 0.5, false, ~int(s.FIGHTER_LAYER) & 0xFFFFF)
+	# (everybody: a gentler share, so the one hit is lit but keeps his own colours and reads dark
+	# against the blaze; the big ones throw shadows)
+	_one_light(at, colour, power, life, peak * 0.3, 0.0, power >= 2.0, 0xFFFFF)
+
+
+func _one_light(at: Vector3, colour: Color, power: float, life: float, peak: float, air: float, shadows: bool, mask: int) -> void:
 	var l := OmniLight3D.new()
 	l.position = at
-	l.light_color = colour
+	l.light_color = FxKit.deep(colour, 1.2).linear_to_srgb()
 	l.light_energy = 0.0
+	l.light_cull_mask = mask
 	l.omni_range = 12.0 + 4.0 * power             # (the ground and the whole party are lit by it)
 	l.omni_attenuation = 1.2
 	l.light_size = 0.4
 	l.light_volumetric_fog_energy = SPELL_FOG * (0.6 + 0.4 * power) * num("spell") * air
-	l.shadow_enabled = power >= 2.0
+	l.shadow_enabled = shadows
 	l.shadow_bias = 0.06
 	l.shadow_normal_bias = 1.0
 	l.shadow_blur = 1.4
 	s.add_child(l)
-	var peak := SPELL_ENERGY * (0.6 + 0.5 * power) * num("spell") * 1.6
 	var tw: Tween = s.create_tween()
 	tw.tween_property(l, "light_energy", peak, 0.05)
 	tw.tween_property(l, "light_energy", peak * 0.55, life * 0.35).set_trans(Tween.TRANS_SINE)
@@ -371,7 +432,8 @@ func core(at: Vector3, colour: Color, size: float, life: float) -> void:
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	m.albedo_texture = dot()
-	var hot := colour.lerp(Color.WHITE, 0.45)
+	# (deep colour round a small hot heart: a core mixed half with white read cream)
+	var hot := FxKit.deep(colour, 1.2).linear_to_srgb().lerp(Color.WHITE, 0.15)
 	var k := 3.0 * num("spell")
 	m.albedo_color = Color(hot.r * k, hot.g * k, hot.b * k, 1.0)
 	m.disable_fog = true
@@ -452,7 +514,8 @@ func swirl(at: Vector3, colour: Color, power: float, height: float) -> void:
 const VORTEX_CODE := "
 shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, shadows_disabled;
-uniform vec3 col : source_color = vec3(0.4, 0.7, 1.0);
+uniform vec3 col = vec3(0.4, 0.7, 1.0);          // LINEAR (FxKit.deep): a Vector3 is never turned from sRGB
+uniform vec3 hot_col = vec3(1.0, 0.8, 0.5);      // the hottest strands and the foot lean to this
 uniform float heat = 3.0;
 uniform float alpha = 0.0;
 uniform float height = 8.0;
@@ -465,6 +528,7 @@ uniform float front = 0.3;
 uniform float body_k = 1.0;
 uniform vec4 hold = vec4(-1.0);
 uniform vec4 hold2 = vec4(-1.0);        // somebody else standing inside the whirl (also kept clear)
+uniform vec4 hold3 = vec4(-1.0);        // and a second one
 uniform float seed = 0.0;
 varying float hy0;
 varying vec2 ring;
@@ -518,14 +582,16 @@ void fragment() {
 			* smoothstep(hold.y - 0.02, hold.y + 0.01, sc.y) * (1.0 - smoothstep(hold.w - 0.01, hold.w + 0.02, sc.y));
 		float inside2 = smoothstep(hold2.x - 0.012, hold2.x + 0.006, sc.x) * (1.0 - smoothstep(hold2.z - 0.006, hold2.z + 0.012, sc.x))
 			* smoothstep(hold2.y - 0.02, hold2.y + 0.01, sc.y) * (1.0 - smoothstep(hold2.w - 0.01, hold2.w + 0.02, sc.y));
-		k *= 1.0 - 0.9 * max(inside, inside2);
+		float inside3 = smoothstep(hold3.x - 0.012, hold3.x + 0.006, sc.x) * (1.0 - smoothstep(hold3.z - 0.006, hold3.z + 0.012, sc.x))
+			* smoothstep(hold3.y - 0.02, hold3.y + 0.01, sc.y) * (1.0 - smoothstep(hold3.w - 0.01, hold3.w + 0.02, sc.y));
+		k *= 1.0 - 0.92 * max(inside, max(inside2, inside3));
 	}
 	// a body of light under the strands, hottest at the foot, so it reads as a volume
 	float body = (0.05 + 0.42 * pow(1.0 - hy, 2.6)) * body_k;
 	float v = (strand * mix(1.6, 0.7, hy) + body) * edge * fade * k * alpha;
 	// (a deep saturated colour: mixed towards white the tone curve made the whole column cream; only
 	// the hottest strands and the foot lean to a warm pale)
-	vec3 c = mix(col, vec3(1.0, 0.78, 0.5) * max(max(col.r, col.g), col.b), clamp(smoothstep(0.6, 1.0, strand) * 0.25 + pow(1.0 - hy, 6.0) * 0.2, 0.0, 1.0));
+	vec3 c = mix(col, hot_col, clamp(smoothstep(0.7, 1.1, strand) * 0.3 + pow(1.0 - hy, 7.0) * 0.25, 0.0, 1.0));
 	ALBEDO = c * heat;
 	ALPHA = clamp(v, 0.0, 1.0);
 }
@@ -540,11 +606,12 @@ render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, 
 uniform vec3 col : source_color = vec3(0.5, 0.8, 1.0);
 uniform float heat = 4.0;
 uniform float alpha = 0.0;
+uniform float core_mix = 0.85;          // how white its middle burns (lightning: nearly white; shards less)
 void fragment() {
 	float across = clamp(1.0 - abs(UV.x * 2.0 - 1.0), 0.0, 1.0);
 	float core = pow(across, 5.0);
 	float v = (pow(across, 1.6) * 0.75 + core) * alpha * (1.0 - smoothstep(0.75, 1.0, UV.y) * 0.8);
-	ALBEDO = mix(col, vec3(1.0), core * 0.85) * heat;
+	ALBEDO = mix(col, vec3(1.0), core * core_mix) * heat;
 	ALPHA = clamp(v, 0.0, 1.0);
 }
 "
@@ -639,20 +706,26 @@ func screen_box(fighter: Node3D) -> Vector4:
 ## `style`: "storm" = bolts of lightning out of the sky into it; "" = shards of light flung up round it.
 func vortex(at: Vector3, colour: Color, power: float, height: float, radius: float, fighter: Node3D = null, life: float = 1.15, style: String = "") -> void:
 	var hold := screen_box(fighter)
-	var hold2 := Vector4(-1.0, -1.0, -1.0, -1.0)
+	# (the two nearest others inside the whirl's reach keep their shapes too)
+	var others: Array = []
 	for p: Node3D in s._people:
-		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 4.5:
-			hold2 = screen_box(p)
-			break
-	# (deep, saturated colour: the tone curve turns hot light white by itself; mixed with white
-	# first, the whole column came out a pale grey-white)
-	var hot := Color.from_hsv(colour.h, minf(colour.s * 1.4 + 0.1, 1.0), colour.v)
+		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 4.6:
+			others.append(p)
+	others.sort_custom(func(a: Node3D, b: Node3D) -> bool: return a.global_position.distance_to(at) < b.global_position.distance_to(at))
+	var hold2 := screen_box(others[0]) if others.size() > 0 else Vector4(-1.0, -1.0, -1.0, -1.0)
+	var hold3 := screen_box(others[1]) if others.size() > 1 else Vector4(-1.0, -1.0, -1.0, -1.0)
+	# (deep, saturated LINEAR colour (FxKit.deep): the tone curve turns hot light pale by itself; an
+	# sRGB colour given as a Vector3 made the firebolt a cream-gold column)
+	var hot := FxKit.deep(colour, 1.25)
+	var hot_tip := FxKit.deep(colour.lerp(Color.WHITE, 0.55), 1.0)
 	var layers := [
 		# [bottom radius, top radius, height share, strands round, turns, spin, thinness, heat, near half, body]
-		[radius * 0.45, radius * 0.6, 1.0, 4.0, 0.6, 0.7, 2.0, 3.6, 0.25, 1.6],
-		[radius * 0.8, radius * 1.15, 1.0, 6.0, 1.3, 0.9, 4.0, 3.0, 0.3, 0.8],
-		[radius * 1.05, radius * 2.0, 0.85, 10.0, -0.8, -1.3, 9.0, 2.4, 0.1, 0.2],
-		[radius * 1.4, radius * 2.4, 0.5, 14.0, 0.5, 1.8, 12.0, 1.8, 0.06, 0.08],
+		[radius * 0.45, radius * 0.6, 1.0, 5.0, 0.6, 0.7, 2.0, 3.4, 0.2, 0.8],
+		[radius * 0.8, radius * 1.2, 1.0, 7.0, 1.3, 0.9, 4.0, 2.9, 0.25, 0.45],
+		[radius * 1.05, radius * 2.2, 0.9, 11.0, -0.8, -1.3, 8.0, 2.5, 0.1, 0.25],
+		[radius * 1.4, radius * 3.0, 0.62, 15.0, 0.5, 1.8, 11.0, 2.0, 0.06, 0.1],
+		# (a wide low skirt of torn light: the blaze fills the frame round the one hit)
+		[radius * 1.9, radius * 4.2, 0.34, 18.0, -0.4, -2.2, 12.0, 1.6, 0.03, 0.06],
 	]
 	for i in layers.size():
 		var row: Array = layers[i]
@@ -666,17 +739,19 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 		cyl.cap_top = false
 		cyl.cap_bottom = false
 		var m := _vortex_mat()
-		m.set_shader_parameter("col", Vector3(hot.r, hot.g, hot.b))
+		m.set_shader_parameter("col", FxKit.vec(hot))
+		m.set_shader_parameter("hot_col", FxKit.vec(hot_tip))
 		m.set_shader_parameter("height", hgt)
 		m.set_shader_parameter("bands", float(row[3]))
 		m.set_shader_parameter("twist", float(row[4]))
 		m.set_shader_parameter("spin", float(row[5]))
 		m.set_shader_parameter("sharp", float(row[6]))
-		m.set_shader_parameter("heat", float(row[7]) * (0.75 + 0.15 * power) * num("spell"))
+		m.set_shader_parameter("heat", float(row[7]) * (0.42 + 0.09 * power) * num("spell"))
 		m.set_shader_parameter("front", float(row[8]))
 		m.set_shader_parameter("body_k", float(row[9]))
 		m.set_shader_parameter("hold", hold)
 		m.set_shader_parameter("hold2", hold2)
+		m.set_shader_parameter("hold3", hold3)
 		m.set_shader_parameter("seed", randf() * 10.0)
 		m.set_shader_parameter("grow", 0.0)
 		var node := MeshInstance3D.new()
@@ -694,8 +769,8 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 	# sparks that wind up the whirl, and a spray of them from its foot
 	_streaks(at + Vector3(0.0, 0.2, 0.0), colour, power, height, radius, true, hold)
 	_streaks(at + Vector3(0.0, 0.3, 0.0), colour, power, height, radius, false, hold)
-	motes(at, colour, power, height, radius)
-	motes(at, colour, power * 0.8, height * 1.3, radius * 1.6)       # (a second, wider cloud: the glitter all round the blaze)
+	motes(at, colour, power, height, radius, hold)
+	motes(at, colour, power * 0.9, height * 1.3, radius * 1.8, hold)       # (a second, wider cloud: the glitter all round the blaze)
 	if style == "storm":
 		# lightning out of the sky into the column, forking as it comes
 		for i in 3:
@@ -713,26 +788,33 @@ func vortex(at: Vector3, colour: Color, power: float, height: float, radius: flo
 
 ## Crisp streaks of light: `up` = climbing the whirl in a spiral; else a spray out of its foot.
 func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: float, up: bool, hold := Vector4(-1.0, -1.0, -1.0, -1.0)) -> void:
-	var sp := Sparks.new()
-	var n := int(clampf((108.0 if up else 80.0) * power, 60.0, 340.0))
+	var sp := FxKit.Streaks.new()
+	var n := int(clampf((120.0 if up else 90.0) * power, 60.0, 380.0))
 	sp.centre = at
 	if up:
 		sp.spin = 15.0
 		sp.pull = -1.5
 		sp.grav = Vector3(0.0, 2.0, 0.0)
 		sp.drag = 0.6
+		sp.trail = 0.06
 	else:
 		sp.spin = 3.0
 		sp.pull = 4.0
 		sp.grav = Vector3(0.0, -9.0, 0.0)
 		sp.drag = 2.2
-	var sm := _streak_mat(colour, 5.0 * num("spell") + 1.0)
+		sp.trail = 0.05
+		sp.floor_y = at.y - 0.25
+		sp.bounce = 0.3
+	sp.width = 0.06
+	sp.max_len = 1.3
+	var sm := FxKit.streak_material(3.0 * num("spell") + 1.0, Color(1.0, 0.95, 0.85), 0.8)
 	sm.set_shader_parameter("hold", hold)
 	sm.set_shader_parameter("hold_z", at.z)
 	sp.start(n, sm)
+	var tip := colour.lerp(Color.WHITE, 0.45)
 	for i in n:
 		var a := randf() * TAU
-		var r := radius * (randf_range(0.6, 1.1) if up else randf_range(0.1, 0.6))
+		var r := radius * (randf_range(0.6, 1.2) if up else randf_range(0.1, 0.6))
 		var p := at + Vector3(cos(a) * r, randf() * (0.6 if up else 0.2), sin(a) * r)
 		var out := Vector3(cos(a), 0.0, sin(a))
 		var tangent := Vector3(-sin(a), 0.0, cos(a))
@@ -741,7 +823,7 @@ func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: f
 			v = Vector3(0.0, height * randf_range(0.6, 1.3), 0.0) + tangent * randf_range(2.0, 4.0)
 		else:
 			v = (out * randf_range(0.6, 1.0) + Vector3(0.0, randf_range(0.5, 1.4), 0.0)).normalized() * randf_range(4.0, 9.0 + 2.0 * power)
-		sp.add(i, p, v, randf() * (0.5 if up else 0.08), randf_range(0.45, 0.8) if up else randf_range(0.35, 0.6))
+		sp.add(i, p, v, randf() * (0.5 if up else 0.08), randf_range(0.45, 0.85) if up else randf_range(0.35, 0.65), colour.lerp(tip, randf() * 0.6))
 	s.add_child(sp)
 
 
@@ -751,7 +833,7 @@ static var _bolt_shader: Shader
 ## A JAGGED BOLT of light from `from` to `to` (lightning out of the sky; a shard of a spell): the
 ## line is broken by midpoint displacement, built once as a ribbon turned to the camera, and
 ## flickers on and off for `life` seconds after `delay`. `forks` thinner side bolts branch off it.
-func bolt(from: Vector3, to: Vector3, colour: Color, width: float, life: float, delay: float = 0.0, forks: int = 0, heat: float = 5.0) -> void:
+func bolt(from: Vector3, to: Vector3, colour: Color, width: float, life: float, delay: float = 0.0, forks: int = 0, heat: float = 5.0, core_mix: float = 0.85) -> void:
 	var pts: Array[Vector3] = [from, to]
 	var jag := from.distance_to(to) * 0.16
 	for level in 5:
@@ -775,6 +857,7 @@ func bolt(from: Vector3, to: Vector3, colour: Color, width: float, life: float, 
 	m.shader = _bolt_shader
 	m.set_shader_parameter("col", Vector3(colour.r, colour.g, colour.b))
 	m.set_shader_parameter("heat", heat * num("spell"))
+	m.set_shader_parameter("core_mix", core_mix)
 	m.set_shader_parameter("alpha", 0.0)
 	m.render_priority = 12
 	var node := MeshInstance3D.new()
@@ -831,130 +914,40 @@ func shards(at: Vector3, colour: Color, height: float, radius: float, count: int
 	for i in count:
 		var a := randf() * TAU
 		var r := radius * randf_range(0.9, 1.8)
-		var base := at + Vector3(cos(a) * r, randf_range(0.3, height * 0.45), sin(a) * r * 0.6 - 0.4)
+		var base := at + Vector3(cos(a) * r, randf_range(0.3, height * 0.45), -absf(sin(a)) * r * 0.6 - 0.5)     # (behind him: never across his face)
 		var len := randf_range(0.9, 2.2)
 		var tip := base + Vector3(randf_range(-0.5, 0.5) + cos(a) * 0.4, len, 0.0)
-		bolt(base, tip, colour.lerp(Color.WHITE, 0.25), randf_range(0.07, 0.13), life * randf_range(0.35, 0.6), randf() * life * 0.45, 0, 4.0)
+		bolt(base, tip, FxKit.deep(colour, 1.1).linear_to_srgb(), randf_range(0.07, 0.13), life * randf_range(0.35, 0.6), randf() * life * 0.45, 0, 2.6, 0.3)
 
 
 ## MOTES: a cloud of small hot specks that hang round a spell and drift up slowly after it has
 ## blazed (the glittering dots all round the column in the night-battle picture).
-func motes(at: Vector3, colour: Color, power: float, height: float, radius: float) -> void:
-	var p := CPUParticles3D.new()
-	p.one_shot = true
-	p.explosiveness = 0.75
-	p.amount = int(clampf(110.0 * power, 80.0, 320.0))
-	p.lifetime = 1.9
-	p.position = at + Vector3(0.0, height * 0.3, 0.0)
-	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = radius * 2.4
-	p.direction = Vector3(0.0, 1.0, 0.0)
-	p.spread = 70.0
-	p.gravity = Vector3(0.0, 0.5, 0.0)
-	p.initial_velocity_min = 0.4
-	p.initial_velocity_max = 2.6
-	p.damping_min = 0.6
-	p.damping_max = 1.6
-	p.scale_amount_min = 0.35
-	p.scale_amount_max = 1.0
-	p.lifetime_randomness = 0.5
-	var ramp := Gradient.new()
-	ramp.offsets = PackedFloat32Array([0.0, 0.08, 0.5, 1.0])
-	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0.75), Color(1, 1, 1, 0)])
-	p.color_ramp = ramp
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	m.albedo_texture = dot()
-	var hot := colour.lerp(Color.WHITE, 0.35)
-	var k := 5.0 * num("spell") + 1.0
-	m.albedo_color = Color(hot.r * k, hot.g * k, hot.b * k, 1.0)
-	m.vertex_color_use_as_albedo = true
-	m.disable_fog = true
-	m.render_priority = 12
-	var q := QuadMesh.new()
-	q.size = Vector2(0.16, 0.16)
-	q.material = m
-	p.mesh = q
-	s.add_child(p)
-	p.emitting = true
-	s.get_tree().create_timer(p.lifetime * 1.5 + 0.4).timeout.connect(p.queue_free)
-
-
-## A handful of sparks flown by code (not a particle system: each knows the way it flies, so it is
-## drawn as a streak along it; see STREAK_CODE). Frees itself when the last one is out.
-class Sparks extends MultiMeshInstance3D:
-	var centre := Vector3.ZERO
-	var spin := 0.0                  ## sideways push round the upright through `centre` (a spiral)
-	var pull := 0.0                  ## push away from that upright (negative: towards it)
-	var grav := Vector3.ZERO
-	var drag := 0.0
-	var _p := PackedVector3Array()
-	var _v := PackedVector3Array()
-	var _age := PackedFloat32Array()
-	var _life := PackedFloat32Array()
-
-	func start(n: int, mat: Material) -> void:
-		var q := QuadMesh.new()
-		q.size = Vector2(1.0, 1.0)
-		q.material = mat
-		multimesh = MultiMesh.new()
-		multimesh.transform_format = MultiMesh.TRANSFORM_3D
-		multimesh.use_colors = true
-		multimesh.mesh = q
-		multimesh.instance_count = n
-		cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		extra_cull_margin = 40.0
-		_p.resize(n)
-		_v.resize(n)
-		_age.resize(n)
-		_life.resize(n)
-		for i in n:
-			multimesh.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO))
-			multimesh.set_instance_color(i, Color(1, 1, 1, 0))
-
-	## One spark: where, how fast, after how long it starts, how long it lives.
-	func add(i: int, at: Vector3, vel: Vector3, delay: float, life: float) -> void:
-		_p[i] = at
-		_v[i] = vel
-		_age[i] = -delay
-		_life[i] = life
-
-	func _process(delta: float) -> void:
-		var alive := false
-		for i in _p.size():
-			var age := _age[i] + delta
-			_age[i] = age
-			if age < 0.0 or age > _life[i]:
-				if age <= _life[i]:
-					alive = true
-				multimesh.set_instance_color(i, Color(1, 1, 1, 0))
-				multimesh.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ZERO), _p[i]))
-				continue
-			alive = true
-			var v := _v[i]
-			var flat := Vector3(_p[i].x - centre.x, 0.0, _p[i].z - centre.z)
-			if flat.length_squared() > 0.0001:
-				var out := flat.normalized()
-				v += (Vector3(-out.z, 0.0, out.x) * spin + out * pull) * delta
-			v += grav * delta
-			v *= maxf(1.0 - drag * delta, 0.0)
-			_v[i] = v
-			_p[i] += v * delta
-			var speed := v.length()
-			var t := age / _life[i]
-			var fade := smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.55, 1.0, t))
-			if speed < 0.05:
-				multimesh.set_instance_color(i, Color(1, 1, 1, 0))
-				continue
-			var dir := v / speed
-			var length := clampf(speed * 0.07, 0.18, 1.1)
-			multimesh.set_instance_transform(i, Transform3D(Basis(Vector3(0.11, 0.0, 0.0), dir * length, Vector3(0.0, 0.0, 1.0)), _p[i]))
-			multimesh.set_instance_color(i, Color(1, 1, 1, fade))
-		if not alive:
-			queue_free()
+func motes(at: Vector3, colour: Color, power: float, height: float, radius: float, hold := Vector4(-1.0, -1.0, -1.0, -1.0)) -> void:
+	var sp := FxKit.Streaks.new()
+	var n := int(clampf(120.0 * power, 80.0, 340.0))
+	sp.centre = at
+	sp.grav = Vector3(0.0, 0.5, 0.0)
+	sp.drag = 1.1
+	sp.trail = 0.05
+	sp.width = 0.05
+	sp.min_len = 0.06
+	sp.max_len = 0.35
+	sp.wobble = 1.2
+	sp.flicker = 0.35
+	var sm := FxKit.streak_material(3.0 * num("spell") + 1.0, Color(1.0, 0.97, 0.9), 0.9)
+	sm.set_shader_parameter("hold", hold)
+	sm.set_shader_parameter("hold_z", at.z)
+	sp.start(n, sm)
+	var tip := colour.lerp(Color.WHITE, 0.5)
+	var mid := at + Vector3(0.0, height * 0.3, 0.0)
+	for i in n:
+		var d := Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), randf_range(-1.0, 1.0))
+		if d.length() > 1.0:
+			d = d.normalized() * randf()
+		var p := mid + Vector3(d.x * radius * 2.4, d.y * height * 0.35, d.z * radius * 1.6)
+		var v := Vector3(randf_range(-0.6, 0.6), randf_range(0.4, 2.6), randf_range(-0.4, 0.4))
+		sp.add(i, p, v, randf() * 0.25, randf_range(0.9, 1.9), colour.lerp(tip, randf()))
+	s.add_child(sp)
 
 
 ## THE HD SCENERY. The camera looks nearly level, so the picture reads in bands, front to back,
