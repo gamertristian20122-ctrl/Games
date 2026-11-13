@@ -272,9 +272,12 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	for pond: Dictionary in place.get("water", []):
 		var c: Vector2 = pond["at"]
 		var r: Vector2 = pond["radius"]
-		var n := maxi(1, int(ceil(r.x / r.y)))
+		# (a harbour basin, "quay": true, lists its own stops along its quay wall: scripts/data/places.gd _harbour)
+		var n := -1 if bool(pond.get("quay", false)) else maxi(1, int(ceil(r.x / r.y)))
 		for i in range(-n, n + 1):                           # nobody walks into it: a row of round stops
 			_solids.append([c + Vector2(float(i) / float(n) * (r.x - r.y * 0.7), 0.0), r.y * 0.9])
+		for stop: Array in pond.get("stops", []):
+			_solids.append(stop)
 		if _view == null:
 			var shape := Polygon2D.new()
 			var ring := PackedVector2Array()

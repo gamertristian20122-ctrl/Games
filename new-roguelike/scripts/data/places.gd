@@ -210,7 +210,127 @@ static func _dress_town(t: Dictionary) -> Dictionary:
 	scatter["hub_gflower"] = [32, 36]
 	scatter["hub_gtuft"] = [4, 60]
 	t["scatter"] = scatter
+	_harbour(t)
 	return t
+
+
+## WICKMERE'S HARBOUR (round three, like the harbour at dusk of the reference pictures): the mere and
+## the gardens of the south-west are a lakeside quay now. The water lies in a round stone basin SUNK
+## below the town (a water row with "quay": true: scripts/hub/view3d_build.gd quay_dip): a quay wall
+## stands over it with a stone coping, iron bollards and a flight of steps down to the water
+## (scripts/hub/arch/sites.gd _quay). A plank jetty on posts runs out over it ("jetty"; people walk
+## out on it: its "decks" row lifts them), and a boat lies moored beside the jetty ("boat": a hull of
+## the packs' planks built in code, a mast, a sail furled on its boom, a lantern at the stern).
+## Lamps stand along the quay's edge so their light falls on the water; crates, barrels, sacks and
+## coils of rope lie about on the quay. The quay is paved in big flags (the castle pack's ashlar).
+## Nobody walks into the water: the basin lists its own round "stops" along the quay wall (hub.gd).
+const HARBOUR_AT := Vector2(205, 606)
+const HARBOUR_R := Vector2(260, 142)
+const QUAY_IN := 0.93                    ## the quay wall's ellipse, as a share of the water's (as view3d_build.gd QUAY_IN)
+const JETTY_X := 318.0                   ## the middle of the jetty
+const JETTY_W := 22.0
+const BOAT := {"at": Vector2(246, 508), "long": 100.0, "beam": 26.0}
+
+
+## How far north the quay wall reaches at x (px): `pad` px further out from the water.
+static func quay_y(x: float, pad: float = 0.0) -> float:
+	var rw := HARBOUR_R * QUAY_IN + Vector2(pad, pad)
+	var k := clampf((x - HARBOUR_AT.x) / rw.x, -1.0, 1.0)
+	return HARBOUR_AT.y - rw.y * sqrt(1.0 - k * k)
+
+
+static func _harbour(t: Dictionary) -> void:
+	var zone := Rect2(28, 402, 412, 200)
+	var rw := HARBOUR_R * QUAY_IN
+	var wide := rw + Vector2(18, 18)
+	# the gardens, the mere's statues and its flowers go
+	var garden := ["hub_gbed", "hub_gflower", "hub_vplant", "hub_vbush", "hub_bush", "hub_tree", "hub_gcypress", "hub_stonebench",
+		"hub_planter", "hub_flower", "hub_tuft", "hub_fence"]
+	var props: Array = t["props"]
+	for i in range(props.size() - 1, -1, -1):
+		var row: Array = props[i]
+		var at := Vector2(row[1], row[2])
+		var id := String(row[0])
+		var is_garden := false
+		for g: String in garden:
+			if id.begins_with(g):
+				is_garden = true
+		if (is_garden and zone.has_point(at)) or ((at - HARBOUR_AT) / wide).length() < 1.0:
+			props.remove_at(i)
+	var anims: Array = []
+	for row: Array in t.get("anims", []):
+		if String(row[0]) != "hub_gspout":
+			anims.append(row)
+	t["anims"] = anims
+	var paths: Array = []
+	for path: Array in t.get("paths", []):
+		if not zone.has_point(path[0]) or not zone.has_point(path[1]):
+			paths.append(path)
+	t["paths"] = paths
+	# the quay's flags (the square's cobbles are laid over them where they meet)
+	t["floor"] = [["hub_bstone", Rect2(-48, 396, 512, 264)]] + (t["floor"] as Array)
+	# THE BASIN: its round stops along the quay wall (a little inside it, reaching 10 px out over the
+	# coping), open where the jetty leaves the quay, and along both sides of the jetty
+	var stops: Array = []
+	var a := PI
+	while a <= TAU + 0.001:
+		var dir := Vector2(cos(a), sin(a))
+		var on := HARBOUR_AT + Vector2(rw.x * dir.x, rw.y * dir.y)
+		var n := Vector2(dir.x / rw.x, dir.y / rw.y).normalized()
+		if on.y < 548.0 and absf(on.x - JETTY_X) > JETTY_W * 0.5 + 12.0:
+			stops.append([on - n * 4.0, 14.0])
+		a += 7.0 / maxf(Vector2(-rw.x * sin(a), rw.y * cos(a)).length(), 1.0)
+	for side: float in [-1.0, 1.0]:
+		var x := JETTY_X + side * (JETTY_W * 0.5 + 10.0)
+		var z := quay_y(x) - 2.0
+		while z < 560.0:
+			stops.append([Vector2(x, z), 10.0])
+			z += 7.0
+	var water: Array = []
+	for pond: Dictionary in t.get("water", []):
+		if bool(pond.get("basin", false)):
+			water.append(pond)                  # (the fountain's basin stays; the mere goes)
+	water.append({"at": HARBOUR_AT, "radius": HARBOUR_R, "quay": true, "depth": 22.0, "lift": 11.0, "stops": stops,
+		"steps": [126.0], "bollards": [70.0, 104.0, 176.0, 262.0, 290.0, 352.0, 380.0]})
+	t["water"] = water
+	# the jetty (people walk out on it) and the boat moored beside it
+	var head := quay_y(JETTY_X) - 4.0
+	t["jetty"] = {"x": JETTY_X, "z0": head, "z1": 584.0, "wide": JETTY_W, "up": 2.0, "water": 11.0 - 22.0}
+	t["boat"] = BOAT.duplicate()
+	var bat: Vector2 = BOAT["at"]
+	var blong := float(BOAT["long"])
+	t["decks"] = [{"rect": Rect2(JETTY_X - JETTY_W * 0.5, head, JETTY_W, 600.0 - head), "up": 2.0},
+		{"rect": Rect2(bat.x - blong * 0.5 + 8.0, bat.y - 9.0, blong - 14.0, 18.0), "up": -6.0}]
+	# lamps along the quay's edge (iron street lamps in the 3D look), one at the jetty's end, one at the
+	# boat's stern: their light lies on the water as long broken streaks
+	var lights: Array = t["lights"]
+	var amber := Color(1.0, 0.78, 0.46)
+	for x: float in [92.0, 200.0, JETTY_X - 16.0, 400.0]:
+		var post := Vector2(x, quay_y(x, 15.0))
+		props.append(["hub_slantern", post.x - LANTERN_GLASS.x, post.y, 2, 0])
+		lights.append([post + Vector2(0, LANTERN_GLASS.y), amber, 1.0, 0.55])
+	var end_post := Vector2(JETTY_X + 7.0, 572.0)
+	props.append(["hub_slantern", end_post.x - LANTERN_GLASS.x, end_post.y, 0, 0])
+	lights.append([end_post + Vector2(0, LANTERN_GLASS.y), amber, 1.0, 0.55])
+	lights.append([bat + Vector2(blong * 0.5 - 7.0, -1.0), amber, 0.8, 0.45])         # the boat's stern lantern
+	# cargo on the quay: barrels and crates by the harbour house, sacks of grain, crates at the
+	# jetty's head (all low, set back from the coping)
+	props.append_array([["hub_sbarrel_1", 56, 448, 8, 1], ["hub_sbarrel_f", 76, 456, 4, 1], ["hub_scrate_4", 50, 468, 5, 1],
+		["hub_scrate_5", 66, 474, 5, 1], ["hub_sbarrel_f", 168, 412, 4, 1],
+		["hub_ssack_1", 140, 448, 0, 1], ["hub_ssack_2", 152, 452, 0, 1], ["hub_scrate_0", 128, 446, 4, 1],
+		["hub_sbarrel_f", 282, 460, 4, 1], ["hub_sbarrel_f", 292, 464, 4, 1], ["hub_scrate_2", 344, 472, 4, 1], ["hub_scrate_3", 356, 476, 4, 1],
+		["hub_ssack_4", 372, 470, 0, 1],
+		# on the boat's deck: a barrel and a crate lashed down
+		["hub_sbarrel_f", bat.x + 18.0, bat.y + 2.0, 0, 0], ["hub_scrate_2", bat.x - 14.0, bat.y + 1.0, 0, 0]])
+	t["coils"] = [Vector2(110, 470), Vector2(232, 458), Vector2(JETTY_X + 4.0, 548.0), Vector2(384, 486)]
+	# folk on the quay: a fisher looking at the boat, a woman with her basket by the sacks
+	_extras(t, [["pc_npc_peasant_a", 168, 460, 1], ["pc_npc_tavern_b_hold", 112, 444, 1]])
+	# the near balustrade only east of the south road now (west of it lies open water); the gate
+	# piers stand at the basin's corner and across the road
+	t["near"] = [{"z": 566.0, "runs": [[528.0, 936.0]], "piers": [[452.0, 30.0], [512.0, 30.0]]}]
+	var forest: Dictionary = t["forest"]
+	forest["open"] = (forest.get("open", []) as Array) + [Rect2(-90, 380, 170, 320)]
+	t["tour"] = [Vector2(250, 200), Vector2(480, 404), Vector2(720, 270), Vector2(250, 452), Vector2(660, 196)]
 
 
 ## TOWNSFOLK (round two's fixer): people who only stand about, in twos and threes at doors and

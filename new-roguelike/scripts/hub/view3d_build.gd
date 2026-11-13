@@ -57,13 +57,18 @@ varying vec3 wn;
 varying vec2 foot;
 varying float facing;
 varying float glassy;
+varying vec3 tint;
 void vertex() {
 	wn = (MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz;
 	foot = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
+	tint = COLOR.rgb;
 }
 void fragment() {
 	vec4 c = texture(tex, UV);
 	if (c.a < 0.5) { discard; }
+	// (round three: each house wears its own tint of the same pack piece, kit.gd `tint`; glass keeps its own colour)
+	float is_pane = glass * smoothstep(0.03, 0.14, c.b - c.r) * step(0.28, c.b);
+	c.rgb *= mix(tint, vec3(1.0), is_pane);
 	float f = clamp(dot(normalize(wn), normalize(vec3(0.25, 0.75, 0.6))), 0.0, 1.0);
 	vec3 col = c.rgb * (0.78 + 0.22 * f);
 	// a pane of glass (blue-ish pixels of a window's art) lit from inside when it is dark
@@ -106,6 +111,8 @@ var rise_row := {}                 ## the place's "rise" (the ground climbs behi
 var hills: Array = []              ## the place's "hills"
 var has_height := false
 var terraces: Array = []           ## the place's "terraces" (raised paving you walk up onto)
+var quays: Array = []              ## the place's harbour basins (water rows with "quay": true): sunk below the ground
+var decks: Array = []              ## the place's "decks" (a jetty, a boat): people and props stand on them over a basin
 var window_mats: Array = []        ## window materials: they glow at night
 var _floor_shader: Shader
 var _solid_shader: Shader
@@ -127,6 +134,12 @@ func reset(place: Dictionary) -> void:
 	hills = place.get("hills", [])
 	has_height = not rise_row.is_empty() or not hills.is_empty()
 	terraces = place.get("terraces", [])
+	quays.clear()
+	for pond: Dictionary in place.get("water", []):
+		if bool(pond.get("quay", false)):
+			quays.append(pond)
+	decks = place.get("decks", [])
+	has_height = has_height or not quays.is_empty()
 	window_mats.clear()
 
 
@@ -174,7 +187,7 @@ func paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 		floor_mesh.mesh = plane
 		floor_mesh.position = Vector3(size.x * 0.5 * PX, 0.0, size.y * 0.5 * PX)
 	else:
-		floor_mesh.mesh = grid(Rect2(-margin, size + margin * 2.0), 16.0, 0.0)      # the ground has height
+		floor_mesh.mesh = grid(Rect2(-margin, size + margin * 2.0), 8.0 if not quays.is_empty() else 16.0, 0.0)      # the ground has height (finer round a sunk basin)
 	floor_mesh.material_override = mat
 	floor_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	v._world.add_child(floor_mesh)
@@ -213,6 +226,9 @@ func paint_ground(stage: Node2D, ysort: Node2D, place: Dictionary) -> void:
 ##            round top) that falls away to nothing at "radius". People WALK on hills: they are
 ##            drawn as high as the ground they stand on (walking itself is still flat).
 func height(at: Vector2) -> float:
+	for d: Dictionary in decks:
+		if (d["rect"] as Rect2).has_point(at):
+			return float(d.get("up", 0.0)) * PX / cos(deg_to_rad(v._pitch))
 	if terraces.is_empty():
 		return _ground(at)
 	return _ground(at) + terrace_px(at) * PX / cos(deg_to_rad(v._pitch))
@@ -265,7 +281,37 @@ func _ground(at: Vector2) -> float:
 		var top := float(hill.get("top", 0.0))
 		var k := clampf((at.distance_to(hill["at"]) - top) / maxf(float(hill["radius"]) - top, 1.0), 0.0, 1.0)
 		h += float(hill["height"]) * (1.0 - k * k * (3.0 - 2.0 * k))
-	return h * PX
+	return h * PX - quay_dip(at) * PX / cos(deg_to_rad(v._pitch))
+
+
+## A HARBOUR BASIN (round three, the harbour picture): a water row with "quay": true lies SUNK in
+## the ground, so a stone quay wall (scripts/hub/arch/sites.gd _quay) stands over the water and
+## steps go down to it. The wall stands on the ellipse QUAY_IN x the water's radius; inside it the
+## ground falls "depth" px (kit px, default 20), and it falls only under the wall's coping (from
+## QUAY_DIP px outside the wall to the wall), so no slope is ever seen. The water row's "lift" sets
+## the water's surface in that hole (depth - 8: 8 px below the quay).
+const QUAY_IN := 0.93
+const QUAY_DIP := 7.0
+const QUAY_COPING := 9.0           ## px: how wide the quay's coping is (it covers the dip)
+func quay_dip(at: Vector2) -> float:
+	var best := 0.0
+	for pond: Dictionary in quays:
+		var d := quay_out(pond, at)
+		if d < QUAY_DIP:
+			var t := clampf(d / QUAY_DIP, 0.0, 1.0)
+			best = maxf(best, float(pond.get("depth", 20.0)) * (1.0 - t * t * (3.0 - 2.0 * t)))
+	return best
+
+
+## How far (px, about) a spot lies outside a basin's quay wall (below 0: inside, over the water).
+static func quay_out(pond: Dictionary, at: Vector2) -> float:
+	var rw: Vector2 = (pond["radius"] as Vector2) * QUAY_IN
+	var q: Vector2 = (at - (pond["at"] as Vector2)) / rw
+	var e := q.length()
+	if e < 0.0001:
+		return -rw.y
+	var g := Vector2(q.x / rw.x, q.y / rw.y) / e
+	return (e - 1.0) / maxf(g.length(), 0.0001)
 
 
 ## How steep the ground is at a spot (0 = level; 0.3 = it climbs 3 for every 10 across).

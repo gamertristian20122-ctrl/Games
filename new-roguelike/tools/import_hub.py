@@ -148,6 +148,7 @@ RECTS = [
     ("bsandwall", DESERT, "Ground.png", 20, 198, 56, 38),    # sandstone wall with its blue band: Dustwatch's houses and wall
     ("bsandcap", DESERT, "Ground.png", 16, 112, 64, 12),     # a sandstone coping slab: parapets, merlons, kerbs in the Sands
     ("bsandbrick", DESERT, "Ground.png", 22, 212, 48, 14),   # plain sandstone courses (two, they repeat): the houses of Dustwatch
+    ("bcloth", HIDE, "Tiles.png", 323, 341, 10, 26),         # (round three) plain canvas with its folds, from the Hideout's hanging cloth: a furled sail
 ]
 # (name, pack, file ending, x, y, w, h) in NATIVE pixels of a picture the pack ships at twice its
 # size (every pixel doubled; halving it by taking every second pixel gives the artist's own pixels
