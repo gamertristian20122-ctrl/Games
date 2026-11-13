@@ -57,6 +57,7 @@ var _cam_home := Vector3.ZERO
 var _t := 0.0
 var _tier := 0
 var _fx: Array = []                ## the look of the skill being shown now (battles.gd FX), [] = a plain blow
+var _fx_id := ""                   ## and that skill's id (HD: a storm brings lightning)
 var _trauma := 0.0                 ## how shaken the camera is, 0 to 1 (see _feel)
 var _shake_t := 0.0
 var _xp_bonus := 0                ## a battle of the story may give XP of its own on top
@@ -68,6 +69,8 @@ var _intro := 0.0                  ## the camera comes in from further back as t
 var _push := 0.0                   ## and moves in a little at the end of a won battle (0 -> 1)
 var _fade: ColorRect               ## black over the screen at the start, gold at a victory
 var _sky := 0.0                    ## HD: how far up into the sky the camera still looks as the battle opens (1 -> 0)
+var _layer: CanvasLayer
+var _ui := 1.0                     ## HD: the menus are drawn smaller (a whole number of screen pixels per art pixel)
 
 
 func _ready() -> void:
@@ -188,11 +191,18 @@ func _build_screen() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 5
 	add_child(layer)
+	_layer = layer
 	_root = Control.new()
 	_root.theme = UI.theme()
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_root)
+	if Hd.on():
+		# HD (PC): COMPACT menus in the corners, so the big fighters, the ground and the sky stay
+		# clear (the night-battle picture the owner sent keeps its numbers small, at the edges).
+		# The phone keeps its sizes (the owner: text and buttons are good as they are there).
+		_fit_ui()
+		get_viewport().size_changed.connect(_fit_ui)
 	var safe := UI.safe_margin(_root, 5)
 	_root.add_child(safe)
 	_area = Control.new()
@@ -211,10 +221,15 @@ func _build_screen() -> void:
 	_message.add_theme_constant_override("outline_size", 3)
 	_area.add_child(_message)
 
-	# your side (bottom left)
+	# your side (bottom left; HD: top right, as a column of small rows)
 	var party_panel := UI.panel("panel")
-	party_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	party_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	if Hd.on():
+		party_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		party_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		party_panel.self_modulate.a = 0.82
+	else:
+		party_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+		party_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_area.add_child(party_panel)
 	var rows := UI.vbox(2)
 	party_panel.add_child(rows)
@@ -249,11 +264,16 @@ func _build_screen() -> void:
 		var who := unit
 		button.pressed.connect(func() -> void: _target_picked(who))
 
-	# what you can do (bottom right)
+	# what you can do (bottom right; HD: bottom left, under your own side)
 	_menu = UI.panel("panel")
-	_menu.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	_menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	if Hd.on():
+		_menu.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+		_menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		_menu.self_modulate.a = 0.86
+	else:
+		_menu.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+		_menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		_menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_area.add_child(_menu)
 	_menu_box = UI.vbox(2)
 	_menu.add_child(_menu_box)
@@ -335,6 +355,26 @@ func _build_screen() -> void:
 	_fade.color = Color(0, 0, 0, 0)
 	_fade.visible = false
 	_root.add_child(_fade)
+
+
+## HD: the menus at a smaller size. The game's 2D picture is 180 art pixels high, stretched to the
+## window; here every art pixel of the menus is drawn as a whole number of screen pixels, about
+## three quarters of the usual (3 on a 720-high window, 4 on 1080), so pixel letters stay crisp.
+func _fit_ui() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var win := Vector2(DisplayServer.window_get_size()) if get_viewport() == get_tree().root else vp
+	var base := maxf(win.y / maxf(vp.y, 1.0), 1.0)          # screen pixels per art pixel
+	var k := maxf(floorf(base * 0.75), minf(2.0, base))
+	_ui = clampf(k / base, 0.4, 1.0)
+	_layer.scale = Vector2(_ui, _ui)
+	_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_root.position = Vector2.ZERO
+	_root.size = vp / _ui
+
+
+## Where a point of the 3D picture is on the menus' layer.
+func _on_ui(world: Vector3) -> Vector2:
+	return stage.cam.unproject_position(world) / _ui
 
 
 ## A boss gets its name and a long bar at the top middle of the screen.
@@ -518,7 +558,7 @@ func _show_commands() -> void:
 	title.add_theme_color_override("font_color", UI.C_GOLD)
 	_menu_box.add_child(title)
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 4 if Hd.on() else 2          # (HD: one low row along the bottom, under every fighter's feet)
 	grid.add_theme_constant_override("h_separation", 3)
 	grid.add_theme_constant_override("v_separation", 3)
 	_menu_box.add_child(grid)
@@ -545,7 +585,7 @@ func _show_commands() -> void:
 
 
 func _reason(text: String) -> Label:
-	var l := UI.label(text, "Small", 150.0)
+	var l := UI.label(text, "Small", 236.0 if Hd.on() else 150.0)
 	l.add_theme_color_override("font_color", UI.C_DIM)
 	return l
 
@@ -562,6 +602,8 @@ func _show_skills() -> void:
 	_menu_box.add_child(title)
 	var grid := GridContainer.new()
 	grid.columns = 2 if (_acting["skills"] as Array).size() > 4 else 1
+	if Hd.on():
+		grid.columns = clampi((_acting["skills"] as Array).size(), 1, 4)
 	grid.add_theme_constant_override("h_separation", 3)
 	grid.add_theme_constant_override("v_separation", 2)
 	_menu_box.add_child(grid)
@@ -691,6 +733,7 @@ func _play(events: Array) -> void:
 				_say("%s: %s!" % [String(e["who"]["name"]), String(e["skill"]["name"])])
 				Sfx.play("ui_start", -6.0)
 				_fx = Battles.FX.get(String(e["skill"].get("id", "")), [])
+				_fx_id = String(e["skill"].get("id", ""))
 				await _step(e["who"], 0.5)
 			"hit":
 				var who: Dictionary = e["who"]
@@ -764,12 +807,12 @@ func _show_fx(target: Dictionary) -> void:
 			var width := 0.5 + 0.25 * power
 			if Hd.on():
 				width = maxf(width, float(target["wide"]) * 2.4)    # (HD: it stands behind the one hit, so it must be wider to glow round it)
-			stage.call("pillar", target["home"], colour, width)
-			stage.call("burst", at, colour, power)
+			stage.call("pillar", target["home"], colour, width, 9.0, target["node"], _fx_id)
+			stage.call("burst", at, colour, power, 0.0, "", target["node"])
 		"rise":
 			stage.call("burst", (target["home"] as Vector3) + Vector3(0.0, 0.2, 0.15), colour, power, 1.6)
 		_:
-			stage.call("burst", at, colour, power)
+			stage.call("burst", at, colour, power, 0.0, "", target["node"])
 
 
 ## GAME FEEL (v0.23.0): several small, brief answers to one hit, sized by a tier.
@@ -890,7 +933,7 @@ func _float(unit: Dictionary, text: String, colour: Color) -> void:
 	l.add_theme_color_override("font_outline_color", UI.C_INK)
 	l.add_theme_constant_override("outline_size", 4)
 	_root.add_child(l)
-	var p: Vector2 = stage.cam.unproject_position((unit["home"] as Vector3) + Vector3(0.0, float(unit["top"]) + 0.4, 0.0))
+	var p: Vector2 = _on_ui((unit["home"] as Vector3) + Vector3(0.0, float(unit["top"]) + 0.4, 0.0))
 	var sz := l.get_minimum_size()
 	l.position = p - Vector2(sz.x * 0.5, 14.0)
 	l.pivot_offset = sz * 0.5
@@ -1021,6 +1064,7 @@ func _take_shot() -> void:
 		# test: --shotspell=<skill id of battles.gd FX> writes battle_spell.png in the middle of that
 		# spell's light, landing on the first monster (a look only: nothing in the fight changes)
 		_fx = Battles.FX.get(G.arg("shotspell", ""), [])
+		_fx_id = G.arg("shotspell", "")
 		_menu.visible = false
 		_show_fx(fight.foes[0])
 		_feel(fight.foes[0], "large")
@@ -1046,16 +1090,27 @@ func _process(delta: float) -> void:
 	var glide := Vector3(-1.6, 2.2, 6.5) * _intro * _intro - Vector3(0.0, 1.4, 4.2) * _push
 	stage.cam.position = _cam_home + Vector3(sin(_t * 0.25) * 0.45, 0.0, 0.0) + jolt + glide
 	var sky := SKY_LOOK * _sky
-	stage.cam.look_at(Stage.AIM + Vector3(0.0, 0.5, 0.0) * _push + sky, Vector3.UP)
+	stage.cam.look_at(stage.aim + Vector3(0.0, 0.5, 0.0) * _push + sky, Vector3.UP)
 	if _marker != null and _marker.visible:
 		var m := _marker.material_override as StandardMaterial3D
 		m.albedo_color.a = 0.5 + 0.25 * sin(_t * 4.0)
 	_arrow.visible = not _turn_unit.is_empty() and not _over and String(_turn_unit.get("side", "")) == "party"
 	if _arrow.visible:
-		var head: Vector2 = stage.cam.unproject_position((_turn_unit["home"] as Vector3) + Vector3(0.0, float(_turn_unit["top"]), 0.0))
+		var head: Vector2 = _on_ui((_turn_unit["home"] as Vector3) + Vector3(0.0, float(_turn_unit["top"]), 0.0))
 		_arrow.position = (head + Vector2(0.0, -3.0 + 2.0 * sin(_t * 5.0))).round()
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
 		var b: Button = tag["button"]
-		var p: Vector2 = stage.cam.unproject_position((u["home"] as Vector3) + Vector3(0.0, float(u["top"]), 0.0))
+		var p: Vector2 = _on_ui((u["home"] as Vector3) + Vector3(0.0, float(u["top"]), 0.0))
+		if Hd.on():
+			# (HD: the frame to tap is as big as the monster really is on the screen)
+			var feet: Vector2 = _on_ui(u["home"])
+			var h := maxf(feet.y - p.y, 12.0)
+			var want := Vector2(maxf(h * float(u["wide"]) / maxf(float(u["top"]), 0.1) * 0.9, 24.0), h * 0.85 + 4.0).round()
+			if b.custom_minimum_size != want:
+				b.custom_minimum_size = want
+				b.size = want
+				(tag["back"] as Control).position.x = (want.x - 34.0) * 0.5
+				var nl: Label = tag["name"]
+				nl.position.x = (want.x - nl.get_minimum_size().x) * 0.5
 		b.position = (p - Vector2(b.size.x * 0.5, 2.0)).round()

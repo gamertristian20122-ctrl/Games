@@ -31,23 +31,28 @@ const Sprite3 = preload("res://scripts/battle/sprite3.gd")
 ##   tame               by day: pale fighters (white robes, pale hair) are drawn a little less bright,
 ##                      so in the full sun they do not burn white and bloom
 ##   spell              how strong spell light is here (by day less: the sun already fills the picture)
+##   pool               [colour, strength]: a broad soft light from high above on the clearing where
+##                      they fight, so the stage is lit and the wood round it falls into deep shade
+##                      (the moonlit ground of the night-battle picture, the golden clearing by day)
 const LOOK := {
-	"forest": {"sun": Color("ffcf8a"), "sun_energy": 2.1, "ambient": Color("b09878"), "ambient_energy": 0.34,
-		"fog": Color("ffe2b8"), "fog_density": 0.005, "fog_sun": 0.8, "fog_aniso": 0.2, "exposure": 1.55,
-		"sky_top": Color("4a5a86"), "sky_low": Color("ffc27a"), "clouds": Color("c8906a"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.7, "tame": 0.8},
+	"forest": {"sun": Color("ffcf8a"), "sun_energy": 2.1, "ambient": Color("8a7458"), "ambient_energy": 0.24,
+		"fog": Color("ffe2b8"), "fog_density": 0.0028, "fog_sun": 0.55, "fog_aniso": 0.2, "exposure": 1.5,
+		"sky_top": Color("3a4a78"), "sky_low": Color("ffb860"), "clouds": Color("b07850"), "stars": 0.0,
+		"wet": 0.0, "top_rim": [0.35, Color("fff0c8")], "fire_boost": 1.0, "spell": 0.7, "tame": 0.8, "beam": 0.07,
+		"pool": [Color("ffc87a"), 2.2]},
 	"forest_night": {"sun": Color("9fb6ff"), "sun_energy": 1.25, "ambient": Color("38487a"), "ambient_energy": 0.30,
-		"fog": Color("6a84c0"), "fog_density": 0.024, "fog_sun": 0.55, "exposure": 1.35,
-		"sky_top": Color("050a18"), "sky_low": Color("16264a"), "clouds": Color("2a3654"), "stars": 1.0,
-		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0, "tame": 0.0},
+		"fog": Color("6a84c0"), "fog_density": 0.012, "fog_sun": 0.4, "exposure": 1.35,
+		"sky_top": Color("03060f"), "sky_low": Color("0f1a33"), "clouds": Color("1b2440"), "stars": 1.0, "sky_glow": Vector3(0.28, 0.14, -0.95),
+		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0, "tame": 0.0, "beam": 0.0,
+		"pool": [Color("a8bcff"), 3.4]},
 	"desert": {"sun": Color("ffe0b0"), "sun_energy": 1.7, "ambient": Color("a89cb4"), "ambient_energy": 0.26,
 		"fog": Color("ffe4c0"), "fog_density": 0.006, "fog_sun": 0.6, "fog_aniso": 0.2, "exposure": 1.45,
 		"sky_top": Color("6a8ac4"), "sky_low": Color("ffd8a0"), "clouds": Color("fff0dc"), "stars": 0.0,
-		"wet": 0.0, "top_rim": [0.3, Color("fff4dc")], "fire_boost": 1.0, "spell": 0.5, "tame": 0.6},
+		"wet": 0.0, "top_rim": [0.3, Color("fff4dc")], "fire_boost": 1.0, "spell": 0.5, "tame": 0.6, "beam": 0.0},
 	"rock": {"sun": Color("ffb890"), "sun_energy": 1.2, "ambient": Color("6a4a5a"), "ambient_energy": 0.30,
 		"fog": Color("a04a2a"), "fog_density": 0.026, "fog_sun": 0.6, "exposure": 1.3,
 		"sky_top": Color("10070a"), "sky_low": Color("4a1a12"), "clouds": Color("3a1a16"), "stars": 0.3,
-		"wet": 0.0, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0},
+		"wet": 0.0, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0, "beam": 0.0},
 }
 const SPELL_ENERGY := 6.0          ## a spell light at power 1 (the flat look's is 5 + 6 x power, without fog)
 const SPELL_FOG := 1.6             ## how much a spell light glows in the air
@@ -79,8 +84,8 @@ void sky() {
 	// clouds: soft drifting banks, lit from the moon's (or the low sun's) side
 	vec2 cp = d.xz / (max(h, 0.02) + 0.25) * 1.6 + vec2(TIME * 0.004, 0.0);
 	float c = smoothstep(0.42, 0.78, fbm(cp));
-	float lit_side = pow(max(dot(d, normalize(moon_dir)), 0.0), 3.0);
-	vec3 cloud = cloud_col * (0.55 + 0.9 * lit_side);
+	float lit_side = pow(max(dot(d, normalize(moon_dir)), 0.0), 8.0);
+	vec3 cloud = cloud_col * (0.5 + 1.3 * lit_side);
 	// the moon (or the sun behind the haze) and its halo
 	float m = dot(d, normalize(moon_dir));
 	float disc = smoothstep(0.9993, 0.9996, m);
@@ -89,11 +94,11 @@ void sky() {
 	vec2 sp = d.xz / (h + 1.0) * 220.0;
 	vec2 cell = floor(sp);
 	float r = hash(cell);
-	float star = step(0.985, r) * smoothstep(0.35, 0.0, length(fract(sp) - 0.5 - (vec2(hash(cell + 3.1), hash(cell + 7.7)) - 0.5) * 0.5));
-	star *= (0.6 + 0.4 * sin(TIME * (1.0 + r * 3.0) + r * 40.0)) * smoothstep(0.05, 0.3, h) * stars * (1.0 - c);
+	float star = step(0.978, r) * smoothstep(0.35, 0.0, length(fract(sp) - 0.5 - (vec2(hash(cell + 3.1), hash(cell + 7.7)) - 0.5) * 0.5));
+	star *= (0.6 + 0.4 * sin(TIME * (1.0 + r * 3.0) + r * 40.0)) * smoothstep(0.0, 0.08, h) * stars * (1.0 - c);
 	col += moon_col * (disc * 6.0 + halo) * (1.0 - c * 0.7);
 	col = mix(col, cloud, c * smoothstep(-0.02, 0.12, h));
-	col += vec3(0.85, 0.9, 1.0) * star * 2.2;
+	col += vec3(0.85, 0.9, 1.0) * star * 3.2;
 	COLOR = col;
 }
 "
@@ -145,6 +150,14 @@ var s                              ## the stage (scripts/battle/stage.gd; untype
 var look := {}
 var attrs: CameraAttributesPractical
 var _band := Vector2.ZERO
+## THE BLOOM HELD OFF THE ONE HIT: a small picture of the screen that the bloom is multiplied by
+## (Environment.glow_map). It is white, except a soft dark patch over every fighter a spell is
+## landing on, so the blazing column glows all round him but never spreads a pale veil over him.
+const GLOW_MAP := Vector2i(96, 48)
+var _glow_img: Image
+var _glow_tex: ImageTexture
+var _held: Array = []              ## {"who": the fighter, "left": seconds, "life": seconds}
+var _glow_clear := true
 static var _dot: GradientTexture2D
 
 
@@ -192,7 +205,7 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	e.glow_enabled = true
 	e.glow_normalized = false
 	for i in 7:
-		e.set_glow_level(i, [0.0, 0.3, 0.7, 1.0, 1.0, 0.85, 0.6][i])
+		e.set_glow_level(i, [0.0, 0.35, 0.8, 1.0, 0.85, 0.5, 0.3][i])     # (the widest levels low: a veil over everything hides the fighters)
 	e.glow_intensity = 0.5
 	e.glow_strength = 1.0
 	e.glow_bloom = 0.0
@@ -201,15 +214,15 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
 	# the air: thin fog that the key light and every spell light really scatter in
 	e.fog_enabled = true                    # (plus a little plain distance fog, so the far wood melts)
-	e.fog_density = float(s.look.get("mist_density", 0.01)) * 0.5
+	e.fog_density = float(s.look.get("mist_density", 0.01)) * 0.25     # (low: far silhouettes stay dark against the sky)
 	e.fog_sky_affect = 0.0
 	e.volumetric_fog_enabled = true
 	e.volumetric_fog_density = num("fog_density")
 	e.volumetric_fog_albedo = look["fog"]
 	e.volumetric_fog_anisotropy = float(look.get("fog_aniso", 0.6))     # (by day low: looking into a low sun, strong forward scatter is a wall of haze)
-	e.volumetric_fog_length = 70.0
+	e.volumetric_fog_length = 48.0
 	e.volumetric_fog_detail_spread = 1.4
-	e.volumetric_fog_ambient_inject = 0.25
+	e.volumetric_fog_ambient_inject = 0.08
 	e.volumetric_fog_sky_affect = 0.15
 	e.volumetric_fog_temporal_reprojection_amount = 0.6   # (a spell's flash must not smear for long)
 	# the sky (seen as the battle opens, and mirrored in the wet ground)
@@ -221,8 +234,9 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	mat.set_shader_parameter("low_col", look["sky_low"])
 	mat.set_shader_parameter("cloud_col", look["clouds"])
 	mat.set_shader_parameter("stars", num("stars"))
-	var to_light := sun.global_transform.basis.z
-	mat.set_shader_parameter("moon_dir", Vector3(to_light.x, maxf(to_light.y, 0.25), to_light.z).normalized())
+	# (the moon's glow, or the evening sun's, low in the open sky behind the fighters, left of the
+	# middle: the camera looks nearly level and sees only the sky's lowest band)
+	mat.set_shader_parameter("moon_dir", (look.get("sky_glow", Vector3(-0.36, 0.13, -0.92)) as Vector3).normalized())
 	mat.set_shader_parameter("moon_col", Vector3(1.0, 0.95, 0.85) if num("stars") < 0.5 else Vector3(0.8, 0.88, 1.0))
 	var sky := Sky.new()
 	sky.sky_material = mat
@@ -242,9 +256,31 @@ func env(e: Environment, sun: DirectionalLight3D) -> void:
 	sun.shadow_blur = 1.3
 	sun.light_angular_distance = 1.4
 	sun.light_volumetric_fog_energy = num("fog_sun")
+	# the pool of light on the fighting ground (see "pool")
+	var pool: Array = look.get("pool", [])
+	if not pool.is_empty():
+		var sp := SpotLight3D.new()
+		sp.light_color = pool[0]
+		sp.light_energy = float(pool[1])
+		sp.spot_range = 17.0
+		sp.spot_angle = 36.0
+		sp.spot_angle_attenuation = 2.2
+		sp.spot_attenuation = 0.0
+		sp.light_volumetric_fog_energy = 0.0         # (no lit air between the camera and the fighters)
+		sp.shadow_enabled = false
+		sp.light_specular = 0.2
+		sp.position = Vector3(0.5, 9.5, 3.0)
+		s.add_child(sp)
+		sp.look_at(Vector3(0.5, 0.0, -0.2), Vector3(0.0, 0.0, -1.0))
 	RenderingServer.directional_shadow_atlas_set_size(4096, true)
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_HIGH)
 	RenderingServer.positional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
+	# the bloom's map (see GLOW_MAP)
+	_glow_img = Image.create(GLOW_MAP.x, GLOW_MAP.y, false, Image.FORMAT_L8)
+	_glow_img.fill(Color.WHITE)
+	_glow_tex = ImageTexture.create_from_image(_glow_img)
+	e.glow_map = _glow_tex
+	e.glow_map_strength = 1.0
 	# the camera's own depth of field (focus() sets the band every frame)
 	attrs = CameraAttributesPractical.new()
 	attrs.dof_blur_far_enabled = true
@@ -288,7 +324,9 @@ func fighter(sprite: MeshInstance3D) -> void:
 
 ## SPELL LIGHT: a real light that flares up on a spot and fades, lighting the ground, the fighters
 ## and the trees round it and glowing in the air. Big ones (power 2 and over) throw shadows.
-func spell_light(at: Vector3, colour: Color, power: float, life: float) -> void:
+## `air` scales how much it glows in the fog (0 for a light in front of a fighter: lit air between him
+## and the camera is a veil over him).
+func spell_light(at: Vector3, colour: Color, power: float, life: float, air: float = 1.0) -> void:
 	var l := OmniLight3D.new()
 	l.position = at
 	l.light_color = colour
@@ -296,7 +334,7 @@ func spell_light(at: Vector3, colour: Color, power: float, life: float) -> void:
 	l.omni_range = 7.0 + 3.0 * power
 	l.omni_attenuation = 1.2
 	l.light_size = 0.4
-	l.light_volumetric_fog_energy = SPELL_FOG * (0.6 + 0.4 * power) * num("spell")
+	l.light_volumetric_fog_energy = SPELL_FOG * (0.6 + 0.4 * power) * num("spell") * air
 	l.shadow_enabled = power >= 2.0
 	l.shadow_bias = 0.06
 	l.shadow_normal_bias = 1.0
@@ -403,9 +441,596 @@ func swirl(at: Vector3, colour: Color, power: float, height: float) -> void:
 	s.get_tree().create_timer(p.lifetime + 0.4).timeout.connect(p.queue_free)
 
 
+# ------------------------------------------------------------------ the blazing spells
+## A WHIRL OF LIGHT, sculpted by code: an open cylinder (or funnel) of light, drawn with thin
+## torn FILAMENTS that wind round it and climb (ridged noise followed along a spiral, so every strand
+## is a long curl, never a net of crossing stripes), over a soft body of light that is hottest at its
+## foot, and brightest where the eye looks along its side (like a glass tube of light).
+## Its far half stands behind the one hit (that one's own picture hides it); its near half is only
+## a thin veil, and where the one hit stands on the screen (`hold`) it is thinned further, so he
+## always reads in front of the blaze.
+const VORTEX_CODE := "
+shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, shadows_disabled;
+uniform vec3 col : source_color = vec3(0.4, 0.7, 1.0);
+uniform float heat = 3.0;
+uniform float alpha = 0.0;
+uniform float height = 8.0;
+uniform float grow = 1.0;
+uniform float twist = 1.4;
+uniform float spin = 1.0;
+uniform float bands = 6.0;
+uniform float sharp = 5.0;
+uniform float front = 0.3;
+uniform float body_k = 1.0;
+uniform vec4 hold = vec4(-1.0);
+uniform float seed = 0.0;
+varying float hy0;
+varying vec2 ring;
+float hash3(vec3 p) {
+	p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+	p *= 17.0;
+	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float noise3(vec3 x) {
+	vec3 i = floor(x);
+	vec3 f = fract(x);
+	f = f * f * (3.0 - 2.0 * f);
+	float a = mix(mix(hash3(i), hash3(i + vec3(1.0, 0.0, 0.0)), f.x), mix(hash3(i + vec3(0.0, 1.0, 0.0)), hash3(i + vec3(1.0, 1.0, 0.0)), f.x), f.y);
+	float b = mix(mix(hash3(i + vec3(0.0, 0.0, 1.0)), hash3(i + vec3(1.0, 0.0, 1.0)), f.x), mix(hash3(i + vec3(0.0, 1.0, 1.0)), hash3(i + vec3(1.0, 1.0, 1.0)), f.x), f.y);
+	return mix(a, b, f.z);
+}
+float ridged(vec3 p) {
+	float v = 0.0;
+	float a = 0.62;
+	for (int i = 0; i < 3; i++) {
+		float n = 1.0 - abs(noise3(p) * 2.0 - 1.0);
+		v += pow(n, sharp) * a;
+		p = p * vec3(2.1, 2.1, 1.7) + vec3(3.1, 1.7, 5.3);
+		a *= 0.5;
+	}
+	return v;
+}
+void vertex() {
+	hy0 = VERTEX.y / height + 0.5;
+	ring = normalize(VERTEX.xz + vec2(1e-5));
+}
+void fragment() {
+	float hy = clamp(hy0, 0.0, 1.0);
+	float t = TIME * spin + seed;
+	// the spiral: along one strand the angle a stays the same while it climbs
+	float a = atan(ring.y, ring.x) + hy * twist * 6.2831853 - t * 2.4;
+	float r = bands * 0.3;
+	vec3 p = vec3(cos(a) * r, sin(a) * r, hy * 4.2 - TIME * 2.6 + seed);
+	float strand = ridged(p);
+	// torn into shreds along their length
+	float tear = noise3(vec3(cos(a) * r * 0.8, sin(a) * r * 0.8, hy * 11.0 - TIME * 6.0 + seed * 2.0));
+	strand *= smoothstep(0.3, 0.6, tear + 0.1);
+	float fade = smoothstep(0.0, 0.05, hy) * (1.0 - smoothstep(grow * 0.62, grow * 0.62 + 0.38 * grow + 0.001, hy));
+	float edge = 1.0 - abs(dot(normalize(NORMAL), normalize(VIEW)));
+	edge = 0.35 + 0.65 * edge * edge;
+	float k = 1.0;
+	if (FRONT_FACING) {
+		k = front;
+		vec2 sc = SCREEN_UV;
+		float inside = smoothstep(hold.x - 0.012, hold.x + 0.006, sc.x) * (1.0 - smoothstep(hold.z - 0.006, hold.z + 0.012, sc.x))
+			* smoothstep(hold.y - 0.02, hold.y + 0.01, sc.y) * (1.0 - smoothstep(hold.w - 0.01, hold.w + 0.02, sc.y));
+		k *= 1.0 - 0.9 * inside;
+	}
+	// a body of light under the strands, hottest at the foot, so it reads as a volume
+	float body = (0.05 + 0.42 * pow(1.0 - hy, 2.6)) * body_k;
+	float v = (strand * mix(1.6, 0.7, hy) + body) * edge * fade * k * alpha;
+	vec3 c = mix(col, vec3(1.0), clamp(smoothstep(0.5, 1.0, strand) * 0.4 + pow(1.0 - hy, 6.0) * 0.35, 0.0, 1.0));
+	ALBEDO = c * heat;
+	ALPHA = clamp(v, 0.0, 1.0);
+}
+"
+
+## A BOLT of lightning (or a shard of a spell): a jagged line of light built once by code as a
+## flat ribbon turned to the camera; hot white along its middle, coloured at its edge. `flick`
+## makes it stutter on and off like real lightning.
+const BOLT_CODE := "
+shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, shadows_disabled;
+uniform vec3 col : source_color = vec3(0.5, 0.8, 1.0);
+uniform float heat = 4.0;
+uniform float alpha = 0.0;
+void fragment() {
+	float across = clamp(1.0 - abs(UV.x * 2.0 - 1.0), 0.0, 1.0);
+	float core = pow(across, 5.0);
+	float v = (pow(across, 1.6) * 0.75 + core) * alpha * (1.0 - smoothstep(0.75, 1.0, UV.y) * 0.8);
+	ALBEDO = mix(col, vec3(1.0), core * 0.85) * heat;
+	ALPHA = clamp(v, 0.0, 1.0);
+}
+"
+
+## A SPARK that is a crisp streak of light along the way it flies (the particle's Y axis follows its
+## speed: CPUParticles3D `particle_flag_align_y`), turned flat to the camera. Hot white middle,
+## coloured edge, a tapering tail.
+const STREAK_CODE := "
+shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, fog_disabled, shadows_disabled;
+uniform vec3 col : source_color = vec3(0.5, 0.8, 1.0);
+uniform float heat = 4.0;
+varying float fade;
+void vertex() {
+	vec3 mid = MODEL_MATRIX[3].xyz;
+	vec3 axis = MODEL_MATRIX[1].xyz;
+	float len = length(axis);
+	fade = COLOR.a;
+	axis = axis / max(len, 1e-4);
+	vec3 to_cam = normalize(CAMERA_POSITION_WORLD - mid);
+	vec3 side = cross(axis, to_cam);
+	side = length(side) < 1e-3 ? vec3(1.0, 0.0, 0.0) : normalize(side);
+	float wide = length(MODEL_MATRIX[0].xyz);
+	vec3 w = mid + side * VERTEX.x * wide + axis * VERTEX.y * len;
+	POSITION = PROJECTION_MATRIX * VIEW_MATRIX * vec4(w, 1.0);
+	if (len < 1e-4 || !(fade > 0.0)) {
+		POSITION = vec4(2.0, 2.0, 2.0, 1.0);       // (asleep: drawn nowhere)
+	}
+}
+void fragment() {
+	float across = clamp(1.0 - abs(UV.x * 2.0 - 1.0), 0.0, 1.0);
+	float along = clamp(1.0 - UV.y, 0.0, 1.0);                 // 1 at the head (the way it flies), 0 at the tail
+	float v = pow(across, 2.5) * smoothstep(0.0, 0.7, along) * (1.0 - smoothstep(0.85, 1.0, along)) * fade;
+	ALBEDO = mix(col, vec3(1.0), pow(across, 6.0) * 0.8) * heat;
+	ALPHA = clamp(v, 0.0, 1.0);
+}
+"
+
+static var _vortex_shader: Shader
+static var _streak_shader: Shader
+
+
+func _vortex_mat() -> ShaderMaterial:
+	if _vortex_shader == null:
+		_vortex_shader = Shader.new()
+		_vortex_shader.code = VORTEX_CODE
+	var m := ShaderMaterial.new()
+	m.shader = _vortex_shader
+	m.render_priority = 11
+	return m
+
+
+func _streak_mat(colour: Color, heat: float) -> ShaderMaterial:
+	if _streak_shader == null:
+		_streak_shader = Shader.new()
+		_streak_shader.code = STREAK_CODE
+	var m := ShaderMaterial.new()
+	m.shader = _streak_shader
+	m.set_shader_parameter("col", Vector3(colour.r, colour.g, colour.b))
+	m.set_shader_parameter("heat", heat)
+	m.render_priority = 12
+	return m
+
+
+## Where a fighter stands on the screen, 0..1 (for a vortex's `hold`). {} = nobody.
+func screen_box(fighter: Node3D) -> Vector4:
+	if fighter == null or not is_instance_valid(fighter):
+		return Vector4(-1.0, -1.0, -1.0, -1.0)
+	var cam: Camera3D = s.cam
+	var vp: Vector2 = s.get_viewport().get_visible_rect().size
+	var h := float(fighter.call("height"))
+	var feet := cam.unproject_position(fighter.global_position) / vp
+	var head := cam.unproject_position(fighter.global_position + Vector3(0.0, h, 0.0)) / vp
+	var half := (feet.y - head.y) * 0.42 * (vp.y / vp.x)
+	var mesh := (fighter as MeshInstance3D).mesh as QuadMesh
+	if mesh != null:
+		half = maxf(half, (cam.unproject_position(fighter.global_position + Vector3(mesh.size.x * 0.5, 0.0, 0.0)) / vp - feet).x)
+	return Vector4(feet.x - half, head.y - 0.01, feet.x + half, feet.y + 0.01)
+
+
+## THE BIG SPELL: a whirl of light that climbs round the one hit and blazes: an inner column and a
+## wider funnel of winding streaks (VORTEX_CODE), crisp sparks spiralling up it and spraying from its
+## foot (STREAK_CODE), a real light, and a pool of light on the ground. `at` = the feet of the one
+## hit, `radius` about his half width, `fighter` his picture (held under the bloom, rimmed).
+## `style`: "storm" = bolts of lightning out of the sky into it; "" = shards of light flung up round it.
+func vortex(at: Vector3, colour: Color, power: float, height: float, radius: float, fighter: Node3D = null, life: float = 1.15, style: String = "") -> void:
+	var hold := screen_box(fighter)
+	# (deep, saturated colour: the tone curve turns hot light white by itself; mixed with white
+	# first, the whole column came out a pale grey-white)
+	var hot := Color.from_hsv(colour.h, minf(colour.s * 1.4 + 0.1, 1.0), colour.v)
+	var layers := [
+		# [bottom radius, top radius, height share, strands round, turns, spin, thinness, heat, near half, body]
+		[radius * 0.45, radius * 0.6, 1.0, 4.0, 0.6, 0.7, 2.0, 3.6, 0.25, 1.6],
+		[radius * 0.8, radius * 1.15, 1.0, 6.0, 1.3, 0.9, 4.0, 3.0, 0.3, 0.8],
+		[radius * 1.05, radius * 2.6, 0.85, 10.0, -0.8, -1.3, 9.0, 2.4, 0.2, 0.2],
+		[radius * 1.4, radius * 3.3, 0.5, 14.0, 0.5, 1.8, 12.0, 1.8, 0.12, 0.08],
+	]
+	for i in layers.size():
+		var row: Array = layers[i]
+		var hgt := height * float(row[2])
+		var cyl := CylinderMesh.new()
+		cyl.bottom_radius = float(row[0])
+		cyl.top_radius = float(row[1])
+		cyl.height = hgt
+		cyl.radial_segments = 40
+		cyl.rings = 8
+		cyl.cap_top = false
+		cyl.cap_bottom = false
+		var m := _vortex_mat()
+		m.set_shader_parameter("col", Vector3(hot.r, hot.g, hot.b))
+		m.set_shader_parameter("height", hgt)
+		m.set_shader_parameter("bands", float(row[3]))
+		m.set_shader_parameter("twist", float(row[4]))
+		m.set_shader_parameter("spin", float(row[5]))
+		m.set_shader_parameter("sharp", float(row[6]))
+		m.set_shader_parameter("heat", float(row[7]) * (0.75 + 0.15 * power) * num("spell"))
+		m.set_shader_parameter("front", float(row[8]))
+		m.set_shader_parameter("body_k", float(row[9]))
+		m.set_shader_parameter("hold", hold)
+		m.set_shader_parameter("seed", randf() * 10.0)
+		m.set_shader_parameter("grow", 0.0)
+		var node := MeshInstance3D.new()
+		node.mesh = cyl
+		node.material_override = m
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		node.position = at + Vector3(0.0, hgt * 0.5 + 0.02, 0.0)
+		s.add_child(node)
+		var tw: Tween = s.create_tween()
+		tw.tween_method(func(v: float) -> void: m.set_shader_parameter("grow", v), 0.0, 1.0, 0.22 + 0.06 * i).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_method(func(v: float) -> void: m.set_shader_parameter("alpha", v), 0.0, 1.0, 0.08)
+		tw.tween_interval(life * 0.3)
+		tw.tween_method(func(v: float) -> void: m.set_shader_parameter("alpha", v), 1.0, 0.0, life * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_callback(node.queue_free)
+	# sparks that wind up the whirl, and a spray of them from its foot
+	_streaks(at + Vector3(0.0, 0.2, 0.0), colour, power, height, radius, true)
+	_streaks(at + Vector3(0.0, 0.3, 0.0), colour, power, height, radius, false)
+	motes(at, colour, power, height, radius)
+	if style == "storm":
+		# lightning out of the sky into the column, forking as it comes
+		for i in 3:
+			var top := at + Vector3(randf_range(-3.5, 3.5), height * 1.6, randf_range(-4.0, -2.5))     # (behind: a tall one leans back by the stand-up tilt)
+			bolt(top, at + Vector3(randf_range(-0.3, 0.3), 0.05, -1.5), colour.lerp(Color.WHITE, 0.3), randf_range(0.16, 0.26), life * 0.55, i * life * 0.12, 3, 6.0)
+	shards(at, colour, height, radius, int(6 + 2 * power), life)
+	if fighter != null and is_instance_valid(fighter) and fighter.has_method("spell_hold"):
+		fighter.call("spell_hold", colour.lerp(Color.WHITE, 0.4), 1.6, life)
+		hold_glow(fighter, life + 0.25)
+	# (anybody else standing inside the whirl keeps his own shape too)
+	for p: Node3D in s._people:
+		if is_instance_valid(p) and p != fighter and Vector2(p.global_position.x - at.x, p.global_position.z - at.z).length() < radius * 3.0:
+			hold_glow(p, life + 0.25)
+
+
+## Crisp streaks of light: `up` = climbing the whirl in a spiral; else a spray out of its foot.
+func _streaks(at: Vector3, colour: Color, power: float, height: float, radius: float, up: bool) -> void:
+	var sp := Sparks.new()
+	var n := int(clampf((54.0 if up else 40.0) * power, 30.0, 170.0))
+	sp.centre = at
+	if up:
+		sp.spin = 15.0
+		sp.pull = -1.5
+		sp.grav = Vector3(0.0, 2.0, 0.0)
+		sp.drag = 0.6
+	else:
+		sp.spin = 3.0
+		sp.pull = 4.0
+		sp.grav = Vector3(0.0, -9.0, 0.0)
+		sp.drag = 2.2
+	sp.start(n, _streak_mat(colour.lerp(Color.WHITE, 0.2), 5.0 * num("spell") + 1.0))
+	for i in n:
+		var a := randf() * TAU
+		var r := radius * (randf_range(0.6, 1.1) if up else randf_range(0.1, 0.6))
+		var p := at + Vector3(cos(a) * r, randf() * (0.6 if up else 0.2), sin(a) * r)
+		var out := Vector3(cos(a), 0.0, sin(a))
+		var tangent := Vector3(-sin(a), 0.0, cos(a))
+		var v: Vector3
+		if up:
+			v = Vector3(0.0, height * randf_range(0.6, 1.3), 0.0) + tangent * randf_range(2.0, 4.0)
+		else:
+			v = (out * randf_range(0.6, 1.0) + Vector3(0.0, randf_range(0.5, 1.4), 0.0)).normalized() * randf_range(4.0, 9.0 + 2.0 * power)
+		sp.add(i, p, v, randf() * (0.5 if up else 0.08), randf_range(0.45, 0.8) if up else randf_range(0.35, 0.6))
+	s.add_child(sp)
+
+
+static var _bolt_shader: Shader
+
+
+## A JAGGED BOLT of light from `from` to `to` (lightning out of the sky; a shard of a spell): the
+## line is broken by midpoint displacement, built once as a ribbon turned to the camera, and
+## flickers on and off for `life` seconds after `delay`. `forks` thinner side bolts branch off it.
+func bolt(from: Vector3, to: Vector3, colour: Color, width: float, life: float, delay: float = 0.0, forks: int = 0, heat: float = 5.0) -> void:
+	var pts: Array[Vector3] = [from, to]
+	var jag := from.distance_to(to) * 0.16
+	for level in 5:
+		var next: Array[Vector3] = []
+		for i in pts.size() - 1:
+			var a: Vector3 = pts[i]
+			var b: Vector3 = pts[i + 1]
+			var d := (b - a)
+			var side := d.cross(Vector3(0.0, 0.0, 1.0)).normalized()
+			if side.length() < 0.5:
+				side = Vector3(1.0, 0.0, 0.0)
+			next.append(a)
+			next.append((a + b) * 0.5 + side * randf_range(-jag, jag) + Vector3(0.0, 0.0, randf_range(-jag, jag) * 0.3))
+		next.append(pts[pts.size() - 1])
+		pts = next
+		jag *= 0.52
+	if _bolt_shader == null:
+		_bolt_shader = Shader.new()
+		_bolt_shader.code = BOLT_CODE
+	var m := ShaderMaterial.new()
+	m.shader = _bolt_shader
+	m.set_shader_parameter("col", Vector3(colour.r, colour.g, colour.b))
+	m.set_shader_parameter("heat", heat * num("spell"))
+	m.set_shader_parameter("alpha", 0.0)
+	m.render_priority = 12
+	var node := MeshInstance3D.new()
+	node.mesh = _ribbon(pts, width)
+	node.material_override = m
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	s.add_child(node)
+	# lightning stutters: on, nearly off, on again, then dies away
+	var tw: Tween = s.create_tween()
+	if delay > 0.0:
+		tw.tween_interval(delay)
+	for v: float in [1.0, 0.25, 1.0, 0.55, 0.9]:
+		tw.tween_callback(func() -> void: m.set_shader_parameter("alpha", v))
+		tw.tween_interval(life * 0.09)
+	tw.tween_method(func(v: float) -> void: m.set_shader_parameter("alpha", v), 0.9, 0.0, life * 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_callback(node.queue_free)
+	for f in forks:
+		var i0 := randi_range(pts.size() / 5, pts.size() * 3 / 5)
+		var start: Vector3 = pts[i0]
+		var dir := (to - from).normalized()
+		var out := Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-0.3, 0.3)).normalized()
+		var reach := from.distance_to(to) * randf_range(0.18, 0.35)
+		bolt(start, start + (dir * 0.7 + out * 0.6).normalized() * reach, colour, width * 0.45, life * 0.8, delay + life * 0.05, 0, heat * 0.8)
+
+
+## A flat strip of triangles along `pts`, `width` wide, turned to face the camera (UV.x across, UV.y
+## along; the far end tapers to a point).
+func _ribbon(pts: Array[Vector3], width: float) -> ArrayMesh:
+	var eye: Vector3 = s.cam.global_position
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := pts.size()
+	var left := PackedVector3Array()
+	var right := PackedVector3Array()
+	for i in n:
+		var p: Vector3 = pts[i]
+		var d: Vector3 = (pts[mini(i + 1, n - 1)] - pts[maxi(i - 1, 0)]).normalized()
+		var side := d.cross((eye - p).normalized()).normalized()
+		var w := width * 0.5 * (1.0 - 0.6 * float(i) / float(n - 1))
+		left.append(p - side * w)
+		right.append(p + side * w)
+	for i in n - 1:
+		var v0 := float(i) / float(n - 1)
+		var v1 := float(i + 1) / float(n - 1)
+		for q: Array in [[left[i], 0.0, v0], [right[i], 1.0, v0], [right[i + 1], 1.0, v1], [left[i], 0.0, v0], [right[i + 1], 1.0, v1], [left[i + 1], 0.0, v1]]:
+			st.set_uv(Vector2(float(q[1]), float(q[2])))
+			st.add_vertex(q[0])
+	return st.commit()
+
+
+## SHARDS: short jagged slivers of light flung up round a column as it blazes (the torn edges of
+## the spell in the night-battle picture), each lit for a moment, one after another.
+func shards(at: Vector3, colour: Color, height: float, radius: float, count: int, life: float) -> void:
+	for i in count:
+		var a := randf() * TAU
+		var r := radius * randf_range(0.9, 1.8)
+		var base := at + Vector3(cos(a) * r, randf_range(0.3, height * 0.45), sin(a) * r * 0.6 - 0.4)
+		var len := randf_range(0.9, 2.2)
+		var tip := base + Vector3(randf_range(-0.5, 0.5) + cos(a) * 0.4, len, 0.0)
+		bolt(base, tip, colour.lerp(Color.WHITE, 0.25), randf_range(0.07, 0.13), life * randf_range(0.35, 0.6), randf() * life * 0.45, 0, 4.0)
+
+
+## MOTES: a cloud of small hot specks that hang round a spell and drift up slowly after it has
+## blazed (the glittering dots all round the column in the night-battle picture).
+func motes(at: Vector3, colour: Color, power: float, height: float, radius: float) -> void:
+	var p := CPUParticles3D.new()
+	p.one_shot = true
+	p.explosiveness = 0.75
+	p.amount = int(clampf(110.0 * power, 80.0, 320.0))
+	p.lifetime = 1.9
+	p.position = at + Vector3(0.0, height * 0.3, 0.0)
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = radius * 2.4
+	p.direction = Vector3(0.0, 1.0, 0.0)
+	p.spread = 70.0
+	p.gravity = Vector3(0.0, 0.5, 0.0)
+	p.initial_velocity_min = 0.4
+	p.initial_velocity_max = 2.6
+	p.damping_min = 0.6
+	p.damping_max = 1.6
+	p.scale_amount_min = 0.35
+	p.scale_amount_max = 1.0
+	p.lifetime_randomness = 0.5
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.08, 0.5, 1.0])
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0.75), Color(1, 1, 1, 0)])
+	p.color_ramp = ramp
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.albedo_texture = dot()
+	var hot := colour.lerp(Color.WHITE, 0.35)
+	var k := 5.0 * num("spell") + 1.0
+	m.albedo_color = Color(hot.r * k, hot.g * k, hot.b * k, 1.0)
+	m.vertex_color_use_as_albedo = true
+	m.disable_fog = true
+	m.render_priority = 12
+	var q := QuadMesh.new()
+	q.size = Vector2(0.16, 0.16)
+	q.material = m
+	p.mesh = q
+	s.add_child(p)
+	p.emitting = true
+	s.get_tree().create_timer(p.lifetime * 1.5 + 0.4).timeout.connect(p.queue_free)
+
+
+## A handful of sparks flown by code (not a particle system: each knows the way it flies, so it is
+## drawn as a streak along it; see STREAK_CODE). Frees itself when the last one is out.
+class Sparks extends MultiMeshInstance3D:
+	var centre := Vector3.ZERO
+	var spin := 0.0                  ## sideways push round the upright through `centre` (a spiral)
+	var pull := 0.0                  ## push away from that upright (negative: towards it)
+	var grav := Vector3.ZERO
+	var drag := 0.0
+	var _p := PackedVector3Array()
+	var _v := PackedVector3Array()
+	var _age := PackedFloat32Array()
+	var _life := PackedFloat32Array()
+
+	func start(n: int, mat: Material) -> void:
+		var q := QuadMesh.new()
+		q.size = Vector2(1.0, 1.0)
+		q.material = mat
+		multimesh = MultiMesh.new()
+		multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		multimesh.use_colors = true
+		multimesh.mesh = q
+		multimesh.instance_count = n
+		cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		extra_cull_margin = 40.0
+		_p.resize(n)
+		_v.resize(n)
+		_age.resize(n)
+		_life.resize(n)
+		for i in n:
+			multimesh.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ZERO), Vector3.ZERO))
+			multimesh.set_instance_color(i, Color(1, 1, 1, 0))
+
+	## One spark: where, how fast, after how long it starts, how long it lives.
+	func add(i: int, at: Vector3, vel: Vector3, delay: float, life: float) -> void:
+		_p[i] = at
+		_v[i] = vel
+		_age[i] = -delay
+		_life[i] = life
+
+	func _process(delta: float) -> void:
+		var alive := false
+		for i in _p.size():
+			var age := _age[i] + delta
+			_age[i] = age
+			if age < 0.0 or age > _life[i]:
+				if age <= _life[i]:
+					alive = true
+				multimesh.set_instance_color(i, Color(1, 1, 1, 0))
+				multimesh.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ZERO), _p[i]))
+				continue
+			alive = true
+			var v := _v[i]
+			var flat := Vector3(_p[i].x - centre.x, 0.0, _p[i].z - centre.z)
+			if flat.length_squared() > 0.0001:
+				var out := flat.normalized()
+				v += (Vector3(-out.z, 0.0, out.x) * spin + out * pull) * delta
+			v += grav * delta
+			v *= maxf(1.0 - drag * delta, 0.0)
+			_v[i] = v
+			_p[i] += v * delta
+			var speed := v.length()
+			var t := age / _life[i]
+			var fade := smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.55, 1.0, t))
+			if speed < 0.05:
+				multimesh.set_instance_color(i, Color(1, 1, 1, 0))
+				continue
+			var dir := v / speed
+			var length := clampf(speed * 0.07, 0.18, 1.1)
+			multimesh.set_instance_transform(i, Transform3D(Basis(Vector3(0.11, 0.0, 0.0), dir * length, Vector3(0.0, 0.0, 1.0)), _p[i]))
+			multimesh.set_instance_color(i, Color(1, 1, 1, fade))
+		if not alive:
+			queue_free()
+
+
+## THE HD SCENERY. The camera looks nearly level, so the picture reads in bands, front to back,
+## like the night-battle picture the owner sent: the lit clearing; a foot of bushes and stones;
+## tall wood on both WINGS that frames the stage; lone trees and stones on the open ground in the
+## middle distance; a low dark treeline far off; and over it all the SKY (clouds, stars and the moon's
+## glow by night, a warm evening sky by day). The middle stays open, so a spell's column of light
+## stands against the sky. All pieces are the place's own pack art (stage.gd LOOKS lists).
+func scenery(rng: RandomNumberGenerator) -> void:
+	# 1. the foot of the clearing: bushes and stones, the middle left open (the fire stands there)
+	for i in 30:
+		var bx := rng.randf_range(-18.0, 18.0)
+		var bz := rng.randf_range(-8.5, -4.8)
+		if absf(bx - 0.5) < 3.4:
+			continue
+		s.prop(s._pick("bushes" if rng.randf() < 0.65 else "rocks"), Vector3(bx, 0.0, bz), rng.randf() < 0.5, 0.012)
+	for side: float in [-1.0, 1.0]:
+		for i in 6:
+			s.prop(s._pick("bushes" if i % 3 != 2 else "rocks"), Vector3(side * rng.randf_range(10.5, 16.0), 0.0, rng.randf_range(-4.0, 3.0)), rng.randf() < 0.5, 0.012)
+	# 2. ledges: stones heaped at both sides of the middle distance (a rock shelf, as in the picture)
+	for side: float in [-1.0, 1.0]:
+		var cx := side * rng.randf_range(8.0, 10.5)
+		var cz := rng.randf_range(-11.0, -9.0)
+		for k in 5:
+			s.prop(s._pick("rocks"), Vector3(cx + rng.randf_range(-2.2, 2.2), 0.0, cz + rng.randf_range(-0.8, 0.8)), rng.randf() < 0.5, 0.0, k < 2)
+	# 3. the wings: tall wood left and right, nearest first; the near ones throw their shadows
+	for side: float in [-1.0, 1.0]:
+		var z := -7.5
+		while z > -30.0:
+			var x := side * (rng.randf_range(11.5, 14.0) + (-z - 7.5) * 0.35)
+			var kind := "trees" if z > -11.0 else "big_trees"
+			s.prop(s._pick(kind), Vector3(x, 0.0, z), rng.randf() < 0.5, 0.05, z > -12.0)
+			# a second, deeper tree further out, so the wing is a wood and not a fence
+			s.prop(s._pick("big_trees"), Vector3(x + side * rng.randf_range(4.0, 8.0), 0.0, z - rng.randf_range(1.0, 3.0)), rng.randf() < 0.5, 0.06, false)
+			z -= rng.randf_range(2.6, 4.2)
+	# 4. the middle distance: a few lone small trees, bushes and stones; low, so the sky shows over them
+	for i in 12:
+		var x := rng.randf_range(-11.0, 11.0)
+		var z := rng.randf_range(-13.0, -26.0)
+		var pick := "small_trees" if rng.randf() < 0.35 else ("bushes" if rng.randf() < 0.6 else "rocks")
+		s.prop(s._pick(pick), Vector3(x, 0.0, z), rng.randf() < 0.5, 0.03, false)
+	# 5. the far treeline: a dense band of the small trees on the low rise, all the way across, low
+	# enough that the sky stays open over it
+	var fx := -75.0
+	while fx < 75.0:
+		s.prop(s._pick("small_trees"), Vector3(fx, 0.0, rng.randf_range(-40.0, -52.0)), rng.randf() < 0.5, 0.02, false)
+		fx += rng.randf_range(1.8, 3.4)
+
+
+## Keep the bloom off `fighter` for `seconds` (it comes back over the last third).
+func hold_glow(fighter: Node3D, seconds: float) -> void:
+	if fighter == null or _glow_img == null:
+		return
+	for h: Dictionary in _held:
+		if h["who"] == fighter:
+			h["left"] = maxf(float(h["left"]), seconds)
+			h["life"] = maxf(float(h["life"]), seconds)
+			return
+	_held.append({"who": fighter, "left": seconds, "life": seconds})
+	_sync_glow(0.0)              # (at once: a frame of bloom over him is a white flash)
+
+
+## Every frame: redraw the bloom's map round every fighter it is held off.
+func _sync_glow(delta: float) -> void:
+	if _glow_img == null or (_held.is_empty() and _glow_clear):
+		return
+	_glow_img.fill(Color.WHITE)
+	var keep: Array = []
+	for h: Dictionary in _held:
+		h["left"] = float(h["left"]) - delta
+		var who: Node3D = h["who"]
+		if float(h["left"]) <= 0.0 or not is_instance_valid(who) or not who.is_visible_in_tree():
+			continue
+		keep.append(h)
+		var k := clampf(float(h["left"]) / (float(h["life"]) * 0.35), 0.0, 1.0)     # (how much is held now)
+		var box := screen_box(who)
+		if box.x < 0.0:
+			continue
+		# a soft rounded patch a little bigger than the fighter: nearly no bloom inside
+		var cx := (box.x + box.z) * 0.5 * GLOW_MAP.x
+		var cy := (box.y + box.w) * 0.5 * GLOW_MAP.y
+		var rx := maxf((box.z - box.x) * 0.5 * GLOW_MAP.x, 1.0) + 1.5
+		var ry := maxf((box.w - box.y) * 0.5 * GLOW_MAP.y, 1.0) + 1.5
+		for y in range(maxi(int(cy - ry - 2.0), 0), mini(int(cy + ry + 3.0), GLOW_MAP.y)):
+			for x in range(maxi(int(cx - rx - 2.0), 0), mini(int(cx + rx + 3.0), GLOW_MAP.x)):
+				var d := Vector2((x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry).length()
+				var dark := (1.0 - smoothstep(0.75, 1.25, d)) * 0.9 * k
+				var was := _glow_img.get_pixel(x, y).r
+				_glow_img.set_pixel(x, y, Color(minf(was, 1.0 - dark), 0.0, 0.0))
+	_held = keep
+	_glow_clear = keep.is_empty()
+	_glow_tex.update(_glow_img)
+
+
 ## Every frame: the depth of field. Sharp from a little in front of the nearest fighter to a little
 ## behind the farthest (feet and head of every one on screen); blur grows only past that.
 func focus(delta: float, people: Array) -> void:
+	_sync_glow(delta)
 	var cam: Camera3D = s.cam
 	var to_view := cam.global_transform.affine_inverse()
 	var near := 1.0e9
