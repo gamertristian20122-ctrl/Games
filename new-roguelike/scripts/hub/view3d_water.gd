@@ -59,7 +59,7 @@ uniform vec3 shallow : source_color = vec3(0.030, 0.140, 0.175);
 uniform float chop = 0.013;              // how steep the ripples are
 uniform float glitter = 3.5;            // how bright the sparkles of the sun and the moon are
 uniform float streak = 3.0;             // how bright the lamps' streaks are
-uniform float mirror = 0.5;             // how much the water mirrors what stands round it (screen-space reflections)
+uniform float mirror = 0.75;            // how much the water mirrors what stands round it (screen-space reflections)
 varying vec2 at;
 varying float spark;                    // this art pixel is one that sparkles just now
 varying float foam;

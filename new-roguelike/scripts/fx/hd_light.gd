@@ -72,6 +72,7 @@ var day := 0.0                     ## 1 = out of doors by day (patches of golden
 var attrs: CameraAttributesPractical  ## HD: the camera's depth of field
 var _band := Vector2.ZERO          ## HD: the distances in focus now (eased towards the wanted band)
 var _drift := 0.0
+var _sun_low := 1.0                ## HD: how much lower than HD_LEAN the sun stands now (dusk: lower)
 var _stats_t := 0.0
 
 
@@ -513,7 +514,14 @@ func _vec(c: Color) -> Vector3:
 func _sync_hd(sky: Color, outdoor: bool) -> void:
 	var night := 1.0 - day
 	if outdoor:
-		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY, day)
+		# (the sun keeps its strength well into the evening: dusk is a low, raking, golden light, not a dim one)
+		sun.light_energy = lerpf(HD_SUN_NIGHT, HD_SUN_DAY, sqrt(day))
+		# and it sinks: the shadows grow longer towards dusk (turned in small steps, so the shadow
+		# maps do not swim while the day goes by)
+		var low := snappedf(lerpf(1.55, 1.0, clampf(day * 1.4 - 0.2, 0.0, 1.0)), 0.05)
+		if not is_equal_approx(low, _sun_low):
+			_sun_low = low
+			sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x * low, -1.0, HD_LEAN.y * low), Vector3.UP)
 		# full day: a golden afternoon sun; towards dusk it sinks to deep amber; the moon is blue
 		var amber := HD_SUN_COLOUR_DAY.lerp(HD_SUN_COLOUR, clampf(night * 1.8, 0.0, 1.0))
 		sun.light_color = sky.lerp(amber, 0.7).lerp(Color(0.62, 0.72, 1.0), smoothstep(0.55, 1.0, night))
@@ -526,6 +534,9 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		sun.light_volumetric_fog_energy = lerpf(0.25, 1.6, day)      # (the air is thin except in the band behind the play)
 		env.tonemap_exposure = lerpf(HD_EXPOSURE_NIGHT, HD_EXPOSURE_DAY, day) * float(grade.get("exposure", 1.0))
 	else:
+		if not is_equal_approx(_sun_low, 1.0):
+			_sun_low = 1.0
+			sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x, -1.0, HD_LEAN.y), Vector3.UP)
 		sun.light_energy = 0.9
 		env.ambient_light_energy = 0.42
 		env.volumetric_fog_density = 0.004
