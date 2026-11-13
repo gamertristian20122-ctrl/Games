@@ -31,6 +31,7 @@ const Actor = preload("res://scripts/battle/anim_actor.gd")
 const Moves = preload("res://scripts/battle/anim_moves.gd")
 const Shatter = preload("res://scripts/battle/anim_death.gd")
 const Num = preload("res://scripts/battle/anim_numbers.gd")
+const BUI = preload("res://scripts/battle/battle_ui.gd")
 ## FAST-FORWARD: while the fight plays out (not while you choose), holding Space, Shift, Enter, the
 ## mouse button, a finger on the screen, or A / the right shoulder of a pad plays it this much faster.
 const FF_SPEED := 3.0
@@ -50,15 +51,33 @@ var story := ""                    ## or: a battle of the story (scripts/data/ta
 var night := false
 var fight: RefCounted
 var stage: Node3D
-var _root: Control
-var _area: Control
-var _order_row: HBoxContainer
-var _message: Label
-var _party_rows: Array = []        ## {"unit", "panel", "hp", "mp", "hp_text", "mp_text", "button"}
-var _tags: Array = []              ## {"unit", "box", "bar", "button"}
-var _menu: PanelContainer
-var _menu_box: VBoxContainer
-var _hint: Label
+var _root: Control                 ## the UI grid (UI.attach): everything of the screen hangs on it
+var _ph := false                   ## the phone's layout (UI.is_phone())
+var _rail: Control                 ## the turn order (battle_ui.gd Rail)
+var _ribbon: Control               ## the words at the top middle (Ribbon)
+var _cards: Array = []             ## your side, one Card each, in the order of fight.party
+var _tags: Array = []              ## {"unit", "button", "bar"} per monster
+var _menu: PanelContainer          ## the orders (PC bottom left; phone bottom right)
+var _page: Control                 ## the page in it now
+var _menu_page := ""               ## "commands" | "skills" | "aim" | ""
+var _menu_page_next := ""          ## (the page being built: rows are tiles on the phone's commands page)
+var _came_from := "commands"       ## where Esc goes back to from aiming
+var _skill_focus := -1             ## the skill row to land on when coming back to the list
+var _skills_row: Button
+var _flee_row: Button
+var _warn: PanelContainer          ## the boss's "Guard!" warning over the orders
+var _warn_on := false
+var _detail: Label                 ## the focused row's words under the list
+var _help: Control                 ## the help strip, top right (PC; hidden on touch)
+var _help_key := ""
+var _flame: Control                ## the ember focus pointer
+var _brackets: Control             ## gold corner brackets round the one aimed at
+var _plate: Control                ## and a monster's name and health over it
+var _plate_key := ""
+var _boss: Control                 ## a boss's long bar at the top
+var _touch_hint: Label             ## "Tap the monster to strike." (touch only)
+var _xp_was := 0                   ## the knight's XP and level as the battle ended (the victory bars fill from there)
+var _lvl_was := 1
 var _speed := 1.0
 var _auto := false
 var _over := false
@@ -72,7 +91,7 @@ var _trauma := 0.0                 ## how shaken the camera is, 0 to 1 (see _fee
 var _shake_t := 0.0
 var _xp_bonus := 0                ## a battle of the story may give XP of its own on top
 var _marker: MeshInstance3D        ## the ring of light under the one whose turn it is
-var _arrow: Polygon2D              ## and the little arrow over his head
+var _arrow: Control                ## and the little ember chevron over his head (battle_ui.gd Pointer)
 var _turn_unit := {}
 var _boss_bar := {}                ## a boss's own bar at the top of the screen
 var _intro := 0.0                  ## the camera comes in from further back as the battle opens (1 -> 0)
@@ -81,7 +100,6 @@ var _push := 0.0                   ## and moves in a little at the end of a won 
 var _fade: ColorRect               ## black over the screen at the start, gold at a victory
 var _sky := 0.0                    ## HD: how far up into the sky the camera still looks as the battle opens (1 -> 0)
 var _layer: CanvasLayer
-var _ui := 1.0                     ## HD: the menus are drawn smaller (a whole number of screen pixels per art pixel)
 var moves: Node                    ## the choreography of every blow and spell (scripts/battle/anim_moves.gd)
 var _dying := 0                    ## falls still being shown (a turn waits for them)
 var _punch := 0.0                  ## the camera's punch-in on a crit or a finishing blow (0 to 1)
@@ -93,7 +111,6 @@ var _track_id := 0
 var _stop_k := 1.0                 ## the hit-stop's share of the time scale
 var _ff := 1.0                     ## and the fast-forward's
 var _hold_t := 0.0
-var _ff_hint: Label
 var _combo := {}                   ## a combo's one counting number, by the fighter hit
 var _plan: Array = []              ## test: --animplan=lunge,slam,thessaly:volley (what the bot picks, in order)
 
@@ -154,6 +171,21 @@ func _ready() -> void:
 	_refresh()
 	_enter()
 	_run.call_deferred(title)
+	if G.arg("shotfight", "") != "" and G.arg("shots", "") != "":
+		_fight_shot()
+
+
+## Test: --shotfight=<s1,s2,...> (game seconds) writes battle_fight_<s>.png at those moments of a
+## battle the bot fights (--autobattle; a look only).
+func _fight_shot() -> void:
+	var waited := 0.0
+	for t: String in G.arg("shotfight", "").split(",", false):
+		await get_tree().create_timer(maxf(float(t) - waited, 0.0)).timeout
+		waited = float(t)
+		if not is_inside_tree():
+			return
+		DirAccess.make_dir_recursive_absolute(G.arg("shots", ""))
+		get_viewport().get_texture().get_image().save_png(G.arg("shots", "").path_join("battle_fight_%s.png" % t))
 
 
 ## THE WAY IN: the screen opens from black while the camera glides in to its place.
@@ -277,181 +309,103 @@ func _colour(unit: Dictionary) -> Color:
 
 
 # ------------------------------------------------------------------ the screen
+## THE INTERFACE (the HD GUI, "Lantern Glass"; the pieces are scripts/battle/battle_ui.gd). It lives
+## on the UI grid (UI.attach): PC about 800 x 360 UI px, the phone the game's 400 x 180.
+## PC: the turn order top left, the help strip top right, the words top middle, your side as cards
+## along the bottom right, the orders in a glass panel bottom left; the middle stays clear.
+## Phone: turn coins top left, your side as thin strips top right, the orders as a 2 x 2 block of
+## tiles bottom right (under 0.68 of the height), no key prompts.
+const MENU_W := 148.0              ## the orders panel's width (PC)
+const PHONE_LIST_W := 150.0        ## the phone's skills list
+
 func _build_screen() -> void:
+	_ph = UI.is_phone()
+	UI._load_fonts()
 	var layer := CanvasLayer.new()
 	layer.layer = 5
 	add_child(layer)
 	_layer = layer
-	_root = Control.new()
+	_root = UI.attach(layer)
 	_root.theme = UI.theme()
-	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(_root)
-	if Hd.on():
-		# HD (PC): COMPACT menus in the corners, so the big fighters, the ground and the sky stay
-		# clear (the night-battle picture the owner sent keeps its numbers small, at the edges).
-		# The phone keeps its sizes (the owner: text and buttons are good as they are there).
-		_fit_ui()
-		get_viewport().size_changed.connect(_fit_ui)
-	var safe := UI.safe_margin(_root, 5)
-	_root.add_child(safe)
-	_area = Control.new()
-	_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	safe.add_child(_area)
+	_root.resized.connect(_layout)
 
-	_order_row = UI.hbox(2)
-	_order_row.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	_area.add_child(_order_row)
+	_rail = BUI.Rail.new()
+	_rail.call("setup")
+	_root.add_child(_rail)
 
-	_message = UI.label("", "Hud")
-	_message.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	_message.offset_top = 22
-	_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_message.add_theme_color_override("font_outline_color", UI.C_INK)
-	_message.add_theme_constant_override("outline_size", 3)
-	_area.add_child(_message)
-
-	# your side (bottom left; HD: top right, as a column of small rows)
-	var party_panel := UI.panel("panel")
-	if Hd.on():
-		party_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-		party_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-		party_panel.self_modulate.a = 0.82
-	else:
-		party_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-		party_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_area.add_child(party_panel)
-	var rows := UI.vbox(2)
-	party_panel.add_child(rows)
-	for unit: Dictionary in fight.party:
-		var button := Button.new()
-		button.theme_type_variation = "Flat"
-		button.custom_minimum_size = Vector2(182, 19)
-		button.focus_mode = Control.FOCUS_NONE
-		button.disabled = true
-		button.add_theme_stylebox_override("disabled", StyleBoxEmpty.new())
-		button.add_theme_stylebox_override("normal", UI.box("slot"))
-		button.add_theme_stylebox_override("hover", UI.box("slot_focus"))
-		button.add_theme_stylebox_override("focus", UI.box("slot_focus"))
-		button.add_theme_stylebox_override("pressed", UI.box("slot_focus"))
-		rows.add_child(button)
-		var row := UI.hbox(5)
-		row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		row.offset_left = 4
-		row.offset_right = -4
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.add_child(row)
-		var name_label := UI.label(String(unit["name"]), "Hud")
-		name_label.custom_minimum_size.x = 52
-		name_label.clip_text = true
-		name_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(name_label)
-		var hp := _bar(UI.C_RED)
-		var mp := _bar(UI.C_BLUE)
-		row.add_child(hp["box"])
-		row.add_child(mp["box"])
-		_party_rows.append({"unit": unit, "button": button, "name": name_label, "hp": hp, "mp": mp})
-		var who := unit
-		button.pressed.connect(func() -> void: _target_picked(who))
-
-	# what you can do (bottom right; HD: bottom left, under your own side)
-	_menu = UI.panel("panel")
-	if Hd.on():
-		_menu.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-		_menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
-		_menu.self_modulate.a = 0.86
-	else:
-		_menu.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-		_menu.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-		_menu.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_area.add_child(_menu)
-	_menu_box = UI.vbox(2)
-	_menu.add_child(_menu_box)
-	_menu.visible = false
-
-	# over each monster: a life bar, always; its name and a frame to tap, while you aim
+	# over each monster: a small health bar, always; while you aim, the whole monster is a button
 	for i in (fight.foes as Array).size():
 		var unit: Dictionary = fight.foes[i]
 		var button := Button.new()
-		button.theme_type_variation = "Flat"
+		button.name = "foe_%d" % i
+		button.flat = true
 		button.focus_mode = Control.FOCUS_NONE
 		button.disabled = true
-		button.custom_minimum_size = Vector2(maxf(34.0, float(unit["wide"]) / PX * 0.9), float(unit["top"]) / PX * 0.8 + 8.0)
-		button.add_theme_stylebox_override("disabled", StyleBoxEmpty.new())
-		button.add_theme_stylebox_override("normal", UI.box("slot"))
-		for state: String in ["hover", "focus", "pressed"]:
-			button.add_theme_stylebox_override(state, UI.box("slot_focus"))
-		button.self_modulate.a = 0.55
+		button.set_meta("no_flame", true)
+		for state: String in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+			button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+		button.size = Vector2(40, 60)
 		_root.add_child(button)
-		var back := ColorRect.new()
-		back.color = UI.C_INK
-		back.size = Vector2(34, 5)
-		back.position = Vector2((button.custom_minimum_size.x - 34.0) * 0.5, -7.0)
-		back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.add_child(back)
-		var well := ColorRect.new()
-		well.color = UI.C_PANEL_LOW
-		well.position = Vector2(1, 1)
-		well.size = Vector2(32, 3)
-		well.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		back.add_child(well)
-		var lost := ColorRect.new()
-		lost.color = Color(1.0, 0.92, 0.75)
-		lost.position = Vector2(1, 1)
-		lost.size = Vector2(32, 3)
-		lost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		back.add_child(lost)
-		var fill := ColorRect.new()
-		fill.color = UI.C_RED
-		fill.position = Vector2(1, 1)
-		fill.size = Vector2(32, 3)
-		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		back.add_child(fill)
-		var gleam := ColorRect.new()
-		gleam.color = Color(1.0, 1.0, 1.0, 0.28)
-		gleam.size = Vector2(32, 1)
-		gleam.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fill.add_child(gleam)
-		var l := UI.label(String(unit["name"]), "Small")
-		l.add_theme_color_override("font_color", UI.C_BONE)
-		l.add_theme_color_override("font_outline_color", UI.C_INK)
-		l.add_theme_constant_override("outline_size", 3)
-		l.visible = false
-		button.add_child(l)
-		l.position = Vector2((button.custom_minimum_size.x - l.get_minimum_size().x) * 0.5, -17.0 - 9.0 * (i % 2))     # every other name a line higher, so two never share a line
-		_tags.append({"unit": unit, "button": button, "fill": fill, "lost": lost, "back": back, "name": l})
+		var bar := UI.bar("foe", 22.0 if _ph else 32.0)
+		bar.call("set_value", float(unit["hp"]), float(unit["max_hp"]), false)
+		_root.add_child(bar)
+		_tags.append({"unit": unit, "button": button, "bar": bar})
 		if bool(unit.get("boss", false)):
-			back.visible = false           # a boss has its big bar at the top instead
+			bar.visible = false            # a boss has its long bar at the top instead
 			_make_boss_bar(unit)
 		var who := unit
 		button.pressed.connect(func() -> void: _target_picked(who))
 
-	# how to speed the fight up (bottom right; hidden while you choose)
-	_ff_hint = UI.label("", "Small")
-	_ff_hint.add_theme_color_override("font_color", UI.C_BONE)
-	_ff_hint.add_theme_color_override("font_outline_color", UI.C_INK)
-	_ff_hint.add_theme_constant_override("outline_size", 3)
-	_ff_hint.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_ff_hint.offset_left = -300.0
-	_ff_hint.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_ff_hint.offset_right = -2.0
-	_ff_hint.offset_top = -12.0
-	_ff_hint.offset_bottom = 0.0
-	_ff_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_ff_hint.visible = false
-	_area.add_child(_ff_hint)
+	# your side: a card each (PC: along the bottom; phone: strips top right). A card is also the
+	# button that picks that fighter for a heal.
+	for unit: Dictionary in fight.party:
+		var card: Control = BUI.Card.new()
+		card.set("level", Rpg.level())
+		card.call("setup", unit)
+		_root.add_child(card)
+		_cards.append(card)
+		var who := unit
+		(card.get("button") as Button).pressed.connect(func() -> void: _target_picked(who))
 
-	# the arrow over the one whose turn it is
-	_arrow = Polygon2D.new()
-	_arrow.polygon = PackedVector2Array([Vector2(-5, -4), Vector2(5, -4), Vector2(0, 2)])
-	_arrow.color = UI.C_GOLD
-	var rim_line := Line2D.new()
-	rim_line.points = PackedVector2Array([Vector2(-5, -4), Vector2(5, -4), Vector2(0, 2), Vector2(-5, -4)])
-	rim_line.width = 1.0
-	rim_line.default_color = UI.C_INK
-	_arrow.add_child(rim_line)
+	# the boss's warning over the orders, and the orders themselves
+	_warn = PanelContainer.new()
+	_warn.add_theme_stylebox_override("panel", UI.box("danger"))
+	_warn.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_warn.visible = false
+	var warn_text := UI.label("", "Small", (128.0 if _ph else MENU_W - 20.0))
+	warn_text.add_theme_color_override("font_color", UI.C_BAD)
+	if _ph:
+		warn_text.add_theme_font_size_override("font_size", 8)
+	_warn.add_child(warn_text)
+	_root.add_child(_warn)
+	_menu = PanelContainer.new()
+	_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu.visible = false
+	_root.add_child(_menu)
+
+	_brackets = BUI.Brackets.new()
+	_root.add_child(_brackets)
+	_plate = BUI.Plate.new()
+	_plate.call("setup")
+	_plate.visible = false
+	_root.add_child(_plate)
+	_ribbon = BUI.Ribbon.new()
+	_root.add_child(_ribbon)
+	_touch_hint = UI.label("", "Small")
+	_touch_hint.add_theme_color_override("font_color", UI.C_PARCH)
+	_touch_hint.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
+	_touch_hint.add_theme_constant_override("outline_size", 3)
+	_touch_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_touch_hint.visible = false
+	_root.add_child(_touch_hint)
+	_arrow = BUI.Pointer.new()
 	_arrow.visible = false
 	_root.add_child(_arrow)
+	if not _ph:
+		_help = UI.help_strip([], "top_right")
+		_root.add_child(_help)
+	_flame = UI.flame(_root)
+	_root.add_child(_flame)
 
 	# what covers the screen on the way in and at the end
 	_fade = ColorRect.new()
@@ -460,113 +414,111 @@ func _build_screen() -> void:
 	_fade.color = Color(0, 0, 0, 0)
 	_fade.visible = false
 	_root.add_child(_fade)
+	_layout()
 
 
-## HD: the menus at a smaller size. The game's 2D picture is 180 art pixels high, stretched to the
-## window; here every art pixel of the menus is drawn as a whole number of screen pixels, about
-## three quarters of the usual (3 on a 720-high window, 4 on 1080), so pixel letters stay crisp.
-func _fit_ui() -> void:
-	var vp := get_viewport().get_visible_rect().size
-	var win := Vector2(DisplayServer.window_get_size()) if get_viewport() == get_tree().root else vp
-	var base := maxf(win.y / maxf(vp.y, 1.0), 1.0)          # screen pixels per art pixel
-	var k := maxf(floorf(base * 0.75), minf(2.0, base))
-	_ui = clampf(k / base, 0.4, 1.0)
-	_layer.scale = Vector2(_ui, _ui)
-	_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_root.position = Vector2.ZERO
-	_root.size = vp / _ui
+## Places what has a fixed spot (again when the window changes size).
+func _layout() -> void:
+	if _root == null or not is_instance_valid(_rail):
+		return
+	var room: Vector2 = _root.size
+	var n := _cards.size()
+	var ins := UI.safe_insets(_root) if _ph else Vector4.ZERO
+	if _ph:
+		# (the phone's camera puts the monsters' heads in the top right: your side's strips sit on
+		# the empty ground bottom left, stacked up from the bottom, clear of the orders' tiles)
+		for i in n:
+			var card: Control = _cards[i]
+			card.call("set_width", 120.0)
+			card.call("place_at", Vector2(8.0 + ins.x, room.y - 4.0 - ins.w - 18.0 * (n - i)))
+	elif n > 0:
+		var gap := 6.0
+		var avail := room.x - 28.0 - MENU_W - 16.0 - gap * (n - 1)
+		var cw := clampf(avail / n, 120.0, 176.0)
+		if cw * n > avail:
+			cw = maxf(floorf(avail / n), 96.0)       # (four fighters on a narrow screen)
+		var x := roundf(room.x - 14.0 - n * cw - gap * (n - 1))
+		for card: Control in _cards:
+			card.call("set_width", cw)
+			card.call("place_at", Vector2(x, room.y - 14.0 - 44.0))
+			x += cw + gap
+	_rail.position = Vector2(ins.x, ins.y)
+	var top := 4.0 if _ph else 14.0
+	if is_instance_valid(_boss):
+		# the boss's bar: top middle, a little left of the middle (a big boss stands on the right and
+		# its head must not sit under its own bar), clear of the turn order and the help strip
+		var w := 140.0 if _ph else 260.0
+		var rail_end := float(_rail.get("end_x")) + (10.0 if _ph else 14.0)
+		var right := room.x - (14.0 if _ph else 200.0)
+		w = minf(w, maxf(right - rail_end, 80.0))
+		var cx := clampf(room.x * 0.5 - (0.0 if _ph else 56.0), rail_end + w * 0.5, right - w * 0.5)
+		_boss.call("set_width", w)
+		_boss.position = Vector2(roundf(cx - w * 0.5), 4.0 if _ph else 8.0)
+		top = _boss.position.y + _boss.size.y + (4.0 if _ph else 8.0)
+	_ribbon.position = Vector2(0, top)
+	_ribbon.size = Vector2(room.x, float(_ribbon.call("band_h")))
+	_touch_hint.position = Vector2(0, top + float(_ribbon.call("band_h")) + 1.0)
+	_touch_hint.size = Vector2(room.x, 12.0)
+	_brackets.position = Vector2.ZERO
+	_brackets.size = room
 
 
-## Where a point of the 3D picture is on the menus' layer.
-func _on_ui(world: Vector3) -> Vector2:
-	return stage.cam.unproject_position(world) / _ui
+## Every frame: the orders panel keeps its corner as it grows and shrinks.
+func _place_menu() -> void:
+	if not _menu.visible:
+		_warn.visible = false
+		return
+	var room: Vector2 = _root.size
+	var ms := _menu.get_combined_minimum_size()
+	if _ph:
+		_menu.size = ms
+		var ins := UI.safe_insets(_root)
+		_menu.position = Vector2(room.x - 8.0 - ins.z - ms.x, room.y - 8.0 - ins.w - ms.y).round()
+	else:
+		_menu.size = Vector2(maxf(MENU_W, ms.x), ms.y)
+		_menu.position = Vector2(14.0, room.y - 14.0 - ms.y).round()
+	_warn.visible = _warn_on and _menu_page != "aim"
+	if _warn.visible:
+		var ws := _warn.get_combined_minimum_size()
+		_warn.size = Vector2(_menu.size.x if not _ph else ws.x, ws.y)
+		_warn.position = Vector2(_menu.position.x if not _ph else _menu.position.x + _menu.size.x - ws.x, _menu.position.y - 6.0 - ws.y).round()
 
 
 ## A boss gets its name and a long bar at the top middle of the screen.
 func _make_boss_bar(unit: Dictionary) -> void:
-	var box := UI.vbox(1)
-	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	box.offset_top = 2
-	# (left of the middle: a big boss stands on the right, its head must not sit under its own bar)
-	box.offset_left -= 56
-	box.offset_right -= 56
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_area.add_child(box)
-	var name_label := UI.label(String(unit["name"]), "Hud")
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_color_override("font_color", UI.C_GOLD)
-	name_label.add_theme_color_override("font_outline_color", UI.C_INK)
-	name_label.add_theme_constant_override("outline_size", 3)
-	box.add_child(name_label)
-	var back := ColorRect.new()
-	back.color = UI.C_INK
-	back.custom_minimum_size = Vector2(162, 7)
-	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(back)
-	var well := ColorRect.new()
-	well.color = UI.C_PANEL_LOW
-	well.position = Vector2(1, 1)
-	well.size = Vector2(160, 5)
-	back.add_child(well)
-	var lost := ColorRect.new()
-	lost.color = Color(1.0, 0.92, 0.75)
-	lost.position = Vector2(1, 1)
-	lost.size = Vector2(160, 5)
-	back.add_child(lost)
-	var fill := ColorRect.new()
-	fill.color = UI.C_BLOOD.lerp(UI.C_RED, 0.5)
-	fill.position = Vector2(1, 1)
-	fill.size = Vector2(160, 5)
-	back.add_child(fill)
-	var gleam := ColorRect.new()
-	gleam.color = Color(1.0, 1.0, 1.0, 0.25)
-	gleam.size = Vector2(160, 1)
-	fill.add_child(gleam)
-	_boss_bar = {"unit": unit, "fill": fill, "lost": lost, "width": 160.0}
-	_message.offset_top = 32               # the words move down under the bar
+	_boss = BUI.BossBar.new()
+	_boss.call("setup", unit)
+	_root.add_child(_boss)
+	_boss_bar = {"unit": unit}
 
 
-## A bar with its numbers under it.
-func _bar(colour: Color) -> Dictionary:
-	var box := UI.vbox(1)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var text := UI.label("", "Small")
-	text.add_theme_color_override("font_color", UI.C_BONE)
-	text.custom_minimum_size.x = 54            # room for "HP 999/999", so the two bars always line up
-	box.add_child(text)
-	var back := ColorRect.new()
-	back.color = UI.C_PANEL_LOW
-	back.custom_minimum_size = Vector2(46, 3)
-	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(back)
-	var fill := ColorRect.new()
-	fill.color = colour
-	fill.size = Vector2(46, 3)
-	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	back.add_child(fill)
-	return {"box": box, "text": text, "fill": fill}
+## Where a point of the 3D picture is on the UI grid.
+func _on_ui(world: Vector3) -> Vector2:
+	return stage.cam.unproject_position(world) / maxf(_layer.scale.x, 0.0001)
+
+
+## A fighter's picture on the UI grid: Rect2 from the top of its head to its feet.
+func _sprite_rect(u: Dictionary) -> Rect2:
+	var stand: Vector3 = (u["actor"] as Node).call("at") if u.get("actor") != null else (u["home"] as Vector3)     # (it follows him when he moves)
+	var head := _on_ui(stand + Vector3(0.0, float(u["top"]), 0.0))
+	var feet := _on_ui(stand)
+	var h := maxf(feet.y - head.y, 12.0)
+	var w := maxf(h * float(u["wide"]) / maxf(float(u["top"]), 0.1) * 0.9, 20.0 if not _ph else 14.0)
+	return Rect2(Vector2(feet.x - w * 0.5, head.y), Vector2(w, h))
 
 
 ## Puts every number and bar right.
 func _refresh(acting: Dictionary = {}) -> void:
-	for row: Dictionary in _party_rows:
-		var u: Dictionary = row["unit"]
-		(row["hp"]["text"] as Label).text = "HP %d/%d" % [int(u["hp"]), int(u["max_hp"])]
-		(row["hp"]["fill"] as ColorRect).size.x = 46.0 * float(u["hp"]) / float(u["max_hp"])
-		(row["mp"]["text"] as Label).text = "MP %d/%d" % [int(u["mp"]), int(u["max_mp"])]
-		(row["mp"]["fill"] as ColorRect).size.x = 46.0 * float(u["mp"]) / maxf(float(u["max_mp"]), 1.0)
-		var label: Label = row["name"]
-		label.add_theme_color_override("font_color", UI.C_GOLD if u == acting else (UI.C_FAINT if int(u["hp"]) <= 0 else UI.C_BONE))
+	for card: Control in _cards:
+		card.call("refresh", true)
+		card.call("set_acting", is_same(card.get("unit"), acting))
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
-		_drain(tag["fill"], tag["lost"], 32.0 * float(u["hp"]) / float(u["max_hp"]))
+		BUI.set_bar(tag["bar"], float(u["hp"]), float(u["max_hp"]))
 		(tag["button"] as Button).visible = int(u["hp"]) > 0
-	if not _boss_bar.is_empty():
+	if is_instance_valid(_boss):
 		var bu: Dictionary = _boss_bar["unit"]
-		_drain(_boss_bar["fill"], _boss_bar["lost"], float(_boss_bar["width"]) * maxf(float(bu["hp"]), 0.0) / float(bu["max_hp"]))
+		BUI.set_bar(_boss.get("bar"), maxf(float(bu["hp"]), 0.0), float(bu["max_hp"]))
 	_turn_unit = acting
 	if _marker != null:
 		_marker.visible = not acting.is_empty() and not _over
@@ -576,91 +528,33 @@ func _refresh(acting: Dictionary = {}) -> void:
 			var c := Color(1.0, 0.82, 0.4) if String(acting["side"]) == "party" else Color(1.0, 0.36, 0.28)
 			(_marker.material_override as StandardMaterial3D).albedo_color = Color(c.r, c.g, c.b, 0.75)
 			_marker.scale = Vector3.ONE * clampf(float(acting["wide"]) * 1.1, 0.8, 2.6)
-	for c in _order_row.get_children():
-		c.queue_free()
 	if acting.is_empty():
 		return
 	var line: Array = [acting]
 	line.append_array(fight.call("upcoming"))
-	for i in mini(line.size(), 7):
-		var u: Dictionary = line[i]
-		var slot := UI.panel("slot_focus" if i == 0 else "slot")
-		slot.custom_minimum_size = Vector2(21, 21) if i == 0 else Vector2(17, 17)
-		slot.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		# a coloured line under each face: blue = your side, red = a monster
-		var side_line := ColorRect.new()
-		side_line.color = UI.C_BLUE if String(u["side"]) == "party" else UI.C_RED
-		side_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		side_line.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-		side_line.offset_top = 1
-		side_line.offset_bottom = 3
-		slot.add_child(side_line)
-		var face := TextureRect.new()
-		face.texture = _face(String(u["sprite"]))
-		face.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		face.custom_minimum_size = Vector2(13, 13)
-		face.modulate = u.get("tint", Color.WHITE)
-		face.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(face)
-		_order_row.add_child(slot)
+	_rail.call("set_line", line, int(fight.round_no))
+	_layout()
 
 
 ## Only the bars of one fighter (the moment a blow lands on him, not before).
 func _refresh_one(u: Dictionary) -> void:
-	for row: Dictionary in _party_rows:
-		if is_same(row["unit"], u):
-			(row["hp"]["text"] as Label).text = "HP %d/%d" % [int(u["hp"]), int(u["max_hp"])]
-			(row["hp"]["fill"] as ColorRect).size.x = 46.0 * float(u["hp"]) / float(u["max_hp"])
-			(row["mp"]["text"] as Label).text = "MP %d/%d" % [int(u["mp"]), int(u["max_mp"])]
+	for card: Control in _cards:
+		if is_same(card.get("unit"), u):
+			card.call("refresh", true)
 	for tag: Dictionary in _tags:
 		if is_same(tag["unit"], u):
-			_drain(tag["fill"], tag["lost"], 32.0 * float(u["hp"]) / float(u["max_hp"]))
+			BUI.set_bar(tag["bar"], float(u["hp"]), float(u["max_hp"]))
 			(tag["button"] as Button).visible = int(u["hp"]) > 0
-	if not _boss_bar.is_empty() and is_same(_boss_bar["unit"], u):
-		_drain(_boss_bar["fill"], _boss_bar["lost"], float(_boss_bar["width"]) * maxf(float(u["hp"]), 0.0) / float(u["max_hp"]))
+	if is_instance_valid(_boss) and is_same(_boss_bar["unit"], u):
+		BUI.set_bar(_boss.get("bar"), maxf(float(u["hp"]), 0.0), float(u["max_hp"]))
 
 
-## Your side's row in the corner jolts and flashes red when that fighter is hit (you see who it was
-## at a glance, even with your eyes on the menu).
+## Your side's card jolts and its HP number flashes red when that fighter is hit (you see who it
+## was at a glance, even with your eyes on the menu).
 func _row_jolt(u: Dictionary, ratio: float) -> void:
-	for row: Dictionary in _party_rows:
-		if not is_same(row["unit"], u):
-			continue
-		var b: Button = row["button"]
-		var tw := b.create_tween()
-		b.modulate = Color(1.0, 0.45, 0.4)
-		tw.tween_property(b, "modulate", Color.WHITE, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		var name_label: Label = row["name"]
-		var kick := 2.0 + 4.0 * ratio
-		var tl := name_label.create_tween()
-		for i in 4:
-			tl.tween_property(name_label, "position:x", name_label.position.x + kick * (1.0 if i % 2 == 0 else -1.0) * (1.0 - i * 0.22), 0.03)
-		tl.tween_property(name_label, "position:x", name_label.position.x, 0.03)
-
-
-## A bar falls to its new length at once; a pale piece behind it shows what was lost, then drains.
-func _drain(fill: ColorRect, lost: ColorRect, width: float) -> void:
-	width = maxf(width, 0.0)
-	var was := fill.size.x
-	fill.size.x = width
-	if width >= was or _speed > 4.0:
-		lost.size.x = width
-		return
-	var tw := create_tween()
-	tw.tween_interval(0.35)
-	tw.tween_property(lost, "size:x", width, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-
-
-## The head of a fighter for the turn order: the top of the first frame of the pack art.
-func _face(sprite_id: String) -> Texture2D:
-	var used := UI.used_rect(sprite_id)
-	var side := minf(used.size.x, used.size.y * 0.6)
-	var at := AtlasTexture.new()
-	at.atlas = Art.tex(sprite_id)
-	at.region = Rect2(used.position.x + (used.size.x - side) * 0.5, used.position.y, side, side)
-	return at
+	for card: Control in _cards:
+		if is_same(card.get("unit"), u):
+			card.call("hit", ratio)
 
 
 # ------------------------------------------------------------------ the menu on your turn
@@ -670,8 +564,13 @@ var _aim := ""                     ## "" | "foe" | "friend": what a tap picks no
 
 
 func _clear_menu() -> void:
-	for c in _menu_box.get_children():
-		c.queue_free()
+	if is_instance_valid(_page):
+		_page.queue_free()
+	_page = null
+	_detail = null
+	_warn_on = false
+	_ribbon.call("unpin")
+	_touch_hint.visible = false
 	_set_aim("")
 
 
@@ -679,96 +578,295 @@ func _set_aim(aim: String) -> void:
 	_aim = aim
 	for tag: Dictionary in _tags:
 		var b: Button = tag["button"]
-		b.disabled = aim != "foe"
-		b.focus_mode = Control.FOCUS_ALL if aim == "foe" else Control.FOCUS_NONE
-		(tag["name"] as Label).visible = aim == "foe"
-	for row: Dictionary in _party_rows:
-		var b: Button = row["button"]
-		var can := aim == "friend" and int(row["unit"]["hp"]) > 0
+		var can := aim == "foe" and int(tag["unit"]["hp"]) > 0
 		b.disabled = not can
 		b.focus_mode = Control.FOCUS_ALL if can else Control.FOCUS_NONE
+	for card: Control in _cards:
+		var b: Button = card.get("button")
+		var can := aim == "friend" and int(card.get("unit")["hp"]) > 0
+		b.disabled = not can
+		b.focus_mode = Control.FOCUS_ALL if can else Control.FOCUS_NONE
+		if not can:
+			card.call("set_targeted", false)
 
 
-func _show_commands() -> void:
-	_clear_menu()
+## Opens a page of the orders panel (it slides in from the side it comes from).
+func _open_page(page: Control, kind: String, dir: int) -> void:
+	_page = page
+	_menu_page = kind
+	var glass := not _ph or kind != "commands"
+	_menu.add_theme_stylebox_override("panel", _menu_box(glass))
+	_menu.add_child(page)
 	_menu.visible = true
-	var title := UI.label(String(_acting["name"]) + ": what now?", "Small")
-	title.add_theme_color_override("font_color", UI.C_GOLD)
-	_menu_box.add_child(title)
-	var grid := GridContainer.new()
-	grid.columns = 4 if Hd.on() else 2          # (HD: one low row along the bottom, under every fighter's feet)
-	grid.add_theme_constant_override("h_separation", 3)
-	grid.add_theme_constant_override("v_separation", 3)
-	_menu_box.add_child(grid)
-	var attack := UI.button("Attack", _on_attack)
-	var skills := UI.button("Skills", _show_skills)
-	var guard := UI.button("Guard", func() -> void: _choose({"do": "guard"}))
-	var flee := UI.button("Flee", func() -> void: _choose({"do": "flee"}))
+	UI.page_swap(null, page, dir)
+
+
+func _menu_box(glass: bool) -> StyleBox:
+	if not glass:
+		return StyleBoxEmpty.new()
+	var g := UI.glass(3.0 if _ph else 4.0, 4.0 if _ph else 6.0, UI.C_BRASS_DIM, not _ph)
+	return g
+
+
+## One order: a row (PC) or a tile (phone) with its icon; `value` right-aligned (a skill's cost).
+func _row(text: String, icon_id: String, action: Callable, value: String = "", value_col: Color = UI.C_MP_A) -> Button:
+	var b := UI.button(text, action, "Big" if _ph and _menu_page_next == "commands" else "")
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if icon_id != "" and Art.has(icon_id):
+		b.icon = Art.tex(icon_id)
+	if _ph and _menu_page_next == "commands":
+		# a touch tile: glass, the icon and a small word, gold edge and the sweep when focused
+		var n := UI.glass(4.0, 2.0)
+		n.shadow_size = 4
+		for state: String in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+			b.add_theme_stylebox_override(state, n)
+		var f := UI.SweepBox.new()
+		f.edge = UI.C_GOLD
+		f.cut_size = UI.cut
+		f.inset = 1.0
+		b.add_theme_stylebox_override("focus", f)
+		b.add_theme_font_override("font", UI.font_body)
+		b.add_theme_font_size_override("font_size", 9)
+		b.add_theme_constant_override("h_separation", 3)
+		b.custom_minimum_size = Vector2(62, 22)
+	else:
+		b.custom_minimum_size = Vector2(0, 20.0 if _ph else UI.row_h)
+		if _ph:
+			b.add_theme_font_size_override("font_size", 9)
+	if value != "":
+		var v := UI.label(value, "Num")
+		v.add_theme_color_override("font_color", value_col)
+		v.add_theme_font_size_override("font_size", 8 if _ph else 11)
+		v.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+		v.offset_left = -30
+		v.offset_right = -6 if _ph else -8
+		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		v.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		b.add_child(v)
+	b.focus_entered.connect(_on_row_focus.bind(b))
+	return b
+
+
+## A row that cannot be used: it still takes the focus, looks faint, and says why when focused or
+## pressed (house rule: never a dead button without its reason on the screen).
+func _refuse(b: Button, why: String) -> void:
+	b.set_meta("why", why)
+	for key: String in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
+		b.add_theme_color_override(key, UI.C_FAINT)
+	b.add_theme_color_override("font_focus_color", UI.C_DIM)
+	for key: String in ["icon_normal_color", "icon_hover_color", "icon_focus_color", "icon_pressed_color"]:
+		b.add_theme_color_override(key, Color(0.45, 0.45, 0.48, 0.7))
+	b.set_meta("refused", true)
+
+
+## The words under the list follow the focus: a skill's text, or why a row cannot be used.
+func _on_row_focus(b: Button) -> void:
+	if not is_instance_valid(_detail):
+		return
+	var t := String(b.get_meta("why", "")) if b.has_meta("why") else ""
+	if t == "":
+		t = String(b.get_meta("text", ""))
+	_detail.text = t
+	_detail.modulate = UI.C_BAD.lerp(Color.WHITE, 0.35) if bool(b.get_meta("refused", false)) else Color.WHITE
+
+
+## Pressed on a row that cannot be used: the refusal sound and its reason, flashed.
+func _refused(b: Button) -> bool:
+	if not bool(b.get_meta("refused", false)):
+		return false
+	Sfx.play("shop_deny")
+	_on_row_focus(b)
+	if is_instance_valid(_detail) and not UI.instant:
+		_detail.modulate = UI.C_BAD
+		var tw := _detail.create_tween()
+		tw.tween_property(_detail, "modulate", UI.C_BAD.lerp(Color.WHITE, 0.35), 0.4)
+	return true
+
+
+## The words under the list (a hairline, then the focused row's words, two lines at most).
+func _add_detail(page: VBoxContainer) -> void:
+	var line := HSeparator.new()
+	line.add_theme_constant_override("separation", 6 if not _ph else 3)
+	page.add_child(line)
+	var w := (PHONE_LIST_W - 12.0) if _ph else (MENU_W - 24.0)
+	_detail = UI.label("", "Small", w)
+	_detail.add_theme_color_override("font_color", UI.C_DIM)
+	_detail.max_lines_visible = 1 if _ph else 2
+	_detail.custom_minimum_size.y = (10.0 if _ph else 26.0)
+	if _ph:
+		_detail.add_theme_font_size_override("font_size", 8)
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 4 if _ph else 8)
+	pad.add_theme_constant_override("margin_right", 4 if _ph else 6)
+	pad.add_theme_constant_override("margin_bottom", 1)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pad.add_child(_detail)
+	page.add_child(pad)
+
+
+## The panel's head: the actor's name (or "SKILLS" and the mana left).
+func _head(page: VBoxContainer, title: String, right: String = "") -> void:
+	var row := UI.hbox(4)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := UI.label(title, "Head")
+	l.add_theme_color_override("font_color", UI.C_GOLD)
+	l.add_theme_font_size_override("font_size", 8 if _ph else (12 if right == "" else 11))
+	if _ph and _menu_page_next == "commands":
+		l.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
+		l.add_theme_constant_override("outline_size", 3)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(l)
+	if right != "":
+		var r := UI.label(right, "Num")
+		r.add_theme_color_override("font_color", UI.C_MP_A)
+		r.add_theme_font_size_override("font_size", 8 if _ph else 10)
+		row.add_child(r)
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 4 if _ph else 8)
+	pad.add_theme_constant_override("margin_right", 4 if _ph else 6)
+	pad.add_theme_constant_override("margin_top", 0 if _ph else 2)
+	pad.add_theme_constant_override("margin_bottom", 1 if _ph else 3)
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pad.add_child(row)
+	page.add_child(pad)
+
+
+func _show_commands(back: bool = false) -> void:
+	_clear_menu()
+	_menu_page_next = "commands"
+	var page := UI.vbox(0 if not _ph else 2)
+	_head(page, String(_acting["name"]))
+	var list: Container
+	if _ph:
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 4)
+		grid.add_theme_constant_override("v_separation", 4)
+		list = grid
+	else:
+		list = UI.vbox(0)
+	page.add_child(list)
+	var attack := _row("Attack", UI.ICON_ATTACK, _on_attack)
+	var skills := _row("Skills", UI.ICON_SKILLS, func() -> void: _on_skills_row())
+	var guard := _row("Guard", UI.icon_or([UI.ICON_SHIELD, UI.ICON_GUARD]), func() -> void: _choose({"do": "guard"}))
+	var flee := _row("Flee", UI.icon_or([UI.ICON_BOOT, UI.ICON_FLEE]), func() -> void: _on_flee_row())
+	_skills_row = skills
+	_flee_row = flee
+	attack.set_meta("text", "Strike one monster.")
+	skills.set_meta("text", "Your skills; they cost mana.")
+	guard.set_meta("text", "Take less than half until your next turn; a little mana back.")
+	flee.set_meta("text", "Try to run from the fight.")
 	for b: Button in [attack, skills, guard, flee]:
-		b.custom_minimum_size = Vector2(54, 19)
-		grid.add_child(b)
+		list.add_child(b)
+	var warn := ""
 	if bool(fight.get("no_flee")):
-		flee.disabled = true
-		_menu_box.add_child(_reason("No running from this one."))
+		_refuse(flee, "No running from this one.")
 	for foe: Dictionary in fight.call("alive", fight.foes):
 		if bool(fight.call("sweep_next", foe)):
-			var warn := _reason("%s draws back for a great blow at everybody. Guard!" % String(foe["name"]))
-			warn.add_theme_color_override("font_color", UI.C_ORANGE)
-			_menu_box.add_child(warn)
+			warn = "%s draws back for a great blow at everybody. Guard!" % String(foe["name"])
 	if (_acting["skills"] as Array).is_empty():
 		# never a dead button without the reason on the screen
-		skills.disabled = true
-		_menu_box.add_child(_reason("No skills yet: the first comes at level 2."))
-	attack.grab_focus.call_deferred()
+		_refuse(skills, "No skills yet: the first comes at level 2.")
+	if not _ph:
+		_add_detail(page)
+	_open_page(page, "commands", -1 if back else 1)
+	_warn_on = warn != ""
+	(_warn.get_child(0) as Label).text = warn
+	_set_help("commands")
+	(skills if back and _came_from == "skills" else attack).grab_focus.call_deferred()
 
 
-func _reason(text: String) -> Label:
-	var l := UI.label(text, "Small", 236.0 if Hd.on() else 150.0)
-	l.add_theme_color_override("font_color", UI.C_DIM)
-	return l
+func _on_skills_row() -> void:
+	if _refused(_skills_row):
+		return
+	_show_skills()
+
+
+func _on_flee_row() -> void:
+	if _refused(_flee_row):
+		return
+	_choose({"do": "flee"})
+
+
+## The icon of a skill: the knight's own (skill_<id>), else the nearest picture for its kind.
+func _skill_icon(s: Dictionary) -> String:
+	var id := String(s.get("id", ""))
+	if Art.has("skill_" + id):
+		return "skill_" + id
+	if s.has("heal"):
+		return "skill_mend"
+	if id in ["pierce", "volley"]:
+		return UI.icon_or(["icon_longbow_string", UI.ICON_ATTACK])
+	if s.has("stun"):
+		return UI.icon_or(["icon_bone_thistle", "skill_cry"])
+	if String(s.get("kind", "")) == "spell":
+		return UI.icon_or(["icon_eclipse_shard", UI.ICON_SKILLS])
+	return UI.ICON_ATTACK
+
+
+func _show_skills(back: bool = false) -> void:
+	_clear_menu()
+	_menu_page_next = "skills"
+	_came_from = "skills"
+	var page := UI.vbox(0)
+	_head(page, "Skills", "MP %d" % int(_acting["mp"]))
+	var many := (_acting["skills"] as Array).size() > 4
+	var list: Container
+	if _ph and many:
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 2)
+		grid.add_theme_constant_override("v_separation", 0)
+		list = grid
+	else:
+		list = UI.vbox(0)
+	page.add_child(list)
+	var first: Button = null
+	var any: Button = null
+	for s: Dictionary in _acting["skills"]:
+		var skill := s
+		var can := bool(fight.call("can_use", _acting, s))
+		var b := _row(String(s["name"]), _skill_icon(s), Callable(), "%d" % int(s["mana"]), UI.C_MP_A if can else UI.C_FAINT)
+		b.pressed.connect(func() -> void: _on_skill_row(b, skill))
+		b.set_meta("text", String(skill.get("text", "")))
+		b.set_meta("i", list.get_child_count())
+		if _ph:
+			b.custom_minimum_size.x = 72.0 if many else PHONE_LIST_W - 8.0
+		if not can:
+			_refuse(b, "Needs %d mana (%d left). Guard gives a little back." % [int(s["mana"]), int(_acting["mp"])])
+		elif first == null:
+			first = b
+		if any == null:
+			any = b
+		list.add_child(b)
+	if _ph:
+		var back_row := _row("Back", "", func() -> void: on_back())
+		back_row.set_meta("text", "")
+		list.add_child(back_row)
+	_add_detail(page)
+	_open_page(page, "skills", -1 if back else 1)
+	_set_help("skills")
+	var to: Button = first if first != null else any
+	if back and _skill_focus >= 0 and _skill_focus < (_acting["skills"] as Array).size():
+		to = list.get_child(_skill_focus) as Button
+	if first == null and is_instance_valid(_detail):
+		_detail.text = "Not enough mana for any of them. Guard gives a little back."
+	if to != null:
+		to.grab_focus.call_deferred()
+
+
+func _on_skill_row(b: Button, skill: Dictionary) -> void:
+	if _refused(b):
+		return
+	_skill_focus = int(b.get_meta("i", -1))
+	_on_skill(skill)
 
 
 func _on_attack() -> void:
 	_waiting_skill = {}
+	_came_from = "commands"
 	_ask_target("foe", "Tap the monster to strike.")
-
-
-func _show_skills() -> void:
-	_clear_menu()
-	var title := UI.label("Skills  (mana %d)" % int(_acting["mp"]), "Small")
-	title.add_theme_color_override("font_color", UI.C_GOLD)
-	_menu_box.add_child(title)
-	var grid := GridContainer.new()
-	grid.columns = 2 if (_acting["skills"] as Array).size() > 4 else 1
-	if Hd.on():
-		grid.columns = clampi((_acting["skills"] as Array).size(), 1, 4)
-	grid.add_theme_constant_override("h_separation", 3)
-	grid.add_theme_constant_override("v_separation", 2)
-	_menu_box.add_child(grid)
-	_hint = _reason("")
-	var first: Button = null
-	for s: Dictionary in _acting["skills"]:
-		var skill := s
-		var b := UI.button("%s  %d" % [String(s["name"]), int(s["mana"])], func() -> void: _on_skill(skill))
-		b.custom_minimum_size = Vector2(84, 17)
-		b.focus_entered.connect(func() -> void: _hint.text = String(skill.get("text", "")))
-		b.mouse_entered.connect(func() -> void: _hint.text = String(skill.get("text", "")))
-		if not bool(fight.call("can_use", _acting, s)):
-			b.disabled = true
-			b.tooltip_text = "Not enough mana"
-		elif first == null:
-			first = b
-		grid.add_child(b)
-	_menu_box.add_child(_hint)
-	if first == null:
-		_hint.text = "Not enough mana for any of them. Guard gives a little back."
-	var back := UI.button("Back", _show_commands, "", "ui_back")
-	back.custom_minimum_size = Vector2(54, 17)
-	_menu_box.add_child(back)
-	if first != null:
-		first.grab_focus.call_deferred()
-	else:
-		back.grab_focus.call_deferred()
 
 
 func _on_skill(skill: Dictionary) -> void:
@@ -782,17 +880,33 @@ func _on_skill(skill: Dictionary) -> void:
 			_ask_target("foe", "Tap the monster to aim at.")
 
 
+## AIMING: the panel closes, the order's name stands at the top, gold brackets close round the one
+## aimed at (a monster also shows its name and health over it). Left / Right (or the mouse) move
+## between them, Enter or a click picks, Esc goes back.
 func _ask_target(aim: String, words: String) -> void:
 	var choices: Array = fight.call("alive", fight.foes if aim == "foe" else fight.party)
 	if choices.size() == 1:
 		_target_picked(choices[0], aim)
 		return
+	var order := "Attack" if _waiting_skill.is_empty() else String(_waiting_skill["name"])
 	_clear_menu()
-	_menu_box.add_child(_reason(words))
-	var back := UI.button("Back", _show_commands, "", "ui_back")
-	back.custom_minimum_size = Vector2(54, 17)
-	_menu_box.add_child(back)
+	_menu_page_next = "aim"
+	_menu_page = "aim"
+	if _ph:
+		# (a touch screen has no Esc: a small Back tile stays in the corner)
+		var page := UI.vbox(0)
+		_menu_page_next = "commands"
+		var back := _row("Back", "", func() -> void: on_back())
+		page.add_child(back)
+		_open_page(page, "aim", 1)
+		_menu.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	else:
+		_menu.visible = false
+	_ribbon.call("pin", order)
+	_touch_hint.text = words
+	_touch_hint.visible = Controls.using_touch
 	_set_aim(aim)
+	_set_help("aim")
 	# a pad or keys: start on the first one that can be picked
 	if aim == "foe":
 		for tag: Dictionary in _tags:
@@ -800,7 +914,66 @@ func _ask_target(aim: String, words: String) -> void:
 				(tag["button"] as Button).grab_focus.call_deferred()
 				break
 	else:
-		(_party_rows[0]["button"] as Button).grab_focus.call_deferred()
+		for card: Control in _cards:
+			if int(card.get("unit")["hp"]) > 0:
+				(card.get("button") as Button).grab_focus.call_deferred()
+				break
+
+
+## Who is aimed at now (the focused monster or friend), {} when nobody is.
+func _aimed() -> Dictionary:
+	if _aim == "":
+		return {}
+	var f := get_viewport().gui_get_focus_owner()
+	if f == null:
+		return {}
+	if _aim == "foe":
+		for tag: Dictionary in _tags:
+			if tag["button"] == f:
+				return tag["unit"]
+	else:
+		for card: Control in _cards:
+			if card.get("button") == f:
+				return card.get("unit")
+	return {}
+
+
+## Left / Right (Up / Down too) step through who can be aimed at, in screen order.
+func _cycle(step: int) -> void:
+	var list: Array = []
+	if _aim == "foe":
+		for tag: Dictionary in _tags:
+			if int(tag["unit"]["hp"]) > 0:
+				list.append(tag["button"])
+		list.sort_custom(func(a: Button, b: Button) -> bool: return a.position.x < b.position.x)
+	else:
+		for card: Control in _cards:
+			if int(card.get("unit")["hp"]) > 0:
+				list.append(card.get("button"))
+	if list.is_empty():
+		return
+	var at := list.find(get_viewport().gui_get_focus_owner())
+	var to: Button = list[posmod(at + step, list.size())] if at >= 0 else list[0]
+	to.grab_focus()
+
+
+func _input(event: InputEvent) -> void:
+	if _acting.is_empty() or _over:
+		return
+	# the mouse's right button goes one step back (as Esc does)
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_RIGHT:
+		if _menu_page != "commands":
+			on_back()
+			get_viewport().set_input_as_handled()
+		return
+	if _aim == "":
+		return
+	if event.is_action_pressed("ui_left") or event.is_action_pressed("ui_up"):
+		_cycle(-1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_right") or event.is_action_pressed("ui_down"):
+		_cycle(1)
+		get_viewport().set_input_as_handled()
 
 
 func _target_picked(unit: Dictionary, forced_aim: String = "") -> void:
@@ -820,7 +993,37 @@ func _choose(action: Dictionary) -> void:
 	_acting = {}
 	_clear_menu()
 	_menu.visible = false
+	_menu_page = ""
+	_skill_focus = -1
+	_came_from = "commands"
+	_set_help("")
 	_picked.emit(action)
+
+
+## The help strip (top right, PC; never on touch): what the keys do now.
+func _set_help(state: String) -> void:
+	if not is_instance_valid(_help):
+		return
+	var pairs: Array = []
+	match state:
+		"commands":
+			pairs = [["confirm", "Choose"]]
+		"skills":
+			pairs = [["confirm", "Choose"], ["back", "Back"]]
+		"aim":
+			var verb := "Strike"
+			if not _waiting_skill.is_empty() and (String(_waiting_skill.get("kind", "")) == "spell" or _waiting_skill.has("heal")):
+				verb = "Cast"
+			pairs = [["target", "Target"], ["confirm", verb], ["back", "Back"]]
+		"fight":
+			pairs = [["fast", "Hold: faster"]]
+		"fast":
+			pairs = [["fast", "Faster x%d" % int(FF_SPEED)]]
+	var key := str(pairs)
+	if key == _help_key:
+		return
+	_help_key = key
+	_help.call("set_pairs", pairs)
 
 
 # ------------------------------------------------------------------ the battle, turn by turn
@@ -828,8 +1031,9 @@ func _wait(seconds: float) -> void:
 	await get_tree().create_timer(seconds / _speed, false).timeout
 
 
+## What happens, in the ribbon at the top middle (held 1.2 s, then it fades).
 func _say(text: String) -> void:
-	_message.text = text
+	_ribbon.call("say", text, 1.2)
 
 
 func _run(title: String) -> void:
@@ -913,7 +1117,7 @@ func _play(events: Array) -> void:
 			await moves.call("turn", who, events)
 		"guard":
 			_say("%s guards." % String(who["name"]))
-			_float(who, "Guard", UI.C_ICE)
+			_float(who, "Guard", UI.C_STEEL)
 			await moves.call("turn", who, events)
 		"stunned":
 			_say("%s cannot move." % String(who["name"]))
@@ -1029,7 +1233,7 @@ func impact(e: Dictionary, opts: Dictionary = {}) -> void:
 				_show_fx(target)
 			else:
 				stage.call("burst", (target["home"] as Vector3) + Vector3(0.0, 0.2, 0.15), Color(0.5, 1.0, 0.6), 1.4, 1.6)
-			_float(target, "+%d" % int(e["amount"]), UI.C_GREEN, {"heal": true})
+			_float(target, "+%d" % int(e["amount"]), Num.C_HEAL, {"heal": true})
 			Sfx.play("pickup", -6.0)
 			var node: Node = target["node"]
 			node.call("set_flash", 0.45, Color(0.6, 1.0, 0.65))
@@ -1132,9 +1336,9 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 	# the number: a combo keeps one that counts up
 	var key := String(target["id"]) + str(target["home"])
 	if parts > 1 and part > 0 and _combo.has(key) and is_instance_valid(_combo[key]):
-		Num.bump(_combo[key], ("%d" % shown), Color(1.0, 0.85, 0.35) if crit else Color(0, 0, 0, 0))
+		Num.bump(_combo[key], ("%d" % shown), Num.C_CRIT if crit else Color(0, 0, 0, 0))
 	else:
-		var l := _float(target, ("%d" % shown), UI.C_GOLD if crit else UI.C_BONE, {"dir": d, "crit": crit, "hold": 0.22 * float(parts - 1 - part)})
+		var l := _float(target, ("%d" % shown), Num.C_CRIT if crit else Num.C_DAMAGE, {"dir": d, "crit": crit, "hold": 0.22 * float(parts - 1 - part)})
 		if parts > 1:
 			_combo[key] = l
 	if last:
@@ -1314,7 +1518,8 @@ func _float(unit: Dictionary, text: String, colour: Color, opts: Dictionary = {}
 	# (never off the screen, nor under the words and the boss's bar at the top: a tall boss's head
 	# can be out of the picture)
 	var room: Vector2 = _root.size
-	p = Vector2(clampf(p.x, 24.0, maxf(room.x - 24.0, 24.0)), clampf(p.y, 58.0 if not _boss_bar.is_empty() else 46.0, maxf(room.y - 30.0, 60.0)))
+	var top_y := float(_ribbon.position.y) + float(_ribbon.call("band_h")) + (16.0 if _ph else 30.0)
+	p = Vector2(clampf(p.x, 24.0, maxf(room.x - 24.0, 24.0)), clampf(p.y, top_y, maxf(room.y - 30.0, top_y + 10.0)))
 	# (round three: bigger in HD, and numbers popping off one fighter close together stack upwards
 	# instead of landing on one another: a volley's "CRITICAL 46 28" collided)
 	var key := str(unit.get("home"))
@@ -1322,10 +1527,8 @@ func _float(unit: Dictionary, text: String, colour: Color, opts: Dictionary = {}
 	var last: Array = _num_stack.get(key, [-100000, -1])
 	var n := int(last[1]) + 1 if now - int(last[0]) < 650 else 0
 	_num_stack[key] = [now, n]
-	p.y = maxf(p.y - 22.0 * float(n % 3), 46.0)
+	p.y = maxf(p.y - (15.0 if _ph else 26.0) * float(n % 3), top_y)
 	var o := opts.duplicate()
-	if Hd.on():
-		o["size"] = 1.4
 	if not text.is_valid_int() and not text.begins_with("+"):
 		o["word"] = true
 	return Num.pop(_root, p, text, colour, o)
@@ -1335,6 +1538,8 @@ func _float(unit: Dictionary, text: String, colour: Color, opts: Dictionary = {}
 func _finish() -> void:
 	_over = true
 	_menu.visible = false
+	_xp_was = Rpg.xp()                 # (what the XP bars on the victory panel fill up from)
+	_lvl_was = Rpg.level()
 	var outcome := String(fight.call("result"))
 	var summary := {"spot": spot, "story": story, "rounds": int(fight.round_no), "xp": 0, "coins": 0, "gear": "", "levels": 0}
 	var lines: Array = []
@@ -1367,6 +1572,8 @@ func _finish() -> void:
 		head = "You got away"
 	if _auto and G.flag("animend") and outcome != "fled":
 		await _closing(outcome == "win")            # test: the victory poses / the defeat, under the bot too
+		if G.flag("shotend") and G.arg("shots", "") != "":
+			await _end_shot(outcome, summary, lines, head)
 		await _wait(1.6)
 	if _auto:
 		print("[battle] result=%s rounds=%d xp=%d coins=%d party_hp=%s" % [outcome, int(fight.round_no), int(summary["xp"]), int(summary["coins"]),
@@ -1374,32 +1581,190 @@ func _finish() -> void:
 		finished.emit(outcome, summary)
 		return
 	if outcome == "fled":
+		_ribbon.call("say", head, 1.2)
 		await _wait(0.3)
 		finished.emit(outcome, summary)
 		return
 	_say("")
 	await _closing(outcome == "win")
-	var panel := UI.panel("panel")
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_area.add_child(panel)
-	var col := UI.vbox(3)
-	panel.add_child(col)
-	var title := UI.label(head, "Head")
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_color_override("font_color", UI.C_GOLD if outcome == "win" else UI.C_RED)
-	col.add_child(title)
-	for line: String in lines:
-		var l := UI.label(line, "Hud")
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		col.add_child(l)
-	var go := UI.button("Continue", func() -> void: finished.emit(outcome, summary), "", "ui_start")
-	go.custom_minimum_size = Vector2(90, 20)
+	_end_screen(outcome, summary, lines, head)
+
+
+## THE END OF A BATTLE on the screen. Won: VICTORY in big gold letters with a light sweeping over
+## them, then a glass panel: a row per fighter (coin, name, the XP counting up, the XP bar filling,
+## LEVEL UP when it comes), the coins, new skills, gear found in its rarity colour, and Continue.
+## Lost: FALLEN in a dark red over the red veil, today's two lines, Continue.
+func _end_screen(outcome: String, summary: Dictionary, lines: Array, _head: String) -> Button:
+	_ribbon.call("unpin")
+	_ribbon.call("say", "", 0.0)
+	_menu.visible = false
+	_warn.visible = false
+	_set_help("")
+	# (the turn order and the boss's bar are done with: they make way for the result)
+	var done: Array = [_rail, _boss]
+	if _ph:
+		done.append_array(_cards)          # (the phone's panel needs the whole height)
+	for c: Control in done:
+		if is_instance_valid(c):
+			UI.pop_out(c, false)
+	var room: Vector2 = _root.size
+	var won := outcome == "win"
+	var banner: Control = BUI.Banner.new()
+	banner.call("setup", "Victory" if won else "Fallen", UI.C_GOLD if won else Color(0.80, 0.40, 0.36),
+		Color(0.45, 0.25, 0.05, 0.6) if won else Color(0.2, 0.0, 0.0, 0.6))
+	_root.add_child(banner)
+	banner.call("fit", room.x)
+	banner.position = Vector2(0, roundf(room.y * (0.05 if _ph else 0.11)))
+	UI.pop_in(banner, Vector2(0, -6))
+	banner.call("play_sweep", 0.25)
+	var col := UI.vbox(2 if _ph else 4)
+	var holder: Control = col
+	var width := minf(room.x - 40.0, 236.0) if _ph else 300.0
+	if won:
+		var panel := UI.panel("panel")
+		panel.add_child(col)
+		holder = panel
+		_victory_rows(col, summary, lines)
+	else:
+		for line: String in lines:
+			var l := UI.label(line, "Hud")
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			l.add_theme_font_size_override("font_size", 9 if _ph else 13)
+			col.add_child(l)
+		col.add_child(UI.spacer(0, 4 if _ph else 8))
+	var go := UI.button("Continue", func() -> void: finished.emit(outcome, summary), "Big", "ui_start")
+	go.custom_minimum_size.x = 90.0 if _ph else 130.0
 	go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(go)
-	UI.pop_in(panel)
+	_root.add_child(holder)
+	var hs := holder.get_combined_minimum_size()
+	holder.size = Vector2(width, hs.y)
+	var under: float = banner.position.y + banner.size.y + (2.0 if _ph else 6.0)
+	holder.position = Vector2(roundf((room.x - width) * 0.5), roundf(minf(under, room.y - hs.y - 4.0)))
+	UI.pop_in(holder)
 	go.grab_focus.call_deferred()
+	return go
+
+
+func _victory_rows(col: VBoxContainer, summary: Dictionary, lines: Array) -> void:
+	var gain := int(summary["xp"])
+	var levels := int(summary["levels"])
+	var from := clampf(float(_xp_was) / float(Rpg.need(_lvl_was)), 0.0, 1.0)
+	var to := Rpg.fill()
+	var i := 0
+	for u: Dictionary in fight.party:
+		var row := UI.hbox(4 if _ph else 8)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var m := UI.medallion(String(u["sprite"]), 5.0 if _ph else 9.0, UI.C_STEEL, false, u.get("tint", Color.WHITE))
+		m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if int(u["hp"]) <= 0:
+			m.call("set_ko", true)
+		row.add_child(m)
+		var nm := UI.label(String(u["name"]), "Name")
+		nm.custom_minimum_size.x = 50.0 if _ph else 78.0
+		nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(nm)
+		var xp := UI.label("+0 XP", "Num")
+		xp.add_theme_color_override("font_color", UI.C_XP_A)
+		xp.custom_minimum_size.x = 38.0 if _ph else 58.0
+		xp.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		xp.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(xp)
+		var bar := UI.bar("xp", 44.0 if _ph else 100.0)
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bar.call("set_value", from, 1.0, false)
+		row.add_child(bar)
+		var tag := PanelContainer.new()
+		tag.add_theme_stylebox_override("panel", UI.box("tag"))
+		tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var tl := UI.label("Level up", "Head")
+		tl.add_theme_font_size_override("font_size", 7 if _ph else 9)
+		tl.add_theme_color_override("font_color", UI.C_EMBER)
+		tag.add_child(tl)
+		tag.modulate.a = 0.0
+		row.add_child(tag)
+		col.add_child(row)
+		_count_up(xp, bar, tag, gain, from, to, levels, 0.35 + 0.1 * i)
+		i += 1
+	col.add_child(HSeparator.new())
+	var coins := UI.hbox(5)
+	coins.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var disc := UI.coin(3.5 if _ph else 5.0)
+	disc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	coins.add_child(disc)
+	var cl := UI.label("+%d coins" % int(summary["coins"]), "Num")
+	cl.add_theme_color_override("font_color", UI.C_GOLD)
+	coins.add_child(cl)
+	for line: String in lines:
+		if line.begins_with("Level "):
+			var ll := UI.label(line.replace("!  ", "!   "), "Good")
+			ll.add_theme_font_size_override("font_size", 8 if _ph else 11)
+			ll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			ll.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			ll.clip_text = true
+			coins.add_child(ll)
+	col.add_child(coins)
+	for line: String in lines:
+		if line.begins_with("New skill: "):
+			var sl := UI.label(line, "Gold")
+			sl.add_theme_font_size_override("font_size", 9 if _ph else 12)
+			col.add_child(sl)
+	var gear_id := String(summary.get("gear", ""))
+	for line: String in lines:
+		if line.begins_with("Found: ") and gear_id != "":
+			var row := UI.hbox(5)
+			row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var g := Gear.row(gear_id)
+			if Art.has(String(g.get("icon", ""))):
+				row.add_child(UI.icon(String(g["icon"]), 12.0 if _ph else 16.0))
+			var fl := UI.label("Found:", "Dim")
+			fl.add_theme_font_size_override("font_size", 9 if _ph else 12)
+			row.add_child(fl)
+			var gl := UI.label(String(g.get("name", "")), "Name")
+			gl.add_theme_color_override("font_color", [UI.C_COMMON, UI.C_RARE, UI.C_EPIC][clampi(int(g.get("rarity", 0)), 0, 2)])
+			row.add_child(gl)
+			col.add_child(row)
+	col.add_child(UI.spacer(0, 2 if _ph else 4))
+
+
+## A fighter's row: "+38 XP" counts up while the bar fills; past the top it says LEVEL UP and
+## fills again from empty.
+func _count_up(xp: Label, bar: Control, tag: Control, gain: int, from: float, to: float, levels: int, delay: float) -> void:
+	if UI.instant or not xp.is_inside_tree():
+		xp.text = "+%d XP" % gain
+		bar.call("set_value", to if levels == 0 else to, 1.0, false)
+		tag.modulate.a = 1.0 if levels > 0 else 0.0
+		return
+	var tw := xp.create_tween()
+	tw.tween_interval(delay)
+	tw.tween_method(func(v: float) -> void: xp.text = "+%d XP" % roundi(v), 0.0, float(gain), 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var tb := bar.create_tween()
+	tb.tween_interval(delay)
+	if levels == 0:
+		tb.tween_method(func(v: float) -> void: bar.call("set_value", v, 1.0, false), from, to, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		return
+	tb.tween_method(func(v: float) -> void: bar.call("set_value", v, 1.0, false), from, 1.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tb.tween_callback(_level_up_tag.bind(tag))
+	tb.tween_method(func(v: float) -> void: bar.call("set_value", v, 1.0, false), 0.0, to, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func _level_up_tag(tag: Control) -> void:
+	if not is_instance_valid(tag):
+		return
+	tag.modulate.a = 1.0
+	tag.pivot_offset = tag.size * 0.5
+	tag.scale = Vector2(1.5, 1.5)
+	tag.create_tween().tween_property(tag, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	Sfx.play("ui_start", -10.0)
+
+
+## Test: --shotend (with --autobattle --animend --shots=<dir>) writes battle_end.png with the
+## victory / defeat screen up (a look only: the bot's battle then ends as usual).
+func _end_shot(outcome: String, summary: Dictionary, lines: Array, head: String) -> void:
+	_end_screen(outcome, summary, lines, head)
+	await get_tree().create_timer(float(G.arg("endwait", "1.8")), true, false, true).timeout
+	DirAccess.make_dir_recursive_absolute(G.arg("shots", ""))
+	get_viewport().get_texture().get_image().save_png(G.arg("shots", "").path_join("battle_end.png"))
 
 
 ## THE WAY OUT: a won battle flashes gold, the camera moves in on the winners and they hop for
@@ -1438,8 +1803,18 @@ func _closing(won: bool) -> void:
 
 ## The phone's Back button, Esc or B: one step back in the menu (never out of the fight).
 func on_back() -> void:
-	if not _acting.is_empty() and _menu.visible:
-		_show_commands()
+	if _acting.is_empty() or _over:
+		return
+	match _menu_page:
+		"skills":
+			Sfx.play("ui_back")
+			_show_commands(true)
+		"aim":
+			Sfx.play("ui_back")
+			if _waiting_skill.is_empty():
+				_show_commands(true)
+			else:
+				_show_skills(true)
 
 
 func _take_shot() -> void:
@@ -1465,6 +1840,35 @@ func _take_shot() -> void:
 		_show_skills()
 		await get_tree().create_timer(0.4).timeout
 		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_skills.png"))
+		_show_commands(true)
+		await get_tree().create_timer(0.2).timeout
+	if G.flag("shotaim"):
+		# test: --shotaim writes battle_target.png while aiming an Attack (on the second monster)
+		_on_attack()
+		await get_tree().create_timer(0.2).timeout
+		_cycle(1)
+		await get_tree().create_timer(0.5).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_target.png"))
+		on_back()
+		await get_tree().create_timer(0.2).timeout
+	if G.flag("shotheal"):
+		# test: --shotheal writes battle_heal.png while the one acting aims a heal at a friend
+		for sk: Dictionary in _acting.get("skills", []):
+			if sk.has("heal"):
+				_waiting_skill = sk
+				_ask_target("friend", "Tap who gets it.")
+				break
+		await get_tree().create_timer(0.5).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_heal.png"))
+		on_back()
+		await get_tree().create_timer(0.2).timeout
+	if G.flag("shotwarn"):
+		# test: --shotwarn writes battle_warn.png with the boss's "Guard!" plate over the orders (a look only)
+		_show_commands()
+		_warn_on = true
+		(_warn.get_child(0) as Label).text = "%s draws back for a great blow at everybody. Guard!" % String(fight.foes[0]["name"])
+		await get_tree().create_timer(0.4).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_warn.png"))
 	G.quit(0)
 
 
@@ -1494,27 +1898,52 @@ func _process(delta: float) -> void:
 	if _marker != null and _marker.visible:
 		var m := _marker.material_override as StandardMaterial3D
 		m.albedo_color.a = 0.5 + 0.25 * sin(_t * 4.0)
-	_arrow.visible = not _turn_unit.is_empty() and not _over and String(_turn_unit.get("side", "")) == "party"
+	_ui_frame()
+
+
+## The screen, every frame: each monster's button and bar follow it, the aimed one gets the
+## brackets (and its plate), the chevron bobs over the one whose turn it is, the panel keeps its
+## corner, the help strip says what the keys do now.
+func _ui_frame() -> void:
+	if _root == null:
+		return
+	var aimed := _aimed()
+	_arrow.visible = not _turn_unit.is_empty() and not _over and String(_turn_unit.get("side", "")) == "party" and _aim == ""
 	if _arrow.visible:
-		var head: Vector2 = _on_ui((_turn_unit["home"] as Vector3) + Vector3(0.0, float(_turn_unit["top"]), 0.0))
-		_arrow.position = (head + Vector2(0.0, -3.0 + 2.0 * sin(_t * 5.0))).round()
+		var r := _sprite_rect(_turn_unit)
+		_arrow.position = Vector2(r.get_center().x, r.position.y - (3.0 if _ph else 5.0)).round()
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
 		var b: Button = tag["button"]
-		var stand: Vector3 = (u["actor"] as Node).call("at") if u.get("actor") != null else (u["home"] as Vector3)     # (the bar follows him when he moves)
-		var p: Vector2 = _on_ui(stand + Vector3(0.0, float(u["top"]), 0.0))
-		if Hd.on():
-			# (HD: the frame to tap is as big as the monster really is on the screen)
-			var feet: Vector2 = _on_ui(stand)
-			var h := maxf(feet.y - p.y, 12.0)
-			var want := Vector2(maxf(h * float(u["wide"]) / maxf(float(u["top"]), 0.1) * 0.9, 24.0), h * 0.85 + 4.0).round()
-			if b.custom_minimum_size != want:
-				b.custom_minimum_size = want
-				b.size = want
-				(tag["back"] as Control).position.x = (want.x - 34.0) * 0.5
-				var nl: Label = tag["name"]
-				nl.position.x = (want.x - nl.get_minimum_size().x) * 0.5
-		b.position = (p - Vector2(b.size.x * 0.5, 2.0)).round()
+		var r := _sprite_rect(u)
+		b.position = r.position.round()
+		b.size = r.size.round()
+		var bar: Control = tag["bar"]
+		bar.visible = int(u["hp"]) > 0 and not bool(u.get("boss", false)) and not is_same(u, aimed) and not _over
+		bar.position = Vector2(r.get_center().x - bar.size.x * 0.5, r.position.y - (4.0 if _ph else 6.0) - bar.size.y).round()
+	_brackets.set("shown", not aimed.is_empty())
+	if not aimed.is_empty():
+		_brackets.set("box", _sprite_rect(aimed).grow(3.0 if not _ph else 2.0))
+	var plate_on := not aimed.is_empty() and String(aimed["side"]) == "foes"
+	_plate.visible = plate_on
+	if plate_on:
+		var key := String(aimed["id"]) + str(aimed["home"]) + ":" + str(aimed["hp"])
+		if key != _plate_key:
+			_plate.call("set_unit", aimed, _plate_key.begins_with(String(aimed["id"]) + str(aimed["home"]) + ":"))
+			_plate_key = key
+		var box := _sprite_rect(aimed)
+		var ps: Vector2 = _plate.size
+		var room: Vector2 = _root.size
+		var min_y := float(_ribbon.position.y) + float(_ribbon.call("band_h")) + 4.0
+		_plate.position = Vector2(clampf(box.get_center().x - ps.x * 0.5, 4.0, room.x - ps.x - 4.0),
+			maxf(box.position.y - (6.0 if _ph else 10.0) - ps.y, min_y)).round()
+	else:
+		_plate_key = ""
+	for card: Control in _cards:
+		card.call("set_targeted", _aim == "friend" and is_same(card.get("unit"), aimed))
+	_place_menu()
+	if _acting.is_empty():
+		_set_help("" if _over or _intro > 0.0 else ("fast" if _ff > 1.0 else "fight"))
 
 
 ## FAST-FORWARD: while the fight plays out (never while you choose), holding a button plays the
@@ -1532,7 +1961,3 @@ func _fast_forward(real: float) -> void:
 	if want != _ff:
 		_ff = want
 		_apply_time()
-	if _ff_hint != null:
-		_ff_hint.visible = not choosing and not _over and _intro <= 0.0
-		_ff_hint.text = ">> x%d" % int(FF_SPEED) if _ff > 1.0 else ("Hold the screen: faster" if OS.has_feature("mobile") else "Hold Space: faster")
-		_ff_hint.modulate.a = 0.95 if _ff > 1.0 else 0.55
