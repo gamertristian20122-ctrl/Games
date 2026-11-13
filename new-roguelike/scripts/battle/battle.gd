@@ -1087,7 +1087,13 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 			stage.call("dust", target["home"], (1.0 + 1.5 * ratio + (0.5 if crit else 0.0)) * (1.4 if big_one else 1.0))
 	# the flash (gold on a crit), and the pack's own hit animation
 	# (the flash shines by itself only a little: a big picture flashing hot blooms into a white blob)
-	node.call("set_flash", 1.0 if crit else (0.55 if big_one else 0.8), Color(1.0, 0.85, 0.45) if crit else Color.WHITE, (0.45 if Hd.on() else 0.3) * (0.5 if big_one else 1.0))
+	# (the party's pale steel and skin, flashed near white under their pool of light, bloomed into a
+	# white ball bigger than the knight in HD: their flash is softer and does not shine by itself)
+	var ours := String(target["side"]) == "party" and Hd.on()
+	var strength := 1.0 if crit else (0.55 if big_one else 0.8)
+	if ours:
+		strength = 0.6 if crit else 0.45
+	node.call("set_flash", strength, Color(1.0, 0.85, 0.45) if crit else Color.WHITE, (0.45 if Hd.on() else 0.3) * (0.5 if big_one else (0.0 if ours else 1.0)))
 	_later(0.05 if not crit else 0.09, node, func(n: Node) -> void: n.call("set_flash", 0.0))
 	if Art.has_anim(String(target["sprite"]), "hit") and int(target["hp"]) > 0:
 		node.call("play", "hit")

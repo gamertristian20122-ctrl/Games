@@ -126,7 +126,9 @@ func _blade(at: Vector3, power: float, hold: Vector4) -> void:
 	var g := _ground(at)
 	var lite := 1.0 if hd() else 0.6
 	# the slash: a crescent of white-hot light that sweeps across the one hit in a blink
-	slash(at + Vector3(0.0, 0.1, 0.35), Color(1.0, 0.92, 0.75), 0.85 + 0.18 * power, power)
+	# (just BEHIND the one hit, so his body cuts it and it flares round him: drawn in front at full
+	# heat it bloomed into a white blob over both fighters on every plain blow)
+	slash(at + Vector3(0.0, 0.1, -0.3), Color(1.0, 0.92, 0.75), 0.85 + 0.18 * power, power, 0.55)
 	# sword sparks: a fan of hot streaks that fly out, fall and skip on the ground
 	var n := int((14.0 + 14.0 * power) * lite)
 	var sp := _streaks(at, 9.0 + 2.5 * power, Color(1.0, 0.8, 0.4))
@@ -145,7 +147,7 @@ func _blade(at: Vector3, power: float, hold: Vector4) -> void:
 		var c := Color(1.0, 0.85, 0.5).lerp(Color(1.0, 0.45, 0.08), randf())
 		sp.add(i, at + Vector3(randf_range(-0.15, 0.15), randf_range(-0.2, 0.3), 0.0), dir * randf_range(4.0, 9.0 + 2.0 * power), randf() * 0.04, randf_range(0.25, 0.6), c)
 	s.add_child(sp)
-	_light(at + Vector3(0.0, 0.3, 0.9), Color(1.0, 0.9, 0.75), 5.0 + 3.0 * power, 6.0 + 1.5 * power, 0.16, false, 0.3)
+	_light(at + Vector3(0.0, 0.3, 0.9), Color(1.0, 0.9, 0.75), 2.5 + 2.0 * power, 6.0 + 1.5 * power, 0.16, false, 0.3)
 	if power >= 1.4:
 		s.dust(g, power * 0.55)
 
@@ -490,7 +492,7 @@ func _strip_mesh(pts: PackedVector3Array, widths: PackedFloat32Array, normal: Ve
 
 ## THE SLASH: a crescent of light across `at`, turned to the camera, that sweeps from one end to
 ## the other in a blink and fades.
-func slash(at: Vector3, colour: Color, radius: float, power: float = 1.0) -> void:
+func slash(at: Vector3, colour: Color, radius: float, power: float = 1.0, heat_k: float = 1.0) -> void:
 	var cb: Basis = (s.cam as Camera3D).global_transform.basis
 	var right := cb.x
 	var up := cb.y
@@ -509,7 +511,7 @@ func slash(at: Vector3, colour: Color, radius: float, power: float = 1.0) -> voi
 		var a := lerpf(a0, a1, t)
 		pts.append((right * cos(a) + up * sin(a) * 0.62) * radius)
 		ws.append((0.06 + 0.22 * (0.6 + 0.2 * power)) * sin(PI * clampf(t * 0.9 + 0.08, 0.0, 1.0)))
-	var m := _strip_mat(colour, 3.2 + 0.6 * power, 0.0)
+	var m := _strip_mat(colour, (3.2 + 0.6 * power) * heat_k, 0.0)
 	m.set_shader_parameter("sweep", 0.0)
 	var node := MeshInstance3D.new()
 	node.mesh = _strip_mesh(pts, ws, cb.z)
