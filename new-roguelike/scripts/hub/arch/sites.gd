@@ -605,6 +605,13 @@ const ROPE := Color(0.86, 0.74, 0.52)
 const PAINT := Color(0.42, 0.62, 0.66)       ## the boat's painted wale (the pack's timber, washed teal)
 const DAMP := Color(0.50, 0.58, 0.48)        ## the quay wall's green-dark band at the water line
 static var _pane: ImageTexture
+## A lantern's pane: one plain colour made by code, laid as "glass" (it glows warm at night like a window).
+static func pane_tex() -> ImageTexture:
+	if _pane == null:
+		var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+		img.fill(Color(0.46, 0.60, 0.76))
+		_pane = ImageTexture.create_from_image(img)
+	return _pane
 
 
 ## px a deck lifts a spot (0 when it is on none: see view3d_build.gd decks).
@@ -815,10 +822,7 @@ func _boat(bt: Dictionary, place: Dictionary) -> void:
 		_rope(Vector3(mx, top - 6.0, zc), Vector3(mx - 6.0, gw.call(tm - 0.07) + 1.0, zc + s * float(hb.call(tm - 0.07))), 0.0)
 	# the stern lantern: a post, an arm, an iron cage round a pane that glows at night
 	var iron := iron_tex()
-	if _pane == null:
-		var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.46, 0.60, 0.76))
-		_pane = ImageTexture.create_from_image(img)
+	pane_tex()
 	var lx := x1 - 5.0
 	var ld: float = gw.call(1.0 - 5.0 / long) - 2.5
 	blk(post, Vector3(lx - 1.2, ld, zc - 1.2), Vector3(lx + 1.2, ld + 21.0, zc + 1.2))

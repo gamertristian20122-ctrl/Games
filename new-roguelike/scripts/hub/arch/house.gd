@@ -27,15 +27,37 @@ extends RefCounted
 ##            bands and sills, a flat roof behind a parapet, no timber posts, no jetty): "wall" is then
 ##            the carved band (hub_bsandwall) that tops each storey of plain brick (hub_bsandbrick)
 ##   "storey" px: one storey's height (default: the wall art's own; a house of the Sands 56)
+## RICHER FRONTS (round three: "the facades are one tone"):
+##   every house wears its own TINT of the pack's pieces (code tints, from the house's spot unless the
+##   row says): "tint" the walls, "timber" beams and posts, "roof_tint" the roof
+##   "frame"  true/false: half-timbering on the upper storeys (studs and braces between the windows;
+##            default on plaster and white walls)
+##   "bay"    [dx, ...]: a bay window on the first upper storey (a timber box out over the street with
+##            its own little roof, on a bracket)
+##   "lamp"   -1 or 1: an iron lantern on a bracket beside the door, on that side; its pane glows at night
+##   "stair"  -1 or 1: an outside stair of stone up that side wall to a door on the upper storey (only
+##            where nobody walks beside the house: the ends of a row)
+##   "chimney_dx" px off the middle for the chimney (default half the half-width, east)
+##   "eave"   px the roof reaches past the walls (default 10); rafter ends show under it
+##   a balcony carries little plants behind its rail and a vine hangs from it
 
 const Kit = preload("res://scripts/hub/arch/kit.gd")
+const Sites = preload("res://scripts/hub/arch/sites.gd")
 const WalkLight = preload("res://scripts/fx/walk_light.gd")
 
 const PX := 1.0 / 16.0
 const PLINTH := 6.0                ## px: the stone foot of the walls
 const BAND := 5.0                  ## px: the timber band between two storeys
 const JETTY := 4.0                 ## px: how far the upper storey juts out
-const EAVE := 8.0                  ## px: how far the roof reaches past the walls
+const EAVE := 10.0                 ## px: how far the roof reaches past the walls (a row's "eave")
+## The tints a house may wear (round three): walls, timber, roof. Pale enough that the pack's own
+## painting still reads; each house picks by its spot.
+## (They must be strong: the HD grade greys colour in the shade, so only a change of value and a
+## clear hue survive it.)
+const WALL_TINTS := [Color(1.0, 1.0, 1.0), Color(1.0, 0.80, 0.52), Color(0.94, 0.66, 0.58), Color(0.72, 0.84, 0.70),
+	Color(0.70, 0.78, 0.92), Color(0.86, 0.76, 0.66), Color(1.0, 0.90, 0.74)]
+const TIMBER_TINTS := [Color(1.0, 1.0, 1.0), Color(0.56, 0.50, 0.50), Color(1.0, 0.80, 0.62), Color(0.54, 0.60, 0.70), Color(0.74, 0.62, 0.50)]
+const ROOF_TINTS := [Color(1.0, 1.0, 1.0), Color(0.76, 0.90, 1.0), Color(1.0, 0.76, 0.64), Color(0.70, 0.80, 0.72), Color(0.88, 0.80, 0.96)]
 const SLAB := 3.0                  ## px: how thick the roof is
 const UPPER := {"hub_wall_brick": "hub_wall_plaster", "hub_wall_log": "hub_wall_plank", "hub_wall_dark": "hub_wall_dark",
 	"hub_wall_white": "hub_wall_white", "hub_wall_plaster": "hub_wall_plaster", "hub_wall_plank": "hub_wall_plank"}
@@ -51,6 +73,10 @@ var rail: Texture2D
 var fringe: Texture2D
 var base := 0.0                    ## px: what the house being built stands on (a terrace)
 var sand := false                  ## the house being built is a flat-roofed one of the Sands
+var wall_tint := Color.WHITE
+var timber_tint := Color.WHITE
+var roof_tint := Color.WHITE
+var eave_px := EAVE
 
 
 func _init(the_kit: Kit, view) -> void:
@@ -120,12 +146,23 @@ func build(h: Dictionary, walk_top: float) -> void:
 	var win_up := float(h.get("win_up", 12.0))
 	var dx_door := float(h.get("door_dx", 0.0))
 	var dc := cx + dx_door                                          # the middle of the door
+	var k := int(absf(cx * 13.0 + cz * 7.0)) / 8
+	wall_tint = h.get("tint", WALL_TINTS[k % WALL_TINTS.size()])
+	timber_tint = h.get("timber", TIMBER_TINTS[(k / 3) % TIMBER_TINTS.size()])
+	roof_tint = h.get("roof_tint", ROOF_TINTS[(k / 2) % ROOF_TINTS.size()])
+	if sand:
+		wall_tint = h.get("tint", Color.WHITE)
+		timber_tint = Color.WHITE
+		roof_tint = Color.WHITE
+	eave_px = float(h.get("eave", EAVE))
 
 	# --- the ground storey: front and sides, and the stone plinth (open where the door is)
+	kit.tint = wall_tint
 	pan(wall, x0, cz, x1, cz, 0.0, sh, Vector3(0, 0, 1))
 	for side: float in [-1.0, 1.0]:
 		var x := cx + side * w
 		pan(wall, x, cz, x, back, 0.0, sh, Vector3(side, 0, 0))
+	kit.tint = Color.WHITE
 	var dl := dc - ds.x * 0.5 - 2.0
 	var dr := dc + ds.x * 0.5 + 2.0
 	blk(stone, Vector3(x0 - 2, 0, back), Vector3(dl, PLINTH, cz + 2))
@@ -141,16 +178,21 @@ func build(h: Dictionary, walk_top: float) -> void:
 	if floors > 1:
 		if band != null:
 			_band(band, x0, x1, front, back, top)
+		kit.tint = timber_tint
 		blk(beam, Vector3(x0 - 1, sh, back), Vector3(x1 + 1, sh + BAND, front + (2.5 if sand else 1.0)), 0)
+		kit.tint = wall_tint
 		pan(upper, x0, front, x1, front, sh + BAND, top, Vector3(0, 0, 1))
 		for side: float in [-1.0, 1.0]:
 			var x := cx + side * w
 			pan(upper, x, front, x, back, sh + BAND, top, Vector3(side, 0, 0))
+		kit.tint = timber_tint
 		# (a third storey: another timber band between the upper two; nobody walks behind the north row)
 		for f in range(2, floors):
 			var y := sh * f + BAND * (f - 1)
 			blk(beam, Vector3(x0 - 1, y, back), Vector3(x1 + 1, y + BAND, front + 1.5), 0)
+		kit.tint = Color.WHITE
 	# --- timber corner posts (a log house has its own corner logs)
+	kit.tint = timber_tint
 	if not logs and not sand:
 		for side: float in [-1.0, 1.0]:
 			var x := cx + side * (w - 1.5)
@@ -158,8 +200,13 @@ func build(h: Dictionary, walk_top: float) -> void:
 			if floors > 1:
 				blk(post, Vector3(x - 2.5, sh + BAND, front - 3), Vector3(x + 2.5, top, front + 1.5), Kit.BOTTOM | Kit.TOP)
 	# --- the door, a pent roof over it where it fits
+	kit.tint = Color.WHITE
 	pan(door, dc - ds.x * 0.5, cz + 0.4, dc + ds.x * 0.5, cz + 0.4, 0.0, ds.y, Vector3(0, 0, 1), "solid", true)
+	kit.tint = timber_tint
 	blk(beam, Vector3(dc - ds.x * 0.5 - 3, ds.y, cz), Vector3(dc + ds.x * 0.5 + 3, ds.y + 3, cz + 2.5))     # the lintel
+	kit.tint = Color.WHITE
+	if h.has("lamp"):
+		_door_lamp(dc + float(h["lamp"]) * (ds.x * 0.5 + 7.0), cz, minf(ds.y + 2.0, sh - 10.0))
 	var room := win_dx - wz.x * 0.5 - ds.x * 0.5 if win != null else 99.0
 	if String(h.get("shop", "")) == "wide":
 		_shop_awning(cx, w, cz, sh, Art.tex(String(h.get("shop_roof", "hub_roof_tiles"))))
@@ -180,22 +227,36 @@ func build(h: Dictionary, walk_top: float) -> void:
 			var xs: Array = h.get("up_xs", [-win_dx, win_dx])
 			if not balcony and wide >= 120.0:
 				xs = [-wide / 3.0, 0.0, wide / 3.0]
+			var bays: Array = h.get("bay", [])
 			for dx: float in xs:
+				if bays.has(dx):
+					continue
 				_window(win, cx + dx, front, y0, true, false)
+			for dx: float in xs + bays:
 				for f in range(2, floors):
 					_window(win, cx + dx, front, y0 + (sh + BAND) * (f - 1), f % 2 == 0, false)
+			for dx: float in bays:
+				_bay(win, cx + dx, front, y0, upper)
+			if bool(h.get("frame", (wall_id == "hub_wall_plaster" or wall_id == "hub_wall_white") and not sand)):
+				for f in range(1, floors):
+					var fy := (sh + BAND) * f
+					_frame(x0, x1, front, fy, fy + sh, (xs + bays).map(func(d: float) -> float: return cx + d), wz.x + 6.0, 0.0 if (balcony and f == 1) else -1.0, cx)
 			if balcony:
 				_balcony(cx, front, sh + BAND, door)
 	# --- the roof
+	kit.tint = timber_tint
 	if sand:
 		_flat_roof(x0, x1, front, back, top)
 	elif gable:
 		_gable_roof(cx, w, front, back, top, rise, win)
 	else:
 		_long_roof(cx, w, front, back, top, rise)
+	kit.tint = Color.WHITE
+	if h.has("stair") and floors > 1 and not sand:
+		_side_stair(cx + float(h["stair"]) * w, float(h["stair"]), cz, back, sh + BAND, door, upper)
 	# --- the chimney
 	if bool(h.get("chimney", false)) and not sand:
-		var bx := cx + w * 0.5
+		var bx := cx + float(h.get("chimney_dx", w * 0.5))
 		var bz := (front + back) * 0.5 - 4.0
 		var tip := top + rise + 14.0
 		blk(stone, Vector3(bx - 6, top - 4, bz - 5), Vector3(bx + 6, tip, bz + 5), Kit.BOTTOM)
@@ -231,7 +292,7 @@ func _pent(cx: float, cz: float, wide: float, up: float) -> void:
 	var out := 13.0
 	var drop := 6.0
 	var n := Vector3(0, out, drop * vs).normalized()
-	kit.poly(roof, [p(cx - w, up, cz), p(cx + w, up, cz), p(cx + w, up - drop, cz + out), p(cx - w, up - drop, cz + out)], n)
+	_roof_face(roof, [p(cx - w, up, cz), p(cx + w, up, cz), p(cx + w, up - drop, cz + out), p(cx - w, up - drop, cz + out)], n)
 	kit.poly(plank, [p(cx - w, up - 2, cz), p(cx + w, up - 2, cz), p(cx + w, up - drop - 2, cz + out), p(cx - w, up - drop - 2, cz + out)], -n)
 	pan(beam, cx - w, cz + out, cx + w, cz + out, up - drop - 2, up - drop, Vector3(0, 0, 1))
 	for side: float in [-1.0, 1.0]:
@@ -257,6 +318,15 @@ func _balcony(cx: float, front: float, floor_up: float, door: Texture2D) -> void
 	for side: float in [-1.0, 1.0]:
 		var x := cx + side * (w - 6)
 		blk(stone, Vector3(x - 2, floor_up - 9, front), Vector3(x + 2, floor_up - 3, front + out - 3), Kit.BOTTOM)
+	# (round three) planters of greens along the top of its rail, a vine hanging from its floor
+	var box := Art.tex("hub_planter")
+	var bs := box.get_size()
+	for side: float in [-1.0, 1.0]:
+		var x := cx + side * (w - 4.0 - bs.x * 0.5)
+		pan(box, x - bs.x * 0.5, front + out + 0.2, x + bs.x * 0.5, front + out + 0.2, floor_up + rh - 3.0, floor_up + rh - 3.0 + bs.y, Vector3(0, 0, 1), "solid", true)
+	var vine := Art.tex("hub_vine_2")
+	var vz := vine.get_size()
+	pan(vine, cx + w - 14.0 - vz.x * 0.5, front + out + 0.8, cx + w - 14.0 + vz.x * 0.5, front + out + 0.8, floor_up - 3.0 - vz.y, floor_up + 1.0, Vector3(0, 0, 1), "solid", true)
 
 
 ## The roof of a house whose ridge runs from side to side: one long slope faces the street.
@@ -268,15 +338,20 @@ func _long_roof(cx: float, w: float, front: float, back: float, top: float, rise
 	var xl := cx - w - 6.0
 	var xr := cx + w + 6.0
 	var ridge := top + rise
-	var eave := top - EAVE * lean
+	var eave := top - eave_px * lean
 	for s: float in [1.0, -1.0]:                                      # the slope to the street, then the back one
-		var ez := zr + s * (hd + EAVE)
+		var ez := zr + s * (hd + eave_px)
 		var n := Vector3(0, hd, s * rise * vs).normalized()
-		kit.poly(roof, [p(xl, ridge, zr), p(xr, ridge, zr), p(xr, eave, ez), p(xl, eave, ez)], n, "solid", Vector3(1, 0, 0))
+		_roof_face(roof, [p(xl, ridge, zr), p(xr, ridge, zr), p(xr, eave, ez), p(xl, eave, ez)], n, "solid", Vector3(1, 0, 0))
 		kit.poly(plank, [p(xl, ridge - SLAB, zr), p(xr, ridge - SLAB, zr), p(xr, eave - SLAB, ez), p(xl, eave - SLAB, ez)], -n, "solid", Vector3(1, 0, 0))
 		pan(beam, xl, ez, xr, ez, eave - SLAB, eave, Vector3(0, 0, s))                     # the fascia
 		if s > 0.0:
 			pan(fringe, xl, ez + 0.3, xr, ez + 0.3, eave - SLAB - fringe.get_size().y, eave - SLAB, Vector3(0, 0, 1))
+			# rafter ends under the deep eave, every 9 px
+			var rx := xl + 5.0
+			while rx < xr - 4.0:
+				blk(beam, Vector3(rx - 0.9, eave - SLAB - 2.0, front), Vector3(rx + 0.9, eave - SLAB + 0.5, ez - 1.0), 0)
+				rx += 9.0
 		for side: float in [-1.0, 1.0]:                               # the bargeboards along the slopes' ends
 			var x := xl if side < 0.0 else xr
 			kit.poly(beam, [p(x, ridge + 0.5, zr), p(x, eave + 0.5, ez), p(x, eave - SLAB - 1.5, ez), p(x, ridge - SLAB - 1.5, zr)], Vector3(side, 0, 0), "solid", Vector3(0, 0, 1))
@@ -291,14 +366,14 @@ func _long_roof(cx: float, w: float, front: float, back: float, top: float, rise
 func _gable_roof(cx: float, w: float, front: float, back: float, top: float, rise: float, win: Texture2D) -> void:
 	var roof := _roof_tex()
 	var lean := rise / w
-	var zf := front + EAVE
-	var zb := back - EAVE
+	var zf := front + eave_px
+	var zb := back - eave_px
 	var ridge := top + rise
 	var eave := top - 6.0 * lean
 	for side: float in [-1.0, 1.0]:
 		var ex := cx + side * (w + 6.0)
 		var n := Vector3(side * rise * vs, w, 0).normalized()
-		kit.poly(roof, [p(cx, ridge, zf), p(cx, ridge, zb), p(ex, eave, zb), p(ex, eave, zf)], n, "solid", Vector3(0, 0, -1))
+		_roof_face(roof, [p(cx, ridge, zf), p(cx, ridge, zb), p(ex, eave, zb), p(ex, eave, zf)], n, "solid", Vector3(0, 0, -1))
 		kit.poly(plank, [p(cx, ridge - SLAB, zf), p(cx, ridge - SLAB, zb), p(ex, eave - SLAB, zb), p(ex, eave - SLAB, zf)], -n, "solid", Vector3(0, 0, -1))
 		pan(beam, ex, zf, ex, zb, eave - SLAB, eave, Vector3(side, 0, 0))                    # the fascia along the side
 		# the bargeboard along the front edge of this slope, and its twin at the back
@@ -336,7 +411,7 @@ func _shop_awning(cx: float, w: float, cz: float, sh: float, roof: Texture2D) ->
 	var xl := cx - w + 2.0
 	var xr := cx + w - 2.0
 	var n := Vector3(0, out, drop * vs).normalized()
-	kit.poly(roof, [p(xl, up, cz), p(xr, up, cz), p(xr, up - drop, cz + out), p(xl, up - drop, cz + out)], n, "solid", Vector3(1, 0, 0))
+	_roof_face(roof, [p(xl, up, cz), p(xr, up, cz), p(xr, up - drop, cz + out), p(xl, up - drop, cz + out)], n, "solid", Vector3(1, 0, 0))
 	kit.poly(plank, [p(xl, up - 1.5, cz), p(xr, up - 1.5, cz), p(xr, up - drop - 1.5, cz + out), p(xl, up - drop - 1.5, cz + out)], -n, "solid", Vector3(1, 0, 0))
 	pan(beam, xl, cz + out, xr, cz + out, up - drop - 2, up - drop, Vector3(0, 0, 1))
 	pan(fringe, xl, cz + out + 0.3, xr, cz + out + 0.3, up - drop - 2 - fringe.get_size().y, up - drop - 2, Vector3(0, 0, 1))
@@ -375,3 +450,152 @@ func _flat_roof(x0: float, x1: float, front: float, back: float, top: float) -> 
 var _roof_id := "hub_roof_planks"
 func _roof_tex() -> Texture2D:
 	return Art.tex(_roof_id)
+
+
+## A roof face wears the house's roof tint (the timber round it keeps the timber tint).
+func _roof_face(tex: Texture2D, pts: Array, n: Vector3, kind := "solid", u_dir := Vector3.ZERO) -> void:
+	var was := kit.tint
+	kit.tint = roof_tint
+	kit.poly(tex, pts, n, kind, u_dir)
+	kit.tint = was
+
+
+## A lantern on an iron bracket beside a door (row key "lamp"): a short arm out from the wall, a
+## four-barred cage hanging from it round a pane that glows at night, a cap; at night a warm pool on
+## the doorstep and a glow round the lantern (they fade in with the windows).
+func _door_lamp(x: float, cz: float, up: float) -> void:
+	var iron := Sites.iron_tex()
+	var pane := Sites.pane_tex()
+	var out := 7.0
+	var z := cz + out
+	blk(iron, Vector3(x - 0.7, up + 1.0, cz), Vector3(x + 0.7, up + 2.2, z + 0.6), 0)                  # the arm
+	kit.poly(iron, [p(x, up - 5.0, cz), p(x, up - 3.5, cz), p(x, up + 1.0, cz + 4.5), p(x, up + 1.0, cz + 3.0)], Vector3(1, 0, 0), "solid", Vector3(0, 0, 1))
+	blk(iron, Vector3(x - 0.4, up - 1.0, z - 0.4), Vector3(x + 0.4, up + 1.0, z + 0.4), 0)              # the hook
+	blk(iron, Vector3(x - 3.0, up - 2.5, z - 3.0), Vector3(x + 3.0, up - 1.0, z + 3.0), 0)              # the cap
+	for c: Array in [[-2.6, -2.6], [1.8, -2.6], [-2.6, 1.8], [1.8, 1.8]]:
+		blk(iron, Vector3(x + c[0], up - 8.5, z + c[1]), Vector3(x + c[0] + 0.8, up - 2.5, z + c[1] + 0.8), 0)
+	blk(iron, Vector3(x - 2.6, up - 9.5, z - 2.6), Vector3(x + 2.6, up - 8.5, z + 2.6), 0)              # its floor
+	for f: Array in [[Vector3(-1.8, 0, 2.2), Vector3(1.8, 0, 2.2), Vector3(0, 0, 1)], [Vector3(2.2, 0, 1.8), Vector3(2.2, 0, -1.8), Vector3(1, 0, 0)],
+			[Vector3(-2.2, 0, -1.8), Vector3(-2.2, 0, 1.8), Vector3(-1, 0, 0)]]:
+		var a3: Vector3 = f[0]
+		var b3: Vector3 = f[1]
+		pan(pane, x + a3.x, z + a3.z, x + b3.x, z + b3.z, up - 8.5, up - 2.5, f[2], "glass", true)
+	if v != null:
+		var lamp_colour := Color(1.0, 0.66, 0.32)
+		var pool := WalkLight.pool(Vector3(x * PX, base * PX * vs, (cz + 10.0) * PX), 1.7, lamp_colour)
+		v._world.add_child(pool)
+		var glow := WalkLight.halo(p(x, up - 5.5, z + 0.5), 1.0, lamp_colour)
+		v._world.add_child(glow)
+		v.light.windows.append([pool.material_override, glow.material_override])
+
+
+## A bay window on the first upper storey (row key "bay"): a box of the storey's own wall jutting
+## out over the street on a timber bracket, the window in its face, a sill, a lintel, and a little
+## sloping roof of the house's roof cover.
+func _bay(win: Texture2D, x: float, front: float, y0: float, wall: Texture2D) -> void:
+	var wz := win.get_size()
+	var bw := wz.x * 0.5 + 5.0
+	var out := 10.0
+	var clad := plank                                     # (the bay is clad in timber: it stands out from the plaster)
+	var lo := y0 - 6.0
+	var hi := y0 + wz.y + 5.0
+	var zf := front + out
+	kit.tint = timber_tint
+	pan(clad, x - bw, zf, x + bw, zf, lo, hi, Vector3(0, 0, 1))
+	for side: float in [-1.0, 1.0]:
+		pan(clad, x + side * bw, zf, x + side * bw, front, lo, hi, Vector3(side, 0, 0))
+	kit.tint = timber_tint
+	blk(beam, Vector3(x - bw - 1.0, lo - 2.5, front), Vector3(x + bw + 1.0, lo, zf + 1.0), 0)           # its floor
+	blk(beam, Vector3(x - 1.5, lo - 10.0, front), Vector3(x + 1.5, lo - 2.5, zf - 2.0), Kit.BOTTOM)    # the bracket
+	kit.poly(beam, [p(x - 1.5, lo - 2.5, zf - 2.0), p(x + 1.5, lo - 2.5, zf - 2.0), p(x + 1.5, lo - 10.0, front), p(x - 1.5, lo - 10.0, front)], Vector3(0, -0.6, 1))
+	for side: float in [-1.0, 1.0]:
+		blk(post, Vector3(x + side * bw - 1.5, lo, zf - 1.5), Vector3(x + side * bw + 1.5, hi, zf + 0.8), Kit.BOTTOM | Kit.TOP)
+	kit.tint = Color.WHITE
+	_window(win, x, zf, y0, true, false)
+	# the little roof
+	var rise := 6.0
+	var n := Vector3(0, out + 3.0, rise * vs).normalized()
+	_roof_face(_roof_tex(), [p(x - bw - 2.0, hi + rise, front), p(x + bw + 2.0, hi + rise, front), p(x + bw + 2.0, hi, zf + 3.0), p(x - bw - 2.0, hi, zf + 3.0)], n, "solid", Vector3(1, 0, 0))
+	kit.tint = timber_tint
+	pan(beam, x - bw - 2.0, zf + 3.0, x + bw + 2.0, zf + 3.0, hi - 2.0, hi, Vector3(0, 0, 1))
+	for side: float in [-1.0, 1.0]:
+		var sx := x + side * (bw + 2.0)
+		kit.poly(beam, [p(sx, hi + rise, front), p(sx, hi, zf + 3.0), p(sx, hi - 2.0, zf + 3.0), p(sx, hi + rise - 2.0, front)], Vector3(side, 0, 0), "solid", Vector3(0, 0, 1))
+	kit.tint = Color.WHITE
+
+
+## Half-timbering on one upper storey (row key "frame"): studs between the windows and a brace in
+## every bay without a window, a rail across under the windows. `xs` are the windows' middles,
+## `gap` how wide a window is with its frame; `skip_mid` 0 leaves the middle (a balcony door) clear.
+func _frame(x0: float, x1: float, front: float, y0: float, y1: float, xs: Array, gap: float, skip_mid: float, cx: float) -> void:
+	var z := front + 0.6
+	kit.tint = timber_tint
+	var edges: Array = [x0 + 3.0]
+	var sorted := xs.duplicate()
+	sorted.sort()
+	for x: float in sorted:
+		edges.append(x - gap * 0.5)
+		edges.append(x + gap * 0.5)
+	edges.append(x1 - 3.0)
+	# the rail under the windows
+	kit.panel(beam, p(x0 + 2.0, 0, z), p(x1 - 2.0, 0, z), (y0 + 5.0 + base) * PX * vs, (y0 + 7.0 + base) * PX * vs, Vector3(0, 0, 1))
+	var i := 0
+	while i + 1 < edges.size():
+		var a: float = edges[i]
+		var c: float = edges[i + 1]
+		i += 2
+		if c - a < 7.0:
+			continue
+		if skip_mid == 0.0 and a < cx and c > cx:
+			continue
+		# studs at both sides of the bay, a brace across it (leaning in towards the middle of the house)
+		for x: float in [a + 1.0, c - 1.0]:
+			blk(post, Vector3(x - 1.2, y0, front), Vector3(x + 1.2, y1, z + 0.6), Kit.BOTTOM | Kit.TOP)
+		var lean := 1.0 if (a + c) * 0.5 < cx else -1.0
+		var xa := a + 1.0 if lean > 0.0 else c - 1.0
+		var xb := c - 1.0 if lean > 0.0 else a + 1.0
+		kit.poly(beam, [p(xa, y0 + 7.0, z + 0.2), p(xa, y0 + 10.0, z + 0.2), p(xb, y1 - 1.0, z + 0.2), p(xb, y1 - 4.0, z + 0.2)], Vector3(0, 0, 1), "solid", Vector3(1, 0, 0))
+	kit.tint = Color.WHITE
+
+
+## An outside stair of stone up a side wall (row key "stair"): from the front corner at the street it
+## climbs towards the back to a landing at the upper storey, where a door opens in the side wall; a
+## timber hand rail on posts runs up its open side. `x` is the side wall, `side` which way is out.
+func _side_stair(x: float, side: float, cz: float, back: float, rise: float, door: Texture2D, wall: Texture2D) -> void:
+	var deep := 12.0
+	var xo := x + side * deep
+	var lo := minf(x, xo)
+	var hi := maxf(x, xo)
+	var land_b := back + 3.0
+	var land_f := back + 17.0
+	var z_start := cz - 1.0
+	var n := int(ceil(rise / 4.2))
+	var run := (z_start - land_f) / float(n)
+	kit.tint = wall_tint * Color(0.92, 0.92, 0.92)
+	for i in n:
+		var zf := z_start - run * i
+		var zb := zf - run
+		var up := rise * float(i + 1) / float(n + 1)
+		blk(stone, Vector3(lo, -1.0, zb), Vector3(hi, up, zf), Kit.BOTTOM | (Kit.LEFT if side > 0.0 else Kit.RIGHT))
+	blk(stone, Vector3(lo, -1.0, land_b), Vector3(hi, rise, land_f), Kit.BOTTOM | (Kit.LEFT if side > 0.0 else Kit.RIGHT))
+	kit.tint = Color.WHITE
+	# the door on the landing, in the side wall of the upper storey
+	var ds := door.get_size()
+	var dz := (land_b + land_f) * 0.5
+	pan(door, x + side * 0.4, dz + ds.x * 0.5, x + side * 0.4, dz - ds.x * 0.5, rise, rise + ds.y, Vector3(side, 0, 0), "solid", true)
+	kit.tint = timber_tint
+	blk(beam, Vector3(x + side * 0.2 - 1.0, rise + ds.y, dz - ds.x * 0.5 - 2.0), Vector3(x + side * 2.5, rise + ds.y + 2.5, dz + ds.x * 0.5 + 2.0), 0)
+	# the hand rail: posts and a sloping rail along the open side, a level one round the landing
+	var rx := xo - side * 1.0
+	var rail_h := 10.0
+	var zz := z_start - 1.0
+	var k := 0
+	while k <= n:
+		var zp := z_start - run * k - 1.0
+		var yp := rise * float(k) / float(n + 1)
+		blk(post, Vector3(rx - 0.9, yp, zp - 0.9), Vector3(rx + 0.9, yp + rail_h, zp + 0.9), Kit.BOTTOM)
+		k += 3
+	kit.poly(beam, [p(rx, rail_h + 1.0, zz), p(rx, rise + rail_h + 1.0, land_f), p(rx, rise + rail_h - 1.0, land_f), p(rx, rail_h - 1.0, zz)], Vector3(side, 0, 0), "solid", Vector3(0, 0, -1))
+	kit.poly(beam, [p(rx, rise + rail_h + 1.0, land_f), p(rx, rise + rail_h + 1.0, land_b), p(rx, rise + rail_h - 1.0, land_b), p(rx, rise + rail_h - 1.0, land_f)], Vector3(side, 0, 0), "solid", Vector3(0, 0, -1))
+	blk(post, Vector3(rx - 0.9, rise, land_b - 0.9), Vector3(rx + 0.9, rise + rail_h + 1.0, land_b + 0.9), Kit.BOTTOM)
+	kit.tint = Color.WHITE
