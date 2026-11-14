@@ -1,0 +1,29 @@
+Pack: JRPG Pack 4 Calm
+Page: https://opengameart.org/content/jrpg-pack-4-calm
+Author: Juhani Junkala (Subspace Audio; https://juhanijunkala.com/)
+Published on the page: 2017-05-14
+Retrieved: 2026-11-14 (UTC), sound pass P06
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0"; the bundled INFO.txt (kept beside this pack's download in
+  assets_raw/audio/music/src_p06/juhani_junkala_jrpg_pack_4_calm/INFO.txt), verbatim: "These music tracks have been released under CC0 creative commons license. You can do anything you want with these tunes."
+
+Human-made evidence: published in 2017, years before generative music tools existed. INFO.txt is signed by the composer: "I'm a classically trained composer, producer and a sound designer with over 20 years of experience." Same composer as the tracks the game already used.
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download (NOT in git: the repo skips *.zip; build_p06_audio.py fetches it again and checks the sha256):
+  JRPG%20Music%20Pack%20%234%20%5BCalm%5D%20by%20Juhani%20Junkala_0.zip
+    from https://opengameart.org/sites/default/files/JRPG%20Music%20Pack%20%234%20%5BCalm%5D%20by%20Juhani%20Junkala_0.zip
+    sha256 cfec70dd7ead4f5a4ebc6a1da5ad12906410ad69c43f79ec6e78c6664d6dddac  (13348608 bytes)
+
+Game files made from it:
+  assets/audio/music/room.ogg           <- Calm1 - A Place I Call Home.ogg        (your room; gain -0.2 dB, -16.1 LUFS, 46.452 s)
+  assets/audio/music/hall.ogg           <- Calm3 - Peaceful Days.ogg              (the tavern hall and other insides; gain -2.2 dB, -16.1 LUFS, 64.0 s)
+  assets/audio/music/dustwatch.ogg      <- Calm4 - Sand Castles.ogg               (Dustwatch; gain -0.1 dB, -17.6 LUFS, 71.111 s)
+  assets/audio/music/results.ogg        <- Calm6 - Innocence.ogg                  (the quiet loop after the victory fanfare; gain 2.3 dB, -17.5 LUFS, 71.111 s)
+  assets/audio/music/calm_friends.ogg   <- Calm2 - Childhood Friends.ogg          (spare: a warm story cue; gain 0.7 dB, -16.6 LUFS, 102.857 s)
+  assets/audio/music/calm_summer.ogg    <- Calm5 - Summer Memories.ogg            (spare: a wistful story cue; gain -2.3 dB, -16.0 LUFS, 65.455 s)
+
+Processing (assets_raw/audio/build_p06_audio.py): decode, one fixed gain per track towards -16 LUFS integrated (less when the peak would pass -1 dBFS; no compressor, no limiter), stereo 44.1 kHz Ogg Vorbis 96 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers: assets_raw/audio/manifest_p06.json.
+
+Nobody has listened to these in the game yet: each role is a guess from the title. The Music room (Settings) plays them all.

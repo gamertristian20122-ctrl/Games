@@ -1,0 +1,27 @@
+Pack: Swishes Sound Pack
+Page: https://opengameart.org/content/swishes-sound-pack
+Author: artisticdude  (https://opengameart.org/users/artisticdude)
+Published on the page: 2011-01-05
+Retrieved: 2026-11-14 (UTC), sound pass P06
+
+Licence: CC0 1.0 Universal - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0"
+
+Human-made evidence: page text, verbatim: "13 'swish' sound effects (4 lighter ones and 9 heavier ones) in the .wav format, created for the FOSS RPG Summoning Wars." Published 2011. Same author as the RPG Sound Pack the game already used.
+AI check: published before 2022; no AI wording on the page.
+
+Original download (NOT in git; build_p06_audio.py fetches it again and checks the sha256):
+  swishes.zip
+    from https://opengameart.org/sites/default/files/swishes.zip
+    sha256 7980215241b739a787dcf26f660ce510bb237900968789395a86911619795693  (385217 bytes)
+
+Game files made from it:
+  assets/audio/sfx/whoosh_1.ogg           <- swishes/swish-7.wav
+  assets/audio/sfx/whoosh_2.ogg           <- swishes/swish-8.wav
+  assets/audio/sfx/whoosh_3.ogg           <- swishes/swish-3.wav
+  assets/audio/sfx/miss_1.ogg             <- swishes/swish-11.wav
+  assets/audio/sfx/miss_2.ogg             <- swishes/swish-12.wav
+  assets/audio/sfx/bow_1.ogg              <- swishes/swish-10.wav
+  assets/audio/sfx/bow_2.ogg              <- swishes/swish-13.wav
+
+Processing (assets_raw/audio/build_p06_audio.py): mono 44.1 kHz, silence cut off both ends, 2 ms / 25 ms fades, peak level to -3 dBFS, Ogg Vorbis q4. No synthesis, no effects. Per-file numbers: assets_raw/audio/manifest_p06.json.

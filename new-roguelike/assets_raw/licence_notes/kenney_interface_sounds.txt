@@ -1,0 +1,23 @@
+Pack: Interface Sounds (Kenney)
+Page: https://opengameart.org/content/interface-sounds   (the OpenGameArt mirror; kenney.nl is blocked from the cloud container)
+Author: Kenney (Kenney Vleugels, www.kenney.nl)
+Published on the page: 2020-02-26 (the bundled License.txt: "Creation date: 11-02-2020")
+Retrieved: 2026-11-14 (UTC), sound pass P06
+
+Licence: CC0 1.0 Universal - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0"; bundled License.txt, verbatim: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/ This content is free to use in personal, educational and commercial projects. Support us by crediting Kenney or www.kenney.nl (this is not mandatory)"
+
+Human-made evidence: made and published by Kenney in February 2020 (100 interface sounds), before generative audio tools.
+AI check: published before 2022; no AI wording on the page or in the bundled files.
+
+Original download (NOT in git; build_p06_audio.py fetches it again and checks the sha256):
+  kenney_interfaceSounds.zip
+    from https://opengameart.org/sites/default/files/kenney_interfaceSounds.zip
+    sha256 f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232  (834536 bytes)
+
+Game files made from it:
+  assets/audio/sfx/ui_move.ogg            <- Audio/select_002.ogg
+  assets/audio/sfx/ui_tab.ogg             <- Audio/drop_002.ogg
+  assets/audio/sfx/save_done.ogg          <- Audio/confirmation_002.ogg
+
+Processing (assets_raw/audio/build_p06_audio.py): mono 44.1 kHz, silence cut off both ends, 2 ms / 25 ms fades, peak level to -3 dBFS, Ogg Vorbis q4. No synthesis, no effects. Per-file numbers: assets_raw/audio/manifest_p06.json.

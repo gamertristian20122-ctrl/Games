@@ -27,3 +27,16 @@ Files used for the game set (copied unchanged into used/, same relative paths as
 
 Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
 Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.
+
+Added 14 Nov 2026 (sound pass P06), from the same download (same sha256 as above; fetched again and checked by
+assets_raw/audio/build_p06_audio.py):
+  assets/audio/sfx/slash_heavy_1.ogg      <- blade_02.ogg
+  assets/audio/sfx/slash_heavy_2.ogg      <- blade_03.ogg
+  assets/audio/sfx/slash_heavy_3.ogg      <- blade_01.ogg
+  assets/audio/sfx/fire_1.ogg             <- spell_fire_06.ogg
+  assets/audio/sfx/fire_2.ogg             <- spell_fire_03.ogg
+  assets/audio/sfx/fire_3.ogg             <- spell_fire_04.ogg
+  assets/audio/sfx/debuff.ogg             <- chain_03.ogg
+  assets/audio/sfx/lantern_pass.ogg       <- spell_fire_07.ogg
+  assets/audio/sfx/flare.ogg              <- spell_fire_05.ogg
+Processing (assets_raw/audio/build_p06_audio.py): mono 44.1 kHz, silence cut off both ends, 2 ms / 25 ms fades, peak level to -3 dBFS, Ogg Vorbis q4. No synthesis, no effects. Per-file numbers: assets_raw/audio/manifest_p06.json.

@@ -356,7 +356,7 @@ func attack(who: Dictionary, events: Array) -> void:
 ## The knight's sword: wind-up, dash, one swing (two on a crit), hop home.
 func blade_attack(who: Dictionary, e: Dictionary, swings: int) -> void:
 	var target: Dictionary = e["target"]
-	Sfx.play("player_shoot_blade", -8.0, 0.08, 0.8)
+	Sfx.play("whoosh", -9.0, 0.08)
 	crouch(who, 1.0, 0.13)
 	sword_to(who, 78.0, 0.13, Tween.TRANS_BACK)
 	await _pause(0.13)
@@ -384,7 +384,7 @@ func swing(who: Dictionary, e: Dictionary, i: int, n: int, flip: int = 0) -> voi
 	var s: Node3D = who.get("sword")
 	if s != null and is_instance_valid(s):
 		s.rotation.z = deg_to_rad(from)
-	Sfx.play("player_shoot_blade", -5.0, 0.1, 1.0 + 0.08 * i)
+	Sfx.play("slash_light", -4.0, 0.08, 1.0 + 0.04 * i)
 	blade_trail(who, 0.1)
 	sword_to(who, to, 0.09, Tween.TRANS_SINE)
 	var tw := _tw(who).set_parallel(true)
@@ -411,7 +411,7 @@ func brute_attack(who: Dictionary, e: Dictionary) -> void:
 	var a0 := PI * 0.5 - d * 0.35
 	var a1 := PI * 0.5 - d * 2.6
 	arc(pivot, a0, a1, reach * 0.25, reach, who["colour"], 0.1)
-	Sfx.play("enemy_shoot", -12.0, 0.1, 0.7)
+	Sfx.play("whoosh", -8.0, 0.1)
 	var tw := _tw(who).set_parallel(true)
 	tw.tween_property(_act(who), "squash", Vector2(1.15, 0.9), 0.05)
 	tw.tween_property(_act(who), "lean", -d * 0.24, 0.05)
@@ -447,11 +447,11 @@ func shoot(who: Dictionary, e: Dictionary, kind: String) -> void:
 	var c: Color = who["colour"]
 	var hand := _mid(who, 0.55) + Vector3(d * (float(who["wide"]) * 0.5 + 0.2), 0.0, 0.2)
 	if kind == "arrow":
-		Sfx.play("player_shoot_knife", -10.0, 0.08, 0.7)
+		Sfx.play("whoosh", -15.0, 0.08)
 		crouch(who, 0.7, 0.18)
 		hands_to(who, 0.1, -0.2, 0.18)
 		await _pause(0.18)
-		Sfx.play("player_shoot_knife", -5.0)
+		Sfx.play("bow", -3.0)
 		hands_to(who, 0.0, 0.0, 0.1)
 		stand_up(who, 0.12)
 		(_act(who) as Node).set("kick", Vector3(-d * 0.18, 0.0, 0.0))
@@ -579,7 +579,7 @@ func charge(who: Dictionary, colour: Color, seconds: float, size: float, ring: b
 		stage.add_child(p)
 		p.emitting = true
 		get_tree().create_timer(p.lifetime + 0.3, false).timeout.connect(p.queue_free)
-	Sfx.play("player_shoot_magic", -14.0, 0.05, 0.6)
+	Sfx.play("buff", -16.0, 0.05)
 	await _pause(seconds)
 	return glow
 
@@ -606,7 +606,7 @@ func release(glow: MeshInstance3D, who: Dictionary) -> void:
 ## Guard: a step back behind the guard, a ring of pale light round the feet.
 func guard(who: Dictionary) -> void:
 	var d := _dir(who)
-	Sfx.play("ui_click", -6.0, 0.05, 0.6)
+	Sfx.play("guard", -5.0, 0.05)
 	var tw := _tw(who).set_parallel(true)
 	tw.tween_property(_act(who), "squash", Vector2(1.1, 0.92), 0.08)
 	tw.tween_property(_act(who), "offset", Vector3(-d * 0.25, 0.0, 0.0), 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -659,7 +659,7 @@ func whirl(who: Dictionary, impacts: Array) -> void:
 	await _pause(0.15)
 	var spot := Vector3(mid.x - _dir(who) * 1.6, 0.0, mid.z + 0.6)
 	await dash(who, spot - (who["home"] as Vector3), 0.17)
-	Sfx.play("player_shoot_blade", -4.0, 0.05, 0.75)
+	Sfx.play("slash_heavy", -3.0, 0.05)
 	# two turns: the sword round and round, the picture turned by flipping, an arc of light
 	var body: Node = who["node"]
 	var s: Node3D = who.get("sword")
@@ -713,7 +713,7 @@ func lunge(who: Dictionary, impacts: Array) -> void:
 	tw.tween_property(_act(who), "offset", (_act(who).get("offset") as Vector3) + Vector3(d * 0.4, 0.0, 0.0), 0.07).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_act(who), "squash", Vector2(1.25, 0.85), 0.05)
 	tw.tween_property(_act(who), "lean", -d * 0.1, 0.05)
-	Sfx.play("player_shoot_blade", -3.0, 0.05, 1.25)
+	Sfx.play("slash_heavy", -2.0, 0.05, 1.1)
 	ghost(who)
 	await _pause(0.05)
 	b.impact(e, {"from": who, "part": 2, "parts": 3})
@@ -739,7 +739,7 @@ func slam(who: Dictionary, impacts: Array) -> void:
 	sword_to(who, 40.0, 0.2)
 	await _pause(0.2)
 	dust((who["home"] as Vector3), 1.3)
-	Sfx.play("player_shoot_blade", -8.0, 0.05, 0.6)
+	Sfx.play("whoosh", -6.0, 0.05)
 	var to := land - (who["home"] as Vector3)
 	var air := 0.46
 	var tw := _tw(who).set_parallel(true)
@@ -759,7 +759,7 @@ func slam(who: Dictionary, impacts: Array) -> void:
 	land_tw.tween_property(_act(who), "squash", Vector2(1.3, 0.7), 0.04)
 	land_tw.tween_property(_act(who), "squash", Vector2.ONE, 0.2).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	Sfx.play("rock_break", -2.0)
-	Sfx.play("explosion", -10.0)
+	Sfx.play("blunt", -4.0)
 	dust(land, 2.2)
 	stage.call("flash", Color(1.0, 0.85, 0.6), 0.7, 0.35)       # (the crash lights the clearing)
 	var colour := Color(1.0, 0.82, 0.5)
@@ -784,7 +784,7 @@ func war_cry(who: Dictionary, impacts: Array) -> void:
 	tw.tween_property(_act(who), "squash", Vector2(0.9, 1.16), 0.1)
 	tw.tween_property(_act(who), "lift", 0.25, 0.1)
 	tw.tween_property(_act(who), "lean", -d * 0.05, 0.1)
-	Sfx.play("boss_roar", -8.0, 0.05, 1.35)
+	Sfx.play("buff", -4.0, 0.05)
 	b.call("shake", 0.45)
 	var at: Vector3 = who["home"]
 	for i in 3:
@@ -807,7 +807,7 @@ func pierce(who: Dictionary, impacts: Array, colour: Color) -> void:
 	crouch(who, 1.0, 0.18)
 	hands_to(who, 0.05, -0.25, 0.2)
 	var glow := await charge(who, colour, 0.34, 0.5, false)
-	Sfx.play("player_shoot_knife", -3.0, 0.05, 0.8)
+	Sfx.play("bow", -1.0, 0.05)
 	release(glow, who)
 	var hand := _mid(who, 0.55) + Vector3(d * (float(who["wide"]) * 0.5 + 0.2), 0.0, 0.2)
 	await projectile(hand, _mid(e["target"], 0.55), colour, 0.12, 0.1, 0.09, "arrow")
@@ -823,7 +823,7 @@ func volley(who: Dictionary, impacts: Array, colour: Color) -> void:
 	await _pause(0.15)
 	var hand := _mid(who, 0.7) + Vector3(d * 0.4, 0.0, 0.2)
 	for i in 4:
-		Sfx.play("player_shoot_knife", -9.0, 0.12)
+		Sfx.play("bow", -6.0, 0.12)
 		var up := hand + Vector3(d * (1.0 + i * 0.4), 6.0, -0.5)
 		projectile(hand, up, colour, 0.05, 0.4, 0.16, "arrow")
 		await _pause(0.05)
@@ -846,7 +846,7 @@ func spell(who: Dictionary, id: String, impacts: Array, colour: Color) -> void:
 	match id:
 		"firebolt", "sunbolt", "roots":
 			release(glow, who)
-			Sfx.play("player_shoot_magic", -4.0, 0.05, 0.8 if id == "firebolt" else 1.1)
+			Sfx.play("fire" if id == "firebolt" else ("earth" if id == "roots" else "flare"), -3.0, 0.05)
 			for e: Dictionary in impacts:
 				if String(e["type"]) == "stun":
 					b.impact(e, {"from": who})
@@ -859,7 +859,7 @@ func spell(who: Dictionary, id: String, impacts: Array, colour: Color) -> void:
 		"storm":
 			# the charge leaps into the sky; the lightning comes down on each in turn
 			release(glow, who)
-			Sfx.play("explosion", -8.0, 0.05, 1.4)
+			Sfx.play("bolt", -3.0, 0.05)
 			await projectile(from, from + Vector3(0.0, 7.0, -1.0), colour, 0.3, 0.0, 0.12, "bolt")
 			for e: Dictionary in impacts:
 				b.impact(e, {"from": who, "fx": true})
@@ -867,7 +867,7 @@ func spell(who: Dictionary, id: String, impacts: Array, colour: Color) -> void:
 		"frost", "sunflare":
 			# a wave of light rolls out over the ground and every monster is hit as it reaches them
 			release(glow, who)
-			Sfx.play("explosion", -9.0, 0.05, 1.2 if id == "frost" else 0.9)
+			Sfx.play("frost" if id == "frost" else "flare", -4.0, 0.05)
 			var at: Vector3 = who["home"]
 			for i in 3:
 				get_tree().create_timer(0.07 * i, false).timeout.connect(func() -> void:
@@ -880,7 +880,7 @@ func spell(who: Dictionary, id: String, impacts: Array, colour: Color) -> void:
 		_:
 			# a heal (mend, sun's mercy) and anything else: the light drifts to the one it is for
 			release(glow, who)
-			Sfx.play("player_shoot_magic", -8.0, 0.05, 1.3)
+			Sfx.play("heal", -6.0, 0.03)
 			for e: Dictionary in impacts:
 				if heal and e.get("target") != null and e["target"] != who:
 					await projectile(from, _mid(e["target"], 0.6), colour, 0.3, 0.8, 0.28, "bolt")
@@ -922,7 +922,7 @@ func boss_attack(who: Dictionary, e: Dictionary) -> void:
 		var pivot := _mid(who, 0.6) + Vector3(d * float(who["wide"]) * 0.3, 0.0, 0.15)
 		arc(pivot, PI * 0.5 - d * 0.2, PI * 0.5 - d * 2.7, 0.5, float(who["top"]) * 0.6, who["colour"], 0.12, 0.22)
 		await _pause(0.06)
-	Sfx.play("rock_break", -6.0, 0.05, 0.8)
+	Sfx.play("blunt", -1.0, 0.05)
 	dust(target["home"], 1.2)
 	b.impact(e, {"from": who, "launch": 0.6})
 	await _pause(0.3)
@@ -969,8 +969,8 @@ func boss_sweep(who: Dictionary, impacts: Array) -> void:
 	land_tw.tween_property(_act(who), "squash", Vector2(1.35, 0.68), 0.05)
 	land_tw.tween_property(_act(who), "squash", Vector2.ONE, 0.3).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	var at := (who["home"] as Vector3) + land
-	Sfx.play("explosion", -2.0, 0.05, 0.7)
-	Sfx.play("rock_break", 0.0, 0.05, 0.6)
+	Sfx.play("explosion", -5.0, 0.05, 0.8)
+	Sfx.play("earth", -1.0, 0.05)
 	dust(at, 2.6)
 	stage.call("flash", Color(1.0, 0.5, 0.35), 0.6, 0.4)
 	b.call("shake", 1.0)

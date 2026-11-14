@@ -76,7 +76,7 @@ const LIST := [
 	},
 	# ---- sound effects
 	{
-		"what": "Sound effects: 80 CC0 RPG SFX",
+		"what": "Sound effects: 80 CC0 RPG SFX (blades, fire spells, chains, coins)",
 		"author": "rubberduck",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/80-cc0-rpg-sfx",
@@ -124,16 +124,28 @@ const LIST := [
 		"url": "https://opengameart.org/content/rpg-sound-pack",
 	},
 	{
-		"what": "Sound effects: 50 RPG sound effects (Kenney RPG Audio)",
+		"what": "Sound effects: 50 RPG sound effects (Kenney RPG Audio: doors, the blade drawn, light cuts, pages, coins, buckles)",
 		"author": "Kenney",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/50-rpg-sound-effects",
 	},
 	{
-		"what": "Sound effects: 85 Short music jingles (Kenney Music Jingles)",
+		"what": "Sound effects: 85 Short music jingles (Kenney Music Jingles: level up, quest done, a find, a night's rest, a beacon lit)",
 		"author": "Kenney",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/85-short-music-jingles",
+	},
+	{
+		"what": "Sound effects: Interface Sounds (menu ticks and the save chime)",
+		"author": "Kenney",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/interface-sounds",
+	},
+	{
+		"what": "Sound effects: Swishes Sound Pack (wind-ups, arrows, misses)",
+		"author": "artisticdude",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/swishes-sound-pack",
 	},
 	{
 		"what": "Sound effects: 512 Sound Effects (8-bit style)",
@@ -167,37 +179,49 @@ const LIST := [
 	},
 	# ---- music
 	{
-		"what": "Music: JRPG Pack 3 Evil (title, floor1, floor2, floor3, spare floor loop)",
+		"what": "Music: JRPG Pack 3 Evil (the title, night out of doors, the Cinder Stair, fights in the Sands and the Cinder Mountains)",
 		"author": "Juhani Junkala",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/jrpg-pack-3-evil",
 	},
 	{
-		"what": "Music: JRPG Pack 2 Towns (shop)",
+		"what": "Music: JRPG Pack 2 Towns (Wickmere, the Rune Glade, the world map, a spare market tune)",
 		"author": "Juhani Junkala",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/jrpg-pack-2-towns",
 	},
 	{
-		"what": "Music: JRPG Pack 5 Action (boss, spare boss loop)",
+		"what": "Music: JRPG Pack 5 Action (fights in the green lands, Old Bramblejaw, the Dune Gorgon)",
 		"author": "Juhani Junkala",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/jrpg-pack-5-action",
 	},
 	{
-		"what": "Music: Boss Battle Music: Epic Boss Battle (final_boss)",
+		"what": "Music: JRPG Pack 1 Exploration (the Elfwood Road, the Deepwood, the beacon's hill, the Sunwell, Emberfall)",
+		"author": "Juhani Junkala",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/jrpg-pack-1-exploration",
+	},
+	{
+		"what": "Music: JRPG Pack 4 Calm (your room, the tavern hall, Dustwatch, after a won fight, two spare story tunes)",
+		"author": "Juhani Junkala",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/jrpg-pack-4-calm",
+	},
+	{
+		"what": "Music: Boss Battle Music: Epic Boss Battle (the Ember Colossus)",
 		"author": "Juhani Junkala",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/boss-battle-music",
 	},
 	{
-		"what": "Music: Victory Fanfare Short (victory)",
+		"what": "Music: Victory Fanfare Short (a fight is won)",
 		"author": "cynicmusic / The Cynic Project",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/victory-fanfare-short",
 	},
 	{
-		"what": "Music: Game Over Theme: No Hope (gameover)",
+		"what": "Music: Game Over Theme: No Hope (a fight is lost)",
 		"author": "Cleyton Kauffman",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/game-over-theme",
@@ -297,9 +321,27 @@ const LIST := [
 		"url": "https://opengameart.org/content/ambient-bird-sounds",
 	},
 	{
-		"what": "Ambience: wind",
+		"what": "Ambience: wind (the world map, the beacon's hill, Dustwatch)",
 		"author": "IgnasD",
 		"licence": "CC0",
 		"url": "https://opengameart.org/content/wind",
+	},
+	{
+		"what": "Ambience: Loopable Dungeon Ambience (the Sunwell, the Cinder Stair)",
+		"author": "JaggedStone",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/loopable-dungeon-ambience",
+	},
+	{
+		"what": "Ambience: Crickets Ambient Noise (night out of doors)",
+		"author": "Ted Kerr (Wolfgang_)",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/crickets-ambient-noise-loopable",
+	},
+	{
+		"what": "Ambience: Hammer on Anvil (Emberfall; from a recording by Duasun on freesound.org)",
+		"author": "themightyglider",
+		"licence": "CC0",
+		"url": "https://opengameart.org/content/hammer-on-anvil",
 	},
 ]

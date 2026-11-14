@@ -29,3 +29,6 @@ Processing for the game-ready files in ../../music/: decode, one fixed gain per 
 Added 12 Nov 2026 (sound pass): one more loop of the same zip (sha256 5a320c6e3d60a8b69700989f84691f6d87eca86e0c2817c3586fb108b64d5ad6),
 same processing (gain to about -16 LUFS integrated, stereo 44.1 kHz Ogg Vorbis 96 kbps):
   ../../music/battle.ogg <- Action3 - Preparing For Battle.ogg  (every turn-based battle that is not a boss)
+
+Added 14 Nov 2026 (sound pass P06): assets/audio/music/boss_gorgon.ogg <- Action2 - Army Approaching.ogg (the Dune Gorgon's theme),
+made again from the zip (same sha256), not from the spare in ../audio/music/alt/. Gain -4.5 dB, -16.2 LUFS, 124.235 s.
