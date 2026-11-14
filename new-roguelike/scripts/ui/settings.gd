@@ -44,10 +44,11 @@ func build() -> void:
 	# slowly). It counts from the next time you press Play or come back from a fight.
 	var look := _row("toggle", "3D look", "look3d")
 	var lefty := _row("toggle", "Left-handed", "swap_sticks")
+	var dust := _row("toggle", "Fairy dust", "fairy_dust")      # the glitter that leads to the story goal
 	var shake := _row("toggle", "Screen shake", "shake")       # the camera shake on a hit in a battle
 	if _ph:
 		# two short switches share a line, so the list still fits a phone screen
-		for pair: Array in [[vib, look], [lefty, shake]]:
+		for pair: Array in [[vib, look], [lefty, shake], [dust]]:
 			var line := UI.hbox(6)
 			list.add_child(line)
 			for r: Control in pair:
@@ -58,7 +59,7 @@ func build() -> void:
 		# Display and VSync instead)
 		vib.queue_free()
 		lefty.queue_free()
-		for r: Control in [look, shake]:
+		for r: Control in [look, shake, dust]:
 			list.add_child(r)
 	# Easy / Normal / Hard (the numbers are G.DIFFICULTY); it counts from the next level you enter
 	var hard := SettingRow.new()

@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS := {
 	"look3d": true,          # the lit 3D look of the places you walk in (scripts/hub/view3d.gd); off = the old flat picture
 	"ui_size": "normal",     # Text size on PC: "small" / "normal" / "large" (scripts/ui/theme.gd TARGET_H; UI.refit_all())
 	"display": "window",     # PC: "window" or "full" (scripts/ui/display.gd; F11 / Alt+Enter toggles)
+	"fairy_dust": true,      # glittering dust on the ground that leads to the story's next goal (scripts/hub/trail.gd)
 	"vsync": true,           # PC: VSync on or off
 }
 const DEFAULTS := {

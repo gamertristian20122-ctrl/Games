@@ -350,6 +350,16 @@ const ENTER := {
 	"dustwatch": {7: {"step": 8}},
 }
 
+## THE FAIRY DUST (scripts/hub/trail.gd): where the glitter on the ground leads at each step. [place id,
+## id of the person to walk up to]. "" = just that place (the story moves on by itself on arriving).
+## A step that is not listed has no trail.
+const TRAIL := {
+	0: ["village", "hale"], 1: ["elfwood", ""], 2: ["glade", "thessaly"], 3: ["deepwood", "thornwatch"],
+	4: ["beacon", "giant"], 5: ["beacon", "beacon"], 6: ["village", "hale"],
+	7: ["dustwatch", ""], 8: ["dustwatch", "sera"], 9: ["suncourt", "queen"], 10: ["world", "site_dunes"],
+	11: ["suncourt", "queen"], 12: ["suncourt", "sandbeacon"], 13: ["village", "hale"],
+}
+
 ## What people of the old story do (open the hill's levels, hand out its quests, sell its
 ## items ...) has no part in this one: with the story on they only talk.
 const RETIRED := ["gate", "quests", "collection", "side", "train", "pack", "hero", "shop", "ally"]

@@ -1450,6 +1450,26 @@ touching any UI. Mock tool: `dev/gui_mock.tscn` (`--mock=battle|target|talk|walk
   and credits text is small at 1080p. The old roguelike screens only got the theme. Only a quick check was run
   for this version (CHECK PASSED); the tale and flow tours were last run by the screen agents.
 
+## v0.27.1 to v0.27.3 (13 Nov 2026): phone fixes, fights on the map, 3D tavern
+- Phone: credits fit the screen; the title always uses the lit 3D forest; world-map place names stay off the top
+  bar and the right-side buttons; no rain in the desert (hub.gd `_dry_here`); the quest text has no hard dark
+  block (`quest_list.gd`).
+- Pokemon-style fights: no monsters stand on the world map; walking in the wild starts a fight every 520-1100
+  map px (`roamers.gd` RANDOM, hub.gd `_wild_steps`; `--wildtest` walks the knight east). The owner likes the rate.
+- The tavern (The Hollow Flagon) and Your room are real 3D rooms (`scripts/hub/arch/interior.gd`, places.gd keys
+  "inside", "zoom3d"; art `hub_i*` cut by `tools/import_hub.py`).
+
+## v0.28.0 (14 Nov 2026): the fairy dust trail
+The owner (on a phone, no PC): glitter on the ground leads to the story's next goal, through doors and across the
+world map; shown at the start and whenever the goal is elsewhere; a setting turns it off.
+- `Tale.TRAIL` (tale.gd): per step [place, person id]. `scripts/hub/trail.gd`: `where()` walks the places' exits
+  (skipping shut ones: old "need", or "tale" above the step) to find the door that leads there; an AStarGrid2D of
+  12 px cells (walk rect, hub `_blocks` and `_solids`) routes round things; about 30 additive star specks drift
+  along the first 330 px, fade, twinkle. Code-made, no art. view3d.gd `rebuild()` makes one per place.
+- Settings > "Fairy dust" (`fairy_dust` in save.gd). It only shows in the 3D look. Hidden while a window is open,
+  and when he is next to the goal. A new story step needs a row in TRAIL.
+- Trap: additive things need `render_priority` above 0 or the last pass erases them (it did).
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.

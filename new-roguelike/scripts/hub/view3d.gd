@@ -42,7 +42,9 @@ const CardShader = preload("res://scripts/fx/card_shader.gd")
 const HdLight = preload("res://scripts/fx/hd_light.gd")
 const Build = preload("res://scripts/hub/view3d_build.gd")
 const Water = preload("res://scripts/hub/view3d_water.gd")
+const Trail = preload("res://scripts/hub/trail.gd")
 const Hd = preload("res://scripts/fx/hd.gd")
+const Tale = preload("res://scripts/data/tale.gd")
 
 const PX := 1.0 / 16.0
 const PITCH := 35.0                 ## how steeply the camera looks down out of doors, in degrees (low, like a stage)
@@ -155,6 +157,10 @@ func rebuild() -> void:
 	if _outdoor:
 		light.build_air(place)
 	light.sync_light()
+	if Tale.on():
+		var dust := Trail.new()          # the fairy dust to the story's next goal (scripts/hub/trail.gd)
+		_world.add_child(dust)
+		dust.setup(hub, self)
 	_sync(0.0)
 
 
