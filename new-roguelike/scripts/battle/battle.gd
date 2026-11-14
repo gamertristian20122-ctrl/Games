@@ -119,6 +119,8 @@ var _plan: Array = []              ## test: --animplan=lunge,slam,thessaly:volle
 
 func _ready() -> void:
 	_auto = G.flag("autotest") or G.flag("autobattle")
+	if G.flag("autoplay"):              # test: --autoplay : the player's Auto switch starts on
+		auto_play = true
 	_speed = maxf(float(G.arg("speed", "1")), 1.0) if _auto else 1.0
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
@@ -394,6 +396,25 @@ func _build_screen() -> void:
 	_root.add_child(_plate)
 	_ribbon = BUI.Ribbon.new()
 	_root.add_child(_ribbon)
+	# AUTO FIGHT (v0.37.0): a small switch in the top right corner. While it is on the party picks its own
+	# moves (the bot's choices, fight.gd auto_choice); a tap takes the fight back. It stays as set from
+	# fight to fight until the game is closed. Bosses too: the bot guards when a great blow is coming.
+	_auto_btn = UI.button("", _toggle_auto, "", "ui_click")
+	_auto_btn.focus_mode = Control.FOCUS_NONE
+	for state: String in ["normal", "hover", "pressed"]:
+		_auto_btn.add_theme_stylebox_override(state, UI.box("plate"))       # a small glass plate, so it reads as a button
+	_auto_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var auto_size := Vector2(46, 14) if _ph else Vector2(84, 22)
+	var auto_gap := 6.0 if _ph else 12.0
+	_auto_btn.anchor_left = 1.0
+	_auto_btn.anchor_right = 1.0
+	_auto_btn.offset_left = -(auto_size.x + auto_gap)
+	_auto_btn.offset_right = -auto_gap
+	_auto_btn.offset_top = 4.0 if _ph else 10.0
+	_auto_btn.offset_bottom = _auto_btn.offset_top + auto_size.y
+	_auto_btn.visible = not _auto
+	_root.add_child(_auto_btn)
+	_sync_auto_btn()
 	_touch_hint = UI.label("", "Small")
 	_touch_hint.add_theme_color_override("font_color", UI.C_PARCH)
 	_touch_hint.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
@@ -1020,6 +1041,22 @@ func _target_picked(unit: Dictionary, forced_aim: String = "") -> void:
 		_choose({"do": "skill", "skill": _waiting_skill, "target": unit})
 
 
+static var auto_play := false      ## the player's Auto switch (kept from fight to fight)
+var _auto_btn: Button
+
+
+func _sync_auto_btn() -> void:
+	_auto_btn.text = "Auto: ON" if auto_play else "Auto"
+	_auto_btn.add_theme_color_override("font_color", UI.C_GOLD if auto_play else UI.C_PARCH)
+
+
+func _toggle_auto() -> void:
+	auto_play = not auto_play
+	_sync_auto_btn()
+	if auto_play and not _acting.is_empty():
+		_choose(fight.call("auto_choice", _acting))        # somebody was waiting for an order: the bot gives it
+
+
 func _choose(action: Dictionary) -> void:
 	if _acting.is_empty():
 		return
@@ -1087,6 +1124,14 @@ func _run(title: String) -> void:
 				action = _planned(who)
 				if action.is_empty():
 					action = fight.call("auto_choice", who)
+			elif auto_play:
+				await _wait(0.3)
+				action = fight.call("auto_choice", who) if auto_play else {}
+				if action.is_empty():                      # (switched off during the wait: he asks as usual)
+					_acting = who
+					_say("")
+					_show_commands()
+					action = await _picked
 			else:
 				_acting = who
 				_say("")
@@ -1603,6 +1648,8 @@ func _finish() -> void:
 	else:
 		outcome = "fled"
 		head = "You got away"
+	if G.flag("autoplay"):
+		print("[battle] autoplay result=%s rounds=%d" % [outcome, int(fight.round_no)])
 	if _auto and G.flag("animend") and outcome != "fled":
 		await _closing(outcome == "win")            # test: the victory poses / the defeat, under the bot too
 		if G.flag("shotend") and G.arg("shots", "") != "":

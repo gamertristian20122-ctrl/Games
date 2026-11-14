@@ -15,11 +15,10 @@ const Places = preload("res://scripts/data/places.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 
 const CELL := 12.0
-const COUNT := 44
-const SPACING := 11.0            ## art pixels between two specks
-const REACH := 330.0             ## how far ahead of the knight the dust is seen
-const GAP := 20.0                ## nothing within this of the knight's feet
-const DRIFT := 15.0              ## art pixels a second the dust slides towards the goal
+const COUNT := 6
+const REACH := 84.0              ## how far ahead of the knight the glimmer is seen
+const GAP := 22.0                ## nothing within this of the knight's feet
+const HINT_LAST := 1              ## the glimmer only helps at the very start (story steps 0 and 1); after that you find your own way
 
 var hub: Node2D
 var view: Node3D
@@ -40,7 +39,7 @@ var _k := 1.0
 ## of this place; "stop" is how near the knight may come before the dust is no longer needed.
 static func where(from: String, step: int) -> Dictionary:
 	var row: Array = Tale.TRAIL.get(step, [])
-	if row.is_empty() or (G.demo() and step >= Tale.DEMO_LAST):
+	if row.is_empty() or step > HINT_LAST or (G.demo() and step >= Tale.DEMO_LAST):
 		return {}
 	var goal := String(row[0])
 	var who := String(row[1])
@@ -241,33 +240,28 @@ func _process(delta: float) -> void:
 	if _path.size() < 2:
 		_mm.visible_instance_count = 0
 		return
-	var step := SPACING * _k
-	var reach := REACH * _k
-	var slide := fmod(_t * DRIFT * _k, step)
-	# the path is cut from the knight's feet, so the part he has walked is not shown
+	# A GLIMMER, NOT A TRAIL (v0.37.0, the owner: "just a slight glimmering, as a hint"): a few faint gold
+	# specks a short way ahead of the knight, each fading in and out in its own time and coming back
+	# somewhere else. They only say "this way".
 	var shown := 0
 	for i in COUNT:
-		var d := GAP * _k + float(i) * step + slide
-		if d > reach or d > _total - 6.0:
-			break
+		var beat := _t * 0.42 + float(i) * 0.61
+		var life := fposmod(beat, 1.0)
+		var turn := floorf(beat)
+		var r1 := fposmod(sin((float(i) * 12.9898 + turn * 78.233)) * 43758.5453, 1.0)
+		var r2 := fposmod(sin((float(i) * 39.3468 + turn * 11.135)) * 24634.6345, 1.0)
+		var d := (GAP + r1 * (REACH - GAP)) * _k
+		if d > _total - 6.0:
+			continue
 		var spot := _spot(d)
-		# a little to the side and up and down: dust, not a row of lamps
 		var ahead := _spot(minf(d + 4.0, _total)) - spot
 		var side := Vector2(-ahead.y, ahead.x).normalized() if ahead.length() > 0.01 else Vector2.ZERO
-		var seed_a := float(i) * 1.7 + floorf(_t * DRIFT * _k / step) * 0.31
-		spot += side * sin(_t * 1.6 + seed_a) * 3.2 * _k
+		spot += side * (r2 - 0.5) * 16.0 * _k
 		var pos3: Vector3 = view.call("_where_at", spot)
-		pos3.y += (0.07 + 0.10 * (0.5 + 0.5 * sin(_t * 2.3 + seed_a * 1.3))) * _k + 0.04
-		var fade_in := smoothstep(GAP * _k, GAP * _k + step * 2.5, d)
-		var fade_out := pow(clampf(1.0 - d / reach, 0.0, 1.0), 0.8)
-		var twinkle := 0.7 + 0.3 * sin(_t * 6.0 + seed_a * 2.1)
-		var a := fade_in * fade_out * twinkle * _show
-		var s := (0.85 + 0.30 * sin(seed_a * 3.7 + _t * 1.9)) * _k
-		var basis := Basis.IDENTITY.scaled(Vector3(s, s, s))
-		_mm.set_instance_transform(shown, Transform3D(basis, pos3))
-		# warm gold with a few pink and pale-blue ones; above 1 so the glow of the HD look picks it up
-		var hue := fmod(seed_a * 0.37, 1.0)
-		var tint := Color(1.0, 0.86, 0.45) if hue < 0.55 else (Color(1.0, 0.62, 0.86) if hue < 0.8 else Color(0.62, 0.86, 1.0))
-		_mm.set_instance_color(shown, Color(tint.r * 2.2, tint.g * 2.2, tint.b * 2.2, a))
+		pos3.y += (0.10 + 0.22 * life) * _k                  # it rises a little as it fades
+		var a := pow(sin(PI * life), 2.0) * 0.55 * _show
+		var s := (0.42 + 0.22 * r2) * _k
+		_mm.set_instance_transform(shown, Transform3D(Basis.IDENTITY.scaled(Vector3(s, s, s)), pos3))
+		_mm.set_instance_color(shown, Color(1.6, 1.36, 0.8, a))
 		shown += 1
 	_mm.visible_instance_count = shown

@@ -162,9 +162,9 @@ func flag(name: String) -> bool:
 ## THE DEMO (v0.36.0, for publishers and testers): the build ends after chapter one (Wickmere, the
 ## Elfwood, the Bramble Giant, the first beacon). Set DEMO to false for the whole game;
 ## `--fullgame` on the command line plays the whole game in a demo build (the story tour uses it).
-const DEMO := true
+const DEMO := false            ## (v0.37.0: back to the whole game; set true and rebuild for a demo build, or run with --demo)
 func demo() -> bool:
-	return DEMO and not flag("fullgame")
+	return (DEMO or flag("demo")) and not flag("fullgame")
 
 
 func arg(name: String, default_value: String = "") -> String:

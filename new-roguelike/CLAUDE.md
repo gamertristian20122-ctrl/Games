@@ -1552,6 +1552,26 @@ The owner: "do everything you need to do for me to make this ready to give to a 
   By day the PC (HD) look is paler than the phone look (it was already so in v0.27.3). The story words are
   AI-written (the owner rewrites or discloses them). Sound was never listened to.
 
+## v0.37.0 (14 Nov 2026): the glimmer, Auto fight, and THE OWNER'S PLAN FOR THE FULL GAME
+The owner played and answered the review. Done in this version:
+- **Fairy dust is now a faint glimmer** (trail.gd): six small gold specks within 84 px ahead of the knight, each
+  fading in and out on its own; no line to follow. Only at story steps 0 and 1 (`HINT_LAST`): "everything else
+  you find yourself". It still asks the path grid for the direction, so it never points through a wall.
+- **Auto fight** (battle.gd): a small "Auto" plate top right; `static var auto_play` (kept between fights). The
+  party uses fight.gd `auto_choice`. `--autoplay` starts with it on (test; prints the result).
+- `G.DEMO` is false again (the whole game). A demo build: set it true, or run with `--demo`.
+**The owner's list for the full game (their words, 14 Nov 2026), still TO DO, in the order I proposed:**
+1. Make fights matter + balance (health carries over, items, inns).
+2. "All the weapons and armor types are going to be upgrades. Remove that from custom abilities": the sword
+   look and armour colour leave the Your-knight screen and become upgrades you earn or buy.
+3. Side quests and secrets.
+4. "Add the other parts and make the game a lot longer. My goal was 8 to 10 hours": chapters three and four,
+   the ending, more to do in every land.
+5. Cut the old roguelike code.
+6. "Really good music" (human-made CC0 / CC-BY only).
+They said these are GOOD AS THEY ARE, do not touch: graphics quality settings, the intro, map names, attack
+animations, the story text.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.
