@@ -34,6 +34,8 @@ const Moves = preload("res://scripts/battle/anim_moves.gd")
 const Shatter = preload("res://scripts/battle/anim_death.gd")
 const Num = preload("res://scripts/battle/anim_numbers.gd")
 const BUI = preload("res://scripts/battle/battle_ui.gd")
+const Tale = preload("res://scripts/data/tale.gd")
+const Looks = preload("res://scripts/data/battle_looks.gd")   ## boss staging, aiming colours, the new words
 ## FAST-FORWARD: while the fight plays out (not while you choose), holding Space, Shift, Enter, the
 ## mouse button, a finger on the screen, or A / the right shoulder of a pad plays it this much faster.
 const FF_SPEED := 3.0
@@ -117,6 +119,27 @@ var _ff := 1.0                     ## and the fast-forward's
 var _hold_t := 0.0
 var _combo := {}                   ## a combo's one counting number, by the fighter hit
 var _plan: Array = []              ## test: --animplan=lunge,slam,thessaly:volley (what the bot picks, in order)
+var _win_do := {}                  ## a story battle's "win" (tale.gd): applied the moment the fight is won
+var _snap := {}                    ## wounds and supplies as the fight began ("Try again" puts them back)
+var _boss_fight := false
+var _aim_ring: MeshInstance3D      ## the pulsing ring on the ground under the one aimed at
+var _aim_pool: MeshInstance3D      ## and the soft pool of light inside it
+var _aim_shown := {}               ## who wears the aiming look now ({} = nobody)
+var _pick := 1.0                   ## the speed plate's share of the time scale (1 while you choose)
+var _stop_pick := true             ## may the speed plate hurry the present hit-stop (never a slow-motion moment)
+
+## PAUSE (main.gd sets it while its pause screen is open over a battle): the whole battle stands
+## still: no turn begins, no blow lands, nothing on the stage moves, and no button of it answers.
+var frozen := false:
+	set(v):
+		if frozen == v:
+			return
+		frozen = v
+		process_mode = Node.PROCESS_MODE_DISABLED if v else Node.PROCESS_MODE_INHERIT
+		if v:
+			Engine.time_scale = 1.0        # (a hit-stop or the fast-forward must not slow or hurry the pause screen)
+		else:
+			_apply_time()
 
 
 func _ready() -> void:
@@ -139,6 +162,10 @@ func _ready() -> void:
 		fight.call("setup", spec["party"], spec["foes"], rng.randi())
 		fight.set("no_flee", bool(spec["boss"]))
 		_xp_bonus = int(spec["xp_bonus"])
+		_boss_fight = bool(spec["boss"])
+		# (the story moves on the moment the fight is won, see _finish; battles.gd may hand the "win" out itself)
+		var win: Variant = spec.get("win", Tale.BATTLES.get(story, {}).get("win", {}))
+		_win_do = win if win is Dictionary else {}
 	else:
 		var kind := Roamers.kind_of(spot)
 		_tier = int(kind["tier"])
@@ -147,6 +174,8 @@ func _ready() -> void:
 		if night and Stage.LOOKS.has(look + "_night"):
 			look += "_night"
 		fight.call("setup", Battles.party(), Battles.pack_for(spot, rng), rng.randi())
+	_snapshot()
+	_load_speed()
 	stage = Stage.new()
 	add_child(stage)
 	stage.call("build", look, 11 + maxi(spot, 0) + story.length())
@@ -168,12 +197,35 @@ func _ready() -> void:
 	var foes: Array = fight.foes
 	for i in party.size():
 		_place(party[i], PARTY_AT[i], false)
+	# BOSS STAGING (scripts/data/battle_looks.gd): a boss stands alone in the middle of its side, drawn
+	# big; its helpers stand behind it and to the sides
+	var has_boss := false
+	for f: Dictionary in foes:
+		has_boss = has_boss or bool(f.get("boss", false))
+	var minion := 0
+	var clear := 0.0                   # (a very wide boss pushes its helpers further out, clear of its body)
+	for f: Dictionary in foes:
+		if bool(f.get("boss", false)):
+			var at: Vector3 = Looks.boss(String(f["id"]))["at"]
+			_place(f, at, true)
+			clear = maxf(clear, at.x + float(f["wide"]) / 0.8 * 0.5 + 0.9 - (Looks.MINION_AT[0] as Vector3).x)
 	for i in foes.size():
-		# a boss stands alone in the middle of its side
-		_place(foes[i], Vector3(4.6, 0.0, 0.4) if bool(foes[i].get("boss", false)) else FOES_AT[i], true)
+		if bool(foes[i].get("boss", false)):
+			continue
+		if has_boss:
+			_place(foes[i], Looks.MINION_AT[minion % Looks.MINION_AT.size()] + Vector3(clear + 1.4 * float(minion / Looks.MINION_AT.size()), 0.0, 0.0), true)
+			minion += 1
+		else:
+			_place(foes[i], FOES_AT[i % FOES_AT.size()], true)
+	if has_boss:
+		_frame_boss()
 	_build_screen()
 	_marker = stage.call("ground_glow", Vector3.ZERO, Color(1.0, 0.82, 0.4, 0.75), 1.25, 0.0, true)
 	_marker.visible = false
+	_aim_ring = stage.call("ground_glow", Vector3.ZERO, Looks.AIM_FOE, 1.5, 0.0, true)
+	_aim_ring.visible = false
+	_aim_pool = stage.call("ground_glow", Vector3.ZERO, Looks.AIM_FOE, 1.5, 0.0, false)
+	_aim_pool.visible = false
 	_refresh()
 	_enter()
 	_run.call_deferred(title)
@@ -222,6 +274,23 @@ func _enter() -> void:
 func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 	var body: MeshInstance3D = stage.call("stand", String(unit["sprite"]), at, faces_left)
 	var tint: Color = unit.get("tint", Color.WHITE)
+	var is_boss := bool(unit.get("boss", false))
+	var big := 1.0
+	# (the edge light stage.stand() gave it: aiming pulses it and must be able to put it back)
+	var key: Array = (stage.look as Dictionary).get("key", [Color(1.0, 0.85, 0.6), 0.5, 1.0])
+	var rim_side := float(key[2]) * (1.0 if at.x < 0.0 else -1.0)
+	unit["rim"] = [float(key[1]), key[0], rim_side]
+	if is_boss:
+		# a boss looks like a boss: bigger than its art, its own edge light, a pool of light under it
+		var bl := Looks.boss(String(unit["id"]))
+		big = maxf(float(bl["scale"]), 0.5)
+		tint = bl["tint"]
+		unit["rim"] = [float(bl["rim_power"]), bl["rim"], rim_side]
+		body.call("set_rim", float(bl["rim_power"]), bl["rim"], rim_side)
+	elif String(unit["side"]) == "foes" and Looks.FOE_TINT.has(String(unit["id"])):
+		var wash: Color = Looks.FOE_TINT[String(unit["id"])]
+		tint = Color(tint.r * wash.r, tint.g * wash.g, tint.b * wash.b)
+	unit["tint"] = tint                # (the turn rail's faces and the victory rows wear the same colour)
 	body.call("set_tint", tint)
 	unit["node"] = body
 	unit["home"] = at
@@ -230,14 +299,26 @@ func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 	var m := Art.meta(String(unit["sprite"]))
 	var bw := float(m.get("body_width", 16.0)) * PX
 	var bh := float(m.get("body_height", 28.0)) * PX
+	var drop := 0.0                    # how far a hovering boss is lowered so that growing it does not lift it off the stage
+	var air := 0.0                     # and the air left under it
 	if bool(unit.get("boss", false)):
 		# boss art has no body measurements: its picture, less the empty air the pack leaves round it
 		var used := UI.used_rect(String(unit["sprite"]))
 		bw = used.size.x * PX * 0.8
 		bh = used.size.y * PX
+		# (some boss art HOVERS: its body is drawn well above its feet point. Made bigger, that air
+		# would grow too and lift it out of the picture: battle_looks.gd "hover" says how much of the
+		# art's own air is kept)
+		if m.has("feet"):
+			var gap := maxf(float(m["feet"][1]) - used.end.y, 0.0) * PX * Sprite3.tall
+			air = gap * clampf(float(Looks.boss(String(unit["id"])).get("hover", 1.0)), 0.0, 1.0)
+			drop = gap * big - air
 	bh *= Sprite3.tall                 # standing pictures are drawn taller by the camera's slant (sprite3.gd)
-	unit["top"] = bh
+	bh *= big
+	bw *= big
+	unit["top"] = bh + air
 	unit["wide"] = bw
+	unit["big"] = big
 	# the pack draws bodies without arms: a hand at each side, and the knight's sword in his
 	var hands := ""
 	if String(unit["id"]) == "knight":
@@ -269,12 +350,104 @@ func _place(unit: Dictionary, at: Vector3, faces_left: bool) -> void:
 	# HOW IT MOVES (scripts/battle/anim_moves.gd) and the colour of its arcs of light
 	unit["style"] = _style(unit)
 	unit["colour"] = _colour(unit)
-	var actor := Actor.new()
+	var actor: Node = BigActor.new() if (big != 1.0 or drop > 0.0) else Actor.new()
+	if actor is BigActor:
+		actor.set("big", big)
+		actor.set("rise", drop)
 	add_child(actor)
-	actor.call("setup", body, at, hash(String(unit["id"])) + int(at.x * 10.0))
+	actor.call("setup", body, at - Vector3(0.0, drop, 0.0), hash(String(unit["id"])) + int(at.x * 10.0))
+	if drop > 0.0:
+		for c in body.get_children():
+			if c is MeshInstance3D:        # (its shadows stay on the ground)
+				(c as MeshInstance3D).position.y += drop / big
 	if String(unit["side"]) == "foes" and not bool(unit.get("boss", false)) and float(Enemies.info(String(unit["id"])).get("hover", 0.0)) > 0.0:
 		actor.set("bob", 0.07)
 	unit["actor"] = actor
+	if is_boss:
+		var bl2 := Looks.boss(String(unit["id"]))
+		var glow: Color = bl2["glow"]
+		unit["glow"] = stage.call("ground_glow", at, glow, clampf(bw * 0.85, 1.6, 4.2), 0.0, false)
+		body.scale = Vector3(big, big, 1.0)
+
+
+## A fighter drawn bigger than its art (a boss): everything anim_actor.gd does, times `big`.
+class BigActor extends "res://scripts/battle/anim_actor.gd":
+	var big := 1.0
+	var rise := 0.0                 ## its picture is set this far down (hovering art, see _place): the ground is here
+
+	func at() -> Vector3:
+		return super() + Vector3(0.0, rise, 0.0)
+
+	func centre(height: float) -> Vector3:
+		return super(height) + Vector3(0.0, rise, 0.0)
+
+	func _process(delta: float) -> void:
+		super(delta)
+		if body != null and is_instance_valid(body):
+			body.scale = Vector3(body.scale.x * big, body.scale.y * big, 1.0)
+
+
+## BOSS FRAMING: the camera steps back, along the line it looks down, until the boss's head stands
+## under the top of the screen (battle_looks.gd FRAME_TOP), and no further than FRAME_BACK.
+func _frame_boss() -> void:
+	var cam: Camera3D = stage.cam
+	var tallest := {}
+	for f: Dictionary in fight.foes:
+		if bool(f.get("boss", false)) and (tallest.is_empty() or float(f["top"]) > float(tallest["top"])):
+			tallest = f
+	if tallest.is_empty():
+		return
+	var head: Vector3 = (tallest["home"] as Vector3) + Vector3(0.0, float(tallest["top"]), 0.0)
+	var home := _cam_home
+	var aim: Vector3 = stage.aim
+	var want := get_viewport().get_visible_rect().size.y * Looks.FRAME_TOP
+	var k := 1.0
+	while k <= Looks.FRAME_BACK:
+		cam.position = aim + (home - aim) * k
+		cam.look_at(aim, Vector3.UP)
+		if cam.is_position_behind(head) or cam.unproject_position(head).y >= want:
+			break
+		k += 0.025
+	_cam_home = aim + (home - aim) * minf(k, Looks.FRAME_BACK)
+	cam.position = _cam_home
+	cam.look_at(aim, Vector3.UP)
+	# the phone look blurs by distance from the fighters (stage.gd POST_CODE): the band that stays
+	# sharp must hold the whole boss, from its feet to its head, from where the camera stands now
+	# (in HD the camera's own depth of field follows the fighters by itself, stage_hd.gd)
+	var post: MeshInstance3D = stage.post
+	if post != null and post.material_override is ShaderMaterial:
+		var to_view := cam.global_transform.affine_inverse()
+		var near := 1.0e9
+		var far := -1.0e9
+		var everybody: Array = (fight.party as Array) + (fight.foes as Array)
+		for u: Dictionary in everybody:
+			for h: float in [0.0, float(u["top"])]:
+				var z := -(to_view * ((u["home"] as Vector3) + Vector3(0.0, h, 0.0))).z
+				near = minf(near, z)
+				far = maxf(far, z)
+		var pm := post.material_override as ShaderMaterial
+		pm.set_shader_parameter("focus", (near + far) * 0.5)
+		pm.set_shader_parameter("sharp", maxf(3.4, (far - near) * 0.5 + 0.9))
+
+
+## TRY AGAIN: what the party carried into the fight (every wound and every supply), to put back.
+func _snapshot() -> void:
+	_snap = {}
+	Supplies.count("herb")             # (the starting pack is put in the save the first time it is counted)
+	for k: Variant in (Save.data.get("hub", {}) as Dictionary).keys():
+		var key := String(k)
+		if key.begins_with("wound:") or key.begins_with("bag:"):
+			_snap[key] = Save.hub_get(key)
+
+
+func _restore_snapshot() -> void:
+	for k: Variant in (Save.data.get("hub", {}) as Dictionary).keys():
+		var key := String(k)
+		if (key.begins_with("wound:") or key.begins_with("bag:")) and not _snap.has(key):
+			Save.hub_set(key, 0)
+	for key: String in _snap:
+		Save.hub_set(key, int(_snap[key]))
+	Save.flush()
 
 
 ## How a fighter moves in a battle (see the header of scripts/battle/anim_moves.gd).
@@ -362,6 +535,7 @@ func _build_screen() -> void:
 			_make_boss_bar(unit)
 		var who := unit
 		button.pressed.connect(func() -> void: _target_picked(who))
+		button.mouse_entered.connect(_hover_aim.bind(button))      # the mouse over a monster moves the aim onto it
 
 	# your side: a card each (PC: along the bottom; phone: strips top right). A card is also the
 	# button that picks that fighter for a heal.
@@ -373,6 +547,7 @@ func _build_screen() -> void:
 		_cards.append(card)
 		var who := unit
 		(card.get("button") as Button).pressed.connect(func() -> void: _target_picked(who))
+		(card.get("button") as Button).mouse_entered.connect(_hover_aim.bind(card.get("button")))
 
 	# the boss's warning over the orders, and the orders themselves
 	_warn = PanelContainer.new()
@@ -401,22 +576,15 @@ func _build_screen() -> void:
 	# AUTO FIGHT (v0.37.0): a small switch in the top right corner. While it is on the party picks its own
 	# moves (the bot's choices, fight.gd auto_choice); a tap takes the fight back. It stays as set from
 	# fight to fight until the game is closed. Bosses too: the bot guards when a great blow is coming.
-	_auto_btn = UI.button("", _toggle_auto, "", "ui_click")
-	_auto_btn.focus_mode = Control.FOCUS_NONE
-	for state: String in ["normal", "hover", "pressed"]:
-		_auto_btn.add_theme_stylebox_override(state, UI.box("plate"))       # a small glass plate, so it reads as a button
-	_auto_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var auto_size := Vector2(46, 14) if _ph else Vector2(84, 22)
-	var auto_gap := 6.0 if _ph else 12.0
-	_auto_btn.anchor_left = 1.0
-	_auto_btn.anchor_right = 1.0
-	_auto_btn.offset_left = -(auto_size.x + auto_gap)
-	_auto_btn.offset_right = -auto_gap
-	_auto_btn.offset_top = 4.0 if _ph else 10.0
-	_auto_btn.offset_bottom = _auto_btn.offset_top + auto_size.y
+	# (quality pass) beside it a speed plate (x1 / x2 / x3); each has its own key cap (T and F) and a
+	# tooltip, and the help strip keeps clear of both (see _place_help)
+	_auto_btn = _corner_plate(_toggle_auto, "T", Looks.word("auto_tip"))
+	_speed_btn = _corner_plate(_cycle_speed, "F", Looks.word("speed_tip"))
 	_auto_btn.visible = not _auto
-	_root.add_child(_auto_btn)
+	_speed_btn.visible = not _auto
+	_place_plates()
 	_sync_auto_btn()
+	_sync_speed_btn()
 	_touch_hint = UI.label("", "Small")
 	_touch_hint.add_theme_color_override("font_color", UI.C_PARCH)
 	_touch_hint.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
@@ -487,6 +655,7 @@ func _layout() -> void:
 	_touch_hint.size = Vector2(room.x, 12.0)
 	_brackets.position = Vector2.ZERO
 	_brackets.size = room
+	_place_help()
 
 
 ## Every frame: the orders panel keeps its corner as it grows and shrinks.
@@ -1012,7 +1181,7 @@ func _ask_target(aim: String, words: String) -> void:
 		# (a touch screen has no Esc: a small Back tile stays in the corner)
 		var page := UI.vbox(0)
 		_menu_page_next = "commands"
-		var back := _row("Back", "", func() -> void: on_back())
+		var back := _row("Back", "", func() -> void: _step_back())
 		page.add_child(back)
 		_open_page(page, "aim", 1)
 		_menu.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -1073,13 +1242,108 @@ func _cycle(step: int) -> void:
 	to.grab_focus()
 
 
+## The mouse over a monster (or a friend's card) while aiming: the aim moves onto it.
+func _hover_aim(b: Button) -> void:
+	if _aim == "" or not is_instance_valid(b) or b.disabled or Controls.using_touch:
+		return
+	if b.focus_mode != Control.FOCUS_NONE and not b.has_focus():
+		b.grab_focus()
+
+
+## THE AIMING LOOK (every frame from _ui_frame): the one aimed at keeps its colours, gets a pulsing
+## ring of light on the ground and a pulsing edge light; everybody else sinks back into shade.
+## `aimed` {} = nobody: everything is put back as it was.
+func _aim_look(aimed: Dictionary) -> void:
+	if not is_same(aimed, _aim_shown) and not (aimed.is_empty() and _aim_shown.is_empty()):
+		if not _aim_shown.is_empty():
+			_unlight(_aim_shown)
+		_aim_shown = aimed
+		var everybody: Array = (fight.party as Array) + (fight.foes as Array)
+		for u: Dictionary in everybody:
+			var k := 1.0
+			if not aimed.is_empty() and not is_same(u, aimed):
+				k = Looks.AIM_DIM_ACTING if is_same(u, _acting) else Looks.AIM_DIM
+			_shade(u, k)
+		if is_instance_valid(_aim_ring):
+			_aim_ring.visible = not aimed.is_empty()
+		if is_instance_valid(_aim_pool):
+			_aim_pool.visible = not aimed.is_empty()
+	if aimed.is_empty() or not is_instance_valid(_aim_ring) or not is_instance_valid(_aim_pool):
+		return
+	var beat := 0.5 + 0.5 * sin(_t * 6.0)
+	var c: Color = Looks.AIM_FOE if String(aimed["side"]) == "foes" else Looks.AIM_FRIEND
+	var at: Vector3 = aimed["home"]
+	_aim_ring.position = Vector3(at.x, float(stage.call("height_at", at.z)) + 0.045, at.z)
+	var wide := clampf(float(aimed["wide"]) * 0.8, 0.85, 3.2)
+	_aim_ring.scale = Vector3.ONE * wide * (1.0 + 0.12 * beat)
+	(_aim_ring.material_override as StandardMaterial3D).albedo_color = Color(c.r, c.g, c.b, c.a * (0.6 + 0.4 * beat))
+	_aim_pool.position = _aim_ring.position - Vector3(0.0, 0.005, 0.0)
+	_aim_pool.scale = Vector3.ONE * wide * 0.9
+	(_aim_pool.material_override as StandardMaterial3D).albedo_color = Color(c.r, c.g, c.b, 0.30 + 0.25 * beat)
+	var node: Node = aimed.get("node")
+	if is_instance_valid(node):
+		var rim: Array = aimed.get("rim", [0.5, Color.WHITE, -1.0])
+		node.call("set_rim", maxf(float(rim[0]), 0.7) + 0.9 * beat, c, float(rim[2]))
+
+
+## Puts a fighter's own edge light back after it was aimed at.
+func _unlight(u: Dictionary) -> void:
+	var node: Node = u.get("node")
+	if is_instance_valid(node) and u.has("rim"):
+		var rim: Array = u["rim"]
+		node.call("set_rim", float(rim[0]), rim[1], float(rim[2]))
+
+
+## Draws a fighter (body, hands, sword) `k` times as bright as its own tint (1 = as it is).
+func _shade(u: Dictionary, k: float) -> void:
+	var node: Node = u.get("node")
+	if not is_instance_valid(node):
+		return
+	var t: Color = u.get("tint", Color.WHITE)
+	var c := Color(t.r * k, t.g * k, t.b * k)
+	node.call("set_tint", c)
+	for h: Variant in u.get("hands", []):
+		if is_instance_valid(h):
+			(h as Node).call("set_tint", c)
+	var sword: Variant = u.get("sword")
+	if sword != null and is_instance_valid(sword):
+		for blade: Node in (sword as Node).get_children():
+			if blade.has_method("set_tint"):
+				blade.call("set_tint", Color(k, k, k))
+
+
 func _input(event: InputEvent) -> void:
+	# Auto and the speed plate have keys of their own (T and F; pad Y and X), in the fight and while choosing
+	if not _over and not _auto and event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo:
+		var code := (event as InputEventKey).physical_keycode
+		var auto_key := event.is_action_pressed("auto") if InputMap.has_action("auto") else code == KEY_T
+		if auto_key:
+			Sfx.play("ui_click")
+			_toggle_auto()
+			get_viewport().set_input_as_handled()
+			return
+		if code == KEY_F:
+			Sfx.play("ui_click")
+			_cycle_speed()
+			get_viewport().set_input_as_handled()
+			return
+	if not _over and not _auto and event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed:
+		if (event as InputEventJoypadButton).button_index == JOY_BUTTON_Y:
+			Sfx.play("ui_click")
+			_toggle_auto()
+			get_viewport().set_input_as_handled()
+			return
+		if (event as InputEventJoypadButton).button_index == JOY_BUTTON_X:
+			Sfx.play("ui_click")
+			_cycle_speed()
+			get_viewport().set_input_as_handled()
+			return
 	if _acting.is_empty() or _over:
 		return
-	# the mouse's right button goes one step back (as Esc does)
+	# the mouse's right button goes one step back (as Esc does) on every page; on the orders page
+	# there is nothing to go back to
 	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_RIGHT:
-		if _menu_page != "commands":
-			on_back()
+		if _step_back():
 			get_viewport().set_input_as_handled()
 		return
 	if _aim == "":
@@ -1111,7 +1375,100 @@ var _auto_btn: Button
 
 func _sync_auto_btn() -> void:
 	_auto_btn.text = "Auto: ON" if auto_play else "Auto"
-	_auto_btn.add_theme_color_override("font_color", UI.C_GOLD if auto_play else UI.C_PARCH)
+	for key: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		_auto_btn.add_theme_color_override(key, UI.C_GOLD if auto_play else UI.C_PARCH)
+
+
+## THE SPEED PLATE (x1 / x2 / x3, beside Auto): how fast blows and spells play out. Kept from fight
+## to fight and in the settings ("battle_speed"). The hold-to-hurry of _fast_forward goes on top.
+static var speed_pick := 1
+var _speed_btn: Button
+
+
+func _load_speed() -> void:
+	var saved: Variant = Save.setting("battle_speed")        # (null before the settings know the key: 1)
+	speed_pick = clampi(int(saved) if (saved is int or saved is float) else 1, 1, int(Looks.SPEEDS.back()))
+
+
+func _sync_speed_btn() -> void:
+	if not is_instance_valid(_speed_btn):
+		return
+	_speed_btn.text = "x%d" % speed_pick
+	for key: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		_speed_btn.add_theme_color_override(key, UI.C_GOLD if speed_pick > 1 else UI.C_PARCH)
+
+
+func _cycle_speed() -> void:
+	var at := Looks.SPEEDS.find(speed_pick)
+	speed_pick = int(Looks.SPEEDS[(at + 1) % Looks.SPEEDS.size()])
+	Save.set_setting("battle_speed", speed_pick)
+	_sync_speed_btn()
+
+
+## A small glass plate in the top right corner (Auto, the speed): a key cap on its left on PC.
+func _corner_plate(action: Callable, cap: String, tip: String) -> Button:
+	var b := UI.button("", action, "", "ui_click")
+	b.focus_mode = Control.FOCUS_NONE
+	for state: String in ["normal", "hover", "pressed"]:
+		b.add_theme_stylebox_override(state, UI.box("plate"))       # a small glass plate, so it reads as a button
+	b.tooltip_text = tip
+	b.anchor_left = 1.0
+	b.anchor_right = 1.0
+	_root.add_child(b)
+	if _ph:
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.add_theme_font_size_override("font_size", 8)
+	else:
+		b.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		var key := UI.prompt(cap, "")
+		key.name = "Cap"
+		key.set("outlined", false)
+		b.add_child(key)
+	return b
+
+
+## Where the two plates sit: Auto in the corner, the speed plate left of it.
+func _place_plates() -> void:
+	var auto_size := Vector2(46, 14) if _ph else Vector2(92, 22)
+	var speed_size := Vector2(24, 14) if _ph else Vector2(52, 22)
+	var gap := 6.0 if _ph else 12.0
+	var top := 4.0 if _ph else 10.0
+	var right := -gap
+	for pair: Array in [[_auto_btn, auto_size], [_speed_btn, speed_size]]:
+		var b: Button = pair[0]
+		var sz: Vector2 = pair[1]
+		b.offset_right = right
+		b.offset_left = right - sz.x
+		b.offset_top = top
+		b.offset_bottom = top + sz.y
+		right -= sz.x + (3.0 if _ph else 6.0)
+		var key := b.get_node_or_null("Cap") as Control
+		if key != null:
+			key.position = Vector2(6.0, roundf((sz.y - key.size.y) * 0.5))
+	_plates_w = -right
+
+
+var _plates_w := 0.0               ## how much of the top right corner the plates take (with their gaps)
+
+
+## THE HELP STRIP keeps clear of the plates: on their row, its right edge 12 px left of them; when
+## that would run it into the boss's bar it drops to a row of its own under them.
+func _place_help() -> void:
+	if not is_instance_valid(_help):
+		return
+	var row: Control = _help.get("_row")
+	var w := row.get_combined_minimum_size().x if row != null else 0.0
+	var room: Vector2 = _root.size
+	var shown := is_instance_valid(_auto_btn) and _auto_btn.visible
+	var side := (_plates_w + 6.0) if shown else 14.0
+	var top := 10.0
+	if shown and is_instance_valid(_boss) and room.x - side - w - 44.0 < _boss.position.x + _boss.size.x + 30.0:
+		side = 14.0
+		top = 10.0 + 22.0 + 6.0
+	var m := Vector2(side, top)
+	if m != (_help.get("margin") as Vector2):
+		_help.set("margin", m)
+		_help.call("_place")
 
 
 func _toggle_auto() -> void:
@@ -1152,17 +1509,26 @@ func _set_help(state: String) -> void:
 		"fight":
 			pairs = [["fast", "Hold: faster"]]
 		"fast":
-			pairs = [["fast", "Faster x%d" % int(FF_SPEED)]]
+			pairs = [["fast", "Faster x%d" % int(minf(FF_SPEED * _pick, TIME_CAP))]]
 	var key := str(pairs)
 	if key == _help_key:
 		return
 	_help_key = key
 	_help.call("set_pairs", pairs)
+	_place_help()
 
 
 # ------------------------------------------------------------------ the battle, turn by turn
 func _wait(seconds: float) -> void:
 	await get_tree().create_timer(seconds / _speed, false).timeout
+	if frozen:
+		await _thaw()
+
+
+## While the game is paused over the battle (`frozen`) nothing goes on: whoever waits, waits here.
+func _thaw() -> void:
+	while frozen and is_inside_tree():
+		await get_tree().process_frame
 
 
 ## What happens, in the ribbon at the top middle (held 1.2 s, then it fades).
@@ -1174,6 +1540,8 @@ func _run(title: String) -> void:
 	_say(title)
 	await _wait(1.45 if Hd.on() and _speed <= 4.0 else 0.9)      # (HD: the camera comes down out of the sky first)
 	while String(fight.call("result")) == "":
+		if frozen:
+			await _thaw()
 		var who: Dictionary = fight.call("next")
 		if who.is_empty():
 			break
@@ -1388,7 +1756,7 @@ func impact(e: Dictionary, opts: Dictionary = {}) -> void:
 			_float(target, "+%d" % int(e["amount"]), Num.C_HEAL, {"heal": true})
 			Sfx.play("pickup", -6.0)
 			var node: Node = target["node"]
-			node.call("set_flash", 0.45, Color(0.6, 1.0, 0.65))
+			node.call("set_flash", 0.45 * _flash_k(), Color(0.6, 1.0, 0.65))
 			_later(0.25, node, func(n: Node) -> void: n.call("set_flash", 0.0))
 			_refresh_one(target)
 		"stun":
@@ -1401,6 +1769,10 @@ func impact(e: Dictionary, opts: Dictionary = {}) -> void:
 			for i in 3:
 				tw.tween_property(a, "lean", 0.12 * (1.0 if i % 2 == 0 else -1.0), 0.06)
 			tw.tween_property(a, "lean", 0.0, 0.08)
+
+
+func _flash_k() -> float:
+	return 0.5 if _reduced() else 1.0
 
 
 ## Which way a blow from `who` throws `target` (+1 = to the right of the screen).
@@ -1453,10 +1825,11 @@ func _hit(e: Dictionary, target: Dictionary, who: Dictionary, opts: Dictionary) 
 	# turned the one hit into a white slab taller than him at night, and on the phone into a pink
 	# blob. The flash now lifts his own pixels half way (sprite3.gd keeps the ink outline) and does
 	# not shine; one of your side flashes a hurt red instead of white)
+	var fk := _flash_k()                # (Settings > Reduce flashes: half as bright)
 	if party_hit:
-		node.call("set_flash", 0.4, Color(1.0, 0.42, 0.32), 0.12)
+		node.call("set_flash", 0.4 * fk, Color(1.0, 0.42, 0.32), 0.12 * fk)
 	else:
-		node.call("set_flash", minf(strength * 0.5, 0.45), Color(1.0, 0.85, 0.45) if crit else Color.WHITE, 0.0)
+		node.call("set_flash", minf(strength * 0.5, 0.45) * fk, Color(1.0, 0.85, 0.45) if crit else Color.WHITE, 0.0)
 	# (ended on REAL time: the hit-stop slows the game to 0.04, and on game time it held the flash
 	# for the whole freeze. One or two frames, whatever the freeze does)
 	_later(0.035 if party_hit else (0.045 if not crit else 0.07), node, func(n: Node) -> void: n.call("set_flash", 0.0), true)
@@ -1536,7 +1909,13 @@ func _die(u: Dictionary, killer: Dictionary) -> void:
 	Sfx.play("boss_die" if boss else "enemy_die", -4.0 if boss else -8.0)
 	# (a kill flash at 1.0 that shone by itself made the fallen a solid white slab for 5-10 frames
 	# under the hit-stop; now half way toward white over his own pixels, ended on real time)
-	node.call("set_flash", 0.45, Color.WHITE, 0.0)
+	node.call("set_flash", 0.45 * _flash_k(), Color.WHITE, 0.0)
+	if is_instance_valid(u.get("glow")):
+		# (a boss's pool of light dies with it)
+		var pool: MeshInstance3D = u["glow"]
+		var tg := pool.create_tween()
+		tg.tween_property(pool.material_override, "albedo_color:a", 0.0, 0.8)
+		tg.tween_callback(pool.queue_free)
 	var d := _away(u, killer)
 	var tw := a.create_tween().set_parallel(true)
 	tw.tween_property(a, "offset", Vector3(d * (0.4 if boss else 0.8), 0.0, 0.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -1551,7 +1930,7 @@ func _die(u: Dictionary, killer: Dictionary) -> void:
 	if has_death:
 		node.call("play", "death")
 	var fade := node.create_tween().set_ignore_time_scale(true)
-	fade.tween_method(func(v: float) -> void: node.call("set_flash", v, Color.WHITE, 0.0), 0.35, 0.0, 0.08 if boss else 0.12)
+	fade.tween_method(func(v: float) -> void: node.call("set_flash", v, Color.WHITE, 0.0), 0.35 * _flash_k(), 0.0, 0.08 if boss else 0.12)
 	await _wait(minf(float(node.call("anim_length", "death")), 0.5) if has_death else 0.2)
 	if boss and is_instance_valid(node):
 		# the boss burns away from the top, embers flying, then breaks
@@ -1624,26 +2003,41 @@ func track(at: Vector3, seconds: float, zoom: float = 0.0) -> void:
 ## may end it; the fast-forward shortens it too).
 var _stop_id := 0
 func _hit_stop(duration: float, slow: float = 0.04) -> void:
-	await _slow_motion(slow, duration)
+	if _reduced():
+		return                             # Settings > Reduce flashes: no freeze frames either
+	await _slow_motion(slow, duration, true)
 
 
 ## Slows the whole game to `scale` for `seconds` of real time (a hit-stop; a boss's fall).
-func _slow_motion(scale: float, seconds: float) -> void:
+## `hurry`: the speed plate shortens it (a hit-stop); a slow-motion MOMENT is never hurried by it.
+func _slow_motion(scale: float, seconds: float, hurry: bool = false) -> void:
 	_stop_id += 1
 	var mine := _stop_id
 	_stop_k = scale
+	_stop_pick = hurry
 	_apply_time()
 	# (process_always, not physics, IGNORE the time scale: or the timer itself would crawl)
-	await get_tree().create_timer(seconds / _ff, true, false, true).timeout
+	await get_tree().create_timer(seconds / (_ff * (_pick if hurry else 1.0)), true, false, true).timeout
 	if mine == _stop_id:
 		_stop_k = 1.0
+		_stop_pick = true
 		_apply_time()
 
 
+const TIME_CAP := 6.0              ## the speed plate times the hold-to-hurry never plays faster than this
+
 func _apply_time() -> void:
-	var want := _stop_k * _ff
+	if frozen:
+		return                             # (paused: the time scale is 1 for the pause screen; set right again on thawing)
+	var want := _stop_k * minf(_ff * (_pick if _stop_pick else 1.0), TIME_CAP)
 	if not is_equal_approx(Engine.time_scale, want):
 		Engine.time_scale = want
+
+
+## Settings > Reduce flashes (the setting "flashes" = "reduced"; unset = full).
+func _reduced() -> bool:
+	var v: Variant = Save.setting("flashes")
+	return v is String and String(v) == "reduced"
 
 
 func _exit_tree() -> void:
@@ -1720,18 +2114,30 @@ func _finish() -> void:
 		if int(summary["levels"]) > 0:
 			Wounds.rest()
 			lines.append("Everybody is rested by the new level.")
+		# every monster beaten is counted (the bestiary reads "kills:<id>")
+		for f: Dictionary in fight.foes:
+			Save.hub_set("kills:" + String(f["id"]), Save.hub_get("kills:" + String(f["id"])) + 1)
+		# A STORY FIGHT IS WON FOR GOOD HERE, not on "Continue": the story moves on and is written to
+		# the save at once (closing the game on the victory panel used to lose the win). main.gd
+		# sees summary["applied"] and does not apply it again (twice is harmless: a step never goes back).
+		if story != "":
+			var did: Dictionary = Tale.apply(_win_do)
+			summary["applied"] = true
+			summary["say"] = String(did.get("say", "Won"))
+			for k: String in did:
+				if k != "say":
+					summary["do_" + k] = did[k]      # (what else the win asks for: "battle", "screen")
 		Save.flush()
 		Sfx.victory()
 	elif outcome == "lose":
 		head = "You fall..."
-		# (v0.38.0) it costs something now: a share of the coins, and the way back
-		var lost := roundi(float(Save.hub_get("bank:coins")) * LOSE_COINS)
-		Save.hub_set("bank:coins", Save.hub_get("bank:coins") - lost)
-		Wounds.rest()
-		summary["lost"] = lost
-		lines.append("Somebody carries you back to your bed.")
-		lines.append("You lost %d coins on the way." % lost if lost > 0 else "You had no coins to lose.")
-		Save.flush()
+		# (v0.38.0) it costs something: a share of the coins, and the way back. (quality pass) But
+		# only once the player picks "Rest and return" on the Fallen screen (_give_in); "Try again"
+		# costs nothing. The bot has no screen: it pays at once.
+		summary["night"] = night
+		lines.append(Looks.word("fallen"))
+		if _auto:
+			_give_in(summary)
 	else:
 		outcome = "fled"
 		head = "You got away"
@@ -1759,6 +2165,29 @@ func _finish() -> void:
 	_end_screen(outcome, summary, lines, head)
 
 
+## A LOST FIGHT, taken as lost: a share of the coins is gone and everybody wakes rested in bed.
+func _give_in(summary: Dictionary) -> void:
+	var lost := _coins_at_stake()
+	Save.hub_set("bank:coins", Save.hub_get("bank:coins") - lost)
+	Wounds.rest()
+	summary["lost"] = lost
+	Save.flush()
+
+
+func _coins_at_stake() -> int:
+	return roundi(float(Save.hub_get("bank:coins")) * LOSE_COINS)
+
+
+## A LOST FIGHT, fought again: wounds and supplies are as they were when it began, no coins are
+## taken, and main.gd starts the same battle anew (outcome "retry"; spot, night and story are in
+## the summary).
+func _try_again(summary: Dictionary) -> void:
+	_restore_snapshot()
+	summary["night"] = night
+	summary["retry"] = true
+	finished.emit("retry", summary)
+
+
 ## THE END OF A BATTLE on the screen. Won: VICTORY in big gold letters with a light sweeping over
 ## them, then a glass panel: a row per fighter (coin, name, the XP counting up, the XP bar filling,
 ## LEVEL UP when it comes), the coins, new skills, gear found in its rarity colour, and Continue.
@@ -1771,6 +2200,9 @@ func _end_screen(outcome: String, summary: Dictionary, lines: Array, _head: Stri
 	_set_help("")
 	# (the turn order and the boss's bar are done with: they make way for the result)
 	var done: Array = [_rail, _boss]
+	for plate: Button in [_auto_btn, _speed_btn]:
+		if is_instance_valid(plate):
+			plate.visible = false          # (Auto and the speed have nothing to do with the result)
 	if _ph:
 		done.append_array(_cards)          # (the phone's panel needs the whole height)
 	for c: Control in done:
@@ -1799,17 +2231,49 @@ func _end_screen(outcome: String, summary: Dictionary, lines: Array, _head: Stri
 		panel.add_child(col)
 		holder = panel
 		_victory_rows(col, summary, lines)
+	var go: Button
+	if won:
+		go = UI.button("Continue", func() -> void: finished.emit(outcome, summary), "Big", "ui_start")
+		go.custom_minimum_size.x = 90.0 if _ph else 130.0
+		go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		col.add_child(go)
 	else:
+		# FALLEN: two ways on. "Try again" (the same fight, as you walked into it, nothing lost) or
+		# "Rest and return" (today's way: a share of the coins, and you wake in your bed). The words
+		# under the buttons follow the focus, so the cost is read before it is paid.
 		for line: String in lines:
 			var l := UI.label(line, "Hud")
 			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			l.add_theme_font_size_override("font_size", 9 if _ph else 13)
 			col.add_child(l)
-		col.add_child(UI.spacer(0, 4 if _ph else 8))
-	var go := UI.button("Continue", func() -> void: finished.emit(outcome, summary), "Big", "ui_start")
-	go.custom_minimum_size.x = 90.0 if _ph else 130.0
-	go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_child(go)
+		var stake := _coins_at_stake()
+		var what := UI.label("", "Hud", width - 8.0)
+		what.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		what.add_theme_font_size_override("font_size", 9 if _ph else 13)
+		what.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
+		what.add_theme_constant_override("outline_size", 3)
+		what.custom_minimum_size.y = 22.0 if _ph else 34.0
+		col.add_child(what)
+		var row := UI.hbox(6 if _ph else 12)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		go = UI.button(Looks.word("try_again"), func() -> void: _try_again(summary), "Big", "ui_start")
+		var rest := UI.button(Looks.word("rest"), func() -> void:
+			_give_in(summary)
+			finished.emit(outcome, summary), "Big", "ui_click")
+		var texts := {go: Looks.word("try_again_text"),
+			rest: (Looks.word("rest_text") % stake) if stake > 0 else Looks.word("rest_text_free")}
+		for b: Button in [go, rest]:
+			b.custom_minimum_size.x = 96.0 if _ph else 138.0
+			row.add_child(b)
+			var say: String = texts[b]
+			b.focus_entered.connect(func() -> void: what.text = say)
+			b.mouse_entered.connect(func() -> void:
+				if is_instance_valid(b) and not b.has_focus():
+					b.grab_focus())
+		go.focus_neighbor_right = go.get_path_to(rest)
+		rest.focus_neighbor_left = rest.get_path_to(go)
+		col.add_child(row)
+		what.text = String(texts[go])
 	_root.add_child(holder)
 	var hs := holder.get_combined_minimum_size()
 	holder.size = Vector2(width, hs.y)
@@ -1959,7 +2423,7 @@ func _closing(won: bool) -> void:
 		moves.call("victory", fight.call("alive", fight.party))      # the knight's sword up, the others hop and turn
 		_fade.color = Color(1.0, 0.86, 0.5, 0.0)
 		var tf := create_tween()
-		tf.tween_property(_fade, "color:a", 0.45, 0.08)
+		tf.tween_property(_fade, "color:a", 0.45 * _flash_k(), 0.08)
 		tf.tween_property(_fade, "color:a", 0.0, 0.5)
 		tf.tween_property(_fade, "color", Color(0.05, 0.03, 0.02, 0.28), 0.6)
 		var tp := create_tween()
@@ -1980,17 +2444,24 @@ func _closing(won: bool) -> void:
 	await _wait(0.75)
 
 
-## The phone's Back button, Esc or B: one step back in the menu (never out of the fight).
-func on_back() -> void:
+## The phone's Back button, Esc or B. Returns true when it was used here (one step back in the
+## menu, or the result is on the screen); FALSE on the orders page and while the others act: there
+## is nothing to step back to, so main.gd opens its pause screen over the battle (and sets `frozen`).
+func on_back() -> bool:
+	if _over:
+		return true
+	return _step_back()
+
+
+## One step back in the orders (skills / items / aiming). False when there is no step to take.
+func _step_back() -> bool:
 	if _acting.is_empty() or _over:
-		return
+		return false
 	match _menu_page:
-		"skills":
+		"skills", "items":
 			Sfx.play("ui_back")
 			_show_commands(true)
-		"items":
-			Sfx.play("ui_back")
-			_show_commands(true)
+			return true
 		"aim":
 			Sfx.play("ui_back")
 			if not _waiting_item.is_empty():
@@ -1999,6 +2470,8 @@ func on_back() -> void:
 				_show_commands(true)
 			else:
 				_show_skills(true)
+			return true
+	return false
 
 
 func _take_shot() -> void:
@@ -2061,6 +2534,16 @@ func _take_shot() -> void:
 		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_heal.png"))
 		on_back()
 		await get_tree().create_timer(0.2).timeout
+	if G.flag("shotfallen"):
+		# test: --shotfallen writes battle_fallen.png: the lost fight's screen with "Try again" and
+		# "Rest and return" (a look only: nothing is taken, the game quits after the picture)
+		_acting = {}
+		_clear_menu()
+		_over = true
+		await _closing(false)
+		_end_screen("lose", {"spot": spot, "story": story, "night": night}, [Looks.word("fallen")], "")
+		await get_tree().create_timer(1.6, true, false, true).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_fallen.png"))
 	if G.flag("shotwarn"):
 		# test: --shotwarn writes battle_warn.png with the boss's "Guard!" plate over the orders (a look only)
 		_show_commands()
@@ -2112,12 +2595,17 @@ func _ui_frame() -> void:
 	if _root == null:
 		return
 	var aimed := _aimed()
-	_arrow.visible = not _turn_unit.is_empty() and not _over and String(_turn_unit.get("side", "")) == "party" and _aim == ""
+	if _over:
+		aimed = {}
+	_aim_look(aimed)
+	# the chevron: over the one whose turn it is; while aiming it bobs over the one aimed at instead
+	var arrow_on: Dictionary = aimed if not aimed.is_empty() else _turn_unit
+	_arrow.visible = not arrow_on.is_empty() and not _over and (not aimed.is_empty() or (String(_turn_unit.get("side", "")) == "party" and _aim == ""))
 	if _arrow.visible:
-		var r := _sprite_rect(_turn_unit)
+		var r := _sprite_rect(arrow_on)
 		# (never up among the turn-order coins: the chevron stays under the rail's bottom)
 		var rail_bottom := float(_rail.position.y) + float(_rail.size.y) + 8.0
-		_arrow.position = Vector2(r.get_center().x, maxf(r.position.y - (3.0 if _ph else 5.0), rail_bottom)).round()
+		_arrow.position = Vector2(r.get_center().x, maxf(r.position.y - (3.0 if _ph else 6.0), rail_bottom if r.get_center().x < float(_rail.size.x) + 20.0 else 12.0)).round()
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
 		var b: Button = tag["button"]
@@ -2143,7 +2631,7 @@ func _ui_frame() -> void:
 		var ps: Vector2 = _plate.size
 		var room: Vector2 = _root.size
 		var min_y := float(_ribbon.position.y) + float(_ribbon.call("band_h")) + 4.0
-		var py := maxf(box.position.y - 10.0 - ps.y, min_y)
+		var py := maxf(box.position.y - 22.0 - ps.y, min_y)      # (over the chevron that bobs above the head)
 		if _ph:
 			# (the phone's monsters stand close: over the head the plate covered the next one's
 			# bar and body, so there it goes under the feet, where the bar was)
@@ -2171,6 +2659,9 @@ func _fast_forward(real: float) -> void:
 		or Input.is_joy_button_pressed(0, JOY_BUTTON_A) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER))
 	_hold_t = _hold_t + real if held else 0.0
 	var want := FF_SPEED if _hold_t >= FF_HOLD else 1.0
-	if want != _ff:
+	# (the speed plate: only while the fight plays out, never while you choose or read the result)
+	var pick := float(speed_pick) if (not choosing and not _over and _intro <= 0.0) else 1.0
+	if want != _ff or pick != _pick:
 		_ff = want
+		_pick = pick
 		_apply_time()
