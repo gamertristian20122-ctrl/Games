@@ -43,6 +43,7 @@ const HdLight = preload("res://scripts/fx/hd_light.gd")
 const Build = preload("res://scripts/hub/view3d_build.gd")
 const Water = preload("res://scripts/hub/view3d_water.gd")
 const Trail = preload("res://scripts/hub/trail.gd")
+const Leaves = preload("res://scripts/fx/leaves.gd")
 const Hd = preload("res://scripts/fx/hd.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 
@@ -157,6 +158,10 @@ func rebuild() -> void:
 	if _outdoor:
 		light.build_air(place)
 	light.sync_light()
+	if _outdoor and Leaves.has(hub.place_id):
+		var drift := Leaves.new()          # leaves and petals on the wind (scripts/fx/leaves.gd)
+		_world.add_child(drift)
+		drift.setup(hub)
 	if Tale.on():
 		var dust := Trail.new()          # the fairy dust to the story's next goal (scripts/hub/trail.gd)
 		_world.add_child(dust)
