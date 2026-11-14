@@ -38,6 +38,7 @@ const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
 const View3D = preload("res://scripts/hub/view3d.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Interior = preload("res://scripts/hub/arch/interior.gd")
 
 signal action(what: String, arg: Variant)
 
@@ -251,13 +252,15 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_near = -1
 	_last_talk = -1
 	_blocks = (place.get("blocks", []) as Array).duplicate()
+	if _built_inside():
+		_blocks = Interior.blocks(place)          # the 3D look builds the room for real: walls and furniture block (scripts/hub/arch/interior.gd)
 	_stage = Node2D.new()
 	add_child(_stage)
 	move_child(_stage, 0)
 	var size: Vector2 = place["size"]
 	if bool(place.get("outdoor", false)):
 		_build_ground()
-	else:
+	elif not _built_inside():
 		var art := Sprite2D.new()
 		art.texture = Art.tex(String(place["art"]))
 		art.centered = false
@@ -265,7 +268,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_ysort = Node2D.new()
 	_ysort.y_sort_enabled = true
 	_stage.add_child(_ysort)
-	_zoom = float(place.get("zoom", 1.0))
+	_zoom = float(place.get("zoom3d" if _built_inside() else "zoom", 1.0))
 	_k = float(place.get("hero_scale", 1.0))
 	for p: Array in place.get("props", []):
 		var s := _prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
@@ -377,6 +380,12 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 			say(String(news["say"]))
 	if _view != null:
 		_view.call("rebuild")
+
+
+## Is this place a room the 3D look builds for real (a place's "inside", scripts/hub/arch/interior.gd)?
+## Then its painted picture, its painted people and the picture's blocks are not used.
+func _built_inside() -> bool:
+	return _view != null and place.has("inside")
 
 
 ## Through a door or off the edge of the screen: a short fade, then the next place.
@@ -1050,6 +1059,12 @@ func _build_light() -> void:
 
 ## A person standing in the camp: body, both hands, a shadow, and a gold "!" when they have news.
 func _add_person(row: Dictionary) -> Dictionary:
+	if bool(row.get("ghost", false)) and row.has("body") and _built_inside():
+		# someone painted into the room's picture: in a room built for real they stand there themselves
+		row = row.duplicate()
+		row.erase("ghost")
+		row["sprite"] = row["body"]
+		row["pos"] = row.get("at3d", row["pos"])        # (the barkeep stands behind his counter)
 	var node := Node2D.new()
 	node.position = row["pos"]
 	_ysort.add_child(node)
@@ -1105,11 +1120,13 @@ var _mate_hands: RefCounted
 var _mate_face := 1.0
 func _build_follower() -> void:
 	_mate = null
-	var mate := Allies.with()
+	var mate := Allies.with() if G.arg("ally") == "" else Allies.row(G.arg("ally"))      # (--ally=<id>: a test, she walks behind him)
 	if mate.is_empty():
 		return
 	_mate = Node2D.new()
 	_mate.position = _hero.position + Vector2(-16, 4) * _k
+	if place.has("inside"):
+		_mate.position = _clear_of_blocks(_mate.position, HERO_RADIUS * _k)
 	_mate.scale = Vector2(_k, _k)
 	_ysort.add_child(_mate)
 	var sprite_id := String(mate["sprite"])
@@ -1133,6 +1150,10 @@ func _move_follower(delta: float) -> void:
 	if walking:
 		var before := _mate.position
 		_mate.position += to.normalized() * minf((to.length() - gap) * 6.0, SPEED * float(place.get("speed", 1.0)) * 1.2) * delta
+		if place.has("inside"):
+			_mate.position = _clear_of_blocks(_mate.position, HERO_RADIUS * _k)      # never on a table or the counter
+			if _mate.position.distance_to(_hero.position) > 70.0:
+				_mate.position = _clear_of_blocks(_hero.position + Vector2(-12, 6), HERO_RADIUS * _k)     # (caught behind furniture: she catches up)
 		if absf(_mate.position.x - before.x) > 0.02:
 			_mate_face = signf(_mate.position.x - before.x)
 	_mate_body.flip_h = _mate_face < 0.0
@@ -1141,6 +1162,26 @@ func _move_follower(delta: float) -> void:
 		_mate_body.play(anim)
 	if _mate_hands != null:
 		_mate_hands.update(delta, walking, _mate_face)
+
+
+## A spot pushed out of every block (walls and furniture) through its nearest side.
+func _clear_of_blocks(to: Vector2, body_r: float) -> Vector2:
+	for b: Rect2 in _blocks:
+		var g := b.grow(body_r)
+		if not g.has_point(to):
+			continue
+		var gaps := [to.x - g.position.x, g.end.x - to.x, to.y - g.position.y, g.end.y - to.y]
+		var least: float = gaps.min()
+		if least == gaps[0]:
+			to.x = g.position.x
+		elif least == gaps[1]:
+			to.x = g.end.x
+		elif least == gaps[2]:
+			to.y = g.position.y
+		else:
+			to.y = g.end.y
+	var walk: Rect2 = place["walk"]
+	return to.clamp(walk.position, walk.end)
 
 
 func _build_hero() -> void:

@@ -447,10 +447,13 @@ func sync_light() -> void:
 		lift = 0.0
 		day = bright
 	else:
-		sun.light_color = Color(1.0, 0.96, 0.9)
-		sun.light_energy = 0.6
-		env.ambient_light_color = Color(1.0, 0.95, 0.88)
-		env.ambient_light_energy = 0.55
+		# (a room built for real, scripts/hub/arch/interior.gd: its "inside" row says how dark it is; the
+		# candles, the chandeliers and the hearth do the rest)
+		var inside: Dictionary = hub.place.get("inside", {})
+		sun.light_color = inside.get("sun_col", Color(1.0, 0.96, 0.9))
+		sun.light_energy = float(inside.get("sun", 0.6))
+		env.ambient_light_color = inside.get("ambient_col", Color(1.0, 0.95, 0.88))
+		env.ambient_light_energy = float(inside.get("ambient", 0.55))
 		env.background_color = Color("07060a")
 		env.fog_enabled = false
 		lift = 0.02
@@ -614,12 +617,13 @@ func _sync_hd(sky: Color, outdoor: bool) -> void:
 		if not is_equal_approx(_sun_low, 1.0):
 			_sun_low = 1.0
 			sun.look_at_from_position(Vector3.ZERO, Vector3(HD_LEAN.x, -1.0, HD_LEAN.y), Vector3.UP)
-		sun.light_energy = 0.9
-		env.ambient_light_energy = 0.42
-		env.volumetric_fog_density = 0.004
+		var inside: Dictionary = v.hub.place.get("inside", {})
+		sun.light_energy = float(inside.get("sun_hd", 0.9))
+		env.ambient_light_energy = float(inside.get("ambient_hd", 0.42))
+		env.volumetric_fog_density = float(inside.get("fog_hd", 0.004))
 		env.volumetric_fog_albedo = Color(0.9, 0.75, 0.6)
 		sun.light_volumetric_fog_energy = 0.2
-		env.tonemap_exposure = 1.2
+		env.tonemap_exposure = float(inside.get("exposure_hd", 1.2))
 	# NO MILKY VEIL: sync_light() sets the flat look's bloom and depth mist each frame; in HD the
 	# bloom is only for what burns over the threshold (no blurred copy of the whole picture added on
 	# top) and the volumetric fog is the only air (the depth mist would wash out the shade again)

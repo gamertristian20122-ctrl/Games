@@ -479,6 +479,106 @@ static func _lanterns(t: Dictionary, drop: Array) -> void:
 			props[i] = ["hub_slantern", at.x, at.y, 2, 0, flip]
 
 
+## THE TWO INTERIORS built for real in the 3D look (scripts/hub/arch/interior.gd explains every key).
+## Positions are px of the place; "at" is a piece's foot (x centre, y its front edge). Walking blocks
+## come from these same rows (Interior.blocks), so a table is where it blocks. Keep the exits clear:
+## the hall's door to your room (x 180-204 on the back wall), its way out to the village (x 8-58, bottom
+## left), your room's door (x 100-124). Nobody may stand on a row that blocks. A person row's "body"
+## is who stands there in the built room (the flat look still shows the painted one), "at3d" where.
+static func _room_inside() -> Dictionary:
+	return {"x0": 6.0, "x1": 138.0, "back": 60.0, "near": 158.0, "high": 60.0, "near_high": 9.0,
+		"floor": "hub_ifloor_herring", "wall": "hub_iwall", "no_posts": [[50, 134]],
+		"sun": 0.18, "ambient": 0.34, "ambient_col": Color(0.70, 0.66, 0.80), "sun_col": Color(0.62, 0.70, 1.0),
+		"sun_hd": 0.25, "ambient_hd": 0.36, "exposure_hd": 1.5,
+		"items": [
+			{"k": "rug", "p": "hub_irug_x", "at": Vector2(90, 112)},
+			{"k": "wall", "p": "hub_idoor_a", "x": 112.0},
+			{"k": "wall", "p": "hub_iwin_a", "x": 34.0, "up": 22.0},
+			{"k": "wall", "p": "hub_iwin_stone", "x": 70.0, "up": 26.0},
+			{"k": "stand", "p": "hub_inight", "at": Vector2(70, 63)},
+			{"k": "slab", "p": "hub_ibed", "at": Vector2(34, 120), "front": 10.0},
+			{"k": "stand", "p": "hub_iplant_b", "at": Vector2(15, 136), "block": Vector2(12, 6)},
+			{"k": "stand", "p": "hub_iplant_a", "at": Vector2(132, 82), "block": Vector2(12, 6)},
+			{"k": "slab", "p": "hub_itable_b", "at": Vector2(118, 152), "front": 9.0},
+			{"k": "stand", "p": "hub_ichair_side", "at": Vector2(94, 146), "block": Vector2(10, 6)},
+			{"k": "stand", "p": "hub_istick_b", "at": Vector2(126, 138), "lift": 9.0},
+			{"k": "stand", "p": "hub_imug_a", "at": Vector2(110, 140), "lift": 9.0},
+			{"k": "light", "at": Vector2(126, 142), "up": 24.0, "light": 0.9, "reach": 110.0},
+			{"k": "sconce", "x": 92.0, "up": 34.0, "light": 0.8, "reach": 90.0},
+		]}
+
+
+static func _hall_inside() -> Dictionary:
+	var items: Array = [
+		{"k": "rug", "p": "hub_irug_g", "at": Vector2(32, 196)},
+		{"k": "rug", "p": "hub_irug_x", "at": Vector2(252, 180)},
+		# the back wall: shelves behind the bar, the door up to your room, windows, the hearth, candles
+		{"k": "stand", "p": "hub_irack", "at": Vector2(80, 61)},
+		{"k": "stand", "p": "hub_ishelf2", "at": Vector2(131, 61)},
+		{"k": "wall", "p": "hub_iboard", "x": 131.0, "up": 46.0},
+		{"k": "wall", "p": "hub_idoor_b", "x": 192.0},
+		{"k": "wall", "p": "hub_iwolf", "x": 192.0, "up": 54.0},
+		{"k": "wall", "p": "hub_iwin_big", "x": 250.0, "up": 24.0},
+		{"k": "stand", "p": "hub_ihearth", "at": Vector2(338, 62)},
+		{"k": "fire", "at": Vector2(338, 63), "up": 3.0, "light": 1.6, "reach": 170.0},
+		{"k": "wall", "p": "hub_iwin_big", "x": 422.0, "up": 24.0},
+		{"k": "sconce", "x": 290.0, "up": 40.0, "light": 0.7, "reach": 90.0},
+		{"k": "sconce", "x": 386.0, "up": 40.0},
+		{"k": "sconce", "x": 222.0, "up": 40.0, "light": 0.6, "reach": 90.0},
+		{"k": "wall", "p": "hub_ibear", "x": 452.0, "up": 50.0},
+		# the bar: a counter with a return to the wall, things on it, two stools in front
+		{"k": "box", "at": Vector2(108, 117), "size": Vector3(108, 14, 12), "tex": "hub_iwall_wood", "top": "hub_ifloor_plank"},
+		{"k": "box", "at": Vector2(157, 105), "size": Vector3(14, 14, 41), "tex": "hub_iwall_wood", "top": "hub_ifloor_plank"},
+		{"k": "stand", "p": "hub_istick_b", "at": Vector2(64, 112), "lift": 14.0},
+		{"k": "stand", "p": "hub_imug_a", "at": Vector2(80, 112), "lift": 14.0},
+		{"k": "stand", "p": "hub_imug_b", "at": Vector2(132, 111), "lift": 14.0},
+		{"k": "stand", "p": "hub_ibottle_3", "at": Vector2(146, 110), "lift": 14.0},
+		{"k": "stand", "p": "hub_ibottle_8", "at": Vector2(156, 96), "lift": 14.0},
+		{"k": "stand", "p": "hub_ibottle_1", "at": Vector2(158, 84), "lift": 14.0},
+		{"k": "light", "at": Vector2(104, 112), "up": 34.0, "light": 0.9, "reach": 120.0},
+		{"k": "stand", "p": "hub_istool_red", "at": Vector2(66, 130), "block": Vector2(12, 6)},
+		{"k": "stand", "p": "hub_istool_red", "at": Vector2(86, 130), "block": Vector2(12, 6)},
+		# by the left wall: casks and crates
+		{"k": "stand", "p": "hub_ibarrel", "at": Vector2(18, 80), "block": Vector2(16, 14)},
+		{"k": "stand", "p": "hub_ibarrel", "at": Vector2(34, 78), "block": Vector2(16, 14)},
+		{"k": "stand", "p": "hub_icrate", "at": Vector2(22, 98), "block": Vector2(16, 12)},
+		{"k": "stand", "p": "hub_iplant_c", "at": Vector2(440, 72), "block": Vector2(26, 8)},
+		{"k": "stand", "p": "hub_iplant_a", "at": Vector2(212, 70), "block": Vector2(12, 6)},
+		# the tables, each with its chairs
+		{"k": "slab", "p": "hub_itable_long", "at": Vector2(252, 132), "front": 8.0},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(214, 126), "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(290, 126), "flip": true, "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_imug_a", "at": Vector2(240, 124), "lift": 8.0},
+		{"k": "stand", "p": "hub_ibottle_6", "at": Vector2(262, 122), "lift": 8.0},
+		{"k": "slab", "p": "hub_itable_round", "at": Vector2(352, 208), "front": 10.0},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(328, 200), "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(376, 200), "flip": true, "block": Vector2(10, 6)},
+		{"k": "slab", "p": "hub_itable_a", "at": Vector2(150, 222), "front": 9.0},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(126, 218), "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(174, 218), "flip": true, "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_imug_b", "at": Vector2(144, 212), "lift": 9.0},
+		{"k": "slab", "p": "hub_itable_c", "at": Vector2(252, 236), "front": 9.0},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(228, 232), "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(276, 232), "flip": true, "block": Vector2(10, 6)},
+		{"k": "slab", "p": "hub_itable_blue", "at": Vector2(424, 226), "front": 8.0},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(400, 196), "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(400, 220), "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(448, 196), "flip": true, "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ichair_side", "at": Vector2(448, 220), "flip": true, "block": Vector2(10, 6)},
+		{"k": "stand", "p": "hub_ibottle_9", "at": Vector2(418, 196), "lift": 8.0},
+		{"k": "stand", "p": "hub_imug_a", "at": Vector2(430, 212), "lift": 8.0},
+		# chandeliers hang from the beams, high over every head
+		{"k": "hang", "p": "hub_ichand", "at": Vector2(300, 196), "up": 46.0, "light": 1.0, "reach": 130.0},
+		{"k": "hang", "p": "hub_ichand", "at": Vector2(190, 214), "up": 46.0, "light": 0.9, "reach": 120.0},
+		{"k": "hang", "p": "hub_ichand", "at": Vector2(410, 158), "up": 46.0, "light": 0.9, "reach": 130.0},
+	]
+	return {"x0": 6.0, "x1": 458.0, "back": 58.0, "near": 252.0, "high": 80.0, "near_high": 10.0, "gaps": [[8.0, 60.0]],
+		"floor": "hub_ifloor_plank", "wall": "hub_iwall", "no_posts": [[56, 166], [170, 214], [312, 364]],
+		"sun": 0.16, "ambient": 0.30, "ambient_col": Color(0.74, 0.64, 0.62), "sun_col": Color(0.62, 0.70, 1.0),
+		"sun_hd": 0.22, "ambient_hd": 0.38, "exposure_hd": 1.5,
+		"items": items}
+
+
 static func _base_place(id: String) -> Dictionary:
 	match id:
 		"room":
@@ -491,6 +591,8 @@ static func _base_place(id: String) -> Dictionary:
 					{"id": "bed", "name": "Your bed", "title": "", "ghost": true, "pos": Vector2(62, 96), "top": 4, "role": "bed", "text": ""},
 					{"id": "mirror", "name": "Looking glass", "title": "", "ghost": true, "pos": Vector2(76, 72), "top": 22, "role": "mirror", "text": ""},
 				],
+				"inside": _room_inside(), "zoom3d": 1.3, "ground": "hub_ifloor_herring",
+				"tour": [Vector2(72, 100), Vector2(100, 130)],
 			}
 		"hall":
 			return {
@@ -503,10 +605,14 @@ static func _base_place(id: String) -> Dictionary:
 					{"rect": Rect2(8, 240, 50, 10), "to": "village", "at": Vector2(124, 172)}],
 				"people": [
 					{"id": "barkeep", "name": "Oswin", "title": "Barkeep", "ghost": true, "pos": Vector2(130, 146), "top": 62, "role": "shop",
+						"body": "pc_npc_tavern_a_hold", "at3d": Vector2(112, 99), "face": 1,
 						"text": "The Hollow Flagon. Beds upstairs, stew in the pot, and a few things from the hill under the counter, if you have coin."},
 					{"id": "patron", "name": "Old Wenna", "title": "Regular", "ghost": true, "solid": 7.0, "pos": Vector2(160, 192), "top": 30, "role": "chat",
+						"body": "pc_npc_tavern_b", "hands": "pc_hand_base_2", "face": -1,
 						"text": "I was a girl when the hill last shook. We left bread at the gate, then. Nobody does now."},
 				],
+				"inside": _hall_inside(), "zoom3d": 0.85, "ground": "hub_ifloor_plank",
+				"tour": [Vector2(192, 90), Vector2(118, 124), Vector2(330, 150), Vector2(200, 244), Vector2(420, 130)],
 			}
 		"elfwood":
 			# the road through the Elfwood: quiet, a few elves who have not gone thorn-sick

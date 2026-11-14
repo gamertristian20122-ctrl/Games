@@ -3379,6 +3379,513 @@
   ],
   "source": "Pixel Crawler - Garden Environment/Assets/Tiles.png"
  },
+ "hub_ibarrel": {
+  "box": [
+   224,
+   122,
+   240,
+   144
+  ],
+  "size": [
+   16,
+   22
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibear": {
+  "box": [
+   584,
+   7,
+   600,
+   24
+  ],
+  "size": [
+   16,
+   17
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibed": {
+  "box": [
+   33,
+   293,
+   79,
+   347
+  ],
+  "size": [
+   46,
+   54
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibed_single": {
+  "box": [
+   1,
+   293,
+   31,
+   347
+  ],
+  "size": [
+   30,
+   54
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibench": {
+  "box": [
+   0,
+   204,
+   48,
+   224
+  ],
+  "size": [
+   48,
+   20
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibench_b": {
+  "box": [
+   128,
+   295,
+   176,
+   316
+  ],
+  "size": [
+   48,
+   21
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iboard": {
+  "box": [
+   226,
+   260,
+   254,
+   283
+  ],
+  "size": [
+   28,
+   23
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_0": {
+  "box": [
+   517,
+   291,
+   522,
+   300
+  ],
+  "size": [
+   5,
+   9
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_1": {
+  "box": [
+   534,
+   291,
+   539,
+   301
+  ],
+  "size": [
+   5,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_10": {
+  "box": [
+   565,
+   323,
+   572,
+   333
+  ],
+  "size": [
+   7,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_11": {
+  "box": [
+   581,
+   323,
+   588,
+   333
+  ],
+  "size": [
+   7,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_2": {
+  "box": [
+   550,
+   291,
+   555,
+   301
+  ],
+  "size": [
+   5,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_3": {
+  "box": [
+   565,
+   291,
+   572,
+   301
+  ],
+  "size": [
+   7,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_4": {
+  "box": [
+   581,
+   291,
+   588,
+   301
+  ],
+  "size": [
+   7,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_5": {
+  "box": [
+   517,
+   307,
+   522,
+   316
+  ],
+  "size": [
+   5,
+   9
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_6": {
+  "box": [
+   534,
+   307,
+   539,
+   317
+  ],
+  "size": [
+   5,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_7": {
+  "box": [
+   550,
+   307,
+   555,
+   317
+  ],
+  "size": [
+   5,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_8": {
+  "box": [
+   565,
+   307,
+   572,
+   317
+  ],
+  "size": [
+   7,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ibottle_9": {
+  "box": [
+   581,
+   307,
+   588,
+   317
+  ],
+  "size": [
+   7,
+   10
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_icabinet": {
+  "box": [
+   112,
+   67,
+   144,
+   96
+  ],
+  "size": [
+   32,
+   29
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_icandle": {
+  "box": [
+   405,
+   256,
+   412,
+   272
+  ],
+  "size": [
+   7,
+   16
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ichain": {
+  "box": [
+   221,
+   96,
+   227,
+   112
+  ],
+  "size": [
+   6,
+   16
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ichair_back": {
+  "box": [
+   67,
+   34,
+   78,
+   58
+  ],
+  "size": [
+   11,
+   24
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ichair_s": {
+  "box": [
+   67,
+   72,
+   78,
+   90
+  ],
+  "size": [
+   11,
+   18
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ichair_side": {
+  "box": [
+   66,
+   3,
+   78,
+   27
+  ],
+  "size": [
+   12,
+   24
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ichand": {
+  "box": [
+   242,
+   64,
+   270,
+   95
+  ],
+  "size": [
+   28,
+   31
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_icounter_a": {
+  "box": [
+   368,
+   7,
+   432,
+   48
+  ],
+  "size": [
+   64,
+   41
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_icounter_b": {
+  "box": [
+   432,
+   7,
+   496,
+   48
+  ],
+  "size": [
+   64,
+   41
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_icrate": {
+  "box": [
+   208,
+   121,
+   224,
+   144
+  ],
+  "size": [
+   16,
+   23
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_idoor_a": {
+  "box": [
+   230,
+   210,
+   266,
+   256
+  ],
+  "size": [
+   36,
+   46
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_idoor_b": {
+  "box": [
+   276,
+   210,
+   316,
+   256
+  ],
+  "size": [
+   40,
+   46
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_idoor_c": {
+  "box": [
+   325,
+   210,
+   363,
+   256
+  ],
+  "size": [
+   38,
+   46
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ifloor_herring": {
+  "box": [
+   176,
+   592,
+   208,
+   624
+  ],
+  "size": [
+   32,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Walls_01.png"
+ },
+ "hub_ifloor_plank": {
+  "box": [
+   16,
+   576,
+   64,
+   640
+  ],
+  "size": [
+   48,
+   64
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Walls_01.png"
+ },
+ "hub_ihearth": {
+  "box": [
+   272,
+   47,
+   320,
+   144
+  ],
+  "size": [
+   48,
+   97
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ihooks": {
+  "box": [
+   48,
+   151,
+   112,
+   171
+  ],
+  "size": [
+   64,
+   20
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_imirror": {
+  "box": [
+   32,
+   149,
+   64,
+   203
+  ],
+  "size": [
+   32,
+   54
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Props/Static/Furniture.png"
+ },
+ "hub_imug_a": {
+  "box": [
+   564,
+   277,
+   573,
+   285
+  ],
+  "size": [
+   9,
+   8
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_imug_b": {
+  "box": [
+   580,
+   277,
+   589,
+   285
+  ],
+  "size": [
+   9,
+   8
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
  "hub_in_hall": {
   "box": [
    168,
@@ -3404,6 +3911,448 @@
    164
   ],
   "source": "Pixel Crawler - Free Pack/MockUps/Tavern.png"
+ },
+ "hub_inight": {
+  "box": [
+   102,
+   112,
+   123,
+   136
+  ],
+  "size": [
+   21,
+   24
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ioven": {
+  "box": [
+   385,
+   47,
+   431,
+   144
+  ],
+  "size": [
+   46,
+   97
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ipainting": {
+  "box": [
+   80,
+   320,
+   96,
+   336
+  ],
+  "size": [
+   16,
+   16
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iplant_a": {
+  "box": [
+   17,
+   352,
+   31,
+   384
+  ],
+  "size": [
+   14,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iplant_b": {
+  "box": [
+   32,
+   360,
+   47,
+   384
+  ],
+  "size": [
+   15,
+   24
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iplant_c": {
+  "box": [
+   48,
+   354,
+   80,
+   384
+  ],
+  "size": [
+   32,
+   30
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iplaster": {
+  "box": [
+   508,
+   100,
+   548,
+   120
+  ],
+  "size": [
+   40,
+   20
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Walls_01.png"
+ },
+ "hub_ipost": {
+  "box": [
+   562,
+   135,
+   574,
+   195
+  ],
+  "size": [
+   12,
+   60
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Walls_01.png"
+ },
+ "hub_irack": {
+  "box": [
+   176,
+   144,
+   224,
+   177
+  ],
+  "size": [
+   48,
+   33
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_irug_d": {
+  "box": [
+   384,
+   336,
+   432,
+   384
+  ],
+  "size": [
+   48,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_irug_g": {
+  "box": [
+   336,
+   336,
+   384,
+   384
+  ],
+  "size": [
+   48,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_irug_x": {
+  "box": [
+   432,
+   304,
+   512,
+   384
+  ],
+  "size": [
+   80,
+   80
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_ishelf2": {
+  "box": [
+   48,
+   97,
+   97,
+   137
+  ],
+  "size": [
+   49,
+   40
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_istick_a": {
+  "box": [
+   533,
+   197,
+   542,
+   208
+  ],
+  "size": [
+   9,
+   11
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_istick_b": {
+  "box": [
+   546,
+   192,
+   558,
+   208
+  ],
+  "size": [
+   12,
+   16
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_istool": {
+  "box": [
+   81,
+   62,
+   95,
+   80
+  ],
+  "size": [
+   14,
+   18
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_istool_red": {
+  "box": [
+   97,
+   61,
+   111,
+   80
+  ],
+  "size": [
+   14,
+   19
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_istool_s": {
+  "box": [
+   81,
+   82,
+   95,
+   96
+  ],
+  "size": [
+   14,
+   14
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_isword": {
+  "box": [
+   98,
+   261,
+   126,
+   270
+  ],
+  "size": [
+   28,
+   9
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_itable_a": {
+  "box": [
+   7,
+   99,
+   41,
+   128
+  ],
+  "size": [
+   34,
+   29
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_itable_b": {
+  "box": [
+   7,
+   131,
+   41,
+   160
+  ],
+  "size": [
+   34,
+   29
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_itable_blue": {
+  "box": [
+   327,
+   1,
+   361,
+   48
+  ],
+  "size": [
+   34,
+   47
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_itable_c": {
+  "box": [
+   7,
+   163,
+   41,
+   192
+  ],
+  "size": [
+   34,
+   29
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_itable_long": {
+  "box": [
+   0,
+   0,
+   64,
+   26
+  ],
+  "size": [
+   64,
+   26
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_itable_round": {
+  "box": [
+   80,
+   7,
+   112,
+   42
+  ],
+  "size": [
+   32,
+   35
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_itable_tall": {
+  "box": [
+   279,
+   1,
+   313,
+   48
+  ],
+  "size": [
+   34,
+   47
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iwall": {
+  "box": [
+   496,
+   96,
+   560,
+   144
+  ],
+  "size": [
+   64,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Walls_01.png"
+ },
+ "hub_iwall_wood": {
+  "box": [
+   400,
+   96,
+   464,
+   144
+  ],
+  "size": [
+   64,
+   48
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Walls_01.png"
+ },
+ "hub_iwin_a": {
+  "box": [
+   68,
+   176,
+   92,
+   208
+  ],
+  "size": [
+   24,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iwin_big": {
+  "box": [
+   176,
+   176,
+   224,
+   216
+  ],
+  "size": [
+   48,
+   40
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iwin_shut": {
+  "box": [
+   137,
+   176,
+   167,
+   216
+  ],
+  "size": [
+   30,
+   40
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iwin_small": {
+  "box": [
+   225,
+   160,
+   255,
+   192
+  ],
+  "size": [
+   30,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iwin_stone": {
+  "box": [
+   98,
+   176,
+   126,
+   208
+  ],
+  "size": [
+   28,
+   32
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
+ },
+ "hub_iwolf": {
+  "box": [
+   552,
+   8,
+   568,
+   25
+  ],
+  "size": [
+   16,
+   17
+  ],
+  "source": "Pixel Crawler - Free Pack/Environment/Structures/Buildings/Interior/Interior_Props_01.png"
  },
  "hub_note": {
   "box": [
