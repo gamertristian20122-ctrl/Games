@@ -1708,8 +1708,8 @@ func _finish() -> void:
 		if int(summary["levels"]) > 0:
 			lines.append("Level %d!  %d points to spend on the Knight page" % [Rpg.level(), Rpg.points()])
 			for lvl in range(before + 1, Rpg.level() + 1):
-				for s: Dictionary in Skills.learn_at(lvl):
-					lines.append("New skill: %s" % String(s["name"]))
+				for s: Dictionary in Skills.LIST.filter(func(r: Dictionary) -> bool: return int(r["level"]) == lvl):
+					lines.append("A teacher can now teach: %s" % String(s["name"]))
 			Skills.fill_empty()
 		if String(reward["gear"]) != "" and Gear.grant(String(reward["gear"])):
 			lines.append("Found: %s" % String(Gear.row(String(reward["gear"]))["name"]))

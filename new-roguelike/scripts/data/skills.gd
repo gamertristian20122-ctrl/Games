@@ -3,7 +3,8 @@ extends RefCounted
 ## "two skill buttons + a mana bar, about 8 skills to learn, you choose which 2 to carry".
 ##
 ## How it works:
-## 1. A skill is LEARNED when the knight reaches its "level" (scripts/data/rpg.gd). Nothing to buy.
+## 1. (v0.39.0) A skill OPENS when the knight reaches its "level"; a teacher then teaches it for coins
+##    and makes it stronger (ranks): scripts/data/arms.gd "lore".
 ## 2. He carries two at a time, on skill button 1 and 2 (save's hub section, "skill:0" and
 ##    "skill:1" = the skill's place in LIST + 1, 0 = empty). The Skills page of the Knight screen
 ##    sets them; a newly learned skill drops into an empty button by itself.
@@ -59,7 +60,14 @@ static func index_of(id: String) -> int:
 	return -1
 
 
+## (v0.39.0) a level only OPENS a skill; a teacher teaches it (scripts/data/arms.gd, "lore").
 static func known(id: String) -> bool:
+	var r := row(id)
+	return not r.is_empty() and Save.hub_get("lore:knight:" + id) > 0
+
+
+## Has the knight's level opened this skill (so a teacher can teach it)?
+static func open_for(id: String) -> bool:
 	var r := row(id)
 	return not r.is_empty() and Rpg.level() >= int(r["level"])
 

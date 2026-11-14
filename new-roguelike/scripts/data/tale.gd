@@ -78,7 +78,7 @@ const TALK := {
 			"Then you know what broke. The crown is in four pieces and the beacons are cold. We burn lamps here from dusk to dawn, and dusk comes earlier every week.",
 			"The beacon of the Elfwood went dark first. Lord Caerwyn of the elves carried his shard up to it, and nobody has come down that hill since.",
 			"The wood is sick now. Thorns in the roots, thorns in the people. Go east, find the Warden of the Wood. She will know the way up.",
-		], "option": "I will go east", "do": {"step": 1, "say": "The east road is open"}},
+		], "option": "I will go east", "do": {"step": 1, "coins": 50, "say": "The east road is open. The watch's purse: +50 coins"}},
 		{"from": 1, "to": 5, "pages": ["East, knight. The Warden keeps the Rune Glade past the Elfwood Road. Rest at the Flagon if the night is too long."]},
 		{"from": 6, "to": 6, "pages": [
 			"We saw it from the wall. A light over the Elfwood, the colour of morning. Half the town stood in the square and wept.",

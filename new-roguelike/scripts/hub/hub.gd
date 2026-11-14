@@ -39,6 +39,10 @@ const UI = preload("res://scripts/ui/theme.gd")
 const View3D = preload("res://scripts/hub/view3d.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 const Supplies = preload("res://scripts/data/supplies.gd")
+const Arms = preload("res://scripts/data/arms.gd")
+const Looks = preload("res://scripts/data/looks.gd")
+const Skills = preload("res://scripts/data/skills.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 const Battles = preload("res://scripts/data/battles.gd")
 const Wounds = preload("res://scripts/data/wounds.gd")
 const Interior = preload("res://scripts/hub/arch/interior.gd")
@@ -108,6 +112,16 @@ var _view: Node3D                ## the lit 3D look (scripts/hub/view3d.gd): it 
 
 
 func _ready() -> void:
+	Arms.ensure()                      # (v0.39.0) old saves: what the level taught stays taught; best arms worn
+	if G.arg("lvl") != "":            # test: --lvl=<n> : the knight's level
+		Save.hub_set("rpg:lvl", int(G.arg("lvl")))
+	if G.arg("coins") != "":          # test: --coins=<n> in the purse
+		Save.hub_set("bank:coins", int(G.arg("coins")))
+	if G.arg("buyarms") != "":        # test: --buyarms=<n> : buy the next n tiers of every line the story allows
+		Save.hub_set("tale:step", maxi(Save.hub_get("tale:step"), int(G.arg("step", "0"))))
+		for i in int(G.arg("buyarms")):
+			for line: String in Arms.LINES:
+				Arms.buy(line)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	Controls.action_enabled = true
 	_cam = Camera2D.new()
@@ -1632,8 +1646,33 @@ func _talk(index: int) -> void:
 		# the story: a smith sells helmets, armour and rings (they count in battles); the old
 		# upgrades and the real-time weapons are not part of it
 		if sell == "smith":
+			# (v0.39.0) the next sword, armour, bow and staff: one tier after the other
+			for line: String in Arms.LINES:
+				var who_for := String(Arms.LINES[line]["who"])
+				if who_for != "knight" and not Allies.joined(who_for):
+					continue
+				var t := Arms.next(line)
+				var owner_name := Looks.hero_name() if who_for == "knight" else String(Allies.row(who_for)["name"])
+				if t.is_empty():
+					info["lines"].append(["%s's %s: the best there is (%s)." % [owner_name, Arms.LINES[line]["label"], Arms.current(line)["name"]], UI.C_DIM])
+					continue
+				var gives := _arm_text(t)
+				if Tale.step() < int(t["from"]):
+					info["lines"].append(["%s for %s: later in the story." % [t["name"], owner_name], UI.C_FAINT])
+					continue
+				var cost := int(t["price"])
+				info["options"].append({"text": "%s for %s: %d coins" % [t["name"], owner_name, cost], "what": "hub_arm", "arg": line,
+					"off": Upgrades.coins() < cost, "why": _poor(cost)})
+				info["lines"].append(["%s: %s (now: %s)" % [t["name"], gives, Arms.current(line)["name"]], UI.C_DIM])
 			info["options"].append({"text": "Helmets, armour and rings", "what": "hub_shelf", "arg": String(row.get("name", "The smith"))})
 			info["lines"].append(["Coins: %d" % Upgrades.coins(), UI.C_GOLD])
+		if Arms.TEACHERS.has(id):
+			# (v0.39.0) a teacher: skills for the knight and each companion
+			info["options"].append({"text": "Teach %s" % Looks.hero_name(), "what": "hub_lore", "arg": "knight"})
+			for mate: Dictionary in Allies.LIST:
+				if Allies.joined(String(mate["id"])):
+					info["options"].append({"text": "Teach %s" % String(mate["name"]), "what": "hub_lore", "arg": String(mate["id"])})
+			info["lines"].append(["A new level opens a skill; I teach it, and teach it again to make it stronger.", UI.C_DIM])
 		sell = ""
 	for up: Dictionary in Upgrades.LIST:
 		if String(up["at"]) != sell:
@@ -1830,6 +1869,53 @@ func shelf_info(who: String) -> Dictionary:
 	return info
 
 
+## What a tier of arms gives, in words.
+func _arm_text(t: Dictionary) -> String:
+	var bits: Array = []
+	if float(t.get("atk", 0.0)) > 0.0:
+		bits.append("+%d%% damage" % roundi(float(t["atk"]) * 100.0))
+	if float(t.get("def", 0.0)) > 0.0:
+		bits.append("+%d defence" % roundi(float(t["def"])))
+	if int(t.get("hp", 0)) > 0:
+		bits.append("+%d health" % int(t["hp"]))
+	if t.has("look"):
+		bits.append("a new look")
+	return ", ".join(bits)
+
+
+## (v0.39.0) A teacher's window for one member of the party: every skill, what it costs to learn
+## or to raise, and when the ones still shut open.
+func lore_info(who: String) -> Dictionary:
+	var person := Looks.hero_name() if who == "knight" else String(Allies.row(who)["name"])
+	var info := {"name": person, "title": "skills", "pages": [], "lines": [], "options": []}
+	var rows: Array = []
+	if who == "knight":
+		for r: Dictionary in Skills.LIST:
+			rows.append(r)
+	else:
+		rows = Battles.ALLY[who]["skills"]
+	var shut_shown := 0
+	for i in rows.size():
+		var r: Dictionary = rows[i]
+		var sid := String(r["id"])
+		var rk := Arms.rank(who, sid)
+		var knows := Arms.knows(who, sid, i)
+		var cost := Arms.price(who, sid, i)
+		var opens := Arms.opens_at(who, sid, i)
+		if cost < 0:
+			info["lines"].append(["%s: rank %d, the most I can teach." % [r["name"], rk], UI.C_GREEN])
+		elif Rpg.level() < opens:
+			if shut_shown < 2:
+				info["lines"].append(["%s: opens at level %d." % [r["name"], opens], UI.C_FAINT])
+			shut_shown += 1
+		else:
+			var what := ("Raise %s to rank %d" % [r["name"], maxi(rk, 1) + 1]) if knows else ("Learn %s" % r["name"])
+			info["options"].append({"text": "%s: %d coins" % [what, cost], "what": "hub_teach", "arg": {"who": who, "id": sid, "i": i},
+				"off": Upgrades.coins() < cost, "why": _poor(cost)})
+	info["lines"].append(["Each rank: about a fifth stronger. Coins: %d" % Upgrades.coins(), UI.C_GOLD])
+	return info
+
+
 ## Why a thing cannot be bought, and where coins come from.
 func _poor(price: int) -> String:
 	return "It costs %d coins and the camp chest holds %d. Coins you carry out of the hill go into the chest: all of them when you walk out or win, half when you fall." % [price, Upgrades.coins()]
@@ -1864,7 +1950,9 @@ func _tour_step(delta: float) -> Vector2:
 func _tour_end() -> void:
 	await get_tree().create_timer(0.3).timeout
 	if G.arg("hubtalk") != "":
-		if G.arg("hubtalk") == "shelf":
+		if G.arg("hubtalk").begins_with("lore:"):
+			action.emit("hub_lore", G.arg("hubtalk").substr(5))      # test: --hubtalk=lore:knight opens the teacher's list
+		elif G.arg("hubtalk") == "shelf":
 			action.emit("hub_shelf", "Tam")      # test: --hubtalk=shelf opens the smith's shelf of gear
 		else:
 			talk_to(G.arg("hubtalk"))

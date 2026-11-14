@@ -1562,8 +1562,7 @@ The owner played and answered the review. Done in this version:
 - `G.DEMO` is false again (the whole game). A demo build: set it true, or run with `--demo`.
 **The owner's list for the full game (their words, 14 Nov 2026), still TO DO, in the order I proposed:**
 1. Make fights matter + balance: DONE in v0.38.0.
-2. "All the weapons and armor types are going to be upgrades. Remove that from custom abilities": the sword
-   look and armour colour leave the Your-knight screen and become upgrades you earn or buy.
+2. Weapons and armour as upgrades (+ the companions', + skills taught): DONE in v0.39.0.
 3. Side quests and secrets.
 4. "Add the other parts and make the game a lot longer. My goal was 8 to 10 hours": chapters three and four,
    the ending, more to do in every land.
@@ -1593,6 +1592,26 @@ Step 1 of the owner's full-game list.
   16/46 in walking places), `--talkend` with `--hubtalk=<id>` (the talk's choices).
 - TRAP found: `./tools/check.sh` does NOT compile battle.gd (it is loaded on demand). A typed-inference error
   there only shows when a battle opens: always open one battle (or run the tale tour) after editing it.
+
+## v0.39.0 (14 Nov 2026): arms and lore (upgrades for everybody, skills must be taught)
+Step 2 of the owner's list. The owner: "I earn upgrades, the knight's look changes, new sword, armour colour ...
+add upgrades for the other characters too ... you have to also upgrade new spells".
+- **`scripts/data/arms.gd`** holds both. ARMS (`LINES`): sword (6 tiers, +12..78% damage, each a sword picture of
+  Looks.SWORDS), armour (6 tiers, +2..10 def, +6..50 hp, each an armour colour of Looks.ARMOUR), Thessaly's bow
+  (4), Seraphine's staff (3); sold by a smith ("as": "smith": Tam, Grukk) one tier after the other, each from a
+  story step. The best owned is carried (`Arms._dress()` writes the knight's look into the settings).
+- **"Your knight" screen**: only the name now (the armour and sword choices were removed).
+- **LORE**: a level only OPENS a skill (`Skills.open_for`); `Skills.known` = taught ("lore:knight:<id>" > 0).
+  Teachers (`Arms.TEACHERS`: Brother Odo, Sister Imre) teach a skill and raise it to rank 2 and 3 (price =
+  (20 + 6 x opening level) x 1 / 2 / 3.5). A rank: +22% blow, +18% heal, +10 stun points, a "II"/"III" name.
+  Companions: their first skill is known when they join; the others open at levels 4 and 8 (`ALLY_LEVELS`).
+  Battles.knight()/party() take arms bonuses and ranked skills (`Arms.ranked`).
+- **Old saves** (`Arms.ensure()`, once, in hub _ready): every skill the knight's level had already given is kept
+  at rank 1; the look is reset to the best owned arms (the owner's chosen colour/sword is NOT kept).
+- **Economy**: Captain Hale's first talk gives 50 coins; monsters give 3 coins + tier (was 2). Chapter one's three
+  story battles are still won by the bot with no knight skills (dev/battle_sim --chain: 100%).
+- Test flags (walking places): `--lvl=<n>`, `--coins=<n>`, `--step=<n> --buyarms=<n>` (buy n tiers of every line),
+  `--hubtalk=lore:knight` (the teacher's list), `--hubtalk=tam --talkend` (the smith's offers).
 
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:

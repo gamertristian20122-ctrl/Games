@@ -819,7 +819,8 @@ func _fill_skills() -> void:
 		var id := String(r["id"])
 		var known := Skills.known(id)
 		var slot := Skills.button_of(id)
-		var tag := "Button %d" % (slot + 1) if slot >= 0 else ("" if known else "Lv %d" % int(r["level"]))
+		var rk := Save.hub_get("lore:knight:" + id)
+		var tag := ("Rank %d" % rk) if known else ("Teacher" if Skills.open_for(id) else "Lv %d" % int(r["level"]))
 		var b := _line("skill_" + id, String(r["icon"]), String(r["name"]), (UI.C_GOLD if id == _skill_sel else UI.C_PARCH) if known else UI.C_FAINT,
 			tag != "", tag, UI.C_GOLD if slot >= 0 else UI.C_FAINT, "%d mana" % int(r["mana"]))
 		if not known:
@@ -848,7 +849,9 @@ func _about_skill(id: String) -> void:
 		var where := "On skill button %d." % (slot + 1) if slot >= 0 else "Not on a button. Tap it, then choose a button."
 		_skill_say(String(r["name"]), String(r["text"]), UI.C_GOLD, meta, where, UI.C_GOOD if slot >= 0 else UI.C_DIM)
 	else:
-		_skill_say(String(r["name"]), "Learned at level %d. %s" % [int(r["level"]), String(r["text"])], UI.C_DIM, meta)
+		var how := "A teacher can teach it now: Brother Odo in Wickmere, Sister Imre in Dustwatch." if Skills.open_for(id) \
+			else "It opens at level %d; then a teacher (Brother Odo in Wickmere) teaches it." % int(r["level"])
+		_skill_say(String(r["name"]), "%s %s" % [how, String(r["text"])], UI.C_DIM, meta)
 
 
 ## "On button 1 / 2": puts the tapped skill there. It always answers: when it cannot, it says why.
@@ -860,7 +863,7 @@ func _put_skill(slot: int) -> void:
 	var r := Skills.row(_skill_sel)
 	if not Skills.known(_skill_sel):
 		Sfx.play("shop_deny")
-		_skill_say(String(r["name"]), "Not learned yet: it comes at level %d. You are level %d." % [int(r["level"]), Rpg.level()], UI.C_BAD)
+		_skill_say(String(r["name"]), "Not learned yet: a teacher teaches it (it opens at level %d; you are level %d)." % [int(r["level"]), Rpg.level()], UI.C_BAD)
 		return
 	Skills.assign(_skill_sel, slot)
 	Sfx.play("ui_start")

@@ -74,14 +74,9 @@ func build() -> void:
 	name_row.add_child(_name)
 	name_row.add_child(UI.spacer(6 if not _ph else 3, 0))
 
-	var tints: Array = []
-	for r: Dictionary in Looks.ARMOUR:
-		tints.append(Color(STEEL * Color(r["tint"]), 1.0))
-	var armour := _choice("Armour", Looks.ARMOUR, "armour", "swatch", tints)
-	list.add_child(armour)
-	list.add_child(_choice("Sword", Looks.SWORDS, "sword_look", "choice"))
+	# (v0.39.0, the owner: swords and armour are UPGRADES now, earned at the smith; only the name is chosen here)
 	list.add_child(UI.spacer(0, 6 if not _ph else 2))
-	var hint := UI.label("The people of the town will use your name.", "Small")
+	var hint := UI.label("The people of the town will use your name. Better swords and armour (they change how you look) are sold by the smith.", "Small")
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.custom_minimum_size.x = 60
 	hint.add_theme_color_override("font_color", UI.C_DIM)
@@ -90,7 +85,7 @@ func build() -> void:
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pad.add_child(hint)
 	list.add_child(pad)
-	default_focus = armour
+	default_focus = _name
 	if not _ph:
 		_add_back_button()
 	_show.call_deferred()

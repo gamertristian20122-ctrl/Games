@@ -48,6 +48,7 @@ const Allies = preload("res://scripts/data/allies.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 const Supplies = preload("res://scripts/data/supplies.gd")
+const Arms = preload("res://scripts/data/arms.gd")
 const Wounds = preload("res://scripts/data/wounds.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
@@ -500,6 +501,26 @@ func _on_action(what: String, arg: Variant) -> void:
 					hub.call("say", "A good night's sleep. Everybody is rested.")
 			else:
 				Sfx.play("ui_back")
+		"hub_arm":
+			# (v0.39.0) the next sword, armour, bow or staff from the smith
+			var ok := Arms.buy(String(arg))
+			Sfx.play("shop_buy" if ok else "ui_back")
+			close_top()
+			if is_instance_valid(hub):
+				if ok:
+					hub.call("refresh_heroes")       # the knight shows his new sword and armour at once
+					hub.call("refresh_hurt")
+				hub.call("retalk")
+		"hub_lore":
+			close_top()
+			if is_instance_valid(hub):
+				open("hub_talk", {"info": hub.call("lore_info", String(arg))})
+		"hub_teach":
+			var ok := Arms.teach(String(arg["who"]), String(arg["id"]), int(arg["i"]))
+			Sfx.play("ui_start" if ok else "ui_back")
+			close_top()
+			if is_instance_valid(hub):
+				open("hub_talk", {"info": hub.call("lore_info", String(arg["who"]))})
 		"hub_supply":
 			# (v0.38.0) buying a supply for the pack
 			var item := Supplies.row(String(arg))

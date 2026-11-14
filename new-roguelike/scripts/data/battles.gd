@@ -22,6 +22,7 @@ const Heroes = preload("res://scripts/data/heroes.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 const Wounds = preload("res://scripts/data/wounds.gd")
 const Supplies = preload("res://scripts/data/supplies.gd")
+const Arms = preload("res://scripts/data/arms.gd")
 
 const DEF_HALF := 24.0             ## this much defence halves a blow (see fight.gd _blow)
 const CRIT_CHANCE := 0.06          ## a blow lands half as hard again this often
@@ -54,7 +55,7 @@ const FOE_ATK_TIER := 1.8
 const FOE_ATK_LEVEL := 0.07        ## monsters hit this much harder per level of the knight
 const FOE_DEF_TIER := 1.0
 const FOE_XP := 0.7                ## XP per point of the row's "hp" (x 1 + tier)
-const FOE_COINS := 2
+const FOE_COINS := 3              ## (v0.39.0: was 2; skills and arms are bought now)
 
 ## What a blow or a spell LOOKS like (scripts/battle/battle.gd shows it with light and sparks):
 ## by skill id: [colour, "burst" | "pillar" | "rise", strength]. "pillar" = a column of light
@@ -108,7 +109,8 @@ static func knight() -> Dictionary:
 	var hero: Dictionary = Heroes.by_id("knight")
 	var lvl := Rpg.level()
 	var pct: Dictionary = Gear.mods().get("pct", {})
-	var hp := KNIGHT_HP + KNIGHT_HP_LEVEL * (lvl - 1) + KNIGHT_HP_VIT * Rpg.stat("vit") + KNIGHT_HP_GEAR * Gear.bonus_hp()
+	var arms := Arms.bonus("knight")              # (v0.39.0) his sword and armour
+	var hp := KNIGHT_HP + KNIGHT_HP_LEVEL * (lvl - 1) + KNIGHT_HP_VIT * Rpg.stat("vit") + KNIGHT_HP_GEAR * Gear.bonus_hp() + int(arms["hp"])
 	var skills: Array = []
 	for row: Dictionary in Skills.LIST:
 		if Skills.known(String(row["id"])) and SKILL.has(String(row["id"])):
@@ -117,11 +119,11 @@ static func knight() -> Dictionary:
 			s["name"] = row["name"]
 			s["kind"] = row["kind"]
 			s["mana"] = int(row["mana"])
-			skills.append(s)
+			skills.append(Arms.ranked("knight", s))
 	return {"id": "knight", "name": String(Save.setting("hero_name")), "sprite": String(hero["sprite"]), "side": "party",
 		"max_hp": hp, "max_mp": roundi(Skills.max_mana()),
-		"atk": (KNIGHT_ATK + KNIGHT_ATK_LEVEL * (lvl - 1)) * (1.0 + Rpg.STR_DAMAGE * Rpg.stat("str") + float(pct.get("damage", 0.0))),
-		"def": KNIGHT_DEF + KNIGHT_DEF_LEVEL * (lvl - 1) + KNIGHT_DEF_SHIELD * Gear.shield(),
+		"atk": (KNIGHT_ATK + KNIGHT_ATK_LEVEL * (lvl - 1)) * (1.0 + Rpg.STR_DAMAGE * Rpg.stat("str") + float(pct.get("damage", 0.0)) + float(arms["atk"])),
+		"def": KNIGHT_DEF + KNIGHT_DEF_LEVEL * (lvl - 1) + KNIGHT_DEF_SHIELD * Gear.shield() + float(arms["def"]),
 		"speed": KNIGHT_SPEED + KNIGHT_SPEED_AGI * Rpg.stat("agi"), "magic": Skills.spell_power(), "dodge": Gear.ward(), "skills": skills}
 
 
@@ -144,10 +146,16 @@ static func party(extra: Array = []) -> Array:
 			continue
 		var who := Allies.row(id)
 		var a: Dictionary = ALLY[id]
+		var arms := Arms.bonus(id)                # (v0.39.0) her bow or staff
+		var known: Array = []                     # (v0.39.0) her first skill, and what a teacher taught her
+		for i in (a["skills"] as Array).size():
+			var sk: Dictionary = a["skills"][i]
+			if Arms.knows(id, String(sk["id"]), i):
+				known.append(Arms.ranked(id, sk))
 		out.append({"id": id, "name": String(who["name"]), "sprite": String(who["sprite"]), "side": "party",
-			"max_hp": int(a["hp"]) + int(a["hp_level"]) * (lvl - 1), "max_mp": int(a["mp"]) + int(a["mp_level"]) * (lvl - 1),
-			"atk": float(a["atk"]) + float(a["atk_level"]) * (lvl - 1), "def": float(a["def"]) + float(a["def_level"]) * (lvl - 1),
-			"speed": float(a["speed"]), "magic": 1.0, "dodge": 0.0, "skills": (a["skills"] as Array).duplicate(true)})
+			"max_hp": int(a["hp"]) + int(a["hp_level"]) * (lvl - 1) + int(arms["hp"]), "max_mp": int(a["mp"]) + int(a["mp_level"]) * (lvl - 1),
+			"atk": (float(a["atk"]) + float(a["atk_level"]) * (lvl - 1)) * (1.0 + float(arms["atk"])), "def": float(a["def"]) + float(a["def_level"]) * (lvl - 1) + float(arms["def"]),
+			"speed": float(a["speed"]), "magic": 1.0, "dodge": 0.0, "skills": known})
 	Wounds.apply(out)                  # everybody starts as hurt as the last battle left them
 	return out
 
