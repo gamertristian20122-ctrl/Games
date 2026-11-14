@@ -49,6 +49,7 @@ uniform float dissolve = 0.0;                   // 0 = whole .. 1 = gone: the pi
 uniform vec3 dissolve_col : source_color = vec3(1.0, 0.55, 0.2);
 uniform float shine = 0.0;
 uniform float sway = 0.0;
+uniform float bend = 0.0;                       // art pixels the top of the figure is slid sideways (+ = screen right)
 uniform float rim = 0.0;                        // a thin edge of light on the side the key light comes from
 uniform vec3 rim_col : source_color = vec3(1.0, 0.85, 0.6);
 uniform float rim_side = -1.0;                  // -1 = the light is on the screen's left, 1 = right
@@ -61,6 +62,14 @@ void vertex() {
 }
 void fragment() {
 	vec2 uv = UV;
+	// BODY BEND (v0.41.0): the head and shoulders slide sideways by whole art pixels, row by row (the
+	// pixels stay square and crisp), so a body leans into a blow while its feet stay planted
+	if (bend != 0.0) {
+		float tw = float(textureSize(tex, 0).x);
+		float upper = pow(clamp((1.0 - UV.y - 0.55) / 0.45, 0.0, 1.0), 1.3);
+		uv.x -= floor(bend * upper + 0.5) / tw;
+		if (uv.x < 0.0 || uv.x > 1.0) { discard; }
+	}
 	if (flip > 0.5) { uv.x = 1.0 - uv.x; }
 	vec4 c = texture(tex, uv);
 	if (c.a < 0.5) { discard; }
@@ -287,6 +296,11 @@ func set_tint(c: Color) -> void:
 
 func set_shine(v: float) -> void:
 	_mat.set_shader_parameter("shine", v)
+
+
+## (v0.41.0) Slide the head and shoulders `px` art pixels sideways (+ = to the screen's right).
+func set_bend(px: float) -> void:
+	_mat.set_shader_parameter("bend", px)
 
 
 func set_sway(v: float) -> void:

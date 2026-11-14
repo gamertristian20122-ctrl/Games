@@ -1623,6 +1623,15 @@ credits); still no AI-generated pictures. Order of work they chose: portraits, a
   pixels (Ysolde, Sister Imre, the Dune Queen, Hale's helmet). A nod while the words are typed (`talking`),
   a hop on a page ending "!", a droop on "...". Test: `--eyesshut` keeps the eyes shut.
 
+## v0.41.0 (14 Nov 2026): bodies that bend in fights (code only)
+- `sprite3.gd` uniform `bend` + `set_bend(px)`: the head and shoulders (the top 45% of the figure) slide sideways
+  by WHOLE art pixels, row by row (crisp pixels, no rotation blur). `anim_actor.gd`: a small lean is now half a
+  turn and half a bend (`lean * 10` px); the upper body lags behind a dash and springs past when it stops
+  (`_lag`, a spring); a pose may add `bend` (art px). A big lean (a fall, |lean| >= 0.6) still turns the whole
+  picture. Every existing move (wind-up, dash, strike, recoil) gets it without new choreography.
+- Movie check: `--write-movie <dir>/f.png --fixed-fps 15 --quit-after 150 -- --battle=story:glade --autobattle
+  --animplan=attack,attack,attack` (gl_compatibility, 960x432) and look at the knight's frames.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.
