@@ -551,10 +551,13 @@ func _sync_words(_zoom: float) -> void:
 	# game px (what the camera's unproject gives) -> UI px of the words layer
 	var k := float(_words.get("stretch")) / maxf(float(_words.get("px")), 0.01)
 	for trio: Array in _twins:
+		# (a label, its copy or its holder may be gone: a chest that was opened takes its own away)
+		if not is_instance_valid(trio[0]) or not is_instance_valid(trio[1]) or (trio[2] != null and not is_instance_valid(trio[2])):
+			if is_instance_valid(trio[1]):
+				(trio[1] as Control).visible = false
+			continue
 		var label: Label = trio[0]
 		var copy: Control = trio[1]
-		if not is_instance_valid(label) or not is_instance_valid(copy):
-			continue
 		var holder: Node2D = trio[2]
 		var kind := String(label.get_meta("walk_kind", ""))
 		var shown := label.visible and label.text != "" and (holder == null or _seen(label, holder))

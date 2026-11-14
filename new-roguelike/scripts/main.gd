@@ -49,6 +49,7 @@ const Roamers = preload("res://scripts/data/roamers.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 const Supplies = preload("res://scripts/data/supplies.gd")
 const Arms = preload("res://scripts/data/arms.gd")
+const Errands = preload("res://scripts/data/errands.gd")
 const Wounds = preload("res://scripts/data/wounds.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
@@ -323,6 +324,8 @@ func _on_battle_finished(outcome: String, summary: Dictionary) -> void:
 				_news = String(Tale.apply(Tale.BATTLES[story].get("win", {})).get("say", "Won"))
 			else:
 				Roamers.beaten(int(summary.get("spot", -1)))
+				if int(summary.get("spot", -1)) >= 0 and int(summary["spot"]) < Roamers.SPOTS.size():
+					Errands.won(String(Roamers.SPOTS[int(summary["spot"])]["kind"]))      # (v0.42.0) side quests that count wins
 				_news = "Won: +%d XP, %d coins" % [int(summary.get("xp", 0)), int(summary.get("coins", 0))]
 		"lose":
 			_news = "You wake in your bed." + (" %d coins are gone." % int(summary.get("lost", 0)) if int(summary.get("lost", 0)) > 0 else "")
@@ -501,6 +504,19 @@ func _on_action(what: String, arg: Variant) -> void:
 					hub.call("say", "A good night's sleep. Everybody is rested.")
 			else:
 				Sfx.play("ui_back")
+		"errand_take":
+			Errands.take(String(arg))
+			Sfx.play("ui_start")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("say", "Side quest: %s" % String(Errands.row(String(arg))["name"]))
+				hub.call("enter", String(hub.get("place_id")), hub.call("hero_pos"))      # what it sends you to find may lie here
+		"errand_done":
+			var got := Errands.hand_in(String(arg))
+			Sfx.play("victory_sting", -6.0)
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("say", "Done: %s. %s" % [String(Errands.row(String(arg))["name"]), got])
 		"hub_arm":
 			# (v0.39.0) the next sword, armour, bow or staff from the smith
 			var ok := Arms.buy(String(arg))

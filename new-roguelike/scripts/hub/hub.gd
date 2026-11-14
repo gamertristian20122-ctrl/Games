@@ -40,6 +40,7 @@ const View3D = preload("res://scripts/hub/view3d.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 const Supplies = preload("res://scripts/data/supplies.gd")
 const Arms = preload("res://scripts/data/arms.gd")
+const Errands = preload("res://scripts/data/errands.gd")
 const Looks = preload("res://scripts/data/looks.gd")
 const Skills = preload("res://scripts/data/skills.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
@@ -113,12 +114,15 @@ var _view: Node3D                ## the lit 3D look (scripts/hub/view3d.gd): it 
 
 func _ready() -> void:
 	Arms.ensure()                      # (v0.39.0) old saves: what the level taught stays taught; best arms worn
+	for land: String in G.arg("lit").split(",", false):     # test: --lit=elfwood,sands : those beacons burn
+		Save.hub_set("tale:lit:" + land, 1)
 	if G.arg("lvl") != "":            # test: --lvl=<n> : the knight's level
 		Save.hub_set("rpg:lvl", int(G.arg("lvl")))
 	if G.arg("coins") != "":          # test: --coins=<n> in the purse
 		Save.hub_set("bank:coins", int(G.arg("coins")))
+	if G.arg("step") != "":           # test: --step=<n> : the story at that step
+		Save.hub_set("tale:step", maxi(Save.hub_get("tale:step"), int(G.arg("step"))))
 	if G.arg("buyarms") != "":        # test: --buyarms=<n> : buy the next n tiers of every line the story allows
-		Save.hub_set("tale:step", maxi(Save.hub_get("tale:step"), int(G.arg("step", "0"))))
 		for i in int(G.arg("buyarms")):
 			for line: String in Arms.LINES:
 				Arms.buy(line)
@@ -358,6 +362,9 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		if String(mate.get("place", "")) == id and Allies.arrived(mate) and String(Allies.with().get("id", "")) != String(mate["id"]):
 			_add_person({"id": "ally_" + String(mate["id"]), "ally": String(mate["id"]), "name": mate["name"], "title": mate["title"], "sprite": mate["sprite"],
 				"hands": mate.get("hands", ""), "pos": mate["pos"], "face": mate.get("face", 1), "role": "ally", "text": ""})
+	if Tale.on():
+		for f: Dictionary in Errands.finds_in(id):      # (v0.42.0) chests and what side quests send you to find
+			_add_find(f)
 	_build_hero()
 	_hero.position = at if at != Vector2.INF else place["spawn"]
 	_hero.scale = Vector2(_k, _k)
@@ -1185,6 +1192,78 @@ func _add_person(row: Dictionary) -> Dictionary:
 	return person
 
 
+## (v0.42.0) A thing lying in the place (scripts/data/errands.gd FINDS): its pack picture standing on the
+## spot (it moves with its holder, so the 3D look drops it the moment it is taken) and a spot to "talk" to.
+func _add_find(f: Dictionary) -> void:
+	var row := {"id": "find:" + String(f["id"]), "name": String(f["name"]), "title": "", "ghost": true, "pos": _free_spot(f["pos"]),
+		"top": 14, "role": "find", "find": String(f["id"]), "text": ""}
+	var p := _add_person(row)
+	if G.flag("allfinds"):
+		print("[finds] %s in %s: asked %s, stands at %s" % [f["id"], place_id, f["pos"], row["pos"]])
+		_reach_test.call_deferred(String(f["id"]), row["pos"])
+	var tex := Art.tex(String(f["sprite"]))
+	var pic := Sprite2D.new()
+	pic.texture = tex
+	pic.offset = Vector2(0, -tex.get_size().y * 0.5 + 2.0)
+	(p["node"] as Node2D).add_child(pic)
+
+
+## Test (--allfinds): can the knight walk from where he came in to this spot? (8 px cells)
+func _reach_test(fid: String, to: Vector2) -> void:
+	var walk: Rect2 = place["walk"]
+	var cell := 8.0
+	var start := Vector2i((Vector2(place["spawn"]) / cell).floor())
+	var goal := Vector2i((to / cell).floor())
+	var free := func(c: Vector2i) -> bool:
+		var p := (Vector2(c) + Vector2(0.5, 0.5)) * cell
+		if not walk.has_point(p):
+			return false
+		for b: Rect2 in _blocks:
+			if b.grow(HERO_RADIUS * _k).has_point(p):
+				return false
+		for sol: Array in _solids:
+			if (sol[0] as Vector2).distance_to(p) < float(sol[1]) + HERO_RADIUS * _k - 2.0:
+				return false
+		return true
+	var seen := {start: true}
+	var queue: Array = [start]
+	var found := false
+	while not queue.is_empty() and seen.size() < 60000:
+		var c: Vector2i = queue.pop_front()
+		if (Vector2(c) - Vector2(goal)).length() <= 2.5:
+			found = true
+			break
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var n := c + d
+			if not seen.has(n) and free.call(n):
+				seen[n] = true
+				queue.append(n)
+	print("[reach] %s in %s: %s" % [fid, place_id, "OK" if found else "CANNOT REACH"])
+
+
+## The nearest spot to `at` where nothing stands (walls, furniture, trees, water) inside the walk.
+func _free_spot(at: Vector2) -> Vector2:
+	var walk: Rect2 = place["walk"]
+	for ring in 12:
+		for k in maxi(1, ring * 8):
+			var p := at + Vector2.RIGHT.rotated(TAU * float(k) / float(maxi(1, ring * 8))) * float(ring) * 8.0
+			if not walk.grow(-6.0).has_point(p):
+				continue
+			var ok := true
+			for b: Rect2 in _blocks:
+				if b.grow(8.0).has_point(p):
+					ok = false
+					break
+			if ok:
+				for sol: Array in _solids:
+					if (sol[0] as Vector2).distance_to(p) < float(sol[1]) + 8.0:
+						ok = false
+						break
+			if ok:
+				return p
+	return at
+
+
 ## The companion who travels with the knight walks a few steps behind him in every camp and on
 ## the world map (only a look: you talk to her on the Party page of the Knight screen).
 var _mate: Node2D
@@ -1380,6 +1459,10 @@ func _update_people(delta: float) -> void:
 		news = Quests.any_complete()
 		for q: Dictionary in _people:
 			q["news"] = Story.has_news(String(q["row"]["id"]))
+			if Tale.on():
+				# (v0.42.0) a gold "!" over somebody with a side quest to give or to hand in
+				var er := Errands.for_giver(String(q["row"]["id"]))
+				q["news"] = not er.is_empty() and (Errands.state(String(er["id"])) == 0 or Errands.complete(er))
 	_news = news
 	for i in _people.size():
 		var p: Dictionary = _people[i]
@@ -1493,6 +1576,7 @@ func talk_to(npc_id: String) -> void:
 	for i in _people.size():
 		if String(_people[i]["row"]["id"]) == npc_id:
 			_talk(i)
+			return              # (a chest is taken out of the list while it is opened)
 
 
 func _talk(index: int) -> void:
@@ -1509,6 +1593,17 @@ func _talk(index: int) -> void:
 	var info := {"name": row["name"], "title": row.get("title", ""), "sprite": row.get("sprite", ""), "pages": pages, "heard": id,
 		"lines": [], "options": []}
 	var role := String(row.get("role", "chat"))
+	if role == "find":
+		# (v0.42.0) a chest or a thing a side quest asked for: taken, gone from the place
+		var words := Errands.open(String(row["find"]))
+		var p: Dictionary = _people[index]
+		(p["node"] as Node).queue_free()
+		_people.remove_at(index)
+		_near = -1
+		_last_talk = -1
+		Sfx.play("chest_open", -4.0)
+		action.emit("talk", {"name": row["name"], "title": "", "sprite": "", "pages": [words if words != "" else "Nothing inside."], "heard": "", "lines": [], "options": []})
+		return
 	if Tale.on():
 		# the story (scripts/data/tale.gd): what this person says at this step, and the one thing
 		# the player may choose to do about it. What people did in the old story is switched off.
@@ -1527,6 +1622,24 @@ func _talk(index: int) -> void:
 			role = "chat"
 		elif said_now.is_empty() and String(row.get("text", "")) != "":
 			info["pages"] = [String(row["text"])]
+		# (v0.42.0) side quests: something taken to this person, one this person gives, or hands in
+		var brought := Errands.talked(id)
+		if brought != "":
+			info["pages"] = [brought] + (info["pages"] as Array)
+		var er := Errands.for_giver(id)
+		if not er.is_empty():
+			var eid := String(er["id"])
+			match Errands.state(eid):
+				0:
+					info["pages"] = (info["pages"] as Array) + [String(er["ask"])]
+					info["options"].append({"text": "Side quest: %s" % String(er["name"]), "what": "errand_take", "arg": eid})
+				1:
+					if Errands.complete(er):
+						info["pages"] = (info["pages"] as Array) + [String(er["thanks"])]
+						info["options"].append({"text": "Hand in: %s" % String(er["name"]), "what": "errand_done", "arg": eid})
+					else:
+						var pr := Errands.progress(er)
+						info["lines"].append(["%s: %d of %d" % [er["name"], int(pr[0]), int(pr[1])], UI.C_DIM])
 	match role:
 		"gate":
 			# every site this gate opens (scripts/data/story.gd): go in at the first level not cleared,
@@ -1959,9 +2072,9 @@ func _tour_end() -> void:
 		if G.flag("talkend"):            # test: --talkend : skip to the choices at the end of the talk
 			await get_tree().create_timer(0.6).timeout
 			var main_node := get_tree().root.get_node_or_null("Main")
-			var top: Variant = main_node.call("top_screen") if main_node != null else null
 			for i in 8:
-				if top is Node and (top as Node).has_method("_advance"):
+				var top: Variant = main_node.call("top_screen") if main_node != null else null
+				if is_instance_valid(top) and top is Node and (top as Node).has_method("_advance"):
 					(top as Node).call("_finish_words")
 					(top as Node).call("_advance")
 					await get_tree().create_timer(0.15).timeout

@@ -16,6 +16,7 @@ const Story = preload("res://scripts/data/story.gd")
 const Bosses = preload("res://scripts/data/bosses.gd")
 const Upgrades = preload("res://scripts/data/upgrades.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Errands = preload("res://scripts/data/errands.gd")
 const WIDTH := 126.0
 ## The heading over the story line: [first step of the chapter, "Chapter ...", "The land"].
 const CHAPTERS := [[0, "Chapter One", "The Elfwood"], [7, "Chapter Two", "The Sands"]]
@@ -96,6 +97,11 @@ func refresh() -> void:
 		lines.append(["Next: " + goal, UI.C_GOLD])
 		if Tale.beacons() > 0 and not goal_only:
 			lines.append(["Beacons lit: %d of 4" % Tale.beacons(), UI.C_DIM])
+		if not goal_only:
+			for er: Dictionary in Errands.active().slice(0, 3):     # (v0.42.0) side quests taken
+				var pr := Errands.progress(er)
+				lines.append(["%s %d/%d%s" % [er["name"], int(pr[0]), int(pr[1]), "  (done: go back)" if Errands.complete(er) else ""],
+					UI.C_GREEN if Errands.complete(er) else UI.C_DIM])
 	elif in_camp:
 		head = "The hill"
 		var next := Story.next_level()

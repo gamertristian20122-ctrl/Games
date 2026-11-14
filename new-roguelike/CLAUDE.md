@@ -1563,7 +1563,7 @@ The owner played and answered the review. Done in this version:
 **The owner's list for the full game (their words, 14 Nov 2026), still TO DO, in the order I proposed:**
 1. Make fights matter + balance: DONE in v0.38.0.
 2. Weapons and armour as upgrades (+ the companions', + skills taught): DONE in v0.39.0.
-3. Side quests and secrets.
+3. Side quests and secrets: DONE in v0.42.0.
 4. "Add the other parts and make the game a lot longer. My goal was 8 to 10 hours": chapters three and four,
    the ending, more to do in every land.
 5. Cut the old roguelike code.
@@ -1631,6 +1631,24 @@ credits); still no AI-generated pictures. Order of work they chose: portraits, a
   picture. Every existing move (wind-up, dash, strike, recoil) gets it without new choreography.
 - Movie check: `--write-movie <dir>/f.png --fixed-fps 15 --quit-after 150 -- --battle=story:glade --autobattle
   --animplan=attack,attack,attack` (gl_compatibility, 960x432) and look at the knight's frames.
+
+## v0.42.0 (14 Nov 2026): side quests and secrets
+- `scripts/data/errands.gd` holds both. ERRANDS (8): Old Wenna's satchel (hall), Ysolde's bundle for Aelin,
+  Marta's lamp oil (3 wins in the grass), Brandt's drill (5 wins anywhere), Wicker's mushroom rings (3 finds),
+  Brother Odo's pages (2 finds on the world map), Nib's crates (3 wins in the sand), Sister Imre's carvings (2 finds).
+  Goals: {"wins": land|any, "n"}, {"finds": [...]}, {"talk": person}. Save "errand:<id>" 0/1/2, "errand:<id>:n".
+  FINDS (24): the errands' things (only while taken) and 16 SECRET chests in every place (two on the world map
+  lie behind the rockfall: seen early, reached after the Sands' beacon). Opened once ("find:<id>").
+- hub.gd: `_add_find()` (a ghost "person" with the pack picture as a child, so the 3D look drops it when taken;
+  `_free_spot()` moves it off walls and trees), role "find" in `_talk`, the giver's offer / progress / hand-in in
+  the story branch of `_talk`, a gold "!" over a giver with something to give or take. main.gd: actions
+  "errand_take" / "errand_done"; a won wild battle counts for errands (`Errands.won(kind)`). quest_list.gd: up to
+  3 taken side quests under the story line ("done: go back" in green).
+- view3d.gd `_sync_words` now skips labels whose holder was freed (an opened chest crashed it).
+- Tests: `--allfinds` puts every find out and prints `[finds]` and `[reach]` (a walk from the spawn to each);
+  with `--lit=elfwood,sands --step=13` every one is reachable (this also proved the opened thorn road and the
+  rockfall's gaps can be walked through). `--step=<n>` alone sets the story step in walking places;
+  `--hubtalk=find:<id>` opens a chest. All side quest words are new placeholders (AI-written, to rewrite).
 
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
