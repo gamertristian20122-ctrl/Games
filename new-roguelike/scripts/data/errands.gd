@@ -13,11 +13,16 @@ extends RefCounted
 ##   "reward" {"coins": n, "supply": {id: n}, "gear": tier}   (gear: a piece of that tier not owned yet)
 ## FINDS: things lying in a place. "id", "place", "pos", "sprite" (pack art), "name", "reward" (as above),
 ##   "errand": only there while that errand is taken. Opened once ("find:<id>" in the save).
+## (the quality pass) A find may also have "locked": a key id (it opens only with "dkey:<id>" in the save; "why" =
+##   what is said before), "night": true (it is only there after dusk), "kept": false (it does not leave an opened
+##   chest behind). A reward may have "key": id (gives the dungeon key "dkey:<id>"; "key_name" = how it is called).
+## MODULES (scripts/data/more.gd) add rows to both tables: always go through all_errands() / all_finds().
 ## Save: "errand:<id>" = 0 not taken, 1 taken, 2 done; "errand:<id>:n" = battles won for it.
 
 const Supplies = preload("res://scripts/data/supplies.gd")
 const Gear = preload("res://scripts/data/gear.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const More = preload("res://scripts/data/more.gd")
 
 const ERRANDS := [
 	{"id": "wenna_satchel", "giver": "patron", "name": "Old Wenna's satchel", "from": 1,
@@ -98,8 +103,17 @@ static func state(id: String) -> int:
 	return Save.hub_get("errand:" + id)
 
 
+## Every side quest and every find: this file's and the modules'.
+static func all_errands() -> Array:
+	return ERRANDS + More.errands()
+
+
+static func all_finds() -> Array:
+	return FINDS + More.finds()
+
+
 static func row(id: String) -> Dictionary:
-	for r: Dictionary in ERRANDS:
+	for r: Dictionary in all_errands():
 		if String(r["id"]) == id:
 			return r
 	return {}
@@ -108,7 +122,7 @@ static func row(id: String) -> Dictionary:
 ## The errand this person has for the knight now ({} = none): one not done, offered at this step.
 static func for_giver(person: String) -> Dictionary:
 	var s := Tale.step()
-	for r: Dictionary in ERRANDS:
+	for r: Dictionary in all_errands():
 		if String(r["giver"]) != person or state(String(r["id"])) == 2:
 			continue
 		if state(String(r["id"])) == 1 or (s >= int(r.get("from", 0)) and s <= int(r.get("to", 999))):
@@ -143,7 +157,7 @@ static func complete(r: Dictionary) -> bool:
 
 ## The errands taken and not yet handed in.
 static func active() -> Array:
-	return ERRANDS.filter(func(r: Dictionary) -> bool: return state(String(r["id"])) == 1)
+	return all_errands().filter(func(r: Dictionary) -> bool: return state(String(r["id"])) == 1)
 
 
 ## A battle won on the world map, in this land ("grass", "robbers", "sand", "rock").
@@ -177,19 +191,46 @@ static func hand_in(id: String) -> String:
 
 
 # ------------------------------------------------------------------ finds
-## The finds lying in this place now (not opened; an errand's only while it is taken).
-static func finds_in(place_id: String) -> Array:
-	return FINDS.filter(func(f: Dictionary) -> bool:
+## The finds lying in this place now (not opened; an errand's only while it is taken; a "night" one only
+## after dusk: the caller says whether it is night).
+static func finds_in(place_id: String, night: bool = true) -> Array:
+	return all_finds().filter(func(f: Dictionary) -> bool:
 		if String(f["place"]) != place_id or Save.hub_get("find:" + String(f["id"])) > 0:
 			return false
-		return not f.has("errand") or state(String(f["errand"])) == 1 or G.flag("allfinds"))      # (--allfinds: test)
+		if G.flag("allfinds"):                                                                 # (--allfinds: test)
+			return true
+		if bool(f.get("night", false)) and not night:
+			return false
+		return not f.has("errand") or state(String(f["errand"])) == 1)
+
+
+## The chests opened in this place: they stay there, open (hub.gd shows them; nothing to talk to).
+static func opened_in(place_id: String) -> Array:
+	return all_finds().filter(func(f: Dictionary) -> bool:
+		return String(f["place"]) == place_id and Save.hub_get("find:" + String(f["id"])) > 0 and open_sprite(f) != "")
+
+
+## The picture of this find once it is opened ("" = it is taken away: a satchel, a page).
+## "open": an Art id of its own; else the pack's open chest that belongs to its closed one.
+const OPEN_ART := {"hub_fchest": "prop_chest_ashen_open", "hub_dchest": "prop_chest_locked_open",
+	"prop_chest_ashen": "prop_chest_ashen_open", "prop_chest_locked": "prop_chest_locked_open", "prop_chest_crypt": "prop_chest_crypt_open",
+	"prop_chest_warrens": "prop_chest_warrens_open", "prop_chest_pit": "prop_chest_pit_open"}
+static func open_sprite(f: Dictionary) -> String:
+	if not bool(f.get("kept", true)):
+		return ""
+	return String(f.get("open", OPEN_ART.get(String(f.get("sprite", "")), "")))
 
 
 static func find_row(id: String) -> Dictionary:
-	for f: Dictionary in FINDS:
+	for f: Dictionary in all_finds():
 		if String(f["id"]) == id:
 			return f
 	return {}
+
+
+## Is this find shut with a key the knight does not carry?
+static func locked(f: Dictionary) -> bool:
+	return String(f.get("locked", "")) != "" and Save.hub_get("dkey:" + String(f["locked"])) <= 0
 
 
 ## Opens a find: its reward. Returns the words to show.
@@ -197,6 +238,8 @@ static func open(id: String) -> String:
 	var f := find_row(id)
 	if f.is_empty() or Save.hub_get("find:" + id) > 0:
 		return ""
+	if locked(f):
+		return String(f.get("why", Tale.KIT["locked"]))
 	Save.hub_set("find:" + id, 1)
 	var words := String(f.get("say", ""))
 	var got := give(f.get("reward", {}))
@@ -206,7 +249,7 @@ static func open(id: String) -> String:
 	return words
 
 
-## Gives a reward ({"coins", "supply", "gear"}); returns it in words.
+## Gives a reward ({"coins", "supply", "gear", "key"}); returns it in words.
 static func give(reward: Dictionary) -> String:
 	var bits: Array = []
 	if int(reward.get("coins", 0)) > 0:
@@ -224,4 +267,7 @@ static func give(reward: Dictionary) -> String:
 		else:
 			Save.hub_set("bank:coins", Save.hub_get("bank:coins") + 30)
 			bits.append("30 coins")
+	if reward.has("key"):
+		Save.hub_set("dkey:" + String(reward["key"]), 1)
+		bits.append(String(reward.get("key_name", "a key")))
 	return ", ".join(bits)
