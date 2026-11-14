@@ -26,6 +26,15 @@ extends RefCounted
 ##                 ("to" may be left out = from then on). No "option" = just talk.
 ##   "do"          what choosing the option does: {"step": n}  {"battle": id}  {"light": land}
 ##                 {"join": companion id}  {"coins": n}  {"say": "banner words"}; several at once is fine.
+##                 (the quality pass) also {"flag": key} (sets that save key to 1; or [keys])  {"gear": gear id}
+##                 {"supply": [id, n]}  {"key": id} (a dungeon key: "dkey:<id>")  {"screen": name} (handed
+##                 back to main.gd, which opens that screen)  and
+##                 {"all": {"flags": [keys], "do": {...}}}: the inner do happens ONCE, when every flag is set.
+##                 A row of TALK and a person of a place may have "flag_on" / "flag_off": a save key that
+##                 must be set / must not be set for the row to count.
+##   MODULES       scripts/data/more.gd: files under scripts/data/more/ add words, scenes, battles and
+##                 places without this file being edited. Ask for a battle with battle_row(id) /
+##                 boss_row(id), never BATTLES[id] (a module's battle is not in that table).
 ##   BATTLES       the story's own turn-based battles (scripts/battle/): who is in them, where,
 ##                 and the "do" of winning.
 ##   ENTER         walking into a place at a step: {place: {step: do}}.
@@ -39,6 +48,7 @@ extends RefCounted
 ## Names and words are placeholders the owner may rewrite.
 
 const Allies = preload("res://scripts/data/allies.gd")
+const More = preload("res://scripts/data/more.gd")          # the modules (dungeons, towns ...): their words, scenes, battles
 
 ## The line in the corner, by step.
 const STEPS := [
@@ -465,6 +475,20 @@ const TRAIL := {
 
 ## What people of the old story do (open the hill's levels, hand out its quests, sell its
 ## items ...) has no part in this one: with the story on they only talk.
+## THE WORLD KIT'S OWN WORDS (the quality pass: doors, levers, chests, resting, travel). Placeholders.
+const KIT := {
+	"locked": "It is locked. There must be a key somewhere.",
+	"door_key": "The key turns. The way is open.",
+	"door_lever": "It will not open by hand. Something else must move it.",
+	"lever": "The lever grinds down. Somewhere, something heavy moves.",
+	"lever_done": "The lever is down. It will not move again.",
+	"lever_name": "A lever",
+	"rest": "A place to rest. If a fight goes badly, you wake here.",
+	"wake": "You wake by the fire.",
+	"safer": "The road is safer now",
+	"empty": "Nothing inside.",
+}
+
 const RETIRED := ["gate", "quests", "collection", "side", "train", "pack", "hero", "shop", "ally"]
 const LATER := "This road belongs to a later chapter of the story."
 
@@ -505,31 +529,90 @@ static func beacons() -> int:
 ## takes it: {"name", "title", "sprite", "pages"}. It is marked as seen. {} = none.
 static func take_scene(place_id: String) -> Dictionary:
 	var at := step()
-	for row: Dictionary in SCENES:
+	for row: Dictionary in SCENES + More.scenes():
 		if String(row["place"]) != place_id or at < int(row.get("from", 0)) or at > int(row.get("to", 999)):
+			continue
+		if not flags_ok(row):
 			continue
 		if bool(row.get("demo", false)) and not G.demo():
 			continue
 		if Save.hub_get("tale:seen:" + String(row["id"])) > 0:
 			continue
 		Save.hub_set("tale:seen:" + String(row["id"]), 1)
-		return {"name": row["name"], "title": row.get("title", ""), "sprite": row.get("sprite", ""), "pages": (row["pages"] as Array).duplicate()}
+		return {"name": row.get("name", ""), "title": row.get("title", ""), "sprite": row.get("sprite", ""), "pages": (row["pages"] as Array).duplicate()}
 	return {}
 
 
 ## The row of TALK that fits this person now, or {}.
 static func beat(npc_id: String) -> Dictionary:
 	var s := step()
+	for row: Dictionary in More.talk(npc_id):          # a module's words for this person come first
+		if s >= int(row.get("from", 0)) and s <= int(row.get("to", 999)) and flags_ok(row):
+			return row
 	for row: Dictionary in TALK.get(npc_id, []):
-		if s >= int(row.get("from", 0)) and s <= int(row.get("to", 999)):
+		if s >= int(row.get("from", 0)) and s <= int(row.get("to", 999)) and flags_ok(row):
 			return row
 	return {}
+
+
+## "flag_on": a save key that must be set, "flag_off": one that must not be (either may be a list).
+static func flags_ok(row: Dictionary) -> bool:
+	if row.has("flag_on"):
+		for k: Variant in (row["flag_on"] if row["flag_on"] is Array else [row["flag_on"]]):
+			if Save.hub_get(String(k)) <= 0:
+				return false
+	if row.has("flag_off"):
+		for k: Variant in (row["flag_off"] if row["flag_off"] is Array else [row["flag_off"]]):
+			if Save.hub_get(String(k)) > 0:
+				return false
+	return true
 
 
 ## Is this person (a row of a place's "people") there at this step?
 static func here(row: Dictionary) -> bool:
 	var s := step()
-	return s >= int(row.get("tale_from", 0)) and s <= int(row.get("tale_to", 999))
+	return s >= int(row.get("tale_from", 0)) and s <= int(row.get("tale_to", 999)) and flags_ok(row)
+
+
+## A battle of the story or of a module (scripts/data/more.gd), {} = there is none with this id.
+## Everybody asks here, never BATTLES[id]. (A fight a monster of a place started, hub.gd "foes", gets
+## the note that this monster is beaten added to its "win".)
+static func battle_row(id: String) -> Dictionary:
+	var row: Dictionary = BATTLES.get(id, {})
+	if row.is_empty():
+		row = More.battle(id)
+	if not row.is_empty() and String(foe_fight.get("battle", "")) == id:
+		row = row.duplicate()
+		var win: Dictionary = (row.get("win", {}) as Dictionary).duplicate()
+		win["foe_won"] = String(foe_fight.get("key", ""))
+		row["win"] = win
+	return row
+
+
+static func boss_row(id: String) -> Dictionary:
+	var row: Dictionary = BOSSES.get(id, {})
+	return row if not row.is_empty() else More.boss(id)
+
+
+## MONSTERS THAT STAND IN A PLACE (hub.gd "foes"): the one whose fight is on ({"key", "battle"}), and
+## the ones beaten: key -> the moment (msec since the game started) each walks again. Only remembered
+## while the game runs, as the world map's roamers are.
+static var foe_fight := {}
+static var foes_gone := {}
+const FOE_RESPAWN := 240.0
+
+
+## Where the light of a beacon sets the knight down next ({"place", "at"}; hub.gd takes it as it starts).
+static var travel_to := {}
+
+static func take_travel() -> Dictionary:
+	var hop := travel_to
+	travel_to = {}
+	return hop
+
+
+static func foe_here(key: String) -> bool:
+	return not foes_gone.has(key) or Time.get_ticks_msec() >= int(foes_gone[key])
 
 
 ## Does what a "do" says. Returns {"battle": id} when a battle must start, {"say": words} for
@@ -544,10 +627,50 @@ static func apply(what: Dictionary) -> Dictionary:
 		Allies.join(String(what["join"]))
 	if what.has("coins"):
 		Save.hub_set("bank:coins", Save.hub_get("bank:coins") + int(what["coins"]))
+	if what.has("flag"):
+		for k: Variant in (what["flag"] if what["flag"] is Array else [what["flag"]]):
+			Save.hub_set(String(k), 1)
+	if what.has("key"):
+		Save.hub_set("dkey:" + String(what["key"]), 1)
+	if what.has("gear"):
+		# (loaded here, not preloaded: this file is preloaded by half the game)
+		var gear: Variant = load("res://scripts/data/gear.gd")
+		if gear != null and not bool(gear.call("owned", String(what["gear"]))):
+			gear.call("grant", String(what["gear"]))
+	if what.has("supply"):
+		var pair: Array = what["supply"]
+		var supplies: Variant = load("res://scripts/data/supplies.gd")
+		if supplies != null and pair.size() >= 2:
+			supplies.call("give", String(pair[0]), int(pair[1]))
+	if what.has("travel"):
+		# stepping into a beacon's light (scripts/data/travel.gd): the next place shown is that stop
+		var travel: Variant = load("res://scripts/data/travel.gd")
+		var stop: Dictionary = travel.call("row", String(what["travel"])) if travel != null else {}
+		if not stop.is_empty() and bool(travel.call("open", stop)):
+			travel_to = {"place": String(stop["place"]), "at": stop["at"]}
+			out["say"] = String(travel.get("ARRIVE")) % String(stop["name"])
+	if what.has("foe_won"):
+		foes_gone[String(what["foe_won"])] = Time.get_ticks_msec() + int(FOE_RESPAWN * 1000.0)
+		foe_fight = {}
 	if what.has("say"):
 		out["say"] = String(what["say"])
 	if what.has("battle"):
 		out["battle"] = String(what["battle"])
+	if what.has("screen"):
+		out["screen"] = String(what["screen"])
+	if what.has("all"):
+		# several things must all be done (two levers, three seals ...): the inner do happens once
+		var both: Dictionary = what["all"]
+		var flags: Array = both.get("flags", [])
+		var mark := "tale:all:" + ",".join(flags)
+		var ready := Save.hub_get(mark) == 0
+		for k: Variant in flags:
+			ready = ready and Save.hub_get(String(k)) > 0
+		if ready:
+			Save.hub_set(mark, 1)
+			var inner := apply(both.get("do", {}))
+			for k2: String in inner:
+				out[k2] = inner[k2]              # (its banner and its battle win over the outer ones)
 	Save.flush()
 	return out
 
@@ -555,6 +678,9 @@ static func apply(what: Dictionary) -> Dictionary:
 ## Walking into a place: does what ENTER says for this step. Returns as apply() does.
 static func entered(place_id: String) -> Dictionary:
 	var by: Dictionary = ENTER.get(place_id, {})
+	if by.has(step()):
+		return apply(by[step()])
+	by = More.enter(place_id)
 	if by.has(step()):
 		return apply(by[step()])
 	return {}

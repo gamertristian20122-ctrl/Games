@@ -47,6 +47,7 @@ const Rpg = preload("res://scripts/data/rpg.gd")
 const Battles = preload("res://scripts/data/battles.gd")
 const Wounds = preload("res://scripts/data/wounds.gd")
 const Interior = preload("res://scripts/hub/arch/interior.gd")
+const Travel = preload("res://scripts/data/travel.gd")
 
 signal action(what: String, arg: Variant)
 
@@ -110,6 +111,8 @@ var _rain: CPUParticles2D
 var _zoom := 1.0                 ## the place's camera zoom (0.5 on the world map: twice as much is seen)
 var _k := 1.0                    ## how big the knight is drawn there (2 on the world map)
 var _shut_t := 0.0               ## a moment before a shut road says so again
+var _doors: Array = []           ## (the dungeon kit) the shut doors of this place: {"row", "near": Rect2 just round its block}
+var _quiet := false              ## the place is being built again where he stands (a lever, a chest): no banner, no story
 var _view: Node3D                ## the lit 3D look (scripts/hub/view3d.gd): it shows what this file builds. null = the old flat look
 
 
@@ -117,6 +120,8 @@ func _ready() -> void:
 	Arms.ensure()                      # (v0.39.0) old saves: what the level taught stays taught; best arms worn
 	for land: String in G.arg("lit").split(",", false):     # test: --lit=elfwood,sands : those beacons burn
 		Save.hub_set("tale:lit:" + land, 1)
+	for key: String in G.arg("set").split(",", false):     # test: --set=dkey:mine,dlever:a : those save keys are 1 (a key held, a lever pulled, a chest opened)
+		Save.hub_set(key, 1)
 	if G.arg("lvl") != "":            # test: --lvl=<n> : the knight's level
 		Save.hub_set("rpg:lvl", int(G.arg("lvl")))
 	if G.arg("coins") != "":          # test: --coins=<n> in the purse
@@ -192,8 +197,23 @@ func _ready() -> void:
 	if G.arg("hub") != "":
 		start_place = G.arg("hub")       # test: --hub=<place id>
 	Story.migrate()
-	var begin: Array = [start_place, start_at] if start_place != "" else Places.start()      # Play: the camp you last walked into
+	var begin: Array = [start_place, start_at] if start_place != "" else Places.start()      # Play: the place you were last in
+	if start_place == "" and Tale.on() and get_parent() != null and get_parent().get_node_or_null("Battle") != null:
+		# main.gd shows "no place" after a LOST fight (its battle is still being put away): he wakes at the
+		# last fire or bed he walked past, not always in Wickmere
+		begin = Places.wake()
+		_woke = true
+	var hop := Tale.take_travel() if Tale.on() else {}       # stepping into a beacon's light (scripts/data/travel.gd)
+	if not hop.is_empty():
+		begin = [String(hop["place"]), hop["at"]]
+		Sfx.play("ui_start", -4.0)
 	enter(String(begin[0]), begin[1])
+	if G.flag("kittest"):            # test: --hub=kit_test --kittest : the kit's pieces are USED one after the other and checked
+		_kit_test.call_deferred()
+	if G.flag("resumetest"):         # test: --resumetest : where Play and a lost fight would put him, place after place
+		_resume_test.call_deferred()
+	if G.flag("traveltest"):         # test: --traveltest : every stop of travel.gd is stood on and checked
+		_travel_test.call_deferred()
 	if G.arg("hubfight") != "":          # test: that roamer touches him after a second (with --autobattle a bot fights)
 		get_tree().create_timer(1.0).timeout.connect(func() -> void: action.emit("hub_encounter", int(G.arg("hubfight"))))
 	if G.arg("hublevel") != "":          # test: go down into that level after a second
@@ -275,7 +295,11 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_people.clear()
 	_near = -1
 	_last_talk = -1
-	_ambushed.clear()
+	_doors.clear()
+	if not _quiet:
+		_ambushed.clear()
+		if Tale.on():
+			Places.remember(id, place, at)      # Play starts here next time; a fire or bed here is where a lost fight wakes him
 	_blocks = (place.get("blocks", []) as Array).duplicate()
 	if _built_inside():
 		_blocks = Interior.blocks(place)          # the 3D look builds the room for real: walls and furniture block (scripts/hub/arch/interior.gd)
@@ -306,6 +330,8 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 				s.set_meta("no3d", true)            # (the 3D look stands an iron street lamp there: scripts/hub/arch/sites.gd)
 		if String(p[0]) == "hub_gfountain" and place.has("fountain") and _view != null:
 			s.set_meta("no3d", true)                # (the 3D look builds the fountain in stone: scripts/hub/arch/sites.gd)
+	if Tale.on():
+		_build_doors()
 	# houses and water: the 3D look builds them as real things (scripts/hub/view3d.gd); the old
 	# flat look shows a house as the pack's flat pieces and water as a flat shape
 	if _view == null:
@@ -365,7 +391,16 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 			_add_person({"id": "ally_" + String(mate["id"]), "ally": String(mate["id"]), "name": mate["name"], "title": mate["title"], "sprite": mate["sprite"],
 				"hands": mate.get("hands", ""), "pos": mate["pos"], "face": mate.get("face", 1), "role": "ally", "text": ""})
 	if Tale.on():
-		for f: Dictionary in Errands.finds_in(id):      # (v0.42.0) chests and what side quests send you to find
+		for lever: Dictionary in place.get("levers", []):      # (the dungeon kit) levers: scripts/data/more.gd places
+			_add_lever(lever)
+		for f: Dictionary in Errands.opened_in(id):     # (the quality pass) an opened chest stays where it stood, open
+			var open_tex := Art.tex(Errands.open_sprite(f))
+			var open_pic := Sprite2D.new()
+			open_pic.texture = open_tex
+			open_pic.position = _free_spot(f["pos"])
+			open_pic.offset = Vector2(0, -open_tex.get_size().y * 0.5 + 2.0)
+			_ysort.add_child(open_pic)
+		for f: Dictionary in Errands.finds_in(id, _is_night()):      # (v0.42.0) chests and what side quests send you to find
 			_add_find(f)
 	_build_hero()
 	_hero.position = at if at != Vector2.INF else place["spawn"]
@@ -402,15 +437,103 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		_cam.limit_bottom = int(size.y) if size.y > view.y else int((size.y + view.y) / 2.0)
 		_cam.position = _hero.position.round()
 	_cam.reset_smoothing()
-	if _entered:
+	if _entered and not _quiet:
 		_show_banner(String(place.get("name", "")))       # the place's name floats up for a moment
 	_entered = true
-	if Tale.on():
+	if Tale.on() and not _quiet:
 		var news := Tale.entered(id)                           # walking in here may move the story on
 		if news.has("say"):
 			say(String(news["say"]))
 	if _view != null:
 		_view.call("rebuild")
+	if G.flag("allfinds") and not _quiet and Tale.on():
+		_reach_all.call_deferred()             # test: can everything here be got to? ("[reach] ...")
+
+
+## Builds the place again round the knight where he stands (a door opened, a lever pulled, a chest
+## opened, night fell): no banner, no story moment, the story's ambushes stay sprung.
+func _rebuild() -> void:
+	_quiet = true
+	enter(place_id, _hero.position)
+	_quiet = false
+
+
+# ------------------------------------------------------------------ the dungeon kit (doors, levers)
+## DOORS: a place's "doors" [{"id", "rect", "key": key id  or  "lever": lever id, "why", "sprite", "pos"}].
+## A shut door is a block (its "rect") with a picture on it ("sprite", default the pack's barred stone
+## gate; "pos" = where its foot stands, default the middle of the rect's near edge).
+##   "key"    it opens when the knight walks against it carrying that key ("dkey:<id>"; chests and people
+##            give keys); once open it stays open ("ddoor:<door id>").
+##   "lever"  it is open while that lever is pulled ("dlever:<id>").
+## "why" is said when he pushes against it shut. "open": a picture left standing when it is open.
+func door_shut(d: Dictionary) -> bool:
+	if d.has("lever"):
+		return Save.hub_get("dlever:" + String(d["lever"])) <= 0
+	return Save.hub_get("ddoor:" + String(d["id"])) <= 0
+
+
+func _build_doors() -> void:
+	for d: Dictionary in place.get("doors", []):
+		var rect: Rect2 = d["rect"]
+		var foot: Vector2 = d.get("pos", Vector2(rect.get_center().x, rect.end.y))
+		if not door_shut(d):
+			if String(d.get("open", "")) != "":
+				_prop(String(d["open"]), foot, 0.0, 0.0)
+			continue
+		_blocks.append(rect)
+		_doors.append({"row": d, "near": rect.grow(HERO_RADIUS * _k + 2.5)})
+		if String(d.get("sprite", "hub_gate_0")) != "":
+			_prop(String(d.get("sprite", "hub_gate_0")), foot, 0.0, 0.0)
+
+
+## The knight pushes against a shut door: with its key it opens (true = the place was built again),
+## without, it says why.
+func _push_doors() -> bool:
+	for door: Dictionary in _doors:
+		if not (door["near"] as Rect2).has_point(_hero.position):
+			continue
+		var d: Dictionary = door["row"]
+		var key := String(d.get("key", ""))
+		if key != "" and Save.hub_get("dkey:" + key) > 0:
+			Save.hub_set("ddoor:" + String(d["id"]), 1)
+			Save.flush()
+			Sfx.play("door_open", -2.0)
+			_toast.call("show_text", String(d.get("opened", Tale.KIT["door_key"])), 2.5)
+			print("[door] %s in %s opens with the key %s" % [d["id"], place_id, key])
+			_rebuild()
+			return true
+		if _shut_t <= 0.0:
+			_shut_t = 3.0
+			_toast.call("show_text", String(d.get("why", Tale.KIT["locked"] if key != "" else Tale.KIT["door_lever"])), 2.5)
+			Sfx.play("ui_back")
+		return false
+	return false
+
+
+## LEVERS: a place's "levers" [{"id", "pos", "name", "say", "do"}]: a lever of the pack standing there. Pulling
+## it sets "dlever:<id>" for good (doors with "lever": id open), says "say", and does "do" (as tale.gd "do":
+## e.g. {"all": {"flags": ["dlever:a", "dlever:b"], "do": {...}}} for two levers that open one thing).
+func _add_lever(lever: Dictionary) -> void:
+	var pulled := Save.hub_get("dlever:" + String(lever["id"])) > 0
+	_add_person({"id": "lever:" + String(lever["id"]), "name": String(lever.get("name", Tale.KIT["lever_name"])), "title": "", "ghost": true,
+		"pos": lever["pos"], "top": 14, "role": "lever", "lever": String(lever["id"]), "text": "", "solid": 4.0,
+		"prop": String(lever.get("sprite_on", "lever_right")) if pulled else String(lever.get("sprite", "lever_left")),
+		"say": lever.get("say", Tale.KIT["lever"]), "do": lever.get("do", {})})
+
+
+func _pull_lever(row: Dictionary) -> void:
+	var key := "dlever:" + String(row["lever"])
+	if Save.hub_get(key) > 0:
+		_toast.call("show_text", Tale.KIT["lever_done"], 2.0)
+		Sfx.play("ui_back")
+		return
+	Save.hub_set(key, 1)
+	var fx := Tale.apply(row.get("do", {}))          # (it also writes the save)
+	Save.flush()
+	Sfx.play("door_close", -2.0)
+	print("[lever] %s in %s pulled" % [row["lever"], place_id])
+	_rebuild()
+	_toast.call("show_text", String(fx.get("say", row.get("say", Tale.KIT["lever"]))), 3.0)
 
 
 ## (v0.38.0) the party's health line under the coins: only while somebody is hurt.
@@ -635,6 +758,8 @@ func sleep() -> void:
 		G.world_clock = (day + 1.0 + 0.02) * DAY_LENGTH
 	_show_banner("Night has fallen" if to_night else "Morning", true)
 	Sfx.play("door_close", -8.0)
+	if Tale.on() and is_instance_valid(_hero):
+		_rebuild()                      # (what is only there by night comes and goes)
 
 
 # ------------------------------------------------------------------ building
@@ -1169,6 +1294,18 @@ func _add_person(row: Dictionary) -> Dictionary:
 		mark.scale = Vector2.ONE / _zoom
 		if float(row.get("solid", 0.0)) > 0.0:
 			_solids.append([row["pos"], float(row["solid"])])
+		if String(row.get("prop", "")) != "":
+			# (the quality pass) a thing of the pack standing on the spot: a sign, a lever, a plaque
+			var thing_tex := Art.tex(String(row["prop"]))
+			var thing := Sprite2D.new()
+			thing.texture = thing_tex
+			thing.offset = Vector2(0, -thing_tex.get_size().y * 0.5 + float(row.get("prop_below", 1.0)))
+			thing.flip_h = bool(row.get("prop_flip", false))
+			node.add_child(thing)
+			node.move_child(thing, 0)
+			if not row.has("top"):
+				top = thing_tex.get_size().y + 2.0
+				mark.position = Vector2(-2, -top - 16)
 		var ghost := {"row": row, "node": node, "hands": null, "mark": mark, "face": 1.0, "top": top, "solid": -1,
 			"body": null, "post": row["pos"], "goal": row["pos"], "wait": 0.0, "walks": false, "ghost": true}
 		_people.append(ghost)
@@ -1205,7 +1342,6 @@ func _add_find(f: Dictionary) -> void:
 	var p := _add_person(row)
 	if G.flag("allfinds"):
 		print("[finds] %s in %s: asked %s, stands at %s" % [f["id"], place_id, f["pos"], row["pos"]])
-		_reach_test.call_deferred(String(f["id"]), row["pos"])
 	var tex := Art.tex(String(f["sprite"]))
 	var pic := Sprite2D.new()
 	pic.texture = tex
@@ -1215,16 +1351,20 @@ func _add_find(f: Dictionary) -> void:
 
 ## Test (--allfinds): can the knight walk from where he came in to this spot? (8 px cells)
 func _reach_test(fid: String, to: Vector2) -> void:
+	print("[reach] %s in %s: %s" % [fid, place_id, "OK" if _reached(_flood([]), to) else "CANNOT REACH"])
+
+
+## Every 8 px cell the knight can walk to from the place's way in. `open`: rects of doors taken as open.
+func _flood(open: Array) -> Dictionary:
 	var walk: Rect2 = place["walk"]
 	var cell := 8.0
 	var start := Vector2i((Vector2(place["spawn"]) / cell).floor())
-	var goal := Vector2i((to / cell).floor())
 	var free := func(c: Vector2i) -> bool:
 		var p := (Vector2(c) + Vector2(0.5, 0.5)) * cell
 		if not walk.has_point(p):
 			return false
 		for b: Rect2 in _blocks:
-			if b.grow(HERO_RADIUS * _k).has_point(p):
+			if b.grow(HERO_RADIUS * _k).has_point(p) and not open.has(b):
 				return false
 		for sol: Array in _solids:
 			if (sol[0] as Vector2).distance_to(p) < float(sol[1]) + HERO_RADIUS * _k - 2.0:
@@ -1232,18 +1372,88 @@ func _reach_test(fid: String, to: Vector2) -> void:
 		return true
 	var seen := {start: true}
 	var queue: Array = [start]
-	var found := false
-	while not queue.is_empty() and seen.size() < 60000:
-		var c: Vector2i = queue.pop_front()
-		if (Vector2(c) - Vector2(goal)).length() <= 2.5:
-			found = true
-			break
+	var at := 0
+	while at < queue.size() and seen.size() < 60000:
+		var c: Vector2i = queue[at]
+		at += 1
 		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 			var n := c + d
 			if not seen.has(n) and free.call(n):
 				seen[n] = true
 				queue.append(n)
-	print("[reach] %s in %s: %s" % [fid, place_id, "OK" if found else "CANNOT REACH"])
+	return seen
+
+
+## Is a spot within `reach` px of a cell he can stand on?
+func _reached(seen: Dictionary, to: Vector2, reach: float = 20.0) -> bool:
+	var goal := Vector2i((to / 8.0).floor())
+	var r := int(ceil(reach / 8.0))
+	for dx in range(-r, r + 1):
+		for dy in range(-r, r + 1):
+			if seen.has(goal + Vector2i(dx, dy)) and Vector2(dx, dy).length() * 8.0 <= reach:
+				return true
+	return false
+
+
+## Test (--allfinds): the whole place is PLAYED on paper: from the way in, whatever can be walked to is
+## taken (a chest's key, a lever), whatever that opens is opened (a key door he can walk up to, a lever
+## door), and so on until nothing changes. Then every find, lever, door, sign and foe says whether the
+## knight can get to it: "[reach] <thing> in <place>: OK" or "CANNOT REACH" / "NO KEY".
+func _reach_all() -> void:
+	var keys := {}
+	var pulled := {}
+	var open: Array = []
+	var seen := {}
+	for d: Dictionary in place.get("doors", []):
+		if not door_shut(d):
+			pulled[String(d.get("lever", ""))] = true
+	for turn in 20:
+		seen = _flood(open)
+		var changed := false
+		for p: Dictionary in _people:
+			var row: Dictionary = p["row"]
+			if not _reached(seen, row["pos"]):
+				continue
+			if String(row.get("role", "")) == "lever" and not pulled.has(String(row["lever"])):
+				pulled[String(row["lever"])] = true
+				changed = true
+			if String(row.get("role", "")) == "find":
+				var f := Errands.find_row(String(row["find"]))
+				var need := String(f.get("locked", ""))
+				var key := String((f.get("reward", {}) as Dictionary).get("key", ""))
+				if key != "" and not keys.has(key) and (need == "" or keys.has(need) or Save.hub_get("dkey:" + need) > 0):
+					keys[key] = true
+					changed = true
+		for door: Dictionary in _doors:
+			var d: Dictionary = door["row"]
+			if open.has(d["rect"]):
+				continue
+			var key := String(d.get("key", ""))
+			var by_key := key != "" and (keys.has(key) or Save.hub_get("dkey:" + key) > 0) and _reached(seen, (d["rect"] as Rect2).get_center(), 24.0)
+			if by_key or (d.has("lever") and pulled.has(String(d["lever"]))):
+				open.append(d["rect"])
+				changed = true
+		if not changed:
+			break
+	for p: Dictionary in _people:
+		var row: Dictionary = p["row"]
+		var role := String(row.get("role", ""))
+		if not ["find", "lever", "read", "bed"].has(role) and not bool(row.get("travel", false)):
+			continue
+		var ok := _reached(seen, row["pos"])
+		var word := "OK" if ok else "CANNOT REACH"
+		if ok and role == "find":
+			var need := String(Errands.find_row(String(row["find"])).get("locked", ""))
+			if need != "" and not keys.has(need) and Save.hub_get("dkey:" + need) <= 0:
+				word = "NO KEY (%s)" % need
+		print("[reach] %s in %s: %s" % [String(row["find"]) if role == "find" else String(row["id"]), place_id, word])
+	for door: Dictionary in _doors:
+		print("[reach] door:%s in %s: %s" % [door["row"]["id"], place_id, "OK" if open.has(door["row"]["rect"]) else "CANNOT OPEN"])
+	for r: Dictionary in _roamers:
+		if r.has("key"):
+			print("[reach] foe:%s: %s" % [r["key"], "OK" if _reached(seen, r["home"]) else "CANNOT REACH"])
+	for e: Dictionary in place.get("exits", []):
+		print("[reach] exit to %s in %s: %s" % [e["to"], place_id, "OK" if _reached(seen, (e["rect"] as Rect2).get_center(), 24.0) else "CANNOT REACH"])
 
 
 ## The nearest spot to `at` where nothing stands (walls, furniture, trees, water) inside the walk.
@@ -1368,7 +1578,20 @@ func refresh_heroes() -> void:
 
 
 # ------------------------------------------------------------------ every frame
-func _physics_process(delta: float) -> void:
+## (the quality pass) Walking ran on the 60-a-second physics tick while the picture is drawn every frame,
+## so on a 144 Hz screen the knight moved in little jumps. Now it runs every drawn frame. A long frame is
+## cut to a thirtieth of a second (of game time) and walked in steps of a sixtieth at most, so nobody
+## steps through a wall or over a doorway on a slow machine or in a speeded-up test.
+func _process(delta: float) -> void:
+	delta = minf(delta, Engine.time_scale / 30.0)
+	var steps := clampi(ceili(delta * 60.0 - 0.01), 1, 16)
+	for i in steps:
+		_tick(delta / float(steps))
+		if not is_inside_tree():
+			return
+
+
+func _tick(delta: float) -> void:
 	_time += delta
 	_move_follower(delta)
 	_move_roamers(delta)
@@ -1378,6 +1601,12 @@ func _physics_process(delta: float) -> void:
 		move = Controls.move
 		if G.flag("wildtest"):           # test: --wildtest walks him east across the map
 			move = Vector2(1.0, 0.1)
+			if G.arg("wildtest").contains(","):      # test: --wildtest=x,y : he walks in a ring round that spot of the map
+				var ring := G.arg("wildtest").split(",")
+				var mid := Vector2(float(ring[0]), float(ring[1]))
+				if _hero.position.distance_to(mid) > 90.0:
+					_hero.position = mid
+				move = Vector2.RIGHT.rotated(_time * 2.4)
 		if not _tour.is_empty():
 			move = _tour_step(delta)
 	var moving := move.length() > 0.12
@@ -1431,6 +1660,8 @@ func _physics_process(delta: float) -> void:
 				else:
 					_go(String(e["to"]), e["at"])
 				break
+		if not _doors.is_empty() and _push_doors():
+			return                      # (a door opened: the place was built again round him)
 		# a locked place of the world map (places.gd _lock_world): pushing against it says why
 		if _shut_t <= 0.0:
 			for row: Dictionary in place.get("shut", []):
@@ -1610,14 +1841,35 @@ func _talk(index: int) -> void:
 	var role := String(row.get("role", "chat"))
 	if role == "find":
 		# (v0.42.0) a chest or a thing a side quest asked for: taken, gone from the place
+		# (the quality pass) a locked one says so and stays; an opened chest stays where it stood, open
+		var shut := Errands.locked(Errands.find_row(String(row["find"])))
 		var words := Errands.open(String(row["find"]))
-		var p: Dictionary = _people[index]
-		(p["node"] as Node).queue_free()
-		_people.remove_at(index)
 		_near = -1
 		_last_talk = -1
-		Sfx.play("chest_open", -4.0)
-		action.emit("talk", {"name": row["name"], "title": "", "sprite": "", "pages": [words if words != "" else "Nothing inside."], "heard": "", "lines": [], "options": []})
+		Sfx.play("ui_back" if shut else "chest_open", -4.0)
+		if G.flag("allfinds"):
+			print("[finds] %s: %s" % [row["find"], "LOCKED" if shut else "opened"])
+		action.emit("talk", {"name": row["name"], "title": "", "sprite": "", "pages": [words if words != "" else Tale.KIT["empty"]], "heard": "", "lines": [], "options": []})
+		if not shut:
+			_rebuild()
+		return
+	if role == "lever":
+		_pull_lever(row)
+		return
+	if role == "read" and Tale.on():
+		# (the dungeon kit) a sign, a plaque, a letter: its "pages" in the talk box, no face beside them.
+		# "do" (as tale.gd "do") happens on reading: at once when it only sets flags, hands over a key or a
+		# thing; after the words when it starts a battle, moves the story or opens a screen.
+		var read := {"name": row["name"], "title": row.get("title", ""), "sprite": "", "pages": (row.get("pages", [String(row.get("text", ""))]) as Array).duplicate(),
+			"heard": "", "lines": [], "options": []}
+		var todo: Dictionary = row.get("do", {})
+		if todo.has("battle") or todo.has("step") or todo.has("screen") or todo.has("light") or todo.has("all"):
+			read["auto_do"] = todo
+		elif not todo.is_empty():
+			var got := Tale.apply(todo)
+			if got.has("say"):
+				say(String(got["say"]))
+		action.emit("talk", read)
 		return
 	if Tale.on():
 		# the story (scripts/data/tale.gd): what this person says at this step, and the one thing
@@ -1657,6 +1909,17 @@ func _talk(index: int) -> void:
 					else:
 						var pr := Errands.progress(er)
 						info["lines"].append(["%s: %d of %d" % [er["name"], int(pr[0]), int(pr[1])], UI.C_DIM])
+		if bool(row.get("travel", false)):
+			# (the quality pass) a burning beacon, or Wickmere's watch-fire: step into the light and out at
+			# any other light that burns (scripts/data/travel.gd). The place is shown anew by main.gd "tale_do".
+			var stop_here := Travel.stop_at(place_id, id)
+			var ways := Travel.from(stop_here)
+			for stop: Dictionary in ways:
+				info["options"].append({"text": Travel.OFFER % String(stop["name"]), "what": "tale_do", "arg": {"travel": String(stop["id"])}})
+			if not ways.is_empty():
+				info["lines"].append([Travel.HINT, UI.C_DIM])
+			elif stop_here.has("add") and not Travel.any_lit():
+				info["pages"] = (info["pages"] as Array) + [Travel.FIRE_DARK]
 	match role:
 		"gate":
 			# every site this gate opens (scripts/data/story.gd): go in at the first level not cleared,
@@ -1745,7 +2008,8 @@ func _talk(index: int) -> void:
 			if place_id == "room":
 				info["lines"].append(["Your room at the Hollow Flagon. The looking glass by the bed changes your name, armour and sword.", UI.C_DIM])
 			else:
-				info["lines"].append(["A place to rest. The game opens here next time, at the camp you last walked into.", UI.C_DIM])
+				# (the quality pass: the old line promised the game would open here, which the story never did)
+				info["lines"].append([Tale.KIT["rest"] if Tale.on() else "A place to rest. The game opens here next time, at the camp you last walked into.", UI.C_DIM])
 			info["lines"].append(["You carry %d item%s. Camp chest: %d coins." % [carried.size(), "" if carried.size() == 1 else "s", Upgrades.coins()], UI.C_GOLD])
 			info["options"].append({"text": ("Sleep until morning" if _is_night() else "Sleep until nightfall") + (" (everybody rested)" if Wounds.any() else ""), "what": "hub_sleep"})
 			info["options"].append({"text": "Remember how it began (the intro)", "what": "hub_intro"})
@@ -1846,45 +2110,117 @@ func _talk(index: int) -> void:
 var _roamers: Array = []
 var _roam_grace := 0.0
 var _caught := false
+var _woke := false               ## this place was opened after a lost fight
 func _build_roamers() -> void:
 	_roamers.clear()
 	_caught = false
 	_roam_grace = Roamers.GRACE
 	_wild_left = randf_range(Roamers.STEPS_MIN, Roamers.STEPS_MAX)
 	_wild_last = Vector2.INF
-	if place_id != "world" or Roamers.RANDOM:
-		return
-	for i in Roamers.SPOTS.size():
-		if not Roamers.here(i):
-			continue
-		var spot: Dictionary = Roamers.SPOTS[i]
-		var row := Enemies.info(Roamers.shows(i))
-		var sprite_id := String(row.get("sprite", "pc_skeleton_base"))
-		var m := Art.meta(sprite_id)
-		var node := Node2D.new()
-		node.position = spot["at"]
-		node.scale = Vector2(_k, _k)
-		_ysort.add_child(node)
-		node.add_child(EnemyScript.make_shadow(clampf(float(m.get("body_width", 16.0)) * 0.85, 11.0, 18.0)))
-		var body := Art.sprite(sprite_id)
-		body.position = Vector2(0, 2)
-		body.modulate = row.get("tint", Color.WHITE)
-		node.add_child(body)
-		var hands: RefCounted = null
-		if String(row.get("hands", "")) != "":
-			hands = Hands.new()
-			hands.build(node, body, String(row["hands"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)))
-		var mark := UI.label("!", "Head")
-		mark.set_meta("walk_kind", "foe")      # (the 3D look shows it as a red "!" coin)
-		mark.theme = UI.theme()
-		mark.add_theme_color_override("font_color", UI.C_RED)
-		mark.add_theme_color_override("font_outline_color", UI.C_INK)
-		mark.add_theme_constant_override("outline_size", 3)
-		mark.position = Vector2(-2, -float(m.get("body_height", 28.0)) - 16.0)
-		mark.visible = false
-		node.add_child(mark)
-		_roamers.append({"spot": i, "node": node, "body": body, "hands": hands, "mark": mark, "home": spot["at"], "leash": float(spot.get("leash", 60.0)),
-			"goal": spot["at"], "wait": randf_range(0.5, 3.0), "chasing": false, "face": 1.0, "runs": Art.has_anim(sprite_id, "run"), "tint": row.get("tint", Color.WHITE)})
+	Roamers.roll = 0
+	Roamers.night = false
+	if place_id == "world" and not Roamers.RANDOM:
+		for i in Roamers.SPOTS.size():
+			if not Roamers.here(i):
+				continue
+			var spot: Dictionary = Roamers.SPOTS[i]
+			var r := _add_roamer(Enemies.info(Roamers.shows(i)), spot["at"], float(spot.get("leash", 60.0)))
+			r["spot"] = i
+	# (the dungeon kit) FOES: a place's "foes" [{"id", "sprite" or "enemy", "pos", "leash", "battle"}]: a monster
+	# that stands in the place, comes for the knight when he steps inside its leash and starts that battle of
+	# the story (tale.gd BATTLES or a module's) on a touch. Beaten, it is gone for Tale.FOE_RESPAWN seconds.
+	# "enemy": a row of scripts/data/enemies.gd to look like; "sprite" (+ "tint", "hands"): pack art by id.
+	# "tale_from" / "tale_to" / "flag_on" / "flag_off" as for people. "spot": the roamer spot whose fight
+	# is fought instead while main.gd cannot start a module's battle yet (see docs/pass/07_world_kit.md).
+	if Tale.on():
+		for foe: Dictionary in place.get("foes", []):
+			var key := place_id + ":" + String(foe["id"])
+			if not Tale.here(foe) or not Tale.foe_here(key):
+				continue
+			var look: Dictionary = Enemies.info(String(foe["enemy"])).duplicate() if foe.has("enemy") else {}
+			for k: String in ["sprite", "tint", "hands"]:
+				if foe.has(k):
+					look[k] = foe[k]
+			var r := _add_roamer(look, foe["pos"], float(foe.get("leash", 70.0)))
+			r["battle"] = String(foe["battle"])
+			r["key"] = key
+			r["spot"] = int(foe.get("spot", 0))
+
+
+## One monster that walks its patch (a roamer of the world map, or a place's foe).
+func _add_roamer(row: Dictionary, at: Vector2, leash: float) -> Dictionary:
+	var sprite_id := String(row.get("sprite", "pc_skeleton_base"))
+	var m := Art.meta(sprite_id)
+	var node := Node2D.new()
+	node.position = at
+	node.scale = Vector2(_k, _k)
+	_ysort.add_child(node)
+	node.add_child(EnemyScript.make_shadow(clampf(float(m.get("body_width", 16.0)) * 0.85, 11.0, 18.0)))
+	var body := Art.sprite(sprite_id)
+	body.position = Vector2(0, 2)
+	body.modulate = row.get("tint", Color.WHITE)
+	node.add_child(body)
+	var hands: RefCounted = null
+	if String(row.get("hands", "")) != "":
+		hands = Hands.new()
+		hands.build(node, body, String(row["hands"]), float(m.get("body_width", 16.0)), float(m.get("body_height", 28.0)))
+	var mark := UI.label("!", "Head")
+	mark.set_meta("walk_kind", "foe")      # (the 3D look shows it as a red "!" coin)
+	mark.theme = UI.theme()
+	mark.add_theme_color_override("font_color", UI.C_RED)
+	mark.add_theme_color_override("font_outline_color", UI.C_INK)
+	mark.add_theme_constant_override("outline_size", 3)
+	mark.position = Vector2(-2, -float(m.get("body_height", 28.0)) - 16.0)
+	mark.visible = false
+	node.add_child(mark)
+	var r := {"spot": -1, "node": node, "body": body, "hands": hands, "mark": mark, "home": at, "leash": leash, "top": float(m.get("body_height", 28.0)),
+		"goal": at, "wait": randf_range(0.5, 3.0), "chasing": false, "face": 1.0, "runs": Art.has_anim(sprite_id, "run"), "tint": row.get("tint", Color.WHITE)}
+	_roamers.append(r)
+	return r
+
+
+## Asks main.gd for a fight, and makes sure the place cannot be left stuck: the knight stands still
+## from the moment the fight is announced (he walked on through a door or opened the pause menu in
+## that third of a second), and if main.gd was busy with a fade and dropped the request, the place
+## lets go of him again after a moment (the review: roamers stood frozen and no fights came).
+func _ask_fight(what: String, arg: Variant, wait: float = 0.0) -> void:
+	_caught = true
+	frozen = true
+	var ask := func() -> void:
+		action.emit(what, arg)
+		get_tree().create_timer(1.5, true, false, true).timeout.connect(func() -> void:
+			# still here a second and a half later (real time): no battle came
+			_caught = false
+			_roam_grace = Roamers.GRACE
+			Tale.foe_fight = {}
+			var main: Node = get_parent().get_parent() if get_parent() != null else null
+			frozen = main != null and main.has_method("top_name") and String(main.call("top_name")) != "")
+	if wait > 0.0:
+		get_tree().create_timer(wait).timeout.connect(ask)
+	else:
+		ask.call()
+
+
+## Can main.gd and battles.gd start a battle that is not in tale.gd's own table (a module's)? They can once
+## they ask Tale.battle_row(); main.gd says so with a constant MORE_BATTLES (docs/pass/07_world_kit.md).
+static var _wired := -1
+func _module_battles() -> bool:
+	if _wired < 0:
+		var main: Variant = load("res://scripts/main.gd")
+		_wired = 1 if main is Script and (main as Script).get_script_constant_map().has("MORE_BATTLES") else 0
+	return _wired == 1
+
+
+## A foe of the place touched the knight: its battle.
+func _foe_touch(r: Dictionary) -> void:
+	var battle := String(r["battle"])
+	print("[foe] %s touches the knight: battle %s" % [r["key"], battle])
+	if Tale.BATTLES.has(battle) or _module_battles():
+		Tale.foe_fight = {"key": String(r["key"]), "battle": battle}
+		_ask_fight("tale_do", {"battle": battle})
+	else:
+		push_warning("hub.gd: main.gd cannot start the module battle '%s' yet (no MORE_BATTLES): a wild fight instead" % battle)
+		_ask_fight("hub_encounter", int(r["spot"]))
 
 
 var _wild_left := 800.0
@@ -1907,19 +2243,28 @@ func _wild_steps(_delta: float) -> void:
 		return
 	var walked := _hero.position.distance_to(_wild_last)
 	_wild_last = _hero.position
+	if G.flag("wildtest") and int(_time) != int(_time - _delta):
+		print("[wild] at %s, %d px to go, %s%s" % [_hero.position.round(), int(_wild_left), Roamers.kind_at(_hero.position), ", lit" if Roamers.lit_at(_hero.position) else ""])
 	if walked <= 0.0 or walked > 40.0 or _hero.position.distance_to(Roamers.SAFE_GATE) < Roamers.SAFE_R:
 		return
-	_wild_left -= walked
+	# (the quality pass) a land whose beacon burns is safer: fights are 40% rarer there (he covers 1.6 times
+	# the ground for each), and the first time he walks in it after the lighting the map says so
+	var safer := Roamers.lit_at(_hero.position)
+	if safer and Tale.on() and Save.hub_get("seen:safer:" + Roamers.land_at(_hero.position)) == 0:
+		Save.hub_set("seen:safer:" + Roamers.land_at(_hero.position), 1)
+		say(Tale.KIT["safer"])
+	_wild_left -= walked / (Roamers.LIT_EASE if safer else 1.0)
 	if _wild_left > 0.0:
 		return
+	Roamers.night = _is_night()             # (who comes depends on the hour: scripts/data/roamers.gd "night")
+	Roamers.roll = randi() % 60             # (and which of them leads changes from fight to fight)
 	var spot := Roamers.spot_for(_hero.position)
 	_wild_left = randf_range(Roamers.STEPS_MIN, Roamers.STEPS_MAX)
 	if spot < 0:
 		return
-	_caught = true
-	print("[wild] a fight starts: spot %d (%s) at %s" % [spot, Roamers.kind_at(_hero.position), _hero.position])
+	print("[wild] a fight starts: spot %d (%s%s) at %s" % [spot, Roamers.SPOTS[spot]["kind"], ", by night" if Roamers.night else "", _hero.position])
 	Sfx.play("enemy_shoot", -6.0, 0.05, 0.7)
-	get_tree().create_timer(0.35).timeout.connect(func() -> void: action.emit("hub_encounter", spot))
+	_ask_fight("hub_encounter", spot, 0.35)
 
 
 func _move_roamers(delta: float) -> void:
@@ -1932,32 +2277,43 @@ func _move_roamers(delta: float) -> void:
 		var to_hero: Vector2 = _hero.position - node.position
 		var far := to_hero.length()
 		var home: Vector2 = r["home"]
-		if not r["chasing"] and _roam_grace <= 0.0 and _tour.is_empty() and far < Roamers.SEE:
+		var foe: bool = r.has("battle")              # a place's own monster: it guards its patch (the leash round its home)
+		var pace := float(place.get("speed", 1.0)) * SPEED / 190.0       # (the roamers' numbers are for the world map, where he does 190)
+		var sees := _hero.position.distance_to(home) < float(r["leash"]) if foe else far < Roamers.SEE
+		var loses := _hero.position.distance_to(home) > float(r["leash"]) * 1.5 if foe else (far > Roamers.LOSE or node.position.distance_to(home) > float(r["leash"]) + 220.0)
+		if not r["chasing"] and _roam_grace <= 0.0 and (_tour.is_empty() or G.flag("foetest")) and sees:
 			r["chasing"] = true
 			Sfx.play("enemy_shoot", -10.0, 0.05, 0.7)
-		elif r["chasing"] and (far > Roamers.LOSE or node.position.distance_to(home) > float(r["leash"]) + 220.0):
+		elif r["chasing"] and loses:
 			r["chasing"] = false
 			r["goal"] = home
 		var step := Vector2.ZERO
 		if r["chasing"]:
-			if far < Roamers.TOUCH:
-				_caught = true
+			if far < Roamers.TOUCH * _k * 0.5:
 				Sfx.play("door_close", -4.0)
-				action.emit("hub_encounter", int(r["spot"]))
+				if foe:
+					_foe_touch(r)
+				else:
+					_ask_fight("hub_encounter", int(r["spot"]))
 				return
-			step = to_hero.normalized() * Roamers.CHASE * delta
+			step = to_hero.normalized() * Roamers.CHASE * pace * delta
 		else:
 			var to_goal: Vector2 = (r["goal"] as Vector2) - node.position
 			if to_goal.length() < 3.0:
 				r["wait"] = float(r["wait"]) - delta
 				if float(r["wait"]) <= 0.0:
 					r["wait"] = randf_range(1.0, 4.0)
-					r["goal"] = home + Vector2.RIGHT.rotated(randf() * TAU) * randf() * float(r["leash"])
+					r["goal"] = home + Vector2.RIGHT.rotated(randf() * TAU) * randf() * float(r["leash"]) * (0.4 if foe else 1.0)
 			else:
-				step = to_goal.normalized() * Roamers.WALK * delta
+				step = to_goal.normalized() * Roamers.WALK * pace * delta
 		var moving := step.length() > 0.001
 		if moving:
+			var before := node.position
 			node.position = (node.position + step).clamp(walk.position, walk.end)
+			if foe:
+				node.position = _clear_of_blocks(node.position, 5.0 * _k)      # (it does not walk through walls and shut doors)
+				if not r["chasing"] and node.position.distance_to(before) < step.length() * 0.3:
+					r["goal"] = node.position                                   # (its stroll ran into something: pick another)
 			if absf(step.x) > 0.01:
 				r["face"] = signf(step.x)
 		var body: AnimatedSprite2D = r["body"]
@@ -1969,12 +2325,153 @@ func _move_roamers(delta: float) -> void:
 			(r["hands"] as RefCounted).update(delta, moving, float(r["face"]), 0.0, true, null, r["tint"])
 		var mark: Label = r["mark"]
 		mark.visible = r["chasing"]
-		mark.position.y = -float(Art.meta(String(Enemies.info(Roamers.shows(int(r["spot"]))).get("sprite", ""))).get("body_height", 28.0)) - 16.0 + (roundf(sin(_time * 8.0) * 1.5) if _view == null else 0.0)
+		mark.position.y = -float(r["top"]) - 16.0 + (roundf(sin(_time * 8.0) * 1.5) if _view == null else 0.0)
 
 
 ## A line in the place's banner for a few seconds (main.gd: what a won roamer fight paid).
 func say(text: String) -> void:
+	if _woke and place_id != Places.START and text.begins_with("You wake in your bed."):
+		# (main.gd's words for a lost fight; he woke by a fire far from his bed: say what is true)
+		text = Tale.KIT["wake"] + text.trim_prefix("You wake in your bed.")
 	_toast.call("show_text", text, 2.5)
+
+
+## Test (--hub=kit_test --kittest --nosave): the dungeon kit is used for real, piece by piece, in the
+## order a player would: the locked chest refuses, the key chest gives the key, the key door opens on a
+## push, the lever opens the other door, the locked chest opens and stays (open), the sign reads, the
+## light offers travel, and the guard comes and starts its fight. One "[kit] ..." line each; "[kit] ALL OK".
+func _kit_test() -> void:
+	var bad: Array = []
+	var heard: Array = []
+	action.connect(func(what: String, arg: Variant) -> void: heard.append([what, arg]))
+	var main: Node = get_parent().get_parent() if get_parent() != null else null
+	var shut := func() -> void:
+		await get_tree().create_timer(0.15).timeout          # (a moment, as a player takes: the window opens, then is closed)
+		if main != null and main.has_method("close_all"):
+			main.call("close_all")
+		frozen = false
+	var check := func(what: String, ok: bool) -> void:
+		print("[kit] %s: %s" % [what, "OK" if ok else "BAD"])
+		if not ok:
+			bad.append(what)
+	await get_tree().create_timer(1.0).timeout
+	await shut.call()
+	check.call("two doors stand shut", _doors.size() == 2 and _blocks.size() == 6)
+	talk_to("find:kit_locked")
+	check.call("the locked chest stays shut without the key", Save.hub_get("find:kit_locked") == 0 and String((heard.back()[1] as Dictionary)["pages"][0]).begins_with("Locked"))
+	await shut.call()
+	talk_to("find:kit_keychest")
+	check.call("the key chest gives the key", Save.hub_get("dkey:kit") == 1 and Save.hub_get("find:kit_keychest") == 1)
+	check.call("the opened chest stays, open", Errands.opened_in(place_id).size() == 1 and Errands.finds_in(place_id, false).size() == 1)
+	await shut.call()
+	_hero.position = Vector2(140, 212)
+	check.call("the key door opens on a push", _push_doors() and Save.hub_get("ddoor:kit_key") == 1 and _doors.size() == 1)
+	_hero.position = Vector2(340, 212)
+	check.call("the lever door does not", not _push_doors() and _doors.size() == 1)
+	talk_to("lever:kit")
+	check.call("the lever opens the lever door", Save.hub_get("dlever:kit") == 1 and _doors.is_empty() and _blocks.size() == 4)
+	talk_to("find:kit_locked")
+	check.call("the locked chest opens with the key", Save.hub_get("find:kit_locked") == 1 and Save.hub_get("bank:coins") >= 10)
+	await shut.call()
+	heard.clear()
+	talk_to("kit_sign")
+	check.call("the sign is read without a face", heard.size() == 1 and String(heard[0][0]) == "talk" and String(heard[0][1]["sprite"]) == "" and (heard[0][1]["pages"] as Array).size() == 2)
+	await shut.call()
+	heard.clear()
+	talk_to("kit_light")
+	check.call("no beacon burns: the light offers nothing", heard.size() == 1 and ((heard[0][1] as Dictionary)["options"] as Array).is_empty())
+	await shut.call()
+	Save.hub_set("tale:lit:elfwood", 1)
+	heard.clear()
+	talk_to("kit_light")
+	var offers: Array = (heard[0][1] as Dictionary)["options"] if heard.size() == 1 else []
+	check.call("a beacon burns: it offers the watch-fire and that beacon", offers.size() == 2 and String(offers[0]["what"]) == "tale_do" and String(offers[0]["arg"]["travel"]) == "wickmere")
+	await shut.call()
+	var fx := Tale.apply({"travel": "elfwood"})
+	check.call("stepping into the light names the next place", String(Tale.travel_to.get("place", "")) == "beacon" and fx.has("say"))
+	Tale.take_travel()
+	check.call("\"all\" waits for every flag", Tale.apply({"all": {"flags": ["dlever:kit", "kit:other"], "do": {"flag": "kit:both"}}}).is_empty() and Save.hub_get("kit:both") == 0)
+	Save.hub_set("kit:other", 1)
+	Tale.apply({"all": {"flags": ["dlever:kit", "kit:other"], "do": {"flag": "kit:both"}}})
+	check.call("... and then happens once", Save.hub_get("kit:both") == 1)
+	check.call("walking in set the module's flag, its scene was taken", Save.hub_get("kit:entered") == 1 and Save.hub_get("tale:seen:kit_arrive") == 1)
+	check.call("the module's battle is found", not Tale.battle_row("kit_guard").is_empty() and Tale.battle_row("glade").has("foes") and Tale.boss_row("gorgon").has("hp"))
+	check.call("the yard is not where Play starts, Wickmere would be", Save.hub_get("at:place") == 0 and Places.place_of(Places.place_number("village")) == "village"
+		and Places.place_of(Places.place_number("kit_test")) == "kit_test")
+	# the guard: stand at the edge of its patch and wait for it
+	heard.clear()
+	_roam_grace = 0.0
+	_hero.position = Vector2(360, 262)
+	var waited := 0.0
+	while waited < 6.0 and not _caught:
+		await get_tree().create_timer(0.1).timeout
+		waited += 0.1
+		if G.flag("verbose"):
+			print("[kit] frozen %s changing %s roamers %d grace %.1f foe at %s" % [frozen, _changing, _roamers.size(), _roam_grace, (_roamers[0]["node"] as Node2D).position if not _roamers.is_empty() else Vector2.ZERO])
+	check.call("the guard comes and touches him (%.1f s)" % waited, _caught and frozen)
+	check.call("... and asks for a fight", heard.size() >= 1 and ["tale_do", "hub_encounter"].has(String(heard[0][0])))
+	print("[kit] ALL OK" if bad.is_empty() else "[kit] %d BAD" % bad.size())
+	G.quit(0 if bad.is_empty() else 1)
+
+
+## Test (--resumetest --nosave): he walks into place after place; after each, where would Play start and
+## where would a lost fight wake him? "[resume] ..." lines, then "[resume] ALL OK".
+func _resume_test() -> void:
+	Save.hub_set("tale:step", Tale.LAST_STEP)
+	var bad := 0
+	# [place walked into, where Play starts, where a lost fight wakes him]
+	for row: Array in [["room", "room", "room"], ["village", "village", "room"], ["elfwood", "elfwood", "room"], ["deepwood", "deepwood", "room"],
+			["world", "world", "room"], ["dustwatch", "dustwatch", "dustwatch"], ["suncourt", "suncourt", "dustwatch"], ["world", "world", "dustwatch"],
+			["emberfall", "emberfall", "emberfall"], ["cinderpeak", "cinderpeak", "emberfall"], ["village", "village", "room"]]:
+		enter(String(row[0]))
+		var play := Places.start()
+		var wake := Places.wake()
+		var spot_ok := true
+		for got: Array in [play, wake]:
+			if got[1] != Vector2.INF:
+				var there := Places.get_place(String(got[0]))
+				spot_ok = spot_ok and (there["walk"] as Rect2).has_point(got[1])
+				if String(got[0]) == place_id:
+					spot_ok = spot_ok and _free_spot(got[1]).distance_to(got[1]) < 0.5
+		var ok := String(play[0]) == String(row[1]) and String(wake[0]) == String(row[2]) and spot_ok and Save.hub_get("seen:place:" + String(row[0])) == 1
+		print("[resume] in %s: Play -> %s %s, a lost fight -> %s %s: %s" % [row[0], play[0], play[1] if play[1] != Vector2.INF else "(its way in)",
+			wake[0], wake[1] if wake[1] != Vector2.INF else "(its way in)", "OK" if ok else "BAD"])
+		bad += 0 if ok else 1
+	enter("world", Vector2(1500, 800))
+	var out := Places.start()
+	print("[resume] on the wide world at (1500, 800): Play -> %s %s: %s" % [out[0], out[1], "OK" if String(out[0]) == "world" and out[1] == Vector2(1500, 800) else "BAD"])
+	bad += 0 if String(out[0]) == "world" and out[1] == Vector2(1500, 800) else 1
+	Save.hub_set("at:place", 999)          # a save that names a place this build does not have
+	var lost := Places.start()
+	print("[resume] an unknown place -> %s: %s" % [lost[0], "OK" if String(lost[0]) == Places.START else "BAD"])
+	bad += 0 if String(lost[0]) == Places.START else 1
+	print("[resume] ALL OK" if bad == 0 else "[resume] %d BAD" % bad)
+	G.quit(0 if bad == 0 else 1)
+
+
+## Test (--traveltest): every stop of scripts/data/travel.gd is stood on: the place exists, the spot is
+## free, the thing to speak to is in reach, and the spot can be walked to from the place's way in.
+func _travel_test() -> void:
+	for l: String in ["elfwood", "sands", "cinder", "archive"]:
+		Save.hub_set("tale:lit:" + l, 1)
+	Save.hub_set("tale:step", Tale.LAST_STEP)
+	for stop: Dictionary in Travel.all():
+		var pid := String(stop["place"])
+		if not Places.exists(pid):
+			print("[travel] %s: NO SUCH PLACE %s" % [stop["id"], pid])
+			continue
+		enter(pid, stop["at"])
+		var free := _free_spot(stop["at"]).distance_to(stop["at"]) < 0.5
+		var reach := false
+		var marked := false
+		for p: Dictionary in _people:
+			if String(p["row"]["id"]) == String(stop["person"]):
+				marked = bool(p["row"].get("travel", false))
+				reach = (p["node"] as Node2D).position.distance_to(stop["at"]) < Hub.TALK_REACH * _k
+		print("[travel] %s in %s: %s, %d ways on" % [stop["id"], pid, "OK" if free and reach and marked else "BAD (free %s, in reach %s, marked %s)" % [free, reach, marked],
+			Travel.from(stop).size()])
+		_reach_test("travel:" + String(stop["id"]), stop["at"])
+	G.quit(0)
 
 
 ## Who travels with the knight changed (main.gd): build the place again around him, where he stands.

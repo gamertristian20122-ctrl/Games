@@ -36,6 +36,8 @@ extends RefCounted
 
 const Hub = preload("res://scripts/data/hub.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const More = preload("res://scripts/data/more.gd")          # the modules: more places, and what they add to these
+const Travel = preload("res://scripts/data/travel.gd")      # the lights the knight can travel between
 
 const START := "room"            ## where Play puts you
 
@@ -43,9 +45,26 @@ const START := "room"            ## where Play puts you
 ## The place with this id. While the story of scripts/data/tale.gd is on, the village is the
 ## town of Wickmere, the Deepwood and the beacon's hill exist, and the Elfwood's two old places
 ## are fitted to the story (who stands there, where the roads lead, how light it is).
+## (the quality pass) A place a MODULE builds (scripts/data/more.gd) takes the place of _base_place(id); and
+## as the very last thing every place, whoever built it, is handed to the travel table (the beacons and the
+## watch-fire become stops) and to every module's fit(id, place).
 static func get_place(id: String) -> Dictionary:
 	if not Tale.on():
 		return _base_place(id)
+	var place := _story_place(id)
+	if id == "village" or id == "hall":
+		place["rest_at"] = START                # Wickmere's bed is upstairs at the Flagon: a lost fight near town wakes him there
+	Travel.fit(id, place)
+	More.fit(id, place)
+	return place
+
+
+## Is there a place with this id (a save may name one that a later version took away)?
+static func exists(id: String) -> bool:
+	return ORDER.has(id) or More.has(id)
+
+
+static func _story_place(id: String) -> Dictionary:
 	match id:
 		"village":
 			return _dress_town(Tale.town())
@@ -57,7 +76,7 @@ static func get_place(id: String) -> Dictionary:
 			return Tale.suncourt()
 		"cinderpeak":
 			return Tale.cinderpeak()
-	var place := _base_place(id)
+	var place := More.build(id) if More.has(id) else _base_place(id)
 	if id == "dustwatch" or id == "world":
 		_fit_sands(id, place)
 	if id == "emberfall" or id == "world" or id == "dustwatch":
@@ -729,15 +748,105 @@ static func _base_place(id: String) -> Dictionary:
 
 
 ## Where Play puts you: your room at the Hollow Flagon, or by the fire of the camp you last walked into.
+## (the quality pass) Under the story: the place he was last in (hub.gd enter() keeps it with remember()), at
+## its fire or bed where it has one, else at its way in. A place that no longer exists, or a save from before
+## this was kept: his room.
 static func start() -> Array:
 	if Tale.on():
-		return [START, Vector2.INF]            # the story: always your room at the Hollow Flagon
+		var id := last_place("at:place")
+		if id == "" or id == START:
+			return [START, Vector2.INF]
+		var place := get_place(id)
+		var spot := rest_spot(place)
+		if spot == Vector2.INF and Save.hub_get("at:x") > 0:
+			# no fire or bed there: the spot he came into the place by (on the wide world: outside the
+			# town he last left, or where his last fight was), if it is still inside the place
+			var came := Vector2(Save.hub_get("at:x"), Save.hub_get("at:y"))
+			if (place["walk"] as Rect2).has_point(came):
+				spot = came
+		return [id, spot]
 	match Save.hub_get("camp"):
 		1:
 			return ["dustwatch", Vector2(320, 300)]
 		2:
 			return ["emberfall", Vector2(300, 292)]
 	return [START, Vector2.INF]
+
+
+## WHERE HE WAS (the quality pass). The save keeps numbers only, so a place is kept as a number: its spot in
+## ORDER (1, 2, 3 ...; never reorder that list, only add at its end), or for a module's place a number made
+## from its name (so modules may come and go without the numbers of other places moving).
+const ORDER := ["room", "hall", "village", "elfwood", "glade", "deepwood", "beacon", "world", "dustwatch", "suncourt", "emberfall", "cinderpeak"]
+
+static func place_number(id: String) -> int:
+	var i := ORDER.find(id)
+	return i + 1 if i >= 0 else 1000 + int(absi(id.hash()) % 2000000000)
+
+
+static func place_of(number: int) -> String:
+	if number >= 1 and number <= ORDER.size():
+		return ORDER[number - 1]
+	if number > 1000:
+		for id: String in More.ids():
+			if place_number(id) == number:
+				return id
+	return ""
+
+
+## The place kept under this save key ("at:place": where he is; "at:rest": the last place with a fire or bed).
+static func last_place(key: String) -> String:
+	return place_of(Save.hub_get(key))
+
+
+## hub.gd calls this on walking into a place (`at`: where he came in, INF = its own way in): it is where Play starts next time, it is marked as seen
+## (the world map screen asks "seen:place:<id>"), and a place to rest becomes where a lost fight wakes him.
+## A place with "pass": true is not kept (a test place, a cutscene's stage).
+static func remember(id: String, place: Dictionary, at: Vector2 = Vector2.INF) -> void:
+	if bool(place.get("pass", false)) or not exists(id):
+		return
+	var n := place_number(id)
+	var moved := Save.hub_get("at:place") != n
+	if moved:
+		Save.hub_set("at:place", n)
+	var x := 0 if at == Vector2.INF else roundi(at.x)
+	var y := 0 if at == Vector2.INF else roundi(at.y)
+	if Save.hub_get("at:x") != x or Save.hub_get("at:y") != y:
+		Save.hub_set("at:x", x)
+		Save.hub_set("at:y", y)
+	if Save.hub_get("seen:place:" + id) == 0:
+		Save.hub_set("seen:place:" + id, 1)
+	var rest := String(place.get("rest_at", id if has_rest(place) else ""))       # ("rest_at": another place's bed counts for this one)
+	if rest != "" and Save.hub_get("at:rest") != place_number(rest):
+		Save.hub_set("at:rest", place_number(rest))
+	if moved:
+		Save.flush()                       # (written at once: closing the game in the next room must not lose the way here)
+
+
+## Has this place a bed or a fire to rest at (a person with the role "bed")?
+static func has_rest(place: Dictionary) -> bool:
+	for row: Dictionary in place.get("people", []):
+		if String(row.get("role", "")) == "bed":
+			return true
+	return false
+
+
+## Where he stands when he starts or wakes in this place: just south of its bed or fire, else its way in.
+## ("wake": Vector2 on the place says so outright.)
+static func rest_spot(place: Dictionary) -> Vector2:
+	if place.has("wake"):
+		return place["wake"]
+	for row: Dictionary in place.get("people", []):
+		if String(row.get("role", "")) == "bed" and not place.has("art"):
+			return (row["pos"] as Vector2) + Vector2(0, 16)
+	return Vector2.INF
+
+
+## Where a lost fight wakes him: the last place with a fire or bed he walked into (his room before any).
+static func wake() -> Array:
+	var id := last_place("at:rest") if Tale.on() else ""
+	if id == "" or id == START:
+		return [START, Vector2.INF]
+	return [id, rest_spot(get_place(id))]
 
 
 ## The giant map. West: the woods round Hollow Hill. Middle and south-east: the sands. North-east: the
