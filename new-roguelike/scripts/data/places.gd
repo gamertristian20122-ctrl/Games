@@ -756,7 +756,15 @@ static func start() -> Array:
 		var id := last_place("at:place")
 		if id == "" or id == START:
 			return [START, Vector2.INF]
-		return [id, rest_spot(get_place(id))]
+		var place := get_place(id)
+		var spot := rest_spot(place)
+		if spot == Vector2.INF and Save.hub_get("at:x") > 0:
+			# no fire or bed there: the spot he came into the place by (on the wide world: outside the
+			# town he last left, or where his last fight was), if it is still inside the place
+			var came := Vector2(Save.hub_get("at:x"), Save.hub_get("at:y"))
+			if (place["walk"] as Rect2).has_point(came):
+				spot = came
+		return [id, spot]
 	match Save.hub_get("camp"):
 		1:
 			return ["dustwatch", Vector2(320, 300)]
@@ -790,20 +798,28 @@ static func last_place(key: String) -> String:
 	return place_of(Save.hub_get(key))
 
 
-## hub.gd calls this on walking into a place: it is where Play starts next time, it is marked as seen
+## hub.gd calls this on walking into a place (`at`: where he came in, INF = its own way in): it is where Play starts next time, it is marked as seen
 ## (the world map screen asks "seen:place:<id>"), and a place to rest becomes where a lost fight wakes him.
 ## A place with "pass": true is not kept (a test place, a cutscene's stage).
-static func remember(id: String, place: Dictionary) -> void:
+static func remember(id: String, place: Dictionary, at: Vector2 = Vector2.INF) -> void:
 	if bool(place.get("pass", false)) or not exists(id):
 		return
 	var n := place_number(id)
-	if Save.hub_get("at:place") != n:
+	var moved := Save.hub_get("at:place") != n
+	if moved:
 		Save.hub_set("at:place", n)
+	var x := 0 if at == Vector2.INF else roundi(at.x)
+	var y := 0 if at == Vector2.INF else roundi(at.y)
+	if Save.hub_get("at:x") != x or Save.hub_get("at:y") != y:
+		Save.hub_set("at:x", x)
+		Save.hub_set("at:y", y)
 	if Save.hub_get("seen:place:" + id) == 0:
 		Save.hub_set("seen:place:" + id, 1)
 	var rest := String(place.get("rest_at", id if has_rest(place) else ""))       # ("rest_at": another place's bed counts for this one)
 	if rest != "" and Save.hub_get("at:rest") != place_number(rest):
 		Save.hub_set("at:rest", place_number(rest))
+	if moved:
+		Save.flush()                       # (written at once: closing the game in the next room must not lose the way here)
 
 
 ## Has this place a bed or a fire to rest at (a person with the role "bed")?

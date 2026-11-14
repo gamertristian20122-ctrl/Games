@@ -120,6 +120,8 @@ func _ready() -> void:
 	Arms.ensure()                      # (v0.39.0) old saves: what the level taught stays taught; best arms worn
 	for land: String in G.arg("lit").split(",", false):     # test: --lit=elfwood,sands : those beacons burn
 		Save.hub_set("tale:lit:" + land, 1)
+	for key: String in G.arg("set").split(",", false):     # test: --set=dkey:mine,dlever:a : those save keys are 1 (a key held, a lever pulled, a chest opened)
+		Save.hub_set(key, 1)
 	if G.arg("lvl") != "":            # test: --lvl=<n> : the knight's level
 		Save.hub_set("rpg:lvl", int(G.arg("lvl")))
 	if G.arg("coins") != "":          # test: --coins=<n> in the purse
@@ -208,6 +210,8 @@ func _ready() -> void:
 	enter(String(begin[0]), begin[1])
 	if G.flag("kittest"):            # test: --hub=kit_test --kittest : the kit's pieces are USED one after the other and checked
 		_kit_test.call_deferred()
+	if G.flag("resumetest"):         # test: --resumetest : where Play and a lost fight would put him, place after place
+		_resume_test.call_deferred()
 	if G.flag("traveltest"):         # test: --traveltest : every stop of travel.gd is stood on and checked
 		_travel_test.call_deferred()
 	if G.arg("hubfight") != "":          # test: that roamer touches him after a second (with --autobattle a bot fights)
@@ -295,7 +299,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	if not _quiet:
 		_ambushed.clear()
 		if Tale.on():
-			Places.remember(id, place)         # Play starts here next time; a fire or bed here is where a lost fight wakes him
+			Places.remember(id, place, at)      # Play starts here next time; a fire or bed here is where a lost fight wakes him
 	_blocks = (place.get("blocks", []) as Array).duplicate()
 	if _built_inside():
 		_blocks = Interior.blocks(place)          # the 3D look builds the room for real: walls and furniture block (scripts/hub/arch/interior.gd)
@@ -1597,6 +1601,12 @@ func _tick(delta: float) -> void:
 		move = Controls.move
 		if G.flag("wildtest"):           # test: --wildtest walks him east across the map
 			move = Vector2(1.0, 0.1)
+			if G.arg("wildtest").contains(","):      # test: --wildtest=x,y : he walks in a ring round that spot of the map
+				var ring := G.arg("wildtest").split(",")
+				var mid := Vector2(float(ring[0]), float(ring[1]))
+				if _hero.position.distance_to(mid) > 90.0:
+					_hero.position = mid
+				move = Vector2.RIGHT.rotated(_time * 2.4)
 		if not _tour.is_empty():
 			move = _tour_step(delta)
 	var moving := move.length() > 0.12
@@ -2107,6 +2117,8 @@ func _build_roamers() -> void:
 	_roam_grace = Roamers.GRACE
 	_wild_left = randf_range(Roamers.STEPS_MIN, Roamers.STEPS_MAX)
 	_wild_last = Vector2.INF
+	Roamers.roll = 0
+	Roamers.night = false
 	if place_id == "world" and not Roamers.RANDOM:
 		for i in Roamers.SPOTS.size():
 			if not Roamers.here(i):
@@ -2231,16 +2243,26 @@ func _wild_steps(_delta: float) -> void:
 		return
 	var walked := _hero.position.distance_to(_wild_last)
 	_wild_last = _hero.position
+	if G.flag("wildtest") and int(_time) != int(_time - _delta):
+		print("[wild] at %s, %d px to go, %s%s" % [_hero.position.round(), int(_wild_left), Roamers.kind_at(_hero.position), ", lit" if Roamers.lit_at(_hero.position) else ""])
 	if walked <= 0.0 or walked > 40.0 or _hero.position.distance_to(Roamers.SAFE_GATE) < Roamers.SAFE_R:
 		return
-	_wild_left -= walked
+	# (the quality pass) a land whose beacon burns is safer: fights are 40% rarer there (he covers 1.6 times
+	# the ground for each), and the first time he walks in it after the lighting the map says so
+	var safer := Roamers.lit_at(_hero.position)
+	if safer and Tale.on() and Save.hub_get("seen:safer:" + Roamers.land_at(_hero.position)) == 0:
+		Save.hub_set("seen:safer:" + Roamers.land_at(_hero.position), 1)
+		say(Tale.KIT["safer"])
+	_wild_left -= walked / (Roamers.LIT_EASE if safer else 1.0)
 	if _wild_left > 0.0:
 		return
+	Roamers.night = _is_night()             # (who comes depends on the hour: scripts/data/roamers.gd "night")
+	Roamers.roll = randi() % 60             # (and which of them leads changes from fight to fight)
 	var spot := Roamers.spot_for(_hero.position)
 	_wild_left = randf_range(Roamers.STEPS_MIN, Roamers.STEPS_MAX)
 	if spot < 0:
 		return
-	print("[wild] a fight starts: spot %d (%s) at %s" % [spot, Roamers.kind_at(_hero.position), _hero.position])
+	print("[wild] a fight starts: spot %d (%s%s) at %s" % [spot, Roamers.SPOTS[spot]["kind"], ", by night" if Roamers.night else "", _hero.position])
 	Sfx.play("enemy_shoot", -6.0, 0.05, 0.7)
 	_ask_fight("hub_encounter", spot, 0.35)
 
@@ -2390,6 +2412,41 @@ func _kit_test() -> void:
 	check.call("... and asks for a fight", heard.size() >= 1 and ["tale_do", "hub_encounter"].has(String(heard[0][0])))
 	print("[kit] ALL OK" if bad.is_empty() else "[kit] %d BAD" % bad.size())
 	G.quit(0 if bad.is_empty() else 1)
+
+
+## Test (--resumetest --nosave): he walks into place after place; after each, where would Play start and
+## where would a lost fight wake him? "[resume] ..." lines, then "[resume] ALL OK".
+func _resume_test() -> void:
+	Save.hub_set("tale:step", Tale.LAST_STEP)
+	var bad := 0
+	# [place walked into, where Play starts, where a lost fight wakes him]
+	for row: Array in [["room", "room", "room"], ["village", "village", "room"], ["elfwood", "elfwood", "room"], ["deepwood", "deepwood", "room"],
+			["world", "world", "room"], ["dustwatch", "dustwatch", "dustwatch"], ["suncourt", "suncourt", "dustwatch"], ["world", "world", "dustwatch"],
+			["emberfall", "emberfall", "emberfall"], ["cinderpeak", "cinderpeak", "emberfall"], ["village", "village", "room"]]:
+		enter(String(row[0]))
+		var play := Places.start()
+		var wake := Places.wake()
+		var spot_ok := true
+		for got: Array in [play, wake]:
+			if got[1] != Vector2.INF:
+				var there := Places.get_place(String(got[0]))
+				spot_ok = spot_ok and (there["walk"] as Rect2).has_point(got[1])
+				if String(got[0]) == place_id:
+					spot_ok = spot_ok and _free_spot(got[1]).distance_to(got[1]) < 0.5
+		var ok := String(play[0]) == String(row[1]) and String(wake[0]) == String(row[2]) and spot_ok and Save.hub_get("seen:place:" + String(row[0])) == 1
+		print("[resume] in %s: Play -> %s %s, a lost fight -> %s %s: %s" % [row[0], play[0], play[1] if play[1] != Vector2.INF else "(its way in)",
+			wake[0], wake[1] if wake[1] != Vector2.INF else "(its way in)", "OK" if ok else "BAD"])
+		bad += 0 if ok else 1
+	enter("world", Vector2(1500, 800))
+	var out := Places.start()
+	print("[resume] on the wide world at (1500, 800): Play -> %s %s: %s" % [out[0], out[1], "OK" if String(out[0]) == "world" and out[1] == Vector2(1500, 800) else "BAD"])
+	bad += 0 if String(out[0]) == "world" and out[1] == Vector2(1500, 800) else 1
+	Save.hub_set("at:place", 999)          # a save that names a place this build does not have
+	var lost := Places.start()
+	print("[resume] an unknown place -> %s: %s" % [lost[0], "OK" if String(lost[0]) == Places.START else "BAD"])
+	bad += 0 if String(lost[0]) == Places.START else 1
+	print("[resume] ALL OK" if bad == 0 else "[resume] %d BAD" % bad)
+	G.quit(0 if bad == 0 else 1)
 
 
 ## Test (--traveltest): every stop of scripts/data/travel.gd is stood on: the place exists, the spot is
