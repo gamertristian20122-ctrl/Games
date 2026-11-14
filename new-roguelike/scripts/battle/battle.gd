@@ -36,6 +36,8 @@ const Num = preload("res://scripts/battle/anim_numbers.gd")
 const BUI = preload("res://scripts/battle/battle_ui.gd")
 const Tale = preload("res://scripts/data/tale.gd")
 const Looks = preload("res://scripts/data/battle_looks.gd")   ## boss staging, aiming colours, the new words
+const Lessons = preload("res://scripts/data/lessons.gd")      ## (P08) first-fight lessons and the Lantern's words
+const LessonCard = preload("res://scripts/ui/kit/lesson.gd")
 ## FAST-FORWARD: while the fight plays out (not while you choose), holding Space, Shift, Enter, the
 ## mouse button, a finger on the screen, or A / the right shoulder of a pad plays it this much faster.
 const FF_SPEED := 3.0
@@ -128,6 +130,11 @@ var _aim_pool: MeshInstance3D      ## and the soft pool of light inside it
 var _aim_shown := {}               ## who wears the aiming look now ({} = nobody)
 var _pick := 1.0                   ## the speed plate's share of the time scale (1 while you choose)
 var _stop_pick := true             ## may the speed plate hurry the present hit-stop (never a slow-motion moment)
+var _lamp: OmniLight3D             ## (P08) the Lantern's warm light over whoever carries it
+var _lamp_unit := {}
+var _lantern_row: Button
+var _passing := false              ## the Lantern is changing hands (the orders wait)
+var _lesson_open := false
 
 ## PAUSE (main.gd sets it while its pause screen is open over a battle): the whole battle stands
 ## still: no turn begins, no blow lands, nothing on the stage moves, and no button of it answers.
@@ -177,6 +184,9 @@ func _ready() -> void:
 		if night and Stage.LOOKS.has(look + "_night"):
 			look += "_night"
 		fight.call("setup", Battles.party(), Battles.pack_for(spot, rng), rng.randi())
+	fight.set("plain_item_turns", false)      # (P08: _play() shows every event of an item's turn)
+	if story == "" and not _auto:
+		Save.hub_set("wild_fights", int(Save.hub_get("wild_fights")) + 1)     # (P08: the "speed" lesson)
 	_snapshot()
 	_load_speed()
 	stage = Stage.new()
@@ -532,7 +542,10 @@ func _build_screen() -> void:
 		var bar := UI.bar("foe", 22.0 if _ph else 32.0)
 		bar.call("set_value", float(unit["hp"]), float(unit["max_hp"]), false)
 		_root.add_child(bar)
-		_tags.append({"unit": unit, "button": button, "bar": bar})
+		var marks: Control = BUI.FoeMarks.new()
+		marks.call("setup", unit, Lessons.word("intent_short"))
+		_root.add_child(marks)
+		_tags.append({"unit": unit, "button": button, "bar": bar, "marks": marks})
 		if bool(unit.get("boss", false)):
 			bar.visible = false            # a boss has its long bar at the top instead
 			_make_boss_bar(unit)
@@ -740,6 +753,7 @@ func _refresh(acting: Dictionary = {}) -> void:
 	for card: Control in _cards:
 		card.call("refresh", true)
 		card.call("set_acting", is_same(card.get("unit"), acting))
+	_sync_lantern()
 	for tag: Dictionary in _tags:
 		var u: Dictionary = tag["unit"]
 		BUI.set_bar(tag["bar"], float(u["hp"]), float(u["max_hp"]))
@@ -760,7 +774,7 @@ func _refresh(acting: Dictionary = {}) -> void:
 		return
 	var line: Array = [acting]
 	line.append_array(fight.call("upcoming"))
-	_rail.call("set_line", line, int(fight.round_no))
+	_rail.call("set_line", line, int(fight.round_no), fight.call("upcoming_next"))
 	_layout()
 
 
@@ -811,7 +825,7 @@ func _set_aim(aim: String) -> void:
 		b.focus_mode = Control.FOCUS_ALL if can else Control.FOCUS_NONE
 	for card: Control in _cards:
 		var b: Button = card.get("button")
-		var can := aim == "friend" and int(card.get("unit")["hp"]) > 0
+		var can := aim == "friend" and (int(card.get("unit")["hp"]) > 0) != _raising()
 		b.disabled = not can
 		b.focus_mode = Control.FOCUS_ALL if can else Control.FOCUS_NONE
 		if not can:
@@ -974,6 +988,18 @@ func _show_commands(back: bool = false) -> void:
 		list = grid
 	else:
 		list = UI.vbox(0)
+	# (P08) the carrier's FLARE, gold, at the very top when the flame is full
+	var flare: Dictionary = fight.call("flare_for", _acting)
+	var flare_row: Button = null
+	if not flare.is_empty():
+		var fl := flare
+		flare_row = _row(String(flare["name"]), UI.icon_or([_skill_icon(flare), UI.ICON_SKILLS]), func() -> void: _on_skill(fl), String(Lessons.word("flare_text")), UI.C_GOLD)
+		flare_row.set_meta("text", String(flare.get("text", "")))
+		for key: String in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+			flare_row.add_theme_color_override(key, UI.C_GOLD)
+		if _ph:
+			flare_row.custom_minimum_size = Vector2(0, 20)
+		page.add_child(flare_row)                  # (between the head and the list of orders)
 	page.add_child(list)
 	var attack := _row("Attack", UI.ICON_ATTACK, _on_attack)
 	var skills := _row("Skills", UI.ICON_SKILLS, func() -> void: _on_skills_row())
@@ -990,6 +1016,17 @@ func _show_commands(back: bool = false) -> void:
 	flee.set_meta("text", "Try to run from the fight.")
 	for b: Button in [attack, skills, items, guard, flee]:
 		list.add_child(b)
+	# (P08) the sixth order: take the Lantern (free, once a round; the turn is not spent)
+	_lantern_row = null
+	if (fight.call("alive", fight.party) as Array).size() > 1:
+		var lr := _row(String(Lessons.word("lantern")), "", func() -> void: _on_lantern())
+		lr.icon = BUI.lantern_tex()
+		lr.expand_icon = false
+		lr.set_meta("text", String(Lessons.word("lantern_text")))
+		if not bool(fight.call("can_take", _acting)):
+			_refuse(lr, String(Lessons.word("lantern_no")) if not is_same(fight.get("lantern"), _acting) else String(Lessons.word("lantern_have")))
+		list.add_child(lr)
+		_lantern_row = lr
 	if Supplies.bag().is_empty():
 		_refuse(items, "Your pack is empty. Sellers in town have herbs and tonics.")
 	var warn := ""
@@ -1007,7 +1044,10 @@ func _show_commands(back: bool = false) -> void:
 	_warn_on = warn != ""
 	(_warn.get_child(0) as Label).text = warn
 	_set_help("commands")
-	(skills if back and _came_from == "skills" else attack).grab_focus.call_deferred()
+	if flare_row != null and not back:
+		flare_row.grab_focus.call_deferred()
+	else:
+		(skills if back and _came_from == "skills" else attack).grab_focus.call_deferred()
 
 
 var _items_row: Button
@@ -1033,9 +1073,18 @@ func _show_items(back: bool = false) -> void:
 	var first: Button = null
 	for pair: Array in Supplies.bag():
 		var item: Dictionary = pair[0]
-		var icon: String = {"herb": "icon_misers_flask", "tonic": "icon_sparking_tonic", "elixir": "icon_swift_tonic"}.get(String(item["id"]), "icon_misers_flask")
-		var b := _row(String(item["name"]), icon, func() -> void: _on_item(item), "x%d" % int(pair[1]), UI.C_GOLD)
+		var icon: String = {"herb": "icon_misers_flask", "tonic": "icon_sparking_tonic", "elixir": "icon_swift_tonic", "ember": "icon_pyre_kindling", "salt": "icon_wardwater"}.get(String(item["id"]), "icon_misers_flask")
+		if not Art.has(icon):
+			icon = "icon_misers_flask"
+		var b := _row(String(item["name"]), icon, Callable(), "x%d" % int(pair[1]), UI.C_GOLD)
+		b.pressed.connect(func() -> void:
+			if not _refused(b):
+				_on_item(item))
 		b.set_meta("text", String(item["text"]))
+		# (P08) an herb nobody needs is greyed, with the reason
+		var why := _item_why(item)
+		if why != "":
+			_refuse(b, why)
 		if _ph:
 			b.custom_minimum_size.x = PHONE_LIST_W - 8.0
 		if first == null:
@@ -1056,6 +1105,11 @@ func _on_item(item: Dictionary) -> void:
 	_waiting_skill = {}
 	_waiting_item = item
 	if String(item.get("aim", "friend")) == "party":
+		# (P08) never a wasted item: the reason instead, and the turn is not spent
+		var why := String(fight.call("useful", _acting, {"do": "item", "item": item, "target": null}))
+		if why != "":
+			_say_refusal(why)
+			return
 		_choose({"do": "item", "item": item, "target": null})
 	else:
 		_ask_target("friend", "Tap who gets it.")
@@ -1158,7 +1212,7 @@ func _on_skill(skill: Dictionary) -> void:
 	_waiting_skill = skill
 	_waiting_item = {}
 	match String(skill.get("aim", "foe")):
-		"foes", "self":
+		"foes", "self", "party":
 			_choose({"do": "skill", "skill": skill, "target": null})
 		"friend":
 			_ask_target("friend", "Tap who gets it.")
@@ -1171,6 +1225,12 @@ func _on_skill(skill: Dictionary) -> void:
 ## between them, Enter or a click picks, Esc goes back.
 func _ask_target(aim: String, words: String) -> void:
 	var choices: Array = fight.call("alive", fight.foes if aim == "foe" else fight.party)
+	if aim == "friend" and _raising():
+		# (P08) a waking item or skill aims at the FALLEN
+		choices = (fight.party as Array).filter(func(u: Dictionary) -> bool: return int(u["hp"]) <= 0)
+		if choices.is_empty():
+			_say_refusal(String(Battles.SAY["standing"]))
+			return
 	if choices.size() == 1:
 		_target_picked(choices[0], aim)
 		return
@@ -1202,8 +1262,9 @@ func _ask_target(aim: String, words: String) -> void:
 				(tag["button"] as Button).grab_focus.call_deferred()
 				break
 	else:
+		var raising := _raising()
 		for card: Control in _cards:
-			if int(card.get("unit")["hp"]) > 0:
+			if (int(card.get("unit")["hp"]) > 0) != raising:
 				(card.get("button") as Button).grab_focus.call_deferred()
 				break
 
@@ -1235,8 +1296,9 @@ func _cycle(step: int) -> void:
 				list.append(tag["button"])
 		list.sort_custom(func(a: Button, b: Button) -> bool: return a.position.x < b.position.x)
 	else:
+		var raising := _raising()
 		for card: Control in _cards:
-			if int(card.get("unit")["hp"]) > 0:
+			if (int(card.get("unit")["hp"]) > 0) != raising:
 				list.append(card.get("button"))
 	if list.is_empty():
 		return
@@ -1371,6 +1433,17 @@ func _target_picked(unit: Dictionary, forced_aim: String = "") -> void:
 	var aim := forced_aim if forced_aim != "" else _aim
 	if aim == "" or _acting.is_empty():
 		return
+	# (P08) never a wasted order: an herb on the whole, a mend on the unhurt is refused, the turn kept
+	var want := {"do": "attack", "target": unit}
+	if not _waiting_item.is_empty():
+		want = {"do": "item", "item": _waiting_item, "target": unit}
+	elif not _waiting_skill.is_empty():
+		want = {"do": "skill", "skill": _waiting_skill, "target": unit}
+	if String(want["do"]) != "attack":
+		var why := String(fight.call("useful", _acting, want))
+		if why != "":
+			_say_refusal(why)
+			return
 	Sfx.play("ui_click")
 	if not _waiting_item.is_empty():
 		_choose({"do": "item", "item": _waiting_item, "target": unit})
@@ -1578,6 +1651,7 @@ func _run(title: String) -> void:
 			else:
 				_acting = who
 				_say("")
+				await _lessons_for(who)            # (P08: a first-fight lesson waits for the player first)
 				_show_commands()
 				_take_shot()
 				action = await _picked
@@ -1668,14 +1742,23 @@ func _play(events: Array) -> void:
 			await _wait(0.5)
 		"item":
 			_say("%s uses a %s." % [String(who["name"]), String(first["item"]["name"])])
-			Sfx.play("heart_pickup", -6.0)
+			Sfx.play("potion", -5.0)
 			for e: Dictionary in events:
+				if String(e["type"]) != "item":
+					continue            # (P08: statuses, burns ... come after, in _play_extras)
 				var t: Dictionary = e["target"]
 				var at: Vector3 = (t["home"] as Vector3) + Vector3(0.0, float(t["top"]) * 0.5, 0.15)
 				stage.call("burst", at, Color(0.55, 0.75, 1.0) if bool(e["mana"]) else Color(0.6, 1.0, 0.55), 0.7, 1.2)
-				_float(t, "+%d" % int(e["amount"]), UI.C_MP_A if bool(e["mana"]) else UI.C_GREEN)
+				if bool(e.get("raised", false)):
+					_stand_up(t)
+				elif bool(e.get("cure", false)):
+					pass
+				else:
+					_float(t, "+%d" % int(e["amount"]), UI.C_MP_A if bool(e["mana"]) else UI.C_GREEN)
 			_refresh()
 			await _wait(0.8)
+	# (P08) what the rules added to the turn: statuses, burns, the Lantern, a phase, the raised
+	await _play_extras(events)
 	# a turn is over when every fall it caused has been shown
 	var guard_t := 0.0
 	while _dying > 0 and guard_t < 4.0:
@@ -1698,11 +1781,284 @@ func _play_quick(events: Array) -> void:
 				if bool(e["dead"]) and String(e["target"]["side"]) == "foes" and is_instance_valid(e["target"]["node"]):
 					(e["target"]["node"] as Node3D).visible = false
 				await _wait(0.1)
+			"burn":
+				_refresh()
+				if bool(e["dead"]) and String(e["target"]["side"]) == "foes" and is_instance_valid(e["target"]["node"]):
+					(e["target"]["node"] as Node3D).visible = false
+				await _wait(0.05)
 			"flee", "say":
 				await _wait(0.3)
 			_:
 				await _wait(0.05)
+	_sync_lantern()
 	_fx = []
+
+
+# ------------------------------------------------------------------ the Lantern, statuses, lessons (quality pass P08)
+## Shows what the rules added to a turn after its own move (fight.gd "NEW EVENTS"): a status put on or
+## taken off, a burn's tick (and the fall it may cause), the Lantern changing hands, the flame, a
+## boss's next phase, the whole side guarding, a fallen friend standing up, lines said mid-turn.
+func _play_extras(events: Array) -> void:
+	var first_type := String((events[0] as Dictionary).get("type", "")) if not events.is_empty() else ""
+	for i in range(1, events.size()):
+		var e: Dictionary = events[i]
+		match String(e["type"]):
+			"status":
+				var t: Dictionary = e["target"]
+				if int(e["turns"]) <= 0 or int(t.get("hp", 0)) <= 0:
+					_refresh_one(t)
+					continue
+				var row: Dictionary = Battles.STATUS.get(String(e["id"]), {})
+				var col: Color = BUI.STATUS_COL.get(String(e["id"]), UI.C_PARCH)
+				_float(t, String(row.get("name", e["id"])), col, {"hold": 0.15})
+				Sfx.play("debuff" if bool(row.get("bad", false)) else "buff", -8.0)
+				_tint_pulse(t, col)
+				_refresh_one(t)
+				await _wait(0.18)
+			"burn":
+				var t: Dictionary = e["target"]
+				if not is_instance_valid(t.get("node")):
+					continue
+				var col: Color = BUI.STATUS_COL.get(String(e.get("id", "burn")), Color(1.0, 0.5, 0.18))
+				_float(t, "%d" % int(e["amount"]), col, {"dir": 0.0})
+				_tint_pulse(t, col)
+				Sfx.play("fire", -10.0)
+				_refresh_one(t)
+				if String(t["side"]) == "party":
+					_row_jolt(t, 0.1)
+				await _wait(0.3)
+				if bool(e["dead"]):
+					_die(t, {})
+			"lantern":
+				_lantern_to(e["who"], true)
+				if bool(e.get("fell", false)):
+					_say(String(Lessons.word("takes")) % String(e["who"]["name"]))
+				await _wait(0.35)
+			"flame":
+				_sync_lantern()
+				var holder: Dictionary = e.get("holder", {})
+				if int(e["n"]) >= Battles.FLAME_MAX and int(e["was"]) < Battles.FLAME_MAX and not holder.is_empty():
+					_float(holder, String(Lessons.word("flare_ready")), UI.C_GOLD, {"hold": 0.3})
+					Sfx.play("flare", -10.0)
+					_lamp_flare(1.6)
+			"phase":
+				var who: Dictionary = e["who"]
+				if is_instance_valid(who.get("node")):
+					track((who["home"] as Vector3) + Vector3(0.0, float(who["top"]) * 0.5, 0.0), 1.3, -0.25)
+					shake(0.35)
+					Sfx.play("boss_roar", -6.0)
+				await _wait(0.6)
+			"rally":
+				for u: Dictionary in fight.call("alive", fight.party if String(e["who"]["side"]) == "party" else fight.foes):
+					_float(u, "Guard", UI.C_STEEL)
+			"heal":
+				if bool(e.get("raised", false)):
+					_stand_up(e["target"])
+			"say":
+				if String(e.get("text", "")) != "" and first_type != "say":
+					_say(String(e["text"]))
+					await _wait(0.55)
+	_sync_lantern()
+
+
+## The fighter's own pixels flash the colour of a status for a moment (the sprite3 shader's flash).
+func _tint_pulse(u: Dictionary, col: Color) -> void:
+	var node: Node = u.get("node")
+	if not is_instance_valid(node) or _speed > 4.0:
+		return
+	node.call("set_flash", 0.4 * _flash_k(), col, 0.0)
+	_later(0.22, node, func(n: Node) -> void: n.call("set_flash", 0.0))
+
+
+## A fallen friend stands up again (the reverse of anim_moves.gd collapse()).
+func _stand_up(u: Dictionary) -> void:
+	var node: Node = u.get("node")
+	var a: Node = u.get("actor")
+	if not is_instance_valid(node) or not is_instance_valid(a):
+		return
+	_float(u, String(Lessons.word("raised")), UI.C_GOOD, {"hold": 0.3})
+	Sfx.play("revive", -4.0)
+	stage.call("ground_glow", u["home"], Color(1.0, 0.85, 0.5, 0.8), 1.4, 0.6)
+	if Art.has_anim(String(u["sprite"]), "idle"):
+		node.call("play", "idle")
+	for c in node.get_children():
+		if c is Node3D and (c == u.get("sword") or (u.get("hands", []) as Array).has(c)):
+			(c as Node3D).visible = true
+	var tw := a.create_tween().set_parallel(true)
+	tw.tween_property(a, "lean", 0.0, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(a, "kick", Vector3.ZERO, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_method(func(t: float) -> void: a.set("lift", 0.3 * 4.0 * t * (1.0 - t)), 0.0, 1.0, 0.35)
+	tw.chain().tween_callback(func() -> void: a.set("breath", 0.022))
+	_refresh_one(u)
+
+
+## The cards' lantern and flames, and the warm light over whoever carries it.
+func _sync_lantern() -> void:
+	var holder: Dictionary = fight.get("lantern")
+	var flame := int(fight.get("flame"))
+	for card: Control in _cards:
+		var on := is_same(card.get("unit"), holder)
+		if bool(card.get("holder")) != on or int(card.get("flame")) != flame:
+			card.set("holder", on)
+			card.set("flame", flame)
+			card.queue_redraw()
+	if not is_same(holder, _lamp_unit):
+		_lantern_to(holder, false)
+
+
+## The Lantern's light: a warm OmniLight3D at the carrier's shoulder; it glides to a new carrier.
+func _lantern_to(u: Dictionary, show: bool) -> void:
+	_lamp_unit = u
+	if stage == null or u.is_empty() or not (u.get("home") is Vector3):
+		return
+	var at: Vector3 = (u["home"] as Vector3) + Vector3(0.35, float(u.get("top", 1.6)) * 0.75, 0.6)
+	if _lamp == null:
+		_lamp = OmniLight3D.new()
+		_lamp.light_color = Color(1.0, 0.72, 0.38)
+		_lamp.omni_range = 3.2
+		_lamp.light_energy = 1.1
+		_lamp.shadow_enabled = false
+		stage.add_child(_lamp)
+		_lamp.position = at
+	if not show or _speed > 4.0:
+		_lamp.position = at
+		_sync_lantern_cards(u)
+		return
+	_float(u, String(Lessons.word("lantern_taken")), UI.C_GOLD, {"hold": 0.2})
+	Sfx.play("lantern_pass", -4.0)
+	var tw := _lamp.create_tween()
+	tw.tween_property(_lamp, "position", at + Vector3(0.0, 0.8, 0.0), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_lamp, "position", at, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_lamp_flare(1.0)
+	stage.call("ground_glow", u["home"], Color(1.0, 0.75, 0.4, 0.7), 1.1, 0.5)
+	_sync_lantern_cards(u)
+
+
+func _sync_lantern_cards(u: Dictionary) -> void:
+	for card: Control in _cards:
+		card.set("holder", is_same(card.get("unit"), u))
+		card.set("flame", int(fight.get("flame")))
+		card.queue_redraw()
+
+
+## The Lantern blazes up for a moment (a pass, a full flame).
+func _lamp_flare(mult: float) -> void:
+	if _lamp == null or _speed > 4.0:
+		return
+	var tw := _lamp.create_tween()
+	tw.tween_property(_lamp, "light_energy", 1.1 + 2.4 * mult, 0.08)
+	tw.tween_property(_lamp, "light_energy", 1.1, 0.5)
+
+
+## The "Lantern" order: the one choosing takes it. Free: the orders come back, the turn goes on.
+func _on_lantern() -> void:
+	if not is_instance_valid(_lantern_row) or _refused(_lantern_row) or _passing:
+		return
+	var events: Array = fight.call("take_lantern", _acting)
+	if events.is_empty():
+		return
+	_passing = true
+	_clear_menu()
+	_menu.visible = false
+	_set_help("")
+	_say(String(Lessons.word("takes")) % String(_acting["name"]))
+	_lantern_to(_acting, true)
+	_refresh(_acting)
+	await _wait(0.6)
+	_passing = false
+	if not _acting.is_empty() and not _over:
+		_show_commands()
+
+
+## Does the order being aimed stand a FALLEN friend up?
+func _raising() -> bool:
+	if not _waiting_item.is_empty():
+		return _waiting_item.has("raise")
+	return not _waiting_skill.is_empty() and _waiting_skill.has("raise") and String(_waiting_skill.get("aim", "")) == "friend"
+
+
+## An order that would be wasted: the refusal sound and its reason; the turn is not spent.
+func _say_refusal(why: String) -> void:
+	Sfx.play("shop_deny")
+	_ribbon.call("say", why, 1.6)
+	if is_instance_valid(_detail):
+		_detail.text = why
+		_detail.modulate = UI.C_BAD
+
+
+## The reason an item from the pack would do nothing for anybody ("" = it would help somebody).
+func _item_why(item: Dictionary) -> String:
+	var first := ""
+	var who: Array = [_acting]
+	who.append_array(fight.party)
+	for u: Dictionary in who:
+		var why := String(fight.call("useful", _acting, {"do": "item", "item": item, "target": u}))
+		if why == "":
+			return ""
+		if first == "":
+			first = why
+	return first
+
+
+## The aiming plate's lines under a monster's bar: what it means to do, its kind (??? until one was
+## beaten), the damage the order being aimed would do.
+func _plate_lines(u: Dictionary) -> Array:
+	var out: Array = []
+	var it: Dictionary = u.get("intent", {})
+	if not it.is_empty() and not bool(it.get("done", false)) and String(it.get("text", "")) != "":
+		out.append([String(it["text"]), BUI.intent_col(String(it.get("icon", ""))).lerp(UI.C_PARCH, 0.3)])
+	for p: Array in BUI.pips_of(u):
+		var row: Dictionary = Battles.STATUS.get(String(p[0]), {})
+		if not row.is_empty():
+			out.append(["%s (%d): %s" % [String(row.get("name", p[0])), int(p[2]), String(row.get("text", ""))], p[1]])
+	var known := int(Save.hub_get("kills:" + String(u["id"]))) > 0
+	var line := String(u.get("line", ""))
+	if line != "" and not _ph:
+		out.append([line if known else String(Lessons.word("unknown_kit")), UI.C_DIM])
+	if not _acting.is_empty() and _waiting_item.is_empty():
+		var power := 1.0
+		var opts := {}
+		if not _waiting_skill.is_empty():
+			power = float(_waiting_skill.get("power", 1.0))
+			opts = {"pierce": bool(_waiting_skill.get("pierce", false)), "bonus": _waiting_skill.get("bonus", {})}
+		if power > 0.0:
+			var r: Array = fight.call("preview", _acting, u, power, opts)
+			out.append([String(Lessons.word("preview")) % [int(r[0]), int(r[1])], UI.C_GOLD])
+	return out
+
+
+## LESSONS (scripts/data/lessons.gd): one card, once, while Settings > Tutorial hints is on. Waits for
+## the player to close it. Never in a test run (the bot) and never twice.
+func _lesson(id: String) -> void:
+	if _auto or _lesson_open or Lessons.seen(id) or Save.setting("hints") == false or G.flag("nolessons"):
+		return
+	var row := Lessons.row(id)
+	if row.is_empty():
+		return
+	Save.set_flag("taught:b_" + id)
+	_lesson_open = true
+	var card: Control = LessonCard.new()
+	_root.add_child(card)
+	card.call("setup", String(row["title"]), String(row["text"]))
+	card.call("centre")
+	await card.done
+	_lesson_open = false
+
+
+## Which lesson (if any) this turn of the player's teaches, the first that applies.
+func _lessons_for(who: Dictionary) -> void:
+	await _lesson("orders")
+	if (fight.call("alive", fight.party) as Array).size() > 1:
+		await _lesson("lantern")
+	for u: Dictionary in fight.call("intents"):
+		var icon := String((u.get("intent", {}) as Dictionary).get("icon", ""))
+		if icon == "heavy" or icon == "all":
+			await _lesson("guard")
+			break
+	if float(who["hp"]) < float(who["max_hp"]) * 0.4 and not Supplies.bag().is_empty():
+		await _lesson("items")
+	if story == "" and int(Save.hub_get("wild_fights")) >= 2:
+		await _lesson("speed")
 
 
 ## The light and sparks of a blow or a spell on the one it lands on (scripts/data/battles.gd FX).
@@ -2102,7 +2458,7 @@ func _finish() -> void:
 	var lines: Array = []
 	var head := "Victory!"
 	if outcome == "win":
-		var reward := Battles.reward(fight.foes, _tier)
+		var reward := Battles.reward(fight.foes, _tier, fight.get("stats"))     # (P08: deeds pay a bonus)
 		reward["xp"] = int(reward["xp"]) + _xp_bonus
 		summary.merge(reward, true)
 		var before := Rpg.level()
@@ -2115,6 +2471,7 @@ func _finish() -> void:
 			for lvl in range(before + 1, Rpg.level() + 1):
 				for s: Dictionary in Skills.LIST.filter(func(r: Dictionary) -> bool: return int(r["level"]) == lvl):
 					lines.append("A teacher can now teach: %s" % String(s["name"]))
+					summary["opens_skill"] = true
 			Skills.fill_empty()
 		if String(reward["gear"]) != "" and Gear.grant(String(reward["gear"])):
 			lines.append("Found: %s" % String(Gear.row(String(reward["gear"]))["name"]))
@@ -2147,6 +2504,8 @@ func _finish() -> void:
 		# costs nothing. The bot has no screen: it pays at once.
 		summary["night"] = night
 		lines.append(Looks.word("fallen"))
+		if not _auto:
+			Sfx.sting("defeat")                     # (P08: the sad piece; the battle music stops)
 		if _auto:
 			_give_in(summary)
 	else:
@@ -2173,6 +2532,15 @@ func _finish() -> void:
 		return
 	_say("")
 	await _closing(outcome == "win")
+	if outcome == "win":
+		# (P08) lessons of a won fight: wounds stay; a level only opens a skill
+		var hurt := false
+		for u: Dictionary in fight.party:
+			hurt = hurt or int(u["hp"]) < int(u["max_hp"])
+		if hurt and int(summary["levels"]) == 0:
+			await _lesson("beds")
+		if bool(summary.get("opens_skill", false)):
+			await _lesson("teach")
 	_end_screen(outcome, summary, lines, head)
 
 
@@ -2353,6 +2721,34 @@ func _victory_rows(col: VBoxContainer, summary: Dictionary, lines: Array) -> voi
 			ll.clip_text = true
 			coins.add_child(ll)
 	col.add_child(coins)
+	# (P08) the deeds the fight earned (battles.gd DEED), gold rows ticking in one after another
+	var d := 0
+	for id: Variant in summary.get("deeds", []):
+		var deed: Dictionary = Battles.DEED.get(String(id), {})
+		if deed.is_empty():
+			continue
+		var drow := UI.hbox(6)
+		drow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var dn := UI.label(String(Lessons.word("deed")) % String(deed["name"]), "Gold")
+		dn.add_theme_font_size_override("font_size", 8 if _ph else 11)
+		drow.add_child(dn)
+		var dt := UI.label(String(deed.get("text", "")), "Dim")
+		dt.add_theme_font_size_override("font_size", 7 if _ph else 10)
+		dt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		dt.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		drow.add_child(dt)
+		var db := UI.label(String(Lessons.word("deed_bonus")) % roundi(Battles.DEED_BONUS * 100.0), "Num")
+		db.add_theme_color_override("font_color", UI.C_GOLD)
+		db.add_theme_font_size_override("font_size", 8 if _ph else 11)
+		drow.add_child(db)
+		col.add_child(drow)
+		if not UI.instant:
+			drow.modulate.a = 0.0
+			var tw := drow.create_tween()
+			tw.tween_interval(0.9 + 0.3 * d)
+			tw.tween_callback(func() -> void: Sfx.play("coins", -10.0))
+			tw.tween_property(drow, "modulate:a", 1.0, 0.2)
+		d += 1
 	for line: String in lines:
 		if line.begins_with("New skill: "):
 			var sl := UI.label(line, "Gold")
@@ -2402,6 +2798,7 @@ func _count_up(xp: Label, bar: Control, tag: Control, gain: int, from: float, to
 	tb.tween_method(func(v: float) -> void: bar.call("set_value", v, 1.0, false), 0.0, to, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
+var _level_sung := false
 func _level_up_tag(tag: Control) -> void:
 	if not is_instance_valid(tag):
 		return
@@ -2409,7 +2806,9 @@ func _level_up_tag(tag: Control) -> void:
 	tag.pivot_offset = tag.size * 0.5
 	tag.scale = Vector2(1.5, 1.5)
 	tag.create_tween().tween_property(tag, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	Sfx.play("ui_start", -10.0)
+	if not _level_sung:
+		_level_sung = true
+		Sfx.sting("level_up")              # (P08: once, not once per row)
 
 
 ## Test: --shotend (with --autobattle --animend --shots=<dir>) writes battle_end.png with the
@@ -2519,6 +2918,29 @@ func _take_shot() -> void:
 		await get_tree().create_timer(1.0).timeout
 		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_herb.png"))
 		print("[battle] herb test: knight %d -> %d, herbs left %d" % [before, int(fight.party[0]["hp"]), Supplies.count("herb")])
+	if G.flag("shotlantern"):
+		# test (P08): --shotlantern writes battle_lantern.png: a full flame (the Flare row on top), a
+		# burn and a weakness on show, then battle_lesson.png with a lesson card over it (a look only)
+		fight.set("lantern", _acting)
+		fight.set("flame", Battles.FLAME_MAX)
+		var ev: Array = []
+		fight.call("add_status", fight.foes[0], "burn", 0, ev)
+		if (fight.party as Array).size() > 1:
+			fight.call("add_status", fight.party[1], "weak", 0, ev)
+		_refresh(_acting)
+		_show_commands()
+		await get_tree().create_timer(0.6).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_lantern.png"))
+		var card: Control = LessonCard.new()
+		_root.add_child(card)
+		var row := Lessons.row("lantern")
+		card.call("setup", String(row["title"]), String(row["text"]))
+		card.call("centre")
+		await get_tree().create_timer(0.5).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_lesson.png"))
+		card.queue_free()
+		_show_commands()
+		await get_tree().create_timer(0.2).timeout
 	if G.flag("shotmenu"):
 		_show_skills()
 		await get_tree().create_timer(0.4).timeout
@@ -2628,14 +3050,29 @@ func _ui_frame() -> void:
 		# (under the feet, on the ground line: every monster's bar sits at the same height above
 		# its own shadow, whatever the shape of its head)
 		bar.position = Vector2(r.get_center().x - bar.size.x * 0.5, r.end.y + (3.0 if _ph else 5.0)).round()
+		# (P08) the intent chip over its head, the status pips right of its bar
+		var marks: Control = tag.get("marks")
+		if is_instance_valid(marks):
+			marks.visible = not _over and int(u["hp"]) > 0 and _intro <= 0.0
+			marks.set("show_intent", not is_same(u, aimed))
+			var top := maxf(r.position.y - (2.0 if _ph else 4.0), float(_rail.position.y) + float(_rail.size.y) + (12.0 if _ph else 16.0))
+			if bool(u.get("boss", false)):
+				top = maxf(r.position.y + r.size.y * 0.12, top)
+			marks.set("head_at", Vector2(r.get_center().x, top))
+			var feet := bar.position + Vector2(bar.size.x + 3.0, -2.0)
+			if bool(u.get("boss", false)):
+				feet = Vector2(r.get_center().x - 12.0, r.end.y + 4.0)
+			marks.set("feet_at", feet)
+			marks.call("sync")
 	_brackets.set("shown", not aimed.is_empty())
 	if not aimed.is_empty():
 		_brackets.set("box", _sprite_rect(aimed).grow(3.0 if not _ph else 2.0))
 	var plate_on := not aimed.is_empty() and String(aimed["side"]) == "foes"
 	_plate.visible = plate_on
 	if plate_on:
-		var key := String(aimed["id"]) + str(aimed["home"]) + ":" + str(aimed["hp"])
+		var key := String(aimed["id"]) + str(aimed["home"]) + ":" + str(aimed["hp"]) + str(aimed.get("status", {})) + str((aimed.get("intent", {}) as Dictionary).get("text", "")) + str(_waiting_skill.get("id", ""))
 		if key != _plate_key:
+			_plate.set("lines", _plate_lines(aimed))
 			_plate.call("set_unit", aimed, _plate_key.begins_with(String(aimed["id"]) + str(aimed["home"]) + ":"))
 			_plate_key = key
 		var box := _sprite_rect(aimed)
@@ -2643,11 +3080,17 @@ func _ui_frame() -> void:
 		var room: Vector2 = _root.size
 		var min_y := float(_ribbon.position.y) + float(_ribbon.call("band_h")) + 4.0
 		var py := maxf(box.position.y - 22.0 - ps.y, min_y)      # (over the chevron that bobs above the head)
+		var px := box.get_center().x - ps.x * 0.5
 		if _ph:
 			# (the phone's monsters stand close: over the head the plate covered the next one's
 			# bar and body, so there it goes under the feet, where the bar was)
 			py = minf(box.end.y + 3.0, room.y - ps.y - 2.0)
-		_plate.position = Vector2(clampf(box.get_center().x - ps.x * 0.5, 4.0, room.x - ps.x - 4.0), py).round()
+		elif box.position.y - 22.0 - ps.y < min_y:
+			# (P08: a taller plate with its lines does not fit over the head: beside the monster instead,
+			# on the side with more room)
+			py = clampf(box.get_center().y - ps.y * 0.5, min_y, room.y - ps.y - 4.0)
+			px = box.position.x - ps.x - 10.0 if box.get_center().x > room.x * 0.5 else box.end.x + 10.0
+		_plate.position = Vector2(clampf(px, 4.0, room.x - ps.x - 4.0), py).round()
 	else:
 		_plate_key = ""
 	for card: Control in _cards:
