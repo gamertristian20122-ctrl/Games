@@ -40,7 +40,7 @@ var _k := 1.0
 ## of this place; "stop" is how near the knight may come before the dust is no longer needed.
 static func where(from: String, step: int) -> Dictionary:
 	var row: Array = Tale.TRAIL.get(step, [])
-	if row.is_empty():
+	if row.is_empty() or (G.demo() and step >= Tale.DEMO_LAST):
 		return {}
 	var goal := String(row[0])
 	var who := String(row[1])

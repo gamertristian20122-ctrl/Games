@@ -1007,6 +1007,10 @@ static func _fit_sands(id: String, place: Dictionary) -> void:
 				e.erase("need")
 				e["tale"] = 7
 				e["why"] = "The Sands come after the Elfwood. Captain Hale will send you."
+				if G.demo():                    # the demo stops at chapter one: Dustwatch stays shut
+					e["tale"] = 99
+					if Tale.step() >= Tale.DEMO_LAST:
+						e["why"] = Tale.DEMO_SHUT
 		for sg: Dictionary in place["signs"]:
 			if String(sg["text"]) == "Dustwatch":
 				sg.erase("need")

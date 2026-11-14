@@ -279,6 +279,12 @@ const SCENES := [
 	{"id": "gate_open", "place": "village", "from": 6, "to": 6, "name": "Wickmere", "title": "", "sprite": "", "pages": [
 		"The east gate stands open. For the first time in a year there are people on the wall looking out, and not in.",
 	]},
+	# THE DEMO ENDS HERE (only in a demo build, G.demo()): shown once, right after Hale's thanks
+	{"id": "demo_end", "demo": true, "place": "village", "from": 7, "to": 7, "name": "Hollow Hill", "title": "The demo ends here", "sprite": "", "pages": [
+		"The first beacon burns. This is the end of the demo. Thank you for playing Hollow Hill.",
+		"In the full game: the Sands and the Dune Queen, the Cinder Mountains, the Sunken Archive, and whatever sleeps under the hill.",
+		"You can keep walking Wickmere, the Elfwood and the wide world for as long as you like.",
+	]},
 	{"id": "sisters", "place": "village", "from": 7, "to": 7, "name": "The sisters", "title": "", "sprite": "pc_elf_druid", "pages": [
 		"Ysolde is waiting at the edge of the square. She does not run. Elves do not run. She walks very fast.",
 		"Ysolde: \"You look terrible.\"   Thessaly: \"You look alive.\"",
@@ -375,7 +381,13 @@ static func step() -> int:
 	return clampi(Save.hub_get("tale:step"), 0, LAST_STEP)
 
 
+const DEMO_DONE := "The demo ends here. Thank you for playing!"
+const DEMO_SHUT := "The Sands open in the full game. Thank you for playing the demo."
+const DEMO_LAST := 7             ## the demo's story stops at this step (chapter one done)
+
 static func objective() -> String:
+	if G.demo() and step() >= DEMO_LAST:
+		return DEMO_DONE
 	return STEPS[step()]
 
 
@@ -398,6 +410,8 @@ static func take_scene(place_id: String) -> Dictionary:
 	var at := step()
 	for row: Dictionary in SCENES:
 		if String(row["place"]) != place_id or at < int(row.get("from", 0)) or at > int(row.get("to", 999)):
+			continue
+		if bool(row.get("demo", false)) and not G.demo():
 			continue
 		if Save.hub_get("tale:seen:" + String(row["id"])) > 0:
 			continue

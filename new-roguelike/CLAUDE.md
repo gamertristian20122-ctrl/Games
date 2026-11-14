@@ -1533,6 +1533,25 @@ The owner: "places I can SEE early but only reach later ... that open as the sto
   in assets_raw/licence_notes/kenney_rpg_sounds.txt) over a low thud (door_close at 0.6 pitch).
 - No sound can be heard in the cloud container: all of this is checked by reading the code and CHECK PASSED only.
 
+## v0.36.0 (14 Nov 2026): THE DEMO BUILD for publishers and testers
+The owner: "do everything you need to do for me to make this ready to give to a publisher to test".
+- **Demo mode** (`G.DEMO` in g.gd, true; `G.demo()`; `--fullgame` plays everything): the story stops after
+  chapter one. Hale's thanks (step 7) is followed by the scene `demo_end` (tale.gd SCENES, "demo": true),
+  the story line reads `Tale.DEMO_DONE`, the road to Dustwatch stays shut (`Tale.DEMO_SHUT`), no fairy dust
+  after that. The title shows "v0.36.0  DEMO". To ship the whole game later: set `G.DEMO` to false.
+- **Tests:** `--uitour=tale` in a demo build = 20 checks (ends at the demo's end screen);
+  `--uitour=tale --fullgame` = the old 28. Both passed, and CHECK PASSED.
+- **Windows build:** export preset "Windows Desktop" (one .exe with the pck inside). Needs
+  `windows_release_x86_64.exe` in the export templates folder (from the same .tpz as Android's).
+  `godot --headless --path . --export-release "Windows Desktop" build/win/HollowHill.exe`.
+  The zip for testers also holds `HollowHill (safe mode).bat` (runs the phone renderer:
+  `--rendering-method gl_compatibility --rendering-driver opengl3`) and `READ ME.txt` (docs/tester_readme.txt).
+- **HD in this container:** `apt-get install mesa-vulkan-drivers` is needed for Forward+ pictures; WITHOUT it
+  Godot silently falls back to OpenGL and tools/shot.sh shows the phone look (this fooled one check).
+- **Honest state for the owner:** the Windows .exe has NEVER been started on a real Windows PC or a real GPU.
+  By day the PC (HD) look is paler than the phone look (it was already so in v0.27.3). The story words are
+  AI-written (the owner rewrites or discloses them). Sound was never listened to.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.

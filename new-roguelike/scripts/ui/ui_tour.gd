@@ -19,6 +19,7 @@ const Skills = preload("res://scripts/data/skills.gd")
 const Allies = preload("res://scripts/data/allies.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Places = preload("res://scripts/data/places.gd")
 const Items = preload("res://scripts/data/items.gd")
 const Unlocks = preload("res://scripts/data/unlocks.gd")
 
@@ -774,6 +775,25 @@ func _run_tale() -> void:
 	await _settle(2.0)
 	_check("chapter one is done: step 7 and the watch's coins", Tale.step() == 7 and Save.hub_get("bank:coins") == coins + 60)
 	await G.save_shot("tale_08_wickmere_after.png")
+	if G.demo():
+		# THE DEMO stops here: its end screen comes by itself, the story line says so, Dustwatch stays shut
+		# (a tour plays no story moments by itself, so the end scene is asked for as hub.gd would, and shown)
+		var ending := Tale.take_scene("village")
+		_check("the demo's end scene is the next story moment in Wickmere", String(ending.get("title", "")) == "The demo ends here")
+		main.call("open", "hub_talk", {"info": ending})
+		await _settle(1.5)
+		_check("the demo's end screen is shown", main.call("top_name") == "hub_talk")
+		await G.save_shot("tale_09_demo_end.png")
+		_check("the story line says the demo is over", Tale.objective() == Tale.DEMO_DONE)
+		var shut := false
+		for e: Dictionary in Places.get_place("world")["exits"]:
+			if String(e["to"]) == "dustwatch":
+				shut = int(e.get("tale", 0)) > Tale.step() and String(e.get("why", "")) == Tale.DEMO_SHUT
+		_check("the road to Dustwatch stays shut and says why", shut)
+		main.call("close_all")
+		print("[tale] done (demo): %d checks, %d failed, knight level %d" % [_count, _fails, Rpg.level()])
+		G.quit(1 if _fails > 0 else 0)
+		return
 	# chapter two: the Sands
 	await _tale_go("dustwatch")
 	_check("walking into Dustwatch is step 8", Tale.step() == 8)

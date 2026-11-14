@@ -253,7 +253,7 @@ func build() -> void:
 		_column.add_child(b)
 	default_focus = play
 
-	_version = UI.label("v" + String(ProjectSettings.get_setting("application/config/version", "0")), "Small")
+	_version = UI.label("v" + String(ProjectSettings.get_setting("application/config/version", "0")) + ("  DEMO" if G.demo() else ""), "Small")
 	_version.add_theme_color_override("font_color", UI.C_FAINT)
 	area.add_child(_version)
 
