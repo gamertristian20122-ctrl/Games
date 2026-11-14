@@ -282,6 +282,9 @@ class Rail extends Control:
 			if String(u["side"]) != "party":
 				m.set("shape", "foe")
 			m.position = (Vector2(x, y) - m.custom_minimum_size * 0.5).round()
+			# (the mouse over a face says who it is; the first acts now)
+			m.mouse_filter = Control.MOUSE_FILTER_PASS
+			m.tooltip_text = String(u["name"])
 			holder.add_child(m)
 			if i == 1 and not is_phone:
 				# who comes next: a small NEXT above the second coin
