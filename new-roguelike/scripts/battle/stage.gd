@@ -28,6 +28,9 @@ const AIM_HD := Vector3(0.0, 2.0, 0.3)
 const CAM_HD := Vector3(0.0, 4.1, 20.5)
 
 ## One row per place a fight can happen in. Colours are the mood; pieces are pack ids.
+## "sky_bright" (0 dark night .. 1 white noon) says how bright the top of the picture is in this
+## look: the battle HUD may thin its dark top wash by it (ask sky_bright(), never the table).
+## "shadow_tint" colours the flat shadows (none = plain darker ground).
 const LOOKS := {
 	# the woods late in the day: low golden sun, long soft shadows, dust in the light
 	"forest": {
@@ -36,7 +39,7 @@ const LOOKS := {
 		"ambient": Color("a89a9c"), "ambient_energy": 0.42,
 		"sun": Color("ffd08a"), "sun_energy": 2.1, "sun_angle": Vector3(-36.0, 138.0, 0.0), "shadow_dark": 0.6, "shadow_rows": 1,
 		"glow_bloom": 0.10, "glow_from": 0.95, "lift": 0.0, "haze": Color("ffd9a0"), "beam": 0.10,
-		"patches": 1.0, "rim": 0.52,
+		"patches": 1.0, "rim": 0.52, "sky_bright": 0.45,
 		"grade": [Vector3(1.06, 1.01, 0.91), Vector3(1.0, 0.94, 0.88), 1.07, 0.98],
 		"cool": Color("9ff0d8"),
 		"big_trees": ["hub_tree_green_0", "hub_tree_green_1", "hub_tree_teal_0", "hub_tree_teal_1", "hub_tree_green_1", "hub_tree_pink_1"],
@@ -58,7 +61,7 @@ const LOOKS := {
 		"ambient": Color("6f86c4"), "ambient_energy": 0.5,
 		"sun": Color("b9c8ff"), "sun_energy": 1.1, "sun_angle": Vector3(-50.0, 132.0, 0.0), "shadow_dark": 0.5, "shadow_rows": 2,
 		"glow_bloom": 0.12, "glow_from": 0.95, "lift": 0.0, "haze": Color("203050"), "beam": 0.06,
-		"fire": Color("ff9440"), "fire_energy": 14.0, "cool": Color("58e8d0"),
+		"fire": Color("ff9440"), "fire_energy": 14.0, "cool": Color("58e8d0"), "sky_bright": 0.05,
 		"big_trees": ["hub_tree_green_0", "hub_tree_green_1", "hub_tree_teal_0", "hub_tree_teal_1", "hub_tree_green_1", "hub_tree_pink_1"],
 		"trees": ["hub_tree_green_2", "hub_tree_teal_2", "hub_tree_green_2", "hub_tree_pink_2"],
 		"small_trees": ["hub_tree_green_3", "hub_tree_teal_3", "hub_tree_green_4", "hub_tree_pink_3", "hub_tree_teal_4"],
@@ -72,15 +75,21 @@ const LOOKS := {
 		"spark": Color(0.85, 1.0, 0.45), "spark_power": 1.6,
 		"key": [Color("ffa860"), 1.0, 1.0],
 	},
-	# the sands: a wide warm sky, old stones and thorn
+	# the sands: a wide pale sky, warm sun on pale dunes, cool blue-violet shade, old stones and thorn
+	# (quality pass P03, 14 Nov 2026: the land was one orange from sky to ground. Now a WARM KEY
+	# against COOL SHADE: the sky and the far air are pale blue to cream, the shade is blue-violet,
+	# the sand paler, so the fighters and the red thorn stand out. Every old value is kept in the
+	# comment beside its line: say the word and it goes back.)
 	"desert": {
-		"ground": "hub_sand", "ground_tint": Color(1.0, 0.98, 0.94), "grey": 0.05,
-		"sky": Color("e0bd8c"), "mist": Color("ddb98a"), "mist_density": 0.004,
-		"ambient": Color("b9b4c4"), "ambient_energy": 0.5,
+		"ground": "hub_sand", "ground_tint": Color(1.0, 0.97, 0.92), "grey": 0.26,      # was tint (1.0, 0.98, 0.94), grey 0.05
+		"sky": Color("b6cdea"), "mist": Color("d6d6d2"), "mist_density": 0.004,          # was sky e0bd8c, mist ddb98a
+		"ambient": Color("96a2dc"), "ambient_energy": 0.5,                               # was b9b4c4
 		"sun": Color("ffdca8"), "sun_energy": 1.0, "sun_angle": Vector3(-38.0, 140.0, 0.0), "shadow_dark": 0.62, "shadow_rows": 2,
-		"glow_bloom": 0.04, "glow_from": 1.15, "lift": 0.0, "haze": Color("ffd9a0"), "beam": 0.0,
+		"shadow_tint": Color(0.80, 0.86, 1.14),                                          # new: the flat shadows lean to violet (was none = 1, 1, 1)
+		"glow_bloom": 0.04, "glow_from": 1.15, "lift": 0.0, "haze": Color("dfe6f0"), "beam": 0.0,   # was haze ffd9a0
 		"patches": 0.45, "rim": 0.5,
-		"grade": [Vector3(1.05, 1.01, 0.92), Vector3(1.0, 0.95, 0.9), 1.05, 0.94],
+		"grade": [Vector3(1.05, 1.01, 0.93), Vector3(0.86, 0.93, 1.14), 1.05, 0.92],     # was [(1.05, 1.01, 0.92), (1.0, 0.95, 0.9), 1.05, 0.94]
+		"sky_bright": 0.85,
 		"cool": Color("ffd28a"),
 		"big_trees": ["hub_dstone_0", "hub_obelisk_0", "hub_dtree_0", "hub_dstone_1", "hub_obelisk_1", "hub_dboulder_0"],
 		"trees": ["hub_dtree_0", "hub_dstone_0", "hub_cactus_4", "hub_obelisk_2"],
@@ -94,13 +103,18 @@ const LOOKS := {
 		"spark": Color(1.0, 0.9, 0.7), "spark_power": 0.6,
 		"key": [Color("fff0c8"), 0.7, 1.0],
 	},
-	# bare rock under the cinder mountains: dim, with pools of fire
+	# bare rock under the cinder mountains: cold and dim, with pools of fire
+	# (quality pass P03, 14 Nov 2026: ground, air, props and fighters were all red-orange. Now the
+	# rock, the sky and the air are a cold blue-grey under a faint moon, so ONLY the fire, the lava
+	# and the embers are orange. Old values in the comments.)
 	"rock": {
-		"ground": "hub_drock", "ground_tint": Color(0.86, 0.80, 0.80), "grey": 0.2,
-		"sky": Color("1c1016"), "mist": Color("3a1c1a"), "mist_density": 0.02,
-		"ambient": Color("a08a98"), "ambient_energy": 0.5,
-		"sun": Color("ffc8a0"), "sun_energy": 0.7, "sun_angle": Vector3(-48.0, 136.0, 0.0), "shadow_dark": 0.5, "shadow_rows": 2,
-		"glow_bloom": 0.12, "glow_from": 0.95, "lift": 0.02, "haze": Color("5a2a1a"), "beam": 0.0,
+		"ground": "hub_drock", "ground_tint": Color(0.70, 0.73, 0.82), "grey": 0.7,      # was tint (0.86, 0.80, 0.80), grey 0.2
+		"sky": Color("0c121e"), "mist": Color("1a2434"), "mist_density": 0.012,          # was sky 1c1016, mist 3a1c1a, density 0.02
+		"ambient": Color("8490b4"), "ambient_energy": 0.5,                               # was a08a98
+		"sun": Color("b4c4f0"), "sun_energy": 0.75, "sun_angle": Vector3(-48.0, 136.0, 0.0), "shadow_dark": 0.5, "shadow_rows": 2,   # was ffc8a0, 0.7
+		"glow_bloom": 0.12, "glow_from": 0.95, "lift": 0.02, "haze": Color("22304a"), "beam": 0.0,   # was haze 5a2a1a
+		"grade": [Vector3(1.07, 1.0, 0.90), Vector3(0.87, 0.94, 1.13), 1.06, 1.0], "rim": 0.55,   # new (was none: the shader's own warm (1.07, 1.0, 0.90), shade (0.88, 0.96, 1.12))
+		"sky_bright": 0.05,
 		"fire": Color("ff7a30"), "fire_energy": 10.0, "cool": Color("ff8840"),
 		"big_trees": ["hub_dspire_0", "hub_dspire_1", "hub_dboulder_0", "hub_dspire_1", "hub_dboulder_0"],
 		"trees": ["hub_dspire_0", "hub_dboulder_0", "hub_dspire_1"],
@@ -274,6 +288,7 @@ render_mode cull_disabled, specular_disabled;
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform float flip = 0.0;
 uniform float dark = 0.5;
+uniform vec3 shadow_tint = vec3(1.0);      // the colour of the shade (the sands: blue-violet)
 void vertex() {
 	at = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 }
@@ -281,7 +296,7 @@ void fragment() {
 	vec2 uv = UV;
 	if (flip > 0.5) { uv.x = 1.0 - uv.x; }
 	if (texture(tex, uv).a < 0.5) { discard; }
-	ALBEDO = ground_colour(at) * dark;
+	ALBEDO = ground_colour(at) * dark * shadow_tint;
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(at);
 }
@@ -447,16 +462,25 @@ func shadow_material(tex: Texture2D) -> ShaderMaterial:
 		mat.set_shader_parameter(k, _ground_params[k])
 	mat.set_shader_parameter("tex", tex)
 	mat.set_shader_parameter("dark", float(look.get("shadow_dark", 0.5)))
+	var st: Color = look.get("shadow_tint", Color.WHITE)
+	mat.set_shader_parameter("shadow_tint", Vector3(st.r, st.g, st.b))
 	return mat
+
+
+## How bright the top of the picture is in this stage's look (0 = night, 1 = a white sky): the
+## battle HUD can thin its dark top wash on a bright sky (LOOKS "sky_bright"). Also by name, before
+## a stage is built:  Stage.sky_bright_of("desert")
+func sky_bright() -> float:
+	return float(look.get("sky_bright", 0.3))
+
+
+static func sky_bright_of(look_name: String) -> float:
+	return float((LOOKS.get(look_name, {}) as Dictionary).get("sky_bright", 0.3))
 
 
 ## Lays a standing picture down along the shadow's lean.
 func shadow_basis() -> Basis:
 	return Basis(Vector3(1.0, 0.0, 0.0), Vector3(_lean.x, 0.0, _lean.y), Vector3(0.0, 1.0, 0.0))
-
-
-## Pack pieces drawn with their ground painted round them (see prop()).
-const SAND_BACKED := ["hub_dpebble", "hub_dblock", "hub_dboulder", "hub_dspire", "hub_dcave"]
 
 
 ## Stands a pack picture on the ground (scenery that never changes). Pictures of the same piece
@@ -470,13 +494,10 @@ func prop(id: String, at: Vector3, flip: bool = false, sway: float = 0.0, shadow
 	if up > 0.0:
 		at.y += up                     # it stands on the slope behind the fighting ground
 		shadow = shadow and up < 0.05
-	# HD: pieces the pack drew WITH sand round them (pebbles, boulders, spires) would throw square
-	# shadows; the small ones lie flat on the sand instead, the big ones throw none
+	# (The desert pebbles, boulders and spires used to come with a square of sand painted round
+	# them and got special treatment here; tools/import_hub.py now cuts that sand away, so they
+	# stand and throw shadows like every other piece.)
 	var cast := true
-	if hd != null and SAND_BACKED.any(func(w: String) -> bool: return id.begins_with(w)):
-		cast = false
-		if id.begins_with("hub_dpebble") or id.begins_with("hub_dblock"):
-			lie_flat = true
 	var key := "%s|%.3f|%s|%s|%.2f|%s|%s" % [id, sway, shadow, tint.to_html(false), shine, lie_flat, cast]
 	if not _batches.has(key):
 		_batches[key] = {"id": id, "sway": sway, "shadow": shadow, "tint": tint, "shine": shine, "flat": lie_flat, "cast": cast, "at": []}

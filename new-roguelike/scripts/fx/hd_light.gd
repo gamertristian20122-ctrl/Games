@@ -539,6 +539,7 @@ func sync_view(delta: float, dist: float, target: Vector3, centre: Vector2, pool
 		mat.set_shader_parameter("gold", float(grade.get("gold", 0.0)))
 		mat.set_shader_parameter("dull", float(grade.get("dull", 0.35)))
 		mat.set_shader_parameter("blue", float(grade.get("blue", 0.0)))
+		mat.set_shader_parameter("sand", float(grade.get("sand", 0.0)))
 		mat.set_shader_parameter("rim", float(grade["rim"]) * (1.2 if Hd.on() else 1.0))
 		# HD: the camera's blur melts the distance; the haze only tints it (else a milky veil)
 		mat.set_shader_parameter("far", float(grade["far"]) * (0.32 if Hd.on() else 1.0))

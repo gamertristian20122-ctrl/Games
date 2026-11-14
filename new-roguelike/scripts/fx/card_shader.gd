@@ -89,7 +89,13 @@ static func _stencil(hero: bool, xray: bool) -> String:
 
 
 const HD_CARD_BODY := "
-const float XRAY_SHOW = 0.55;                                       // how much of a hidden person shows through what hides them
+// XRAY (a person hidden by a tree or a house): a clear SILHOUETTE in one calm colour, the figure's
+// own light and dark faintly kept, with a bright outline. (Before the quality pass it was the lit
+// figure at 55%: a pale ghost nobody could find under the leaves of the world map.)
+const float XRAY_SHOW = 0.66;                                       // how solid the silhouette's inside is
+const float XRAY_EDGE = 0.96;                                       // ... and its outline
+const vec3 XRAY_COL = vec3(0.42, 0.80, 1.0);                        // the silhouette: a pale sky blue (reads on leaves, sand and rock alike)
+const vec3 XRAY_LINE = vec3(1.0, 0.97, 0.86);                       // its outline: warm white
 uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
 uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec3 tint : source_color = vec3(1.0);
@@ -253,17 +259,24 @@ void fragment() {
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(foot);
 #ifdef XRAY
-	ALPHA = XRAY_SHOW;
+	// the outermost pixels of the figure (the pack's dark outline) become the bright line
+	float edge = 1.0 - min(min(a1.x, a1.y), min(a1.z, a1.w));
+	vec3 sil = mix(XRAY_COL * (0.5 + 0.7 * me), XRAY_LINE, edge);
+	ALPHA = mix(XRAY_SHOW, XRAY_EDGE, edge);
 	// the copy is drawn after the last pass (which only sees solid things), so it copies the last
-	// pass's grade itself: its tint and its dark corners (in linear light)
+	// pass's dark corners itself; it gives its own light (no lamp or shade changes it), and the
+	// camera's exposure is taken out again, so it is as bright in a dark wood as on the sands
 	vec2 q = SCREEN_UV - 0.5;
-	float vig = 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * hh_grade.x;
-	vec3 graded = pow(max(hh_tint.rgb * vig, vec3(0.0)), vec3(2.2));
-	ALBEDO *= graded;
-	EMISSION *= graded;
+	float vig = 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * hh_grade.x * 0.5;
+	ALBEDO = vec3(0.0);
+	EMISSION = pow(sil * vig, vec3(2.2)) * (0.85 / clamp(hh_exposure, 0.25, 3.0));
+	AO = 1.0;
 #endif
 }
 void light() {
+#ifdef XRAY
+	DIFFUSE_LIGHT += vec3(0.0);                                  // the silhouette takes no light: it gives its own
+#else
 	float ndl = dot(NORMAL, LIGHT);
 	float lit;
 	if (LIGHT_IS_DIRECTIONAL) {
@@ -304,6 +317,35 @@ void light() {
 	add += ATTENUATION * LIGHT_COLOR / PI * rim * rim_w * max(dot(rim_n, LIGHT), 0.0) * (LIGHT_IS_DIRECTIONAL ? 2.2 * sun_share : 1.2);
 #endif
 	DIFFUSE_LIGHT += add;
+#endif
+}
+"
+
+## THE PHONE'S SILHOUETTE (GL Compatibility; quality pass P03). The phone had no see-through copy
+## at all: under the trees of the world map the knight was simply gone. Every person's card now
+## has a second pass that is drawn ONLY where something nearer hides it (the depth test turned
+## round: no depth picture is read, so it costs a phone next to nothing), as a flat silhouette in
+## the same colours as the PC's. A person's own card marks the stencil, so the silhouette never
+## shows through the person's own sword or through somebody standing in front.
+const GL_XRAY_CODE := "
+shader_type spatial;
+render_mode unshaded, cull_disabled, depth_draw_never, depth_test_inverted, blend_mix, shadows_disabled, fog_disabled;
+stencil_mode read, compare_not_equal, 1;
+uniform sampler2D tex : source_color, filter_nearest, repeat_disable;
+uniform vec4 uv_rect = vec4(0.0, 0.0, 1.0, 1.0);
+float alpha_at(vec2 uv) {
+	if (uv.x < uv_rect.x || uv.y < uv_rect.y || uv.x > uv_rect.x + uv_rect.z || uv.y > uv_rect.y + uv_rect.w) { return 0.0; }
+	return step(0.5, texture(tex, uv).a);
+}
+void fragment() {
+	vec2 uv = uv_rect.xy + UV * uv_rect.zw;
+	vec4 c = texture(tex, uv);
+	if (c.a < 0.5) { discard; }
+	vec2 tx = 1.0 / vec2(textureSize(tex, 0));
+	float inside = min(min(alpha_at(uv - vec2(tx.x, 0.0)), alpha_at(uv + vec2(tx.x, 0.0))), min(alpha_at(uv - vec2(0.0, tx.y)), alpha_at(uv + vec2(0.0, tx.y))));
+	float me = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+	ALBEDO = mix(vec3(1.0, 0.97, 0.86), vec3(0.42, 0.80, 1.0) * (0.5 + 0.7 * me), inside);
+	ALPHA = mix(0.96, 0.66, inside);
 }
 "
 
@@ -405,6 +447,8 @@ static func casts() -> GeometryInstance3D.ShadowCastingSetting:
 static var _card_shader: Shader
 static var _shade_shader: Shader
 static var _hd_shaders := {}          ## false = scenery, true = HERO, "xray" = a person's see-through copy
+static var _gl_hero: Shader           ## the phone: a person's card (marks the stencil) ...
+static var _gl_xray: Shader           ## ... and the silhouette where that person is hidden
 
 
 static func card_shader(hero := false) -> Shader:
@@ -414,6 +458,11 @@ static func card_shader(hero := false) -> Shader:
 			sh.code = card_code(hero)
 			_hd_shaders[hero] = sh
 		return _hd_shaders[hero]
+	if hero:
+		if _gl_hero == null:
+			_gl_hero = Shader.new()
+			_gl_hero.code = CARD_CODE.replace("specular_disabled;\n", "specular_disabled;\nstencil_mode write, compare_always, 1;\n")
+		return _gl_hero
 	if _card_shader == null:
 		_card_shader = Shader.new()
 		_card_shader.code = CARD_CODE
@@ -444,6 +493,15 @@ static func card(tex: Texture2D, uv: Vector4, tint: Color, hero := false) -> Sha
 		xray.render_priority = 1
 		xray.set_shader_parameter("rim", HERO_RIM)
 		mat.next_pass = xray
+	elif hero:
+		# the phone: the silhouette pass (GL_XRAY_CODE), after the last pass like the PC's
+		if _gl_xray == null:
+			_gl_xray = Shader.new()
+			_gl_xray.code = GL_XRAY_CODE
+		var gl_xray := ShaderMaterial.new()
+		gl_xray.shader = _gl_xray
+		gl_xray.render_priority = 1
+		mat.next_pass = gl_xray
 	param(mat, "tex", tex)
 	param(mat, "uv_rect", uv)
 	param(mat, "tint", Vector3(tint.r, tint.g, tint.b))

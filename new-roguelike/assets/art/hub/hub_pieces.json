@@ -887,12 +887,12 @@
   "box": [
    162,
    103,
-   208,
-   144
+   205,
+   143
   ],
   "size": [
-   46,
-   41
+   43,
+   40
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
@@ -900,12 +900,12 @@
   "box": [
    210,
    114,
-   240,
-   144
+   239,
+   143
   ],
   "size": [
-   30,
-   30
+   29,
+   29
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
@@ -953,11 +953,11 @@
    96,
    64,
    160,
-   128
+   125
   ],
   "size": [
    64,
-   64
+   61
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
@@ -1106,27 +1106,27 @@
  },
  "hub_dpebble_0": {
   "box": [
-   112,
-   0,
-   128,
-   14
+   113,
+   4,
+   126,
+   13
   ],
   "size": [
-   16,
-   14
+   13,
+   9
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
  "hub_dpebble_1": {
   "box": [
-   128,
-   2,
-   142,
-   14
+   130,
+   4,
+   141,
+   12
   ],
   "size": [
-   14,
-   12
+   11,
+   8
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
@@ -1223,14 +1223,14 @@
  },
  "hub_drockbed": {
   "box": [
-   160,
+   161,
    0,
-   240,
-   80
+   239,
+   79
   ],
   "size": [
-   80,
-   80
+   78,
+   79
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
@@ -1250,26 +1250,26 @@
  "hub_dspire_0": {
   "box": [
    96,
-   24,
-   112,
+   25,
+   111,
    56
   ],
   "size": [
-   16,
-   32
+   15,
+   31
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },
  "hub_dspire_1": {
   "box": [
-   136,
-   24,
+   137,
+   25,
    160,
-   64
+   63
   ],
   "size": [
-   24,
-   40
+   23,
+   38
   ],
   "source": "Pixel Crawler - Desert/Assets/Ground.png"
  },

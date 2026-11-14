@@ -39,13 +39,16 @@ const Hd = preload("res://scripts/fx/hd.gd")
 ##                  back far more than grass and cobbles)
 ##   bounce         HD: how much light bounces off the ground into the shade (pale sand: orange shade)
 ##   moon           HD: by night, a faint moon-blue pool where the knight stands (in place of "key")
+##   sand           how far saturated ORANGE (the pack's sand, the red rock of the Cinder land) is
+##                  pulled towards a pale dune colour; greens, blues and greys are left alone, so
+##                  on the world map only the Sands change (0 = as painted). Both renderers.
 ## Rows: "<place>" (by day), "<place>:night", "<place>:lit" (after its land's beacon is lit),
 ## "default", "default:night", "indoors". A missing key is taken from "default" / "default:night".
 const GRADES := {
 	"default": {"warm": Vector3(1.06, 1.01, 0.90), "shade": Vector3(1.0, 0.93, 0.88), "punch": 1.07, "rich": 0.97,
-		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 1.2, "sun": 1.0, "dull": 0.35, "blue": 0.0, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5, "lean": Vector3(-0.82, 0.0, 0.76)},
+		"haze": Color(1.0, 0.86, 0.62), "far": 0.30, "rim": 0.46, "shafts": 0.8, "motes": 0.8, "dapple": 0.5, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 1.2, "sun": 1.0, "dull": 0.35, "blue": 0.0, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5, "lean": Vector3(-0.82, 0.0, 0.76), "sand": 0.0},
 	"default:night": {"warm": Vector3(1.10, 1.0, 0.86), "shade": Vector3(0.84, 0.94, 1.16), "punch": 1.06, "rich": 0.95,
-		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45, "blue": 0.3, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5, "lean": Vector3(-0.82, 0.0, 0.76)},
+		"haze": Color(0.20, 0.26, 0.42), "far": 0.34, "rim": 0.52, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "exposure": 1.0, "ambient": 1.0, "gold": 0.0, "key": 0.0, "sun": 1.0, "dull": 0.45, "blue": 0.3, "fog": 1.0, "lamps": 1.0, "bounce": 1.0, "moon": 0.5, "lean": Vector3(-0.82, 0.0, 0.76), "sand": 0.0},
 	# Wickmere at dusk: honey light on the stones, plum shade
 	"village": {"warm": Vector3(1.08, 1.0, 0.88), "shade": Vector3(1.0, 0.90, 0.94), "haze": Color(1.0, 0.80, 0.60), "far": 0.26, "dapple": 0.25, "rich": 0.85, "gold": 0.25, "dull": 0.5,
 		"lean": Vector3(0.85, 0.0, -0.45), "key": 1.6},     # (round three: the sun from the south-west lights the shop fronts and the street)
@@ -69,16 +72,29 @@ const GRADES := {
 	"glade:lit": {"warm": Vector3(1.10, 1.01, 0.85), "haze": Color(1.0, 0.84, 0.58), "shafts": 1.0, "motes": 1.0},
 	"beacon:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
 	# the Sands: hot pale dust before the beacon, deep amber after it
-	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.80, 0.90, 1.18), "haze": Color(0.96, 0.82, 0.62), "far": 0.34, "shafts": 0.6, "dapple": 0.0, "blue": 1.0, "fog": 0.6, "lamps": 0.8, "bounce": 0.3, "exposure": 0.72, "key": 0.6, "rich": 0.68, "dull": 0.6},
-	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.90, 0.90, 1.04), "haze": Color(0.78, 0.70, 0.62), "far": 0.38, "shafts": 0.4, "dapple": 0.0, "blue": 1.0, "fog": 0.6, "lamps": 0.8, "bounce": 0.3, "exposure": 0.6, "key": 0.6, "rich": 0.68, "dull": 0.6},
+	# (quality pass P03, 14 Nov 2026: WARM KEY, COOL SHADE. The sand was one flat red-orange that
+	# swallowed the lamps and the fires. "sand" pales it, the distance is a pale cool dust instead
+	# of more orange, and the shade keeps its blue. Old values in the comments.)
+	"dustwatch": {"warm": Vector3(1.07, 1.0, 0.88), "shade": Vector3(0.80, 0.90, 1.18), "haze": Color(0.86, 0.84, 0.80), "far": 0.34, "shafts": 0.6, "dapple": 0.0, "blue": 1.0, "fog": 0.6, "lamps": 0.8, "bounce": 0.3, "exposure": 0.72, "key": 0.6, "rich": 0.68, "dull": 0.6,
+		"sand": 0.45},      # was haze (0.96, 0.82, 0.62), no "sand"
+	"suncourt": {"warm": Vector3(1.04, 0.99, 0.90), "shade": Vector3(0.86, 0.90, 1.10), "haze": Color(0.74, 0.72, 0.70), "far": 0.38, "shafts": 0.4, "dapple": 0.0, "blue": 1.0, "fog": 0.6, "lamps": 0.8, "bounce": 0.3, "exposure": 0.6, "key": 0.6, "rich": 0.68, "dull": 0.6,
+		"sand": 0.45},      # was shade (0.90, 0.90, 1.04), haze (0.78, 0.70, 0.62), no "sand"
 	# the sands by night: clear air, a blue moonlit plain, the lamps and fires in small amber pools
-	"dustwatch:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},
-	"suncourt:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5},
-	"dustwatch:lit": {"warm": Vector3(1.12, 1.0, 0.82), "haze": Color(1.0, 0.78, 0.50), "shafts": 1.0, "motes": 1.0},
-	"suncourt:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0},
+	"dustwatch:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5, "sand": 0.3},
+	"suncourt:night": {"haze": Color(0.16, 0.22, 0.42), "exposure": 0.72, "ambient": 2.4, "sun": 1.8, "blue": 0.75, "fog": 0.25, "lamps": 0.55, "dull": 0.3, "bounce": 0.5, "sand": 0.3},
+	# (after the beacon the Sands are MEANT to be deep amber: less of the paling)
+	"dustwatch:lit": {"warm": Vector3(1.12, 1.0, 0.82), "haze": Color(1.0, 0.78, 0.50), "shafts": 1.0, "motes": 1.0, "sand": 0.2},
+	"suncourt:lit": {"warm": Vector3(1.11, 1.0, 0.83), "haze": Color(1.0, 0.80, 0.52), "shafts": 1.0, "motes": 1.0, "sand": 0.2},
+	# the Cinder land (P03: it had no rows at all and wore the wood's golden default, so rock, air
+	# and people were all red-orange). Cold blue-grey shade and air; only fire and lava stay orange.
+	"emberfall": {"warm": Vector3(1.07, 1.0, 0.90), "shade": Vector3(0.82, 0.92, 1.18), "haze": Color(0.34, 0.40, 0.54), "far": 0.36, "shafts": 0.0, "motes": 0.4, "dapple": 0.0, "blue": 0.7, "dull": 0.5, "bounce": 0.4, "fog": 0.7, "sand": 0.55},
+	"cinderpeak": {"warm": Vector3(1.07, 1.0, 0.90), "shade": Vector3(0.80, 0.92, 1.20), "haze": Color(0.30, 0.36, 0.52), "far": 0.40, "shafts": 0.0, "motes": 0.4, "dapple": 0.0, "blue": 0.8, "dull": 0.5, "bounce": 0.4, "fog": 0.7, "sand": 0.55},
+	"emberfall:night": {"sand": 0.45, "blue": 0.6}, "cinderpeak:night": {"sand": 0.45, "blue": 0.6},
 	# the world map: a wide view, so the distance matters most
-	"world": {"haze": Color(0.92, 0.84, 0.70), "far": 0.6, "rim": 0.6, "shafts": 0.55, "motes": 0.3, "dapple": 0.0, "exposure": 0.42, "gold": 0.3, "rich": 0.8, "key": 0.8, "lamps": 0.55, "bounce": 0.7},
-	"world:night": {"haze": Color(0.16, 0.22, 0.38), "far": 0.45, "lamps": 0.55},
+	# (P03: the distance is a cooler pale air, the shade cool, and "sand" pales the Sands' half
+	# without touching the wood. Was haze (0.92, 0.84, 0.70), the default warm shade, no "sand".)
+	"world": {"haze": Color(0.84, 0.84, 0.80), "shade": Vector3(0.88, 0.93, 1.10), "far": 0.6, "rim": 0.6, "shafts": 0.55, "motes": 0.3, "dapple": 0.0, "exposure": 0.42, "gold": 0.3, "rich": 0.8, "key": 0.8, "lamps": 0.55, "bounce": 0.7, "sand": 0.55},
+	"world:night": {"haze": Color(0.16, 0.22, 0.38), "far": 0.45, "lamps": 0.55, "sand": 0.35},
 	# rooms: candle warmth, soft brown shade
 	"indoors": {"warm": Vector3(1.09, 0.99, 0.84), "shade": Vector3(0.96, 0.88, 0.90), "punch": 1.05, "rich": 0.98,
 		"haze": Color(0.32, 0.20, 0.14), "far": 0.0, "rim": 0.50, "shafts": 0.0, "motes": 0.0, "dapple": 0.0, "key": 0.0},
@@ -143,6 +159,7 @@ uniform float fore_z = 0.0;       // HD: things nearer than this (view distance)
 uniform float gold = 0.0;         // HD: greens turned towards olive and gold (GRADES gold)
 uniform float dull = 0.35;        // HD: how grey the shade goes (GRADES dull)
 uniform float blue = 0.0;         // HD: how far the shade turns dusk blue (GRADES blue)
+uniform float sand = 0.0;         // how far saturated orange is pulled to a pale dune colour (GRADES sand)
 const int TAPS = 22;
 
 float dist(vec2 uv, mat4 inv) {
@@ -230,6 +247,17 @@ void fragment() {
 	col = pow(max(col, vec3(0.0)), vec3(punch));
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(l), col, rich);
+	// THE SANDS: the pack's sand is one saturated orange, and under a warm sun it burns out to pure
+	// orange-red. Pixels that are orange (red over green over blue, evenly) are pulled towards a pale
+	// dune colour, a little brighter; greens, blues and greys do not move, flame and lava (far more
+	// saturated than any sand) keep their fire, and people keep most of their skin (HD knows where
+	// they are).
+	float orange = clamp(min(col.r - col.g, (col.g - col.b) * 1.2) * 4.0, 0.0, 1.0);
+	orange *= 1.0 - smoothstep(0.74, 0.84, (col.r - col.b) / max(col.r, 0.001));      // (sand: about 0.67 to 0.74; a flame's dim edge: 0.77 and up)
+#ifdef HD_POST
+	orange *= 1.0 - smoothstep(1.0, 1.25, col.r);          // (light hotter than white is a fire or a lamp)
+#endif
+	col = mix(col, vec3(l) * vec3(1.24, 1.12, 0.92), sand * orange * (1.0 - person * 0.7));
 #ifdef HD_POST
 	// as in the reference pictures: the shade is near grey-brown and only the lit parts carry colour,
 	// and the greens lean to olive and gold
@@ -284,6 +312,8 @@ void fragment() {
 	ALBEDO = colour * mix(f, e, steep) * strength * 2.5;
 }
 "
+## The phone: the most light a glow may add at its heart (see HALO_CODE cap; was no cap = white discs).
+const HALO_CAP := 0.62
 ## The soft glow round a flame, standing in the air and always facing the camera.
 const HALO_CODE := "
 shader_type spatial;
@@ -291,6 +321,7 @@ render_mode unshaded, blend_add, cull_disabled, depth_draw_never, depth_test_dis
 uniform vec3 colour : source_color = vec3(1.0, 0.7, 0.4);
 uniform float strength = 1.0;
 uniform float gain = 3.4;
+uniform float cap = 0.0;          // the phone: the brightest the glow may add (0 = no cap). Without it the heart of every lamp clipped to a white disc
 void vertex() {
 	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
 	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0), vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0), vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0), vec4(0.0, 0.0, 0.0, 1.0));
@@ -298,7 +329,16 @@ void vertex() {
 void fragment() {
 	float d = length(UV - 0.5) * 2.0;
 	float f = exp(-d * d * 4.5) * (1.0 - smoothstep(0.8, 1.0, d));
-	ALBEDO = colour * f * strength * gain;
+	vec3 c = colour * f * strength * gain;
+	if (cap > 0.0) {
+		// a soft ceiling that keeps the colour: the heart stays amber (its three channels are scaled
+		// together), the skirt of the glow is as wide as before
+		float m = max(c.r, max(c.g, c.b));
+		c *= 1.25 * cap / (cap + m);
+	}
+	// a lamp just above the picture: its glow thins out towards the top edge instead of being cut
+	// off there as a bright half disc
+	ALBEDO = c * smoothstep(0.0, 0.12, SCREEN_UV.y);
 }
 "
 ## A beam of sun: soft at both sides, fading out at the ground and in the sky, with dust in it.
@@ -377,6 +417,8 @@ static func halo(at: Vector3, size: float, colour: Color) -> MeshInstance3D:
 		# (HD: a deeper orange and softer, so the halo round a lamp reads amber, never white)
 		mat.set_shader_parameter("colour", Vector3(colour.r, colour.g * 0.62, colour.b * 0.32))
 		mat.set_shader_parameter("gain", 3.4)
+	else:
+		mat.set_shader_parameter("cap", HALO_CAP)
 	mat.render_priority = 6
 	var q := QuadMesh.new()
 	q.size = Vector2.ONE
