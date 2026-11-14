@@ -27,6 +27,7 @@ var _pages: Array = []
 var _page := 0
 var _shown := 0.0
 var _text: Label
+var _well: Control              ## (v0.40.0) the speaker's portrait: it blinks, nods while the words come, reacts
 var _box: Control                ## the glass box (talk panel) with its plate, portrait and words
 var _marks: Control              ## page dots + chevron
 var _choices: Control            ## the choice panel (null until the words are done)
@@ -160,6 +161,7 @@ func _build_box(with_words: bool) -> void:
 		well.size = ws
 		holder.add_child(well)
 		well.call("setup", sprite_id, float(_g["k"]))
+		_well = well
 		if not UI.is_phone():
 			# a brass hairline fading upward beside the well
 			var line := HairLine.new()
@@ -245,12 +247,18 @@ func _start_page() -> void:
 	if G.flag("talkdone") or UI.instant:
 		_shown = float(_text.text.length())
 		_text.visible_characters = -1
+	if is_instance_valid(_well):
+		_well.call("react", _text.text)
 
 
 func _process(delta: float) -> void:
 	if _text == null or _choices != null:
+		if is_instance_valid(_well):
+			_well.set("talking", false)
 		return
 	var total := _text.text.length()
+	if is_instance_valid(_well):
+		_well.set("talking", _shown < float(total) and _hold <= 0.0)
 	if _shown < total:
 		if _hold > 0.0:
 			_hold -= delta

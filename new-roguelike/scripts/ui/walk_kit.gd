@@ -31,13 +31,29 @@ class Base extends Control:
 ## standing on the bottom of a lit well (a warm glow behind), cut by the well's bottom edge; a brass
 ## hairline fading upward on its right. clip_contents keeps the glow inside the well.
 class Portrait extends Base:
+	## THE TALK PORTRAIT (v0.40.0, the owner: faces that move). The speaker's own pack sprite, cut to head and
+	## shoulders and drawn big (whole pixels only, so the art stays crisp), and moved by code only:
+	##   blink     the eye pixels (found by eyes_of(): blue / green / dark pixels framed by the face colour, in
+	##             the top of the head) are painted over with the face colour for a moment every few seconds
+	##   talk      while the words are typed, a small nod every few letters (talking = true)
+	##   react()   a page that ends in "!" makes a little hop; one with "..." a slow droop
+	## Nothing is drawn that the pack did not draw: only its own pixels, moved or recoloured.
+	const NO_BLINK := ["pc_elf_druid", "pc_scholar_cataloguer", "pc_mummy_mage", "pc_royal_knight"]   ## eyes not found right (looked at by hand)
+	static var _blinks := {}        ## sprite id -> its "eyes shut" picture (or null)
 	var sprite_id := ""
-	var k := 2.0                ## UI px per sprite px (2 on a PC: close to the world's own pixel size)
+	var k := 2.0                ## UI px per sprite px
 	var glow := true
 	var bob := true             ## a slow idle breath (1 UI px)
+	var talking := false        ## hub_talk.gd sets it while the words are typed
+	var close := true           ## head and shoulders, big (false = the whole figure, as before v0.40.0)
 	var _tex: Texture2D
+	var _shut: Texture2D
 	var _used := Rect2()
 	var _t := 0.0
+	var _blink_at := 2.5
+	var _blink_t := 0.0
+	var _hop := 0.0
+	var _droop := 0.0
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -46,20 +62,132 @@ class Portrait extends Base:
 
 	func setup(id: String, per_px: float) -> void:
 		sprite_id = id
-		# (the whole figure at one whole scale, the same pixel size for everybody, rather than a
-		# big crop cut off at the waist)
-		k = minf(per_px, 2.0)
 		_tex = null
+		_shut = null
 		if id != "" and Art.has(id):
 			_tex = Art.tex(id)
 			_used = UI.used_rect(id)
-			while k > 1.0 and size.x > 0.0 and (_used.size.x * k > size.x - 4.0 or _used.size.y * k > size.y - 6.0):
-				k -= 1.0
+			if close:
+				# head and shoulders: the top of the figure, as big as the well allows in whole steps
+				# (the height decides the size; a wide figure, a bow or a staff beside it, is cut at the sides)
+				var rows := ceilf(_used.size.y * 0.6)
+				k = clampf(floorf((size.y - 4.0) / maxf(rows, 1.0)), 1.0, 6.0)
+			else:
+				k = minf(per_px, 2.0)
+				while k > 1.0 and size.x > 0.0 and (_used.size.x * k > size.x - 4.0 or _used.size.y * k > size.y - 6.0):
+					k -= 1.0
+			_shut = _blink_tex(id, _tex, _used)
+		_blink_at = randf_range(1.5, 3.5)
 		set_process(bob and not UI.instant)
 		queue_redraw()
 
+	## A page has begun: "!" = a hop, "..." = a droop.
+	func react(text: String) -> void:
+		var t := text.strip_edges()
+		if t.ends_with("!") or t.ends_with("!\""):
+			_hop = 1.0
+		elif t.contains("...") or t.contains("…"):
+			_droop = 1.0
+
+	## The eye pixels of a sprite: [Vector2i], or [] when they cannot be told apart for sure.
+	static func eyes_of(img: Image, used: Rect2) -> Array:
+		var x0 := int(used.position.x)
+		var y0 := int(used.position.y)
+		var x1 := int(used.end.x)
+		var head_y := y0 + int(used.size.y * 0.42)
+		var counts := {}
+		for y in range(y0, head_y):
+			for x in range(x0, x1):
+				var c := img.get_pixel(x, y)
+				if c.a > 0.8:
+					counts[c.to_html(false)] = int(counts.get(c.to_html(false), 0)) + 1
+		var found: Array = []
+		for y in range(y0, head_y):
+			for x in range(x0, x1):
+				var c := img.get_pixel(x, y)
+				if c.a <= 0.8 or int(counts.get(c.to_html(false), 0)) > 4:
+					continue
+				var eyeish := (c.s > 0.35 and c.h > 0.22 and c.h < 0.72 and c.v > 0.3) or c.v < 0.22
+				if not eyeish:
+					continue
+				var others := {}
+				var n := 0
+				for d: Vector2i in [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]:
+					var q := Vector2i(x, y) + d
+					if q.x < 0 or q.y < 0 or q.x >= img.get_width() or q.y >= img.get_height():
+						continue
+					var o := img.get_pixel(q.x, q.y)
+					if o.a > 0.8 and o != c:
+						n += 1
+						others[o.to_html(false)] = int(others.get(o.to_html(false), 0)) + 1
+				if n < 3:
+					continue
+				var face := ""
+				for key: String in others:
+					if face == "" or int(others[key]) > int(others[face]):
+						face = key
+				if int(others[face]) < 2 or int(counts.get(face, 0)) < 6:
+					continue
+				var fc := Color.html(face)
+				if absf(c.get_luminance() - fc.get_luminance()) < 0.1 and absf(c.r - fc.r) + absf(c.g - fc.g) + absf(c.b - fc.b) < 0.35:
+					continue
+				found.append([Vector2i(x, y), face])
+		if found.is_empty():
+			return []
+		var tally := {}
+		for f: Array in found:
+			tally[f[1]] = int(tally.get(f[1], 0)) + 1
+		var skin := ""
+		for key: String in tally:
+			if skin == "" or int(tally[key]) > int(tally[skin]):
+				skin = key
+		var top := 9999
+		for f: Array in found:
+			if f[1] == skin:
+				top = mini(top, (f[0] as Vector2i).y)
+		var out: Array = []
+		var lo := 9999
+		var hi := -9999
+		for f: Array in found:
+			var p: Vector2i = f[0]
+			if f[1] == skin and p.y <= top + 1:
+				out.append([p, Color.html(skin)])
+				lo = mini(lo, p.x)
+				hi = maxi(hi, p.x)
+		if out.size() > 4 or hi - lo > 6:
+			return []
+		return out
+
+	static func _blink_tex(id: String, tex: Texture2D, used: Rect2) -> Texture2D:
+		if _blinks.has(id):
+			return _blinks[id]
+		var made: Texture2D = null
+		if not NO_BLINK.has(id):
+			var img := tex.get_image()
+			if img != null:
+				if img.is_compressed():
+					img.decompress()
+				img.convert(Image.FORMAT_RGBA8)
+				var eyes := eyes_of(img, used)
+				if not eyes.is_empty():
+					for e: Array in eyes:
+						var p: Vector2i = e[0]
+						img.set_pixel(p.x, p.y, (e[1] as Color).darkened(0.18))     # the eyelid: the face colour, a shade darker
+					made = ImageTexture.create_from_image(img)
+		_blinks[id] = made
+		return made
+
 	func _process(delta: float) -> void:
 		_t += delta
+		_hop = move_toward(_hop, 0.0, delta * 2.6)
+		_droop = move_toward(_droop, 0.0, delta * 0.45)
+		_blink_at -= delta
+		if _blink_at <= 0.0:
+			_blink_t = 0.13
+			_blink_at = randf_range(2.2, 4.8)
+		_blink_t = maxf(0.0, _blink_t - delta)
+		if G.flag("eyesshut"):          # test: --eyesshut keeps the eyes shut (to look at the blink)
+			_blink_t = 1.0
 		queue_redraw()
 
 	func _notification(what: int) -> void:
@@ -72,20 +200,30 @@ class Portrait extends Base:
 		# a dark well with a warm lamp behind the figure, darker towards the edges (vignette)
 		UI.rs_vgrad(ci, r, Color(0.06, 0.05, 0.08, 0.55), Color(0.01, 0.01, 0.03, 0.75))
 		if glow:
-			var at := Vector2(r.size.x * 0.5, r.size.y * 0.46)
-			var big := minf(r.size.x, r.size.y) * 0.5
+			var at := Vector2(r.size.x * 0.5, r.size.y * (0.40 if close else 0.46))
+			var big := minf(r.size.x, r.size.y) * 0.55
 			for i in 7:
-				draw_circle(at, big * (1.0 - float(i) / 8.0), Color(1.0, 0.70, 0.40, 0.04), true, -1.0, true)
+				draw_circle(at, big * (1.0 - float(i) / 8.0), Color(1.0, 0.70, 0.40, 0.045), true, -1.0, true)
 		if _tex != null:
 			var lift := 0.0
 			if bob and not UI.instant:
 				lift = roundf(0.5 + 0.5 * sin(_t * 2.2))           # breathes up one UI px and back
-			var rows := minf(_used.size.y, floorf((r.size.y - 4.0) / k))
-			var src := Rect2(_used.position + Vector2(0, _used.size.y - rows), Vector2(_used.size.x, rows))
-			var dst := Rect2(roundf((r.size.x - _used.size.x * k) * 0.5), r.size.y - 4.0 - rows * k - lift, _used.size.x * k, rows * k)
-			# a soft shadow under the feet
-			draw_circle(Vector2(r.size.x * 0.5, r.size.y - 4.0), _used.size.x * k * 0.32, Color(0, 0, 0, 0.35), true, -1.0, true)
-			draw_texture_rect_region(_tex, dst, src)
+				if talking:
+					lift += 1.0 if fmod(_t, 0.24) < 0.12 else 0.0   # a small nod every few letters
+				lift += roundf(sin(_hop * PI) * 3.0)                # "!": a little hop
+				lift -= roundf(sin(_droop * PI * 0.5) * 2.0)        # "...": a slow droop
+			var rows := minf(_used.size.y, floorf((r.size.y - 2.0) / k))
+			var cols := minf(_used.size.x, floorf((r.size.x - 4.0) / k)) if close else _used.size.x
+			var left := _used.position.x + floorf((_used.size.x - cols) * 0.5)
+			var src := Rect2(Vector2(left, _used.position.y), Vector2(cols, rows)) if close else Rect2(_used.position + Vector2(0, _used.size.y - rows), Vector2(_used.size.x, rows))
+			var dst := Rect2(roundf((r.size.x - cols * k) * 0.5), (r.size.y - rows * k + 2.0 if close else r.size.y - 4.0 - rows * k) - lift, cols * k, rows * k)
+			if not close:
+				draw_circle(Vector2(r.size.x * 0.5, r.size.y - 4.0), _used.size.x * k * 0.32, Color(0, 0, 0, 0.35), true, -1.0, true)
+			var pic := _shut if _shut != null and _blink_t > 0.0 else _tex
+			draw_texture_rect_region(pic, dst, src)
+			# (close) the warm lamp light on the face's lit side, and shade low down: the bust sits in the light
+			if close:
+				draw_rect(Rect2(dst.position.x, dst.end.y - k * 3.0, dst.size.x, k * 3.0), Color(0.02, 0.01, 0.03, 0.35))
 		# the brass frame: a hairline with cut corners and darker inner edges
 		for i in 4:
 			var e := float(i) * 2.0

@@ -1613,6 +1613,16 @@ add upgrades for the other characters too ... you have to also upgrade new spell
 - Test flags (walking places): `--lvl=<n>`, `--coins=<n>`, `--step=<n> --buyarms=<n>` (buy n tiers of every line),
   `--hubtalk=lore:knight` (the teacher's list), `--hubtalk=tam --talkend` (the smith's offers).
 
+## v0.40.0 (14 Nov 2026): talk portraits that move (code only, from the pack sprites)
+The owner allowed code that EDITS the purchased art to enhance and animate it ("coded with AI assistance" in the
+credits); still no AI-generated pictures. Order of work they chose: portraits, attack animations, side quests.
+- `walk_kit.gd Portrait`: head and shoulders of the speaker's sprite, big, whole pixels (k decided by the height;
+  wide figures are cut at the sides). Blinks: `eyes_of()` finds the eye pixels (blue / green / dark pixels framed
+  by the face colour in the top 42% of the figure, the topmost row only, at most 4) and a copy with them painted
+  over (face colour, darker) shows for 0.13 s every 2-5 s. `NO_BLINK` lists sprites where it found the wrong
+  pixels (Ysolde, Sister Imre, the Dune Queen, Hale's helmet). A nod while the words are typed (`talking`),
+  a hop on a page ending "!", a droop on "...". Test: `--eyesshut` keeps the eyes shut.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.
