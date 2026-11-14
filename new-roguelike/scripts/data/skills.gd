@@ -32,7 +32,7 @@ const LIST := [
 		"text": "Throw a bolt of fire the way you aim. Three times a blow's damage.", "p": {"damage": 3.0, "speed": 230.0, "range": 210.0}},
 	{"id": "lunge", "name": "Lunge", "kind": "sword", "level": 5, "mana": 7, "cd": 2.5, "icon": "skill_lunge",
 		"text": "Dash the way you aim, cutting through what stands there. Nothing can hurt you on the way.", "p": {"damage": 1.6, "dist": 62.0, "safe": 0.4}},
-	{"id": "mend", "name": "Mend", "kind": "spell", "level": 7, "mana": 18, "cd": 9.0, "icon": "skill_mend",
+	{"id": "mend", "name": "Mend", "kind": "spell", "level": 7, "mana": 12, "cd": 9.0, "icon": "skill_mend",
 		"text": "Heal one heart.", "p": {"hp": 2}},
 	{"id": "cry", "name": "War Cry", "kind": "sword", "level": 9, "mana": 10, "cd": 8.0, "icon": "skill_cry",
 		"text": "A shout that shoves monsters back and stuns them. Bosses only flinch.", "p": {"radius": 70.0, "stun": 1.8}},
