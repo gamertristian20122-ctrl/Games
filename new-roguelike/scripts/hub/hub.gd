@@ -90,6 +90,7 @@ var _time := 0.0
 var _tour: Array = []
 var _tour_t := 0.0
 var _news := false              ## a quest is waiting to be handed in
+var _ambushed := {}               ## (v0.43.0) story fights already sprung on this visit
 var _talked := {}               ## npc ids spoken to during this visit
 var _quests: Control
 var _small := false              ## the place fits on the screen: the camera stands still
@@ -274,6 +275,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	_people.clear()
 	_near = -1
 	_last_talk = -1
+	_ambushed.clear()
 	_blocks = (place.get("blocks", []) as Array).duplicate()
 	if _built_inside():
 		_blocks = Interior.blocks(place)          # the 3D look builds the room for real: walls and furniture block (scripts/hub/arch/interior.gd)
@@ -896,7 +898,7 @@ func _build_fire() -> void:
 	var flame := _anim("hub_flame", 9.0)
 	flame.offset = Vector2(0, -16)
 	pit.add_child(flame)
-	_solids.append([(place["fire"] as Vector2) - Vector2(0, 6), 11.0])
+	_solids.append([(place["fire"] as Vector2) - Vector2(0, 4), 16.0])     # (v0.43.0: was 11: he stood in the fire)
 	if place.has("grill"):
 		var grill := _anim("hub_fire_c", 7.0)        # the cook's fire
 		grill.position = (place["grill"] as Vector2)
@@ -998,6 +1000,7 @@ static func _iron_pane(img: Image) -> void:
 func _build_beacon() -> void:
 	var spec: Dictionary = place["beacon"]
 	var lift := float(spec.get("lift", 24.0))
+	_solids.append([(spec["pos"] as Vector2) + Vector2(0, 8), 20.0])        # (v0.43.0) nobody walks into the beacon's stones
 	var bowl := _anim("hub_fire_a", 7.0)
 	bowl.position = spec["pos"]
 	bowl.offset = Vector2(0, -8.0 - lift)
@@ -1106,6 +1109,8 @@ func _build_light() -> void:
 		l.color = spec[1]
 		l.texture_scale = spec[2]
 		l.energy = spec[3]
+		if spec.size() > 4 and String(spec[4]) == "held":
+			l.set_meta("no_halo", true)          # (v0.43.0) a light held by somebody: no glowing ball over them
 		l.name = "light%d" % get_child_count()
 		_stage.add_child(l)
 		_lamps.append([l, float(spec[3])])
@@ -1185,7 +1190,7 @@ func _add_person(row: Dictionary) -> Dictionary:
 		hands.build(node, body, String(row["hands"]), bw, bh)
 	mark.position = Vector2(-2, -bh - 16)
 	node.move_child(mark, node.get_child_count() - 1)
-	_solids.append([row["pos"] - Vector2(0, 2), 6.0])
+	_solids.append([row["pos"] - Vector2(0, 2), maxf(7.0, bw * 0.45)])     # (v0.43.0: was 6: the knight stood inside wide people)
 	var person := {"row": row, "node": node, "hands": hands, "mark": mark, "face": face, "top": bh, "solid": _solids.size() - 1,
 		"body": body, "post": row["pos"], "goal": row["pos"], "wait": randf_range(1.0, 4.0), "walks": Art.has_anim(sprite_id, "run")}
 	_people.append(person)
@@ -1481,6 +1486,16 @@ func _update_people(delta: float) -> void:
 		mark.set_meta("under_tag", false)
 	_near = best
 	G.hub_near = best >= 0 and not frozen
+	# (v0.43.0, the owner: story fights start BY THEMSELVES, a surprise, no button): walking up to whoever
+	# the story's next battle is with opens their words, and the battle follows them
+	if best >= 0 and not frozen and not _changing and Tale.on() and (_tour.is_empty() or G.flag("ambushtest")) and not G.flag("uitour"):
+		var rid := String(_people[best]["row"]["id"])
+		var beat := Tale.beat(rid)
+		if (beat.get("do", {}) as Dictionary).has("battle") and not _ambushed.has(rid):
+			_ambushed[rid] = true
+			print("[hub] a story fight springs: %s" % rid)
+			_talk(best)
+			return
 	if best >= 0 and not frozen:
 		var p: Dictionary = _people[best]
 		_prompt.text = String(p["row"]["name"])
@@ -1610,7 +1625,9 @@ func _talk(index: int) -> void:
 		var said_now := Tale.beat(id)
 		info["heard"] = ""
 		info["pages"] = (said_now.get("pages", []) as Array).duplicate()
-		if said_now.has("option"):
+		if said_now.has("option") and (said_now.get("do", {}) as Dictionary).has("battle"):
+			info["auto_do"] = said_now["do"]          # (v0.43.0) no button: the fight starts when the words end
+		elif said_now.has("option"):
 			info["options"].append({"text": String(said_now["option"]), "what": "tale_do", "arg": said_now["do"]})
 		if Supplies.SELLERS.has(id):
 			role = "supplies"                # (v0.38.0) sells herbs and tonics; the barkeep also lets rooms

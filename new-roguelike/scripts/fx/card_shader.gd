@@ -45,7 +45,11 @@ void light() {
 	float side = (UV.x * 2.0 - 1.0) * dot(normalize(card_side), LIGHT);
 	float lamp = 0.35 * (1.0 + 0.55 * side) * (1.15 - 0.3 * (1.0 - UV.y));
 	float sun = sun_share * (1.0 + 0.22 * side);
-	DIFFUSE_LIGHT += ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun : max(lamp, 0.0));
+	vec3 got = ATTENUATION * LIGHT_COLOR / PI * (LIGHT_IS_DIRECTIONAL ? sun : max(lamp, 0.0));
+	// (v0.43.0) a lamp or fire right beside somebody (or the shard in the Dune Queen's hand) turned
+	// the whole figure white: one lamp may light a picture warmly, never past this
+	if (!LIGHT_IS_DIRECTIONAL) { got = got / (1.0 + max(dot(got, vec3(0.333)) - 0.35, 0.0) * 1.6); }
+	DIFFUSE_LIGHT += got;
 }
 "
 ## THE HD CARD (Forward+ on PC, scripts/fx/hd.gd): the same picture, but it also THROWS a real

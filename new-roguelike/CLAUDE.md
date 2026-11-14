@@ -1650,6 +1650,19 @@ credits); still no AI-generated pictures. Order of work they chose: portraits, a
   rockfall's gaps can be walked through). `--step=<n>` alone sets the story step in walking places;
   `--hubtalk=find:<id>` opens a chest. All side quest words are new placeholders (AI-written, to rewrite).
 
+## v0.43.0 (14 Nov 2026): the owner's phone bugs (screenshots from a real play)
+- **Story fights spring by themselves**: walking within talk reach of whoever the story's next battle is with
+  (a TALK row whose "do" has "battle": the glade, the lost wardens, the giant, the wall, the Gorgon) opens their
+  words at once and the battle starts when they end (hub_talk `info["auto_do"]`, no button). Once per visit
+  (`_ambushed`, cleared in enter()). Test: `--ambushtest --tourat=x,y` (prints "a story fight springs").
+- **Standing inside things**: people now block by their width (`max(7, body_width * 0.45)`, was 6: the knight
+  stood inside the Dune Queen), a camp fire blocks 16 px (was 11: "the fire floats" = he stood in it, the flame
+  over his head), the beacon's stones block 20 px.
+- **White-out by a lamp on the phone**: one lamp may light a card warmly, never past a soft cap (card_shader.gd
+  CARD_CODE light()); a light row with a 5th field "held" (the shard in the Dune Queen's hand) gets no halo.
+- NOT from the game, asked the owner: the grid of small white diamonds over their screenshots (our renders never
+  show it; it is likely a phone overlay).
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.

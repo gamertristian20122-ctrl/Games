@@ -313,7 +313,7 @@ func build_lamps(place: Dictionary) -> void:
 			ground = Vector3(ground_at.x * PX, v.build.height(ground_at), ground_at.y * PX + 0.2)
 		var pool := WalkLight.pool(ground, reach, colour)
 		v._world.add_child(pool)
-		var halo := WalkLight.halo(flame, clampf(reach * 0.55, 0.9, 2.4), colour)
+		var halo := WalkLight.halo(flame, clampf(reach * 0.55, 0.9, 2.4) * (0.0 if two.has_meta("no_halo") else 1.0), colour)
 		v._world.add_child(halo)
 		glows.append([two, pool.material_override, halo.material_override, warm, float(glows.size()) * 2.7])
 

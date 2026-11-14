@@ -305,7 +305,9 @@ func _finish_words() -> void:
 		_text.visible_characters = -1
 	if String(info.get("heard", "")) != "":
 		Story.heard(String(info["heard"]))
-	if (info.get("options", []) as Array).is_empty() and (info.get("lines", []) as Array).is_empty():
+	if info.has("auto_do"):
+		send("tale_do", info["auto_do"])      # (v0.43.0) a story fight starts by itself when the words end
+	elif (info.get("options", []) as Array).is_empty() and (info.get("lines", []) as Array).is_empty():
 		Sfx.play("ui_back")
 		send("back")
 	else:

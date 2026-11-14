@@ -712,7 +712,7 @@ static func suncourt() -> Dictionary:
 	else:
 		lights.append([Vector2(280, 180), Color(0.5, 0.6, 1.0), 1.2, 0.35])
 	if held:
-		lights.append([Vector2(206, 250), Color(1.0, 0.9, 0.62), 1.6, 0.9])     # the shard in her fist
+		lights.append([Vector2(206, 250), Color(1.0, 0.9, 0.62), 1.6, 0.5, "held"])     # the shard in her fist
 	var forest := {"top_gaps": [], "behind": [], "open": [Rect2(220, 390, 120, 90), Rect2(-60, 396, 680, 90), Rect2(120, 30, 320, 80)],
 		"big": ["hub_dstone_0", "hub_obelisk_2", "hub_dstone_1", "hub_tusk_1", "hub_dpillar_3", "hub_dbush_0"],
 		"side": ["hub_dpillar_0", "hub_dstone_1", "hub_dpillar_2", "hub_cactus_3"],
