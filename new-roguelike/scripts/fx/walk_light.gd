@@ -188,7 +188,12 @@ float soft_at(float z, vec2 uv) {
 	return max(near_k, band);
 }
 #else
-float soft_at(float z, vec2 uv) { return soft(z); }
+// the phone: the same tilt-shift lens as the reference pictures: the middle of the picture (where the
+// knight stands) is sharp, the very top and bottom melt away. People stand in the middle band.
+float soft_at(float z, vec2 uv) {
+	float band = max(smoothstep(0.80, 1.0, uv.y) * 0.9, smoothstep(0.13, 0.0, uv.y) * 0.55);
+	return max(soft(z), band);
+}
 #endif
 void vertex() {
 	POSITION = vec4(VERTEX.xy, 1.0, 1.0);
@@ -217,10 +222,10 @@ void fragment() {
 		vec3 s = texture(screen_tex, uv).rgb;
 		sum += s * w;
 		n += w;
-		bright += max(s - vec3(0.8), vec3(0.0)) * (1.0 - linear_in);      // light that spills a little into what is round it (HD: the glow does it)
+		bright += max(s - vec3(0.62), vec3(0.0)) * (1.0 - linear_in);      // light that spills a little into what is round it (HD: the glow does it)
 	}
 	vec3 col = sum / n;
-	col += bright * (0.9 / float(TAPS));
+	col += bright * (1.4 / float(TAPS)) * vec3(1.0, 0.86, 0.62);
 	if (linear_in > 0.5) { col = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2)); }
 	col = pow(max(col, vec3(0.0)), vec3(punch));
 	float l = dot(col, vec3(0.299, 0.587, 0.114));

@@ -1470,6 +1470,18 @@ world map; shown at the start and whenever the goal is elsewhere; a setting turn
   and when he is next to the goal. A new story step needs a row in TRAIL.
 - Trap: additive things need `render_priority` above 0 or the last pass erases them (it did).
 
+## v0.29.0 and v0.30.0 (14 Nov 2026): leaves, and phone lighting like the owner's reference pictures
+The owner (phone only) asked for "next level grafix, anything as long as it is not AI" and sent three pictures
+of the reference game (golden forest camp, ship at night, town street): tilt-shift, warm bloom, deep shade.
+- v0.29.0 `scripts/fx/leaves.gd`: leaves and petals drifting on the wind (code-drawn shapes, CPUParticles3D;
+  table WHERE: village petals, elfwood/glade/beacon leaves, deepwood dark). Dimmed at night by the sky colour.
+- v0.30.0 `walk_light.gd POST_CODE` (the PHONE / compat pass; HD already had these): a tilt-shift band
+  (top and bottom of the picture melt, middle stays sharp; no people mask on the phone, so people at the very
+  edge of the screen go soft) and a warm bloom (bright parts spill gold into what is round them).
+  Night lamps now glow like the reference. If a light looks blown out, lower the 1.4 in `bright * (1.4 / TAPS)`.
+- The owner is on a phone: judge the look in `GL=1 ./tools/shot.sh <place> <dir> --uiphone`, not Forward+.
+- AI art tools (SpriteCook, CellCog and so on) are OFF LIMITS: the owner sells this as "not made with AI".
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.
