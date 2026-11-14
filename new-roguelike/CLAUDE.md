@@ -1499,6 +1499,13 @@ All in the PHONE (gl_compatibility) path; HD is untouched.
 - World-map signs on the phone: 1 px outline + a drop shadow (3 px of ink on 8 px letters was a smear);
   a shut place's name is pale parchment, not dark grey.
 
+## v0.33.0 (14 Nov 2026): fights on the phone get the same light
+- `stage.gd POST_CODE` (only when `linear_in` is 0 = the phone): warm bloom spill, colours 9% deeper, a soft pool
+  of light over the fighters. The camp fire of a battle stage lays a wide warm `ground_glow` on the phone.
+- Checked: CHECK PASSED, `--uitour=tale` 28/28 (gl_compatibility) with the fairy dust, leaves and new light.
+- Battle picture on the phone renderer: `--battle=story:glade --nosave --shotspell=firebolt --uiphone
+  --shots=<dir>` with `--fixed-fps 24` before `--`.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.

@@ -184,6 +184,7 @@ void fragment() {
 	float cc = soft(zc);
 	vec3 sum = texture(screen_tex, SCREEN_UV).rgb;
 	float n = 1.0;
+	vec3 glow = vec3(0.0);
 	for (int i = 1; i <= TAPS && blur_on > 0.5; i++) {
 		float r = sqrt(float(i) / float(TAPS));
 		float a = float(i) * 2.39996;
@@ -192,10 +193,13 @@ void fragment() {
 		float ct = soft(zt);
 		if (zt > zc) { ct = min(ct, cc); }      // what is behind never smears over crisp things in front
 		float w = smoothstep(r - 0.2, r + 0.05, ct);
-		sum += texture(screen_tex, uv).rgb * w;
+		vec3 s = texture(screen_tex, uv).rgb;
+		sum += s * w;
 		n += w;
+		glow += max(s - vec3(0.62), vec3(0.0)) * (1.0 - linear_in);      // the phone: bright things spill warm light round them
 	}
 	vec3 col = sum / n;
+	col += glow * (1.4 / float(TAPS)) * vec3(1.0, 0.86, 0.62);
 	if (linear_in > 0.5) { col = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2)); }
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = pow(max(col, vec3(0.0)), vec3(punch));
@@ -206,6 +210,13 @@ void fragment() {
 	col = mix(col, col * warm, smoothstep(0.25, 0.9, l));          // the tint of the light
 	col = mix(col, col * shade, 1.0 - smoothstep(0.0, 0.3, l));    // the tint of the shade
 	col = mix(col, haze, lift * (1.0 - l));                                         // soft, hazy shade
+	if (linear_in < 0.5) {
+		// the phone (v0.33.0): deeper colours and a soft pool of light over the fighters, the frame in shade
+		float l2 = dot(col, vec3(0.299, 0.587, 0.114));
+		col = mix(vec3(l2), col, 1.09);
+		vec2 pc = (SCREEN_UV - vec2(0.5, 0.42)) * vec2(0.8, 1.3);
+		col *= 0.86 + 0.32 * exp(-dot(pc, pc) * 4.5);
+	}
 	vec2 q = SCREEN_UV - 0.5;
 	col *= 1.0 - smoothstep(0.18, 0.62, dot(q, q) * 1.9) * rim;
 	if (show_depth > 0.5) { col = vec3(cc); }
@@ -639,6 +650,10 @@ func _scenery_common(dim: Color) -> void:
 		flame.set_shine(2.6 * boost)              # (HD: a white-hot core far over the bloom's threshold)
 		_fire_energy = float(look["fire_energy"]) * (0.75 if hd != null else 1.0)
 		_fire = lamp(fire_at + Vector3(0.0, 1.3, 0.7), look["fire"], _fire_energy, 14.0)
+		if hd == null:
+			# the phone: a wide warm pool of firelight on the ground (the lamp alone hardly showed on grass)
+			var fc: Color = look["fire"]
+			ground_glow(fire_at + Vector3(0.0, 0.0, 0.4), Color(fc.r, fc.g * 0.8, fc.b * 0.6, 0.55), 6.5, 0.0)
 		if hd != null:
 			hd.call("lamp", _fire, true)            # every fighter's shadow leans away from the fire
 			_fire.light_volumetric_fog_energy = 3.0
