@@ -42,7 +42,7 @@ const AMBIENCE := {
 	"fire": ["torch_fire_loop", -16.0],
 }
 const STEP_EVERY := 0.36    ## seconds between steps at a normal pace
-const STEP_DB := -19.0
+const STEP_DB := -13.0         ## (v0.35.0: was -19; the owner could not hear the ground change)
 
 var _streams := {}          # name -> Array[AudioStream] (empty when missing)
 var _players: Array[AudioStreamPlayer] = []
@@ -56,6 +56,9 @@ var _amb_b: AudioStreamPlayer
 var _amb_id := ""
 var _amb_db := 0.0          # the level of the ambience playing now, before the sound volume
 var _surface := "grass"
+var _ground := ""            # the ground under the walker just now (ground()); "" = the place's own
+var _place_id := ""
+var _night := false
 var _step_t := 0.0
 var sfx_volume := 1.0
 var music_volume := 0.7
@@ -149,10 +152,40 @@ func _music(role: String, fade: float = 1.0) -> void:
 
 ## The sound of a walking place (PLACES): its music, its ambience loop and its ground.
 func place(id: String) -> void:
+	_place_id = id
 	var row: Array = PLACES.get(id, PLACES["_"])
 	_surface = String(row[2])
-	_music(String(row[0]), 1.6)
-	ambience(String(row[1]), 1.6)
+	_music(_place_music(row), 1.6)
+	ambience(_place_amb(row), 1.6)
+
+
+## NIGHT (v0.35.0): out of doors the place's tune gives way to the quiet, uneasy night theme
+## ("night": Whispers from Beyond, Juhani Junkala, CC0) and the birds to the wind. Rooms keep theirs.
+## hub.gd calls night(true / false) as the day turns; it only does something when that changes.
+func night(on: bool) -> void:
+	if on == _night:
+		return
+	_night = on
+	if _place_id == "" or _closed:
+		return
+	var row: Array = PLACES.get(_place_id, PLACES["_"])
+	if _music_role == String(row[0]) or _music_role == "night":       # (not over battle music)
+		_music(_place_music(row), 4.0)
+		ambience(_place_amb(row), 4.0)
+
+
+func _place_music(row: Array) -> String:
+	return "night" if _night and String(row[2]) != "wood" else String(row[0])
+
+
+func _place_amb(row: Array) -> String:
+	return "wind" if _night and String(row[1]) == "birds" else String(row[1])
+
+
+## The ground under the walker just now ("" = the place's own): hub.gd says it as he walks, so the
+## steps change from cobbles to grass to the planks of the jetty inside one place.
+func ground(surface: String) -> void:
+	_ground = surface
 
 
 ## Crossfades the ambience loop ("" fades it out). Asking for the one playing does nothing.
@@ -188,7 +221,7 @@ func _amb_level() -> float:
 
 ## One footstep on "grass", "stone", "sand" or "wood" ("" = the ground of the place).
 func footstep(surface: String = "") -> void:
-	var s := surface if surface != "" else _surface
+	var s := surface if surface != "" else (_ground if _ground != "" else _surface)
 	play("step_" + s if has("step_" + s) else "footstep", STEP_DB, 0.1)
 
 
@@ -206,6 +239,8 @@ func walking(moving: bool, delta: float, pace: float = 1.0) -> void:
 
 ## Battle music (a boss has its own); the place's ambience fades away.
 func battle(boss: bool = false) -> void:
+	play("battle_start", -2.0, 0.04)             # a blade drawn (Kenney, CC0), and a heavy thud under it
+	play("door_close", -7.0, 0.0, 0.6)
 	ambience("", 0.6)
 	_music("boss" if boss else "battle", 0.6)
 

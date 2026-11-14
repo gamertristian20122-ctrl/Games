@@ -1521,6 +1521,18 @@ The owner: "places I can SEE early but only reach later ... that open as the sto
   PASSED, `--uitour=tale` 28/28. NOT checked by hand: walking through the opened gaps (34 px free each).
 - No broken bridge: the packs have no river piece that looks right from this camera.
 
+## v0.35.0 (14 Nov 2026): sound (steps by ground, night music, a fight-start sound)
+- Steps: the four grounds already had sounds (v0.24.0) but one ground per PLACE and very quiet. Now hub.gd
+  `_ground_here()` says the ground under the knight (jetty "decks" = wood, a place's "floor" rects = stone, the
+  dry half of the world map = sand, the Cinder rock = stone, else grass) through `Sfx.ground()`, and steps are
+  6 dB louder (`STEP_DB` -13).
+- Night: `Sfx.night(on)` (hub.gd `_weather`) crossfades the place's tune to `night.ogg` out of doors (rooms keep
+  theirs) and birds to wind. night.ogg = "Whispers from Beyond", Juhani Junkala, CC0 (it was already in
+  assets_raw/audio/music/alt). NOBODY HAS LISTENED to it in the game: the owner should say if it fits.
+- Fight start: `Sfx.battle()` plays `battle_start.ogg` (a blade drawn: Kenney RPG Audio drawKnife2, CC0, noted
+  in assets_raw/licence_notes/kenney_rpg_sounds.txt) over a low thud (door_close at 0.6 pitch).
+- No sound can be heard in the cloud container: all of this is checked by reading the code and CHECK PASSED only.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.

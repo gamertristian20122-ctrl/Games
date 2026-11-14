@@ -440,6 +440,28 @@ func _is_night() -> bool:
 	return t >= NIGHT_FROM and t < NIGHT_TO
 
 
+## What the knight walks on right here, for the sound of his steps: "wood" on a jetty, "stone" on
+## paving, "sand" in the dry half of the world map, else the place's own ground ("": sfx.gd PLACES).
+func _ground_here() -> String:
+	if not is_instance_valid(_hero) or not bool(place.get("outdoor", false)):
+		return ""
+	var at := _hero.position
+	for d: Dictionary in place.get("decks", []):
+		if (d["rect"] as Rect2).has_point(at):
+			return "wood"
+	if place_id == "world":
+		if at.x > 1330.0 and at.y < 440.0:
+			return "stone"                       # the bare rock of the Cinder Mountains
+		return "sand" if _dry_here() else "grass"
+	var paved: Variant = place.get("floor", [])
+	if paved is Array and not (paved as Array).is_empty():
+		for row: Array in paved:
+			if (row[1] as Rect2).has_point(at):
+				return "stone"
+		return "sand" if String(place.get("ground", "")) == "hub_sand" else "grass"
+	return ""
+
+
 func _raining() -> bool:
 	return hash(["weather", int(G.world_clock / WEATHER_SLOT)]) % 100 < RAIN_CHANCE
 
@@ -454,6 +476,7 @@ func _dry_here() -> bool:
 ## Moves the day on and lays its light over the place (out of doors only).
 func _weather(delta: float) -> void:
 	G.world_clock += delta
+	Sfx.night(_is_night())
 	if not bool(place.get("outdoor", false)) or not is_instance_valid(_sky_node):
 		_rain.emitting = false
 		return
@@ -1227,6 +1250,8 @@ func _physics_process(delta: float) -> void:
 		if not _tour.is_empty():
 			move = _tour_step(delta)
 	var moving := move.length() > 0.12
+	if moving:
+		Sfx.ground(_ground_here())
 	Sfx.walking(moving and not _changing, delta, float(place.get("speed", 1.0)))
 	if moving:
 		var was := _hero.position
