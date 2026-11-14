@@ -1,5 +1,6 @@
 extends "res://scripts/ui/screen.gd"
-## Title screen: the game's name, Play / Collection / Settings / Credits / Quit, and the version.
+## Title screen: the game's name, Continue / New Game / Load / Settings / Credits / Quit, and the version.
+## Continue and Load only show once a game is saved (scripts/core/save.gd slots; the slot cards are scripts/ui/slots.gd).
 ## The picture behind it is the lit 3D title scene (scripts/ui/title_scene.gd) or, without the 3D
 ## look, scripts/ui/backdrop.gd (main.gd keeps both).
 ## HD GUI (spec 6.5): on a PC a wash on the left, the pixel logo (Alkhemikal at a whole multiple of
@@ -8,6 +9,13 @@ extends "res://scripts/ui/screen.gd"
 ## right. On a phone the name stays centred at the top and the menu on the right (the thumb).
 
 const Heroes = preload("res://scripts/data/heroes.gd")
+const Slots = preload("res://scripts/ui/slots.gd")
+
+## The words of the menu rows this screen adds (placeholders the owner may rewrite).
+const WORDS := {
+	"continue": "Continue", "new": "New Game", "load": "Load", "quit": "Quit",
+	"recovered": "A save file was damaged. Its backup copy was loaded.",
+}
 
 ## The one line under the game's name: what makes this game different.
 const TAGLINE := "Four seals are breaking under the hill."
@@ -20,6 +28,9 @@ var _glow: Control
 var _wash: Control
 var _area: Control
 var _version: Label
+var _resume_line: Label            ## under Continue: which game it goes on with
+var _has_game := false
+var _notice: Label                 ## "a backup copy was loaded" (only after a damaged save file)
 var _ph := false
 var _t := 0.0
 
@@ -235,27 +246,18 @@ func build() -> void:
 		area.add_child(_rule)
 	# every row in one face (Alegreya): the focus is shown by the brass bar and the flame only.
 	# The old roguelike's Collection is only offered with the old story (--oldstory).
-	var rows: Array = [["Play", "play"]]
-	if G.flag("oldstory"):
-		rows.append(["Collection", "collection"])
-	rows.append_array([["Settings", "settings"], ["Credits", "credits"], ["Quit", ""]])
-	var play: Button = null
-	for row: Array in rows:
-		var what: String = row[1]
-		var b := UI.button(row[0], (func() -> void: send(what)) if what != "" else _ask_quit, "", "ui_start" if what == "play" else "ui_click")
-		b.custom_minimum_size = Vector2(150 if not _ph else 104, 24 if not _ph else 20)
-		if not _ph:
-			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			b.add_theme_font_size_override("font_size", 15 if what == "play" else 13)
-		if what == "play":
-			b.add_theme_color_override("font_color", UI.C_GOLD)
-			play = b
-		_column.add_child(b)
-	default_focus = play
+	_fill_rows()
 
 	_version = UI.label("v" + String(ProjectSettings.get_setting("application/config/version", "0")) + ("  DEMO" if G.demo() else ""), "Small")
 	_version.add_theme_color_override("font_color", UI.C_FAINT)
 	area.add_child(_version)
+	if Save.recovered:
+		# a save file was cut short or garbled and its backup copy was used: say so, once, plainly
+		_notice = UI.label(WORDS["recovered"], "Small")
+		_notice.add_theme_color_override("font_color", UI.C_GOLD)
+		_notice.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
+		_notice.add_theme_constant_override("outline_size", 2)
+		area.add_child(_notice)
 
 	resized.connect(_fit)
 	area.resized.connect(_fit)          # the safe margin sizes the area a moment after the screen
@@ -266,12 +268,85 @@ func build() -> void:
 	UI.pop_in(_tag_label, Vector2(0, -3))
 
 
+## The menu rows (built again when the saved games changed while another screen was open).
+func _fill_rows() -> void:
+	# Continue (only when a game is saved; it is gold and has the focus then), New Game, Load.
+	for old: Node in _column.get_children():
+		_column.remove_child(old)
+		old.queue_free()
+	_resume_line = null
+	var has_game := Save.any_slot()
+	_has_game = has_game
+	var rows: Array = []
+	if has_game:
+		rows.append([WORDS["continue"], "continue"])
+	rows.append([WORDS["new"], "new"])
+	if has_game:
+		rows.append([WORDS["load"], "load"])
+	if G.flag("oldstory"):
+		rows.append(["Collection", "collection"])
+	rows.append_array([["Settings", "settings"], ["Credits", "credits"], [WORDS["quit"], "quit"]])
+	var first: Button = null
+	# a phone's screen is 180 px tall and the help strip sits under the menu: more than four rows
+	# go in two columns there (Continue | New Game, Load | Settings, Credits | Quit)
+	var holder: Container = _column
+	var two := _ph and rows.size() > 4
+	if two:
+		if has_game:
+			_resume_line = _make_resume_line()
+			_resume_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			_column.add_child(_resume_line)
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 4)
+		grid.add_theme_constant_override("v_separation", 3)
+		_column.add_child(grid)
+		holder = grid
+	for row: Array in rows:
+		var what: String = row[1]
+		var b := UI.button(row[0], _press.bind(what), "", "ui_start" if what in ["continue", "new"] else "ui_click")
+		b.name = "Row_" + what
+		b.custom_minimum_size = Vector2(150 if not _ph else (104 if not two else 92), 24 if not _ph else 20)
+		if not _ph:
+			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			b.add_theme_font_size_override("font_size", 15 if first == null else 13)
+		if first == null:
+			b.add_theme_color_override("font_color", UI.C_GOLD)
+			first = b
+		holder.add_child(b)
+		if what == "continue" and not two:
+			# under Continue: which game it is (chapter, level, place, time played)
+			_resume_line = _make_resume_line()
+			var pad := MarginContainer.new()
+			pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			pad.add_theme_constant_override("margin_left", 9 if not _ph else 4)
+			pad.add_theme_constant_override("margin_bottom", 3 if not _ph else 1)
+			pad.add_child(_resume_line)
+			_column.add_child(pad)
+	default_focus = first
+	if is_inside_tree():
+		_fit.call_deferred()
+		_focus_default.call_deferred()
+
+
+func _make_resume_line() -> Label:
+	var l := UI.label(_resume_text(), "Small")
+	l.add_theme_color_override("font_color", Color(0.80, 0.74, 0.60))
+	l.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
+	l.add_theme_constant_override("outline_size", 2)
+	return l
+
+
 func help_pairs() -> Array:
 	return [["confirm", "Choose"], ["back", "Quit"]]
 
 
 ## The hero you played last stands in the picture (the first hero on a fresh save).
 func refresh() -> void:
+	if is_instance_valid(_column) and _has_game != Save.any_slot():
+		_fill_rows()                     # a game was erased or copied on the slots screen
+	elif is_instance_valid(_resume_line):
+		_resume_line.text = _resume_text()
 	if not is_instance_valid(backdrop):
 		return
 	var hero := Heroes.by_id("knight")          # Aldous is the only hero now
@@ -316,6 +391,8 @@ func _fit() -> void:
 			_wash.size.x = maxf(name_size.x + left + 120.0, size.x * 0.5)
 	_column.size = col_size
 	_version.position = Vector2(2, a.y - _version.get_minimum_size().y)
+	if is_instance_valid(_notice):
+		_notice.position = Vector2(2, _version.position.y - _notice.get_minimum_size().y - 1.0)
 	_glow.size = Vector2(name_size.x * 1.5 + 60.0, name_size.y * 2.6)
 	_glow.position = _area.position + _name_label.position + name_size * 0.5 - _glow.size * 0.5 + Vector2(0, 2)
 
@@ -332,8 +409,46 @@ static func _logo_size(max_ui: float, px: float) -> float:
 	return maxf(roundf(16.0 / px), 8.0)
 
 
+## A row of the menu was chosen.
+func _press(what: String) -> void:
+	match what:
+		"continue":
+			send("continue", _resume_slot())
+		"new":
+			# a free slot is taken without a question; with all three full the player picks one
+			var free := Save.free_slot()
+			if free > 0:
+				send("new_game", free)
+			else:
+				send("slots", "new")
+		"load":
+			send("slots", "load")
+		"quit":
+			_ask_quit()
+		_:
+			send(what)
+
+
+## The slot Continue goes on with: the one played last, or else the one saved most recently.
+func _resume_slot() -> int:
+	if bool(Save.slot_info(Save.slot)["exists"]):
+		return Save.slot
+	var best := 0
+	var best_date := ""
+	for n: int in range(1, Save.SLOTS + 1):
+		var info: Dictionary = Save.slot_info(n)
+		if bool(info["exists"]) and (best == 0 or String(info["date"]) > best_date):
+			best = n
+			best_date = String(info["date"])
+	return maxi(best, 1)
+
+
+func _resume_text() -> String:
+	return Slots.line(Save.slot_info(_resume_slot()))
+
+
 func _ask_quit() -> void:
-	_ask_quit()
+	on_back()
 
 
 ## Back on the title means "leave the game?".

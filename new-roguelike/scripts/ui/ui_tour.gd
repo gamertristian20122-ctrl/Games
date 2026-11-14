@@ -8,6 +8,9 @@ extends Node
 ##
 ## --uitour=kit draws every widget of the HD GUI kit (scripts/ui/theme.gd, scripts/ui/kit/) on one
 ## board over a walking place and saves kit.png (add --uiphone for the phone grid).
+## --uitour=save checks the saved games without a screen (safe write, backup, slots, the old save
+## taken over, the title's rows, the pause menus) and prints "[save] ok" or "[save] FAIL".
+## --uitour=shell only takes the pictures of the title, the slots and the pause menus.
 ## A second mode, --uitour=flow, plays the real game's whole flow with key presses (title ->
 ## hero select -> run -> pause -> settings -> death -> try again -> give up -> menu) and prints
 ## "[flow] ok ..." or "[flow] FAIL ..." for every step. Use it after changing main.gd.
@@ -36,6 +39,10 @@ func _ready() -> void:
 		_run_kit.call_deferred()
 	elif G.arg("uitour") == "flow":
 		_run_flow.call_deferred()
+	elif G.arg("uitour") == "save":
+		_run_save.call_deferred()
+	elif G.arg("uitour") == "shell":
+		_run_shell.call_deferred()
 	else:
 		_run_tour.call_deferred()
 
@@ -252,6 +259,7 @@ func _run_tour() -> void:
 	await _shot("hub_pause_knight")
 	main.call("close_all")
 
+	await _shell_shots()
 	print("[tour] done, %d screenshots" % _count)
 	G.quit()
 
@@ -286,7 +294,7 @@ func _run_flow() -> void:
 	main.call("show_title")
 	await _settle()
 	_check("title is open", main.call("top_name") == "title")
-	_check("Play has the focus", _focus_text() == "Play")
+	_check("New Game has the focus (nothing is saved yet)", _focus_text() == "New Game")
 	await G.save_shot("flow_01_title.png")
 	await _key(KEY_DOWN)
 	var second := "Collection" if G.flag("oldstory") else "Settings"      # (the story game has no Collection)
@@ -300,7 +308,7 @@ func _run_flow() -> void:
 	await get_tree().process_frame
 	_touch(0, centre, false)
 	await _settle(0.9)             # the fade out, your room being built, the fade in
-	_check("a tap on Play opens your room", is_instance_valid(main.get("hub")) and String(main.get("hub").get("place_id")) == "room")
+	_check("a tap on New Game opens your room", is_instance_valid(main.get("hub")) and String(main.get("hub").get("place_id")) == "room")
 	_check("a touch switches to touch controls", Controls.using_touch)
 	await _key(KEY_ESCAPE)
 	await _settle()
@@ -993,3 +1001,344 @@ func _run_kit() -> void:
 	await G.save_shot("kit.png")
 	print("[kit] grid %s, %s px per UI px, phone %s" % [root.size, root.get("px"), ph])
 	G.quit(0)
+
+
+# ------------------------------------------------------------------ the saved games (--uitour=save, --uitour=shell)
+## (a folder of this run's own, so two checks running at once never share files)
+var SAVE_TEST_DIR := "user://_savetest_%d/" % OS.get_process_id()
+## A save file as versions before the slots wrote it (one file, the settings inside).
+const OLD_SAVE := {
+	"version": 1, "unlocks": {"item:test": true}, "stats": {"runs": 2}, "seen": {}, "flags": {"taught:x": true},
+	"hub": {"tale:step": 5, "rpg:lvl": 4, "bank:coins": 77},
+	"settings": {"music_volume": 0.3, "hero_name": "Tester", "shake": false},
+}
+
+
+func _save_check(what: String, ok: bool) -> void:
+	_count += 1
+	if ok:
+		print("[save] ok    ", what)
+	else:
+		_fails += 1
+		print("[save] FAIL  ", what)
+
+
+func _wipe_dir(dir: String) -> void:
+	var d := DirAccess.open(dir)
+	if d == null:
+		return
+	for f: String in d.get_files():
+		d.remove(f)
+	DirAccess.remove_absolute(dir)
+
+
+## Points the Save autoload at an empty folder of its own and switches writing on (a tour never
+## touches the player's real files). _save_test_end() puts everything back.
+func _save_test_begin() -> void:
+	_wipe_dir(SAVE_TEST_DIR)
+	DirAccess.make_dir_recursive_absolute(SAVE_TEST_DIR)
+	Save.root = SAVE_TEST_DIR
+	Save.disk = true
+
+
+func _save_test_end() -> void:
+	Save.disk = false
+	Save.root = "user://"
+	_wipe_dir(SAVE_TEST_DIR)
+
+
+func _text_of(path: String) -> String:
+	return FileAccess.get_file_as_string(path) if FileAccess.file_exists(path) else ""
+
+
+func _put(path: String, text: String) -> void:
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string(text)
+	f.close()
+
+
+func _press(b: Button) -> void:
+	if b != null:
+		b.pressed.emit()
+	await _settle(0.5)
+
+
+func _run_save() -> void:
+	_save_test_begin()
+	var dir := SAVE_TEST_DIR
+
+	# ---- 1. a save from before the slots is taken over into slot 1, and left alone
+	var old_text := JSON.stringify(OLD_SAVE, "\t")
+	_put(dir + "save.json", old_text)
+	Save.boot()
+	_save_check("the old save.json became slot 1 (step, level and coins are there)",
+		Save.slot == 1 and Save.hub_get("tale:step") == 5 and Save.hub_get("rpg:lvl") == 4 and Save.hub_get("bank:coins") == 77
+		and Save.is_unlocked("item:test") and Save.flag("taught:x") and Save.stat_get("runs") == 2)
+	_save_check("its settings were taken over", is_equal_approx(float(Save.setting("music_volume")), 0.3)
+		and String(Save.setting("hero_name")) == "Tester" and Save.setting("shake") == false)
+	_save_check("the new settings have their defaults", String(Save.setting("battle_mode")) == "normal" and int(Save.setting("battle_speed")) == 1
+		and Save.setting("hints") == true and Save.setting("binds") is Dictionary and String(Save.setting("flashes")) == "full")
+	_save_check("the old file is untouched, byte for byte", _text_of(dir + "save.json") == old_text)
+	_save_check("slot 1 has a file of its own", FileAccess.file_exists(Save.slot_path(1)))
+	Save.hub_set("bank:coins", 80)
+	Save.set_setting("binds", {"interact": {"keys": [69], "pad": [0]}})
+	Save.flush()
+	_save_check("after a flush: settings.json exists, the slot file has no settings in it, a meta block is there",
+		FileAccess.file_exists(dir + "settings.json") and not (JSON.parse_string(_text_of(Save.slot_path(1))) as Dictionary).has("settings")
+		and (JSON.parse_string(_text_of(Save.slot_path(1))) as Dictionary).get("meta") is Dictionary)
+	_save_check("the old file is STILL untouched after playing on", _text_of(dir + "save.json") == old_text)
+	Save.boot()
+	_save_check("started again: slot 1, 80 coins, the rebound keys come back as a dictionary",
+		Save.slot == 1 and Save.hub_get("bank:coins") == 80 and (Save.setting("binds") as Dictionary).has("interact") and not Save.recovered)
+
+	# ---- 2. slot 3: write it, cut the file short, and it loads from its backup
+	Save.new_game(3)
+	Save.hub_set("tale:step", 9)
+	Save.hub_set("bank:coins", 123)
+	Save.place_name = "Dustwatch"
+	Save.add_play(600.0)
+	var heard := [0]
+	var on_flush := func() -> void: heard[0] += 1
+	Save.flushed.connect(on_flush)
+	Save.flush()
+	Save.hub_set("bank:coins", 150)
+	Save.flush()
+	Save.flushed.disconnect(on_flush)
+	var path3: String = Save.slot_path(3)
+	_save_check("slot 3 was written twice, each write said so (the Saved tag)", heard[0] == 2 and FileAccess.file_exists(path3))
+	_save_check("its backup holds the write before (123 coins), no .tmp is left over",
+		FileAccess.file_exists(path3 + ".bak") and not FileAccess.file_exists(path3 + ".tmp")
+		and int(((JSON.parse_string(_text_of(path3 + ".bak")) as Dictionary)["hub"] as Dictionary)["bank:coins"]) == 123)
+	var info: Dictionary = Save.slot_info(3)
+	_save_check("its card: step 9, Dustwatch, ten minutes played, a date",
+		bool(info["exists"]) and int(info["step"]) == 9 and String(info["place"]) == "Dustwatch" and is_equal_approx(float(info["play_s"]), 600.0) and String(info["date"]) != "")
+	var whole := _text_of(path3)
+	_put(path3, whole.left(whole.length() / 2))          # the power went out in the middle of a write
+	Save.boot()
+	_save_check("a slot file cut short: the game starts, in slot 3, from the backup (123 coins, step 9)",
+		Save.slot == 3 and Save.recovered and Save.hub_get("bank:coins") == 123 and Save.hub_get("tale:step") == 9)
+	var kept := false
+	for f: String in DirAccess.get_files_at(dir):
+		kept = kept or f.begins_with("save_3.broken_")
+	_save_check("the broken file was kept under a dated name", kept)
+	_save_check("the slot's file is whole again", JSON.parse_string(_text_of(path3)) is Dictionary)
+	Save.hub_set("bank:coins", 124)
+	Save.flush()
+	_save_check("and can be written again", int(((JSON.parse_string(_text_of(path3)) as Dictionary)["hub"] as Dictionary)["bank:coins"]) == 124)
+
+	# ---- 3. garbage everywhere: nothing crashes, the game starts fresh
+	_put(dir + "settings.json", "{ this is not json")
+	_put(dir + "settings.json.bak", "nor this")
+	_put(Save.slot_path(2), "\u0000\u0001 garbage")
+	Save.boot()
+	_save_check("garbled settings: the defaults, slot 1, and the game still starts", Save.slot == 1 and is_equal_approx(float(Save.setting("music_volume")), 0.7))
+	Save.set_setting("music_volume", 0.5)
+	Save.flush()
+	_save_check("a garbled slot with no backup reads as empty", not bool(Save.slot_info(2)["exists"]))
+	DirAccess.remove_absolute(Save.slot_path(2))
+
+	# ---- 4. copy, erase, switch
+	_save_check("copy slot 3 into slot 2", Save.copy_slot(3, 2) and bool(Save.slot_info(2)["exists"]) and int(Save.slot_info(2)["coins"]) == 124)
+	_save_check("an empty slot cannot be copied", Save.copy_slot(2, 2) == false)
+	Save.use_slot(2)
+	Save.hub_set("bank:coins", 500)
+	Save.use_slot(1)
+	_save_check("switching slots writes the one left (500) and reads the other (80)", int(Save.slot_info(2)["coins"]) == 500 and Save.hub_get("bank:coins") == 80)
+	Save.erase_slot(2)
+	_save_check("erase slot 2: its file and its backup are gone", not bool(Save.slot_info(2)["exists"]) and not FileAccess.file_exists(Save.slot_path(2)) and not FileAccess.file_exists(Save.slot_path(2) + ".bak"))
+	_save_check("the first free slot is 2", Save.free_slot() == 2)
+	Save.reset_progress()
+	_save_check("erasing the slot being played empties it in memory too, settings stay",
+		Save.hub_get("bank:coins") == 0 and not bool(Save.slot_info(1)["exists"]) and Save.setting("binds") is Dictionary)
+
+	# ---- 5. --nosave: nothing is written
+	Save.erase_slot(3)
+	Save.disk = false
+	Save.new_game(2)
+	Save.hub_set("tale:step", 3)
+	Save.flush()
+	_save_check("with writing off no file appears, the game lives in memory", not FileAccess.file_exists(Save.slot_path(2)) and bool(Save.slot_info(2)["exists"]) and Save.hub_get("tale:step") == 3)
+	Save.erase_slot(2)
+	Save.disk = true
+	Save.boot()
+	_save_check("after a restart the erased slot 1 stays empty (the old save.json is taken over only once)",
+		not Save.any_slot() and Save.hub_get("tale:step") == 0 and FileAccess.file_exists(dir + "save.json"))
+
+	# ---- 6. the title's rows, with nothing saved
+	await main.call("show_title")
+	await _settle(0.6)
+	var title: Control = main.call("top_screen")
+	_save_check("nothing saved: the title offers New Game first, no Continue, no Load",
+		_focus_text() == "New Game" and title.find_child("Row_continue", true, false) == null and title.find_child("Row_load", true, false) == null)
+	for row: Array in [["settings", "settings"], ["credits", "credits"]]:
+		await _press(title.find_child("Row_" + String(row[0]), true, false) as Button)
+		_save_check("the title's %s row opens it" % row[0], main.call("top_name") == row[1])
+		main.call("close_top")
+		await _settle(0.3)
+	await _press(title.find_child("Row_quit", true, false) as Button)
+	_save_check("Quit asks first (it used to freeze the game)", is_instance_valid(title.get("_dialog")) and _focus_text() == "Stay")
+	title.call("close_dialog")
+	await _settle(0.3)
+	await _press(title.find_child("Row_new", true, false) as Button)
+	await _settle(1.0)
+	var hub: Node = main.get("hub")
+	_save_check("New Game starts in your room, in slot 1, and the slot is on the disk at once",
+		is_instance_valid(hub) and String(hub.get("place_id")) == "room" and Save.slot == 1 and FileAccess.file_exists(Save.slot_path(1)))
+
+	# ---- 7. the pause menu of a walking place
+	main.call("_back")
+	await _settle(0.5)
+	var pause: Control = main.call("top_screen")
+	_save_check("Back opens the pause menu", main.call("top_name") == "pause")
+	var Pause: Script = load("res://scripts/ui/pause.gd")
+	var rows_right := true
+	for extra: Array in Pause.get_script_constant_map()["MORE"]:
+		var there: bool = pause.find_child("Open_" + String(extra[1]), true, false) != null
+		rows_right = rows_right and there == bool(Pause.call("has_screen", String(extra[1]), String(extra[3])))
+	_save_check("it lists Journal / Map / Items / How to play exactly when those screens exist", rows_right)
+	Save.hub_set("bank:coins", 31)
+	await _press(pause.find_child("Title", true, false) as Button)
+	_save_check("Title asks first", is_instance_valid(pause.get("_dialog")))
+	if is_instance_valid(pause.get("_dialog")):
+		(pause.get("_dialog") as Control).emit_signal("answered", true)
+	await _settle(1.0)
+	title = main.call("top_screen")
+	_save_check("back on the title the game is on the disk (31 coins)",
+		main.call("top_name") == "title" and int(((JSON.parse_string(_text_of(Save.slot_path(1))) as Dictionary)["hub"] as Dictionary).get("bank:coins", 0)) == 31)
+	_save_check("now Continue is first and has the focus, and Load is offered",
+		_focus_text() == "Continue" and title.find_child("Row_load", true, false) != null)
+
+	# ---- 8. the slots screen
+	await _press(title.find_child("Row_load", true, false) as Button)
+	var slots: Control = main.call("top_screen")
+	_save_check("Load opens the three slots", main.call("top_name") == "slots" and (slots.get("_cards") as Array).size() == 3)
+	slots.call("_mark", 1, false)
+	slots.call("_act", "copy")
+	await _settle(0.3)
+	slots.call("_press_card", 3)
+	await _settle(0.3)
+	_save_check("Copy, then a card: slot 1 is copied into slot 3", bool(Save.slot_info(3)["exists"]) and int(Save.slot_info(3)["coins"]) == 31)
+	slots.call("_mark", 3, false)
+	slots.call("_act", "erase")
+	await _settle(0.3)
+	_save_check("Erase asks first", is_instance_valid(slots.get("_dialog")) and bool(Save.slot_info(3)["exists"]))
+	if is_instance_valid(slots.get("_dialog")):
+		(slots.get("_dialog") as Control).emit_signal("answered", true)
+	await _settle(0.3)
+	_save_check("and then slot 3 is empty", not bool(Save.slot_info(3)["exists"]))
+	slots.call("_mark", 2, false)
+	slots.call("_act", "continue")
+	_save_check("Continue on an empty slot says why and goes nowhere", main.call("top_name") == "slots" and String((slots.get("_hint") as Label).text).contains("empty"))
+	slots.call("_press_card", 1)
+	await _settle(1.0)
+	hub = main.get("hub")
+	_save_check("a press on slot 1's card goes on with that game", is_instance_valid(hub) and Save.slot == 1 and Save.hub_get("bank:coins") == 31)
+
+	# ---- 9. a request that comes during a fade is kept, and the pause menu of a battle
+	main.set("_busy", true)
+	main.call("_on_action", "hub_encounter", 0)
+	main.set("_busy", false)
+	_save_check("a fight asked for during a fade is kept for after it", (main.get("_queued") as Array).size() == 2)
+	main.set("_queued", [])
+	await main.call("show_battle", 0, false, "")
+	var waited := 0
+	while is_instance_valid(main.get("battle")) and String(main.get("battle").get("_menu_page")) != "commands" and waited < 60:
+		await _settle(0.3)
+		waited += 1
+	main.call("_back")
+	await _settle(0.5)
+	pause = main.call("top_screen")
+	_save_check("Back on a battle's orders opens the battle's pause menu",
+		main.call("top_name") == "pause" and pause != null and bool(pause.get("in_battle")) and pause.find_child("GiveUp", true, false) != null
+		and pause.find_child("Title", true, false) == null)
+	main.call("_back")
+	await _settle(0.5)
+	_save_check("Back again resumes the battle", main.call("top_name") == "" and is_instance_valid(main.get("battle")))
+	main.call("_back")
+	await _settle(0.5)
+	pause = main.call("top_screen")
+	if pause != null:
+		await _press(pause.find_child("GiveUp", true, false) as Button)
+		_save_check("Give up the fight asks first", is_instance_valid(pause.get("_dialog")) and is_instance_valid(main.get("battle")))
+		if is_instance_valid(pause.get("_dialog")):
+			(pause.get("_dialog") as Control).emit_signal("answered", true)
+	waited = 0
+	while (is_instance_valid(main.get("battle")) or not is_instance_valid(main.get("hub"))) and waited < 40:
+		await _settle(0.5)
+		waited += 1
+	_save_check("giving up ends the fight as lost: he is in a place again", is_instance_valid(main.get("hub")) and not is_instance_valid(main.get("battle")))
+
+	main.call("close_all")
+	_save_test_end()
+	if _fails == 0:
+		print("[save] ok: %d checks, 0 failed" % _count)
+	else:
+		print("[save] FAIL: %d of %d checks failed" % [_fails, _count])
+	G.quit(1 if _fails > 0 else 0)
+
+
+## Pictures of the shell: the title with a game to continue, the slots, the pause menus, the tag.
+func _shell_shots() -> void:
+	_save_test_begin()
+	Save.boot()
+	Save.new_game(2)
+	Save.hub_set("tale:step", 3)
+	Save.hub_set("rpg:lvl", 2)
+	Save.hub_set("bank:coins", 64)
+	Save.place_name = "The Rune Glade"
+	Save.add_play(1380.0)
+	Save.flush()
+	Save.new_game(1)
+	Save.hub_set("tale:step", 9)
+	Save.hub_set("rpg:lvl", 6)
+	Save.hub_set("bank:coins", 214)
+	Save.place_name = "Dustwatch"
+	Save.add_play(7560.0)
+	Save.flush()
+	Save.recovered = false
+	Controls.call("_set_touch", false, false)
+	await main.call("show_title")
+	await _settle(1.0)
+	await _shot("title_continue")
+	main.call("_on_action", "slots", "load")
+	await _shot("slots_load")
+	var slots: Control = main.call("top_screen")
+	slots.call("_mark", 1, false)
+	slots.call("_act", "copy")
+	await _shot("slots_copy_pick")
+	slots.call("on_back")
+	slots.call("_mark", 1, false)
+	slots.call("_act", "erase")
+	await _shot("slots_erase_question")
+	slots.call("close_dialog")
+	main.call("close_top")
+	Save.recovered = true
+	await main.call("show_title")
+	await _shot("title_recovered")
+	Save.recovered = false
+	await main.call("show_hub", "village")
+	await _settle(1.2)
+	main.call("open_hub_pause")
+	await _shot("hub_pause_rows")
+	main.call("close_all")
+	(main.get("_saved_tag") as Control).call("show_now")
+	await _shot("saved_tag")
+	await main.call("show_battle", 0, false, "")
+	var waited := 0
+	while is_instance_valid(main.get("battle")) and String(main.get("battle").get("_menu_page")) != "commands" and waited < 60:
+		await _settle(0.3)
+		waited += 1
+	main.call("_back")
+	await _shot("battle_pause")
+	var pause: Control = main.call("top_screen")
+	if pause != null and pause.find_child("GiveUp", true, false) != null:
+		(pause.find_child("GiveUp", true, false) as Button).pressed.emit()
+		await _shot("battle_give_up_question")
+	main.call("close_all")
+	_save_test_end()
+
+
+func _run_shell() -> void:
+	await _shell_shots()
+	print("[tour] done, %d screenshots" % _count)
+	G.quit()

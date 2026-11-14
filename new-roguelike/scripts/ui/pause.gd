@@ -1,7 +1,8 @@
 extends "res://scripts/ui/screen.gd"
 ## Pause menu. Two kinds:
 ##   in a walking place (run == null): the veil and one centred glass panel: PAUSED, Resume, Knight,
-##     Settings, Title (asks first: "Back to the title? The game saves as you walk.").
+##     Journal / Map / Items / How to play (each once its screen exists), Settings, Title (asks first).
+##   in a turn-based battle (run == null, in_battle): Resume, Settings, Give up the fight (asks first).
 ##   in an old dungeon run: Resume, Knight, Settings, Back to camp / Give up (asks first), plus what
 ##     you carry and how the run is going. The game underneath is frozen by main.gd.
 ## Tap or move onto an item to read what it does. Esc / B / a right click = Resume.
@@ -11,7 +12,26 @@ const Items = preload("res://scripts/data/items.gd")
 const Icon = preload("res://scripts/ui/icon.gd")
 const Rpg = preload("res://scripts/data/rpg.gd")
 
+## The rows a walking pause offers after Knight: [words, the screen's file name in scripts/ui,
+## what is sent with "open_screen", the page that screen must have ("" = any)]. A row only shows
+## when its screen's file exists (and, for a page, when the screen lists it in its PAGES).
+const MORE := [
+	["Journal", "journal", "journal", ""],
+	["Map", "world_map", "world_map", ""],
+	["Items", "knight", ["knight", {"page": "items"}], "items"],
+	["How to play", "howto", "howto", ""],
+]
+## The words of the walking and the battle pause (placeholders the owner may rewrite).
+const WORDS := {
+	"paused": "Paused", "resume": "Resume", "settings": "Settings", "title": "Title", "stay": "Stay",
+	"ask_title": "Back to the title? Your game is saved.",
+	"give_up": "Give up the fight",
+	"ask_give_up": "Give up this fight? It counts as lost: you wake in a bed and some of your coins are gone.",
+	"yes_give_up": "Give up", "no_give_up": "Fight on",
+}
+
 var run: Node                    ## set by main.gd
+var in_battle := false           ## set by main.gd: the pause over a turn-based battle
 var _detail: Label
 var _detail_name: Label
 var _knight: Button
@@ -170,7 +190,9 @@ func build() -> void:
 	UI.pop_in(cols)
 
 
-## The pause menu over a walking place (no run): Resume, Knight, Settings, Title (asks first).
+## The pause menu over a walking place (no run): Resume, Knight, then the screens a returning
+## player needs (Journal, Map, Items, How to play: each only once its screen exists), Settings,
+## Title (asks first). In a battle (in_battle): Resume, Settings, Give up the fight (asks first).
 func _build_walking() -> void:
 	var ph := UI.is_phone()
 	var centre := CenterContainer.new()
@@ -183,29 +205,62 @@ func _build_walking() -> void:
 	var col := UI.vbox(3 if not ph else 2)
 	panel.add_child(col)
 	col.add_child(UI.spacer(0, 4 if not ph else 1))
-	var head := UI.label("Paused", "Head")
+	var head := UI.label(WORDS["paused"], "Head")
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(head)
 	var rule := UI.rule(120, UI.C_BRASS, "both")
 	rule.custom_minimum_size = Vector2(0, 7 if not ph else 4)
 	col.add_child(rule)
 	# (one face for every row: Resume is first and gold; focus is the brass bar and the flame)
-	var resume := UI.button("Resume", func() -> void: send("resume"))
-	resume.custom_minimum_size.y = (UI.row_h + 3.0) if not ph else 20.0
-	resume.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	var resume := UI.button(WORDS["resume"], func() -> void: send("resume"))
+	resume.name = "Resume"
 	resume.add_theme_color_override("font_color", UI.C_GOLD)
-	col.add_child(resume)
-	_knight = UI.button(_knight_text(), func() -> void: send("knight"))
-	var settings := UI.button("Settings", func() -> void: send("settings"))
-	var title := UI.button("Title", func() -> void:
-		ask("Back to the title? The game saves as you walk.", "Title", "Stay", func() -> void: send("title"), false))
-	for b: Button in [_knight, settings, title]:
-		b.custom_minimum_size.y = (UI.row_h + 3.0) if not ph else 20.0
+	var rows: Array[Button] = [resume]
+	if in_battle:
+		rows.append(UI.button(WORDS["settings"], func() -> void: send("settings")))
+		var give := UI.button(WORDS["give_up"], func() -> void:
+			ask(WORDS["ask_give_up"], WORDS["yes_give_up"], WORDS["no_give_up"], func() -> void: send("battle_give_up")), "Danger")
+		give.name = "GiveUp"
+		rows.append(give)
+	else:
+		_knight = UI.button(_knight_text(), func() -> void: send("knight"))
+		rows.append(_knight)
+		for extra: Array in MORE:
+			if not has_screen(String(extra[1]), String(extra[3])):
+				continue                       # that screen (or that page of it) is not in this build yet: no row
+			var b := UI.button(String(extra[0]), send.bind("open_screen", extra[2]))
+			b.name = "Open_" + String(extra[1])
+			rows.append(b)
+		rows.append(UI.button(WORDS["settings"], func() -> void: send("settings")))
+		var title := UI.button(WORDS["title"], func() -> void:
+			ask(WORDS["ask_title"], WORDS["title"], WORDS["stay"], func() -> void: send("title"), false))
+		title.name = "Title"
+		rows.append(title)
+	# on a phone a long menu gets shorter rows, so it never runs off the 180 px tall screen
+	var row_h := (UI.row_h + 3.0) if not ph else (20.0 if rows.size() <= 5 else 16.0)
+	for b: Button in rows:
+		b.custom_minimum_size.y = row_h
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		col.add_child(b)
 	col.add_child(UI.spacer(0, 3 if not ph else 0))
 	default_focus = resume
 	UI.pop_in(panel)
+
+
+## True when scripts/ui/<file>.gd exists and, if a page is named, its PAGES table lists that page.
+static func has_screen(file: String, page: String = "") -> bool:
+	var path := "res://scripts/ui/%s.gd" % file
+	if not ResourceLoader.exists(path):
+		return false
+	if page == "":
+		return true
+	var script := load(path) as Script
+	var pages: Variant = script.get_script_constant_map().get("PAGES") if script != null else null
+	if pages is Array:
+		for row: Variant in pages:
+			if row is Array and not (row as Array).is_empty() and String(row[0]) == page:
+				return true
+	return false
 
 
 ## A right click means "carry on" (the mouse's Back).
