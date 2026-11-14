@@ -1120,7 +1120,7 @@ var _mate_hands: RefCounted
 var _mate_face := 1.0
 func _build_follower() -> void:
 	_mate = null
-	var mate := Allies.with()
+	var mate := Allies.with() if G.arg("ally") == "" else Allies.row(G.arg("ally"))      # (--ally=<id>: a test, she walks behind him)
 	if mate.is_empty():
 		return
 	_mate = Node2D.new()

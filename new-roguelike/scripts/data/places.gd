@@ -489,7 +489,7 @@ static func _room_inside() -> Dictionary:
 	return {"x0": 6.0, "x1": 138.0, "back": 60.0, "near": 158.0, "high": 60.0, "near_high": 9.0,
 		"floor": "hub_ifloor_herring", "wall": "hub_iwall", "no_posts": [[50, 134]],
 		"sun": 0.18, "ambient": 0.34, "ambient_col": Color(0.70, 0.66, 0.80), "sun_col": Color(0.62, 0.70, 1.0),
-		"sun_hd": 0.25, "ambient_hd": 0.20, "exposure_hd": 1.25,
+		"sun_hd": 0.25, "ambient_hd": 0.36, "exposure_hd": 1.5,
 		"items": [
 			{"k": "rug", "p": "hub_irug_x", "at": Vector2(90, 112)},
 			{"k": "wall", "p": "hub_idoor_a", "x": 112.0},
@@ -524,7 +524,7 @@ static func _hall_inside() -> Dictionary:
 		{"k": "wall", "p": "hub_iwin_big", "x": 422.0, "up": 24.0},
 		{"k": "sconce", "x": 290.0, "up": 40.0, "light": 0.7, "reach": 90.0},
 		{"k": "sconce", "x": 386.0, "up": 40.0},
-		{"k": "sconce", "x": 222.0, "up": 40.0},
+		{"k": "sconce", "x": 222.0, "up": 40.0, "light": 0.6, "reach": 90.0},
 		{"k": "wall", "p": "hub_ibear", "x": 452.0, "up": 50.0},
 		# the bar: a counter with a return to the wall, things on it, two stools in front
 		{"k": "box", "at": Vector2(108, 117), "size": Vector3(108, 14, 12), "tex": "hub_iwall_wood", "top": "hub_ifloor_plank"},
@@ -535,7 +535,7 @@ static func _hall_inside() -> Dictionary:
 		{"k": "stand", "p": "hub_ibottle_3", "at": Vector2(146, 110), "lift": 14.0},
 		{"k": "stand", "p": "hub_ibottle_8", "at": Vector2(156, 96), "lift": 14.0},
 		{"k": "stand", "p": "hub_ibottle_1", "at": Vector2(158, 84), "lift": 14.0},
-		{"k": "light", "at": Vector2(64, 114), "up": 36.0, "light": 0.6, "reach": 80.0},
+		{"k": "light", "at": Vector2(104, 112), "up": 34.0, "light": 0.9, "reach": 120.0},
 		{"k": "stand", "p": "hub_istool_red", "at": Vector2(66, 130), "block": Vector2(12, 6)},
 		{"k": "stand", "p": "hub_istool_red", "at": Vector2(86, 130), "block": Vector2(12, 6)},
 		# by the left wall: casks and crates
@@ -575,7 +575,7 @@ static func _hall_inside() -> Dictionary:
 	return {"x0": 6.0, "x1": 458.0, "back": 58.0, "near": 252.0, "high": 80.0, "near_high": 10.0, "gaps": [[8.0, 60.0]],
 		"floor": "hub_ifloor_plank", "wall": "hub_iwall", "no_posts": [[56, 166], [170, 214], [312, 364]],
 		"sun": 0.16, "ambient": 0.30, "ambient_col": Color(0.74, 0.64, 0.62), "sun_col": Color(0.62, 0.70, 1.0),
-		"sun_hd": 0.22, "ambient_hd": 0.18, "exposure_hd": 1.25,
+		"sun_hd": 0.22, "ambient_hd": 0.38, "exposure_hd": 1.5,
 		"items": items}
 
 
