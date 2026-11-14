@@ -306,24 +306,65 @@ void light() {
 ## The ground: the place's ground tile laid cell by cell, each turned at random so that no rows
 ## show, and OVER it whatever hub.gd painted flat (paths, paving, sand, decals).
 const FLOOR_PART := "
-uniform sampler2D ground_tex : source_color, filter_nearest, repeat_disable;
+uniform sampler2D ground_tex : source_color, filter_linear, repeat_disable;
 uniform vec4 ground_rect = vec4(0.0, 0.0, 1.0, 1.0);
-uniform sampler2D base_tex : source_color, filter_nearest, repeat_disable;
+uniform sampler2D base_tex : source_color, filter_linear, repeat_disable;
 uniform vec2 base_cell = vec2(3.0, 3.0);
 uniform vec4 base_region = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec2 base_texel = vec2(0.01, 0.01);
 uniform float grey = 0.22;
 varying vec2 at;
+// SHARP PIXELS (v0.31.0): the ground is pixel art seen at a slant. Plain nearest sampling shimmers and
+// crawls when the knight walks; plain bilinear is blurry. This keeps every art pixel crisp but melts
+// only the edge between two of them over one screen pixel, and where the ground is far enough that an
+// art pixel is smaller than a screen pixel it takes the average of four samples instead.
+// `p` is the spot in art pixels, `w` how many art pixels one screen pixel covers.
+vec2 sharp_at(vec2 p, vec2 w) {
+	vec2 f = fract(p);
+	vec2 s = clamp((f - 0.5) / max(w, vec2(0.0001)) + 0.5, 0.0, 1.0);
+	return floor(p) + s;
+}
 vec3 ground_colour(vec2 where) {
+	vec2 w = max(fwidth(where) * 16.0, vec2(0.0001));          // art pixels per screen pixel
+	float far = smoothstep(0.9, 1.6, max(w.x, w.y));
 	vec2 g = where / base_cell;
 	vec2 id = floor(g);
 	vec2 f = fract(g);
 	float h = fract(sin(dot(id, vec2(127.1, 311.7))) * 43758.5453);
-	if (h > 0.5) { f.x = 1.0 - f.x; }
-	if (fract(h * 7.0) > 0.5) { f.y = 1.0 - f.y; }
-	vec3 c = texture(base_tex, base_region.xy + clamp(f, base_texel, 1.0 - base_texel) * base_region.zw).rgb;
-	vec4 over = texture(ground_tex, (where - ground_rect.xy) / ground_rect.zw);
+	bool fx = h > 0.5;
+	bool fy = fract(h * 7.0) > 0.5;
+	// the tile's own pixels: where we are inside the cell, in art pixels, made sharp
+	vec2 cell_px = base_cell * 16.0;
+	vec2 pp = f * cell_px;
+	pp = sharp_at(pp, w);
+	vec2 u = pp / cell_px;
+	if (fx) { u.x = 1.0 - u.x; }
+	if (fy) { u.y = 1.0 - u.y; }
+	vec3 c = texture(base_tex, base_region.xy + clamp(u, base_texel, 1.0 - base_texel) * base_region.zw).rgb;
+	vec2 gp = (where - ground_rect.xy) / ground_rect.zw;
+	vec2 gsize = ground_rect.zw * 16.0;
+	vec4 over = texture(ground_tex, sharp_at(gp * gsize, w) / gsize);
+	if (far > 0.0) {
+		vec2 o = w * 0.3 / gsize;
+		vec4 a = texture(ground_tex, gp + vec2(o.x, o.y)) + texture(ground_tex, gp + vec2(-o.x, o.y))
+			+ texture(ground_tex, gp + vec2(o.x, -o.y)) + texture(ground_tex, gp + vec2(-o.x, -o.y));
+		over = mix(over, a * 0.25, far);
+	}
 	c = mix(c, over.rgb, over.a);
+	// GROUND DETAIL (v0.31.0, made by code): wide soft mottling and fine grain, so big flat stretches of
+	// sand and grass (the world map above all) have life in them. Tied to the art pixel grid.
+	vec2 q = floor(where * 16.0);
+	float grain = fract(sin(dot(q, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+	vec2 m = where * 0.9;
+	vec2 mi = floor(m);
+	vec2 mf = fract(m);
+	mf = mf * mf * (3.0 - 2.0 * mf);
+	float n00 = fract(sin(dot(mi, vec2(127.1, 311.7))) * 43758.5453);
+	float n10 = fract(sin(dot(mi + vec2(1.0, 0.0), vec2(127.1, 311.7))) * 43758.5453);
+	float n01 = fract(sin(dot(mi + vec2(0.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);
+	float n11 = fract(sin(dot(mi + vec2(1.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);
+	float blot = mix(mix(n00, n10, mf.x), mix(n01, n11, mf.x), mf.y) - 0.5;
+	c *= 1.0 + blot * 0.16 + grain * 0.05 * (1.0 - far);
 	float l = dot(c, vec3(0.299, 0.587, 0.114));
 	return mix(c, vec3(l) * 1.15, grey);
 }

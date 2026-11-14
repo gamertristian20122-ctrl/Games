@@ -1482,6 +1482,14 @@ of the reference game (golden forest camp, ship at night, town street): tilt-shi
 - The owner is on a phone: judge the look in `GL=1 ./tools/shot.sh <place> <dir> --uiphone`, not Forward+.
 - AI art tools (SpriteCook, CellCog and so on) are OFF LIMITS: the owner sells this as "not made with AI".
 
+## v0.31.0 (14 Nov 2026): sharper, richer ground (the owner: "increase the texture quality for the map")
+- `card_shader.gd FLOOR_PART`: the ground is sampled with SHARP PIXELS (`sharp_at`: crisp art pixels, only the
+  edge between two melts over one screen pixel; far ground averages four taps) instead of plain nearest, so
+  it no longer crawls when walking. Plus code-made GROUND DETAIL: soft mottling (+-8%) and fine grain (+-2.5%).
+  Both apply to every walking place, the world map's flat sand most. No art added or changed.
+- The owner installed two skills for Godot (`wshobson/agents@godot-gdscript-patterns`,
+  `gamedev-skills/.../godot-gdscript`) in the Games repo root (.claude/skills, not committed).
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.
