@@ -2,7 +2,8 @@ extends RefCounted
 ## Data checker: looks through every data table for typos (a sprite that does not exist, an AI
 ## file that is missing, a broken room layout ...). Run it with:
 ##   godot --headless --path . res://dev/world_test.tscn -- --validate
-## tools/check.sh runs it before the bot tests.
+## tools/check.sh runs it after dev/compile_all.gd (which loads EVERY script of the game; the
+## check_scripts() below only loads the old world half and the data tables).
 
 const Layouts = preload("res://scripts/data/room_layouts.gd")
 const Items = preload("res://scripts/data/items.gd")
@@ -93,8 +94,37 @@ static func curse(host: Node) -> Array[String]:
 	return CurseTests.run_all(host)
 
 
+## The shell (v0.45): every screen main.gd names has its file, the pause menu's and the hotkeys'
+## rows are whole, and every setting has a default of a kind the save file can hold.
+static func shell_checks() -> Array[String]:
+	var out: Array[String] = []
+	var main_script: Script = load("res://scripts/main.gd")
+	var pause_script: Script = load("res://scripts/ui/pause.gd")
+	if main_script == null or pause_script == null:
+		return ["main.gd or pause.gd does not load"]
+	var consts := main_script.get_script_constant_map()
+	for name: String in consts["SCREENS"]:
+		if not ResourceLoader.exists(String(consts["SCREENS"][name])):
+			out.append("main.gd SCREENS: '%s' names a file that is missing (%s)" % [name, consts["SCREENS"][name]])
+	for row: Variant in consts["HOTKEYS"]:
+		if not (row is Array and (row as Array).size() == 4 and row[0] is String and row[1] is String and row[2] is Dictionary and row[3] is String):
+			out.append("main.gd HOTKEYS: a row is not [action, screen, setup, page]: %s" % str(row))
+	for row: Variant in pause_script.get_script_constant_map()["MORE"]:
+		if not (row is Array and (row as Array).size() == 4 and row[0] is String and row[1] is String and row[3] is String):
+			out.append("pause.gd MORE: a row is not [words, file, what is sent, page]: %s" % str(row))
+	for file: String in ["slots", "kit/saved_tag"]:
+		if not ResourceLoader.exists("res://scripts/ui/%s.gd" % file):
+			out.append("scripts/ui/%s.gd is missing" % file)
+	for key: String in Save.DEFAULT_SETTINGS:
+		var v: Variant = Save.DEFAULT_SETTINGS[key]
+		if not (v is bool or v is int or v is float or v is String or v is Dictionary):
+			out.append("save.gd DEFAULT_SETTINGS: '%s' is of a kind the save file cannot hold" % key)
+	return out
+
+
 static func all() -> Array[String]:
 	var out: Array[String] = layout_checks()
+	out.append_array(shell_checks())
 	# ---- gear (scripts/data/gear.gd): a picture, a known slot, and every tier has Common and Rare pieces
 	var slots: Array = []
 	for sl: Dictionary in Gear.SLOTS:

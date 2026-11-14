@@ -13,13 +13,25 @@ extends Node
 ##   --fakerun          use the fake run (scripts/ui/dev_fake_run.gd) instead of the real one
 ##   --safe=l,t,r,b     pretend the phone has a notch this many game pixels deep on each side
 ##   --fonts=<dir>      try display.ttf / body.ttf from a folder outside the project
+##   --openscreen=<name>[:page]   walk into a place (--openat=<place>, default the village), open that
+##                      screen 2 s later; with --shots=<dir> save screen_<name>.png and quit
+##   --battlepause      with --battle=...: open the battle's pause menu after 6 s (with --shots:
+##                      battle_pause.png, then quit)
+##
+## SAVED GAMES: the title sends "continue" / "new_game" with a slot number (scripts/core/save.gd
+## slots, scripts/ui/slots.gd). main.gd counts the seconds played, writes the game every 60 s while
+## walking, and shows the small "Saved" tag (scripts/ui/kit/saved_tag.gd).
+##
+## ADDING A SCREEN needs no edit here: write scripts/ui/<name>.gd (it extends screen.gd) and send
+## ("open_screen", "<name>") or ("open_screen", ["<name>", {setup}]) from any screen or place.
 
 const Display = preload("res://scripts/ui/display.gd")
+const Pause = preload("res://scripts/ui/pause.gd")
 const UI = preload("res://scripts/ui/theme.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 
-## Every menu screen by name. To add a screen: write scripts/ui/<name>.gd (it extends
-## screen.gd), add it here, and open it from _on_action().
+## The menu screens main.gd itself opens, by name. A screen that is NOT listed here is looked for
+## as scripts/ui/<name>.gd (see open()), so a new screen is a new file only.
 const SCREENS := {
 	"title": "res://scripts/ui/title.gd",
 	"hero_select": "res://scripts/ui/hero_select.gd",
@@ -34,6 +46,16 @@ const SCREENS := {
 }
 ## Screens that keep the dungeon picture bright behind them; behind the others it is dimmed.
 const BRIGHT := ["title", "hero_select"]
+## Keys that open a screen straight from a walking place: [input action, screen, setup, the page
+## that screen must have]. Each works only once its action exists in the InputMap (scripts/core/
+## controls.gd makes them) and its screen's file exists.
+const HOTKEYS := [
+	["open_journal", "journal", {}, ""],
+	["open_map", "world_map", {}, ""],
+	["open_items", "knight", {"page": "items"}, "items"],
+]
+## The game is written to the disk this often while walking (seconds of real time).
+const AUTOSAVE_S := 60.0
 const RUN_SCRIPT := "res://scripts/run/run.gd"
 const FAKE_RUN_SCRIPT := "res://scripts/ui/dev_fake_run.gd"
 const HUB_SCRIPT := "res://scripts/hub/hub.gd"
@@ -77,6 +99,14 @@ var _from_place := ""            ## where the hero went into that level (a place
 var _from_at := Vector2.INF      ## ... and the spot he stood on, so a run puts him back there
 var _encounter := {}             ## the roamer's fight being played (scripts/data/roamers.gd fight()), or {}
 var _waiting_talk: Variant = null    ## words that could not be shown yet (see _on_action "talk")
+var _queued: Array = []          ## one ("hub_encounter" / "tale_do") request that came during a fade: run when it ends
+var _then_screen := ""           ## a screen the story asked for (Tale.apply "screen"): opened once the place is back
+var _battle_args: Array = [-1, false, ""]    ## spot, night, story of the battle being fought (for "Try again")
+var _saved_tag: Control          ## scripts/ui/kit/saved_tag.gd
+var _saved_in_battle := false    ## the game was written during a battle: say "Saved" once he walks again
+var _last_ms := 0                ## the clock at the last frame (play time is counted in real time)
+var _autosave_t := 0.0
+var _testing := false            ## a test flag is on: never pause by itself (focus lost, pad unplugged)
 var _seed := 0
 var _clock := 0.0
 var _time_limit := 0.0
@@ -96,6 +126,12 @@ func _ready() -> void:
 	_build_layers()
 	G.run_ended.connect(_on_run_ended)
 	G.note_found.connect(_on_note_found)
+	Save.flushed.connect(_on_saved)
+	_last_ms = Time.get_ticks_msec()
+	_testing = (G.flag("autotest") or G.flag("uitour") or G.flag("autobattle") or G.flag("intro") or G.flag("hub")
+		or G.args.has("shots") or G.args.has("battle") or G.args.has("time") or G.args.has("openscreen")
+		or DisplayServer.get_name() == "headless")
+	Input.joy_connection_changed.connect(_on_joy_changed)
 	Controls.pause_pressed.connect(_back)
 	Controls.menu_pressed.connect(open_knight)
 	if G.flag("uitour"):
@@ -113,6 +149,8 @@ func _ready() -> void:
 			show_battle(-1, G.flag("night"), G.arg("battle").trim_prefix("story:"))
 		else:
 			show_battle(int(G.arg("battle", "0")), G.flag("night"))
+		if G.flag("battlepause"):
+			_battle_pause_test()
 	elif G.flag("autotest"):
 		if G.flag("yard"):               # --yard: the bot spars in the training yard
 			G.next_run = {"training": true, "kit": []}
@@ -125,6 +163,9 @@ func _ready() -> void:
 		show_intro()                   # test: --intro plays the cutscene at once
 	elif G.flag("hub"):
 		show_hub("village" if G.arg("hub") == "" else G.arg("hub"))
+	elif G.arg("openscreen") != "":
+		show_hub(G.arg("openat", "village"))
+		_open_screen_test()
 	else:
 		_fade.color.a = 1.0
 		show_title()
@@ -166,6 +207,10 @@ func _build_layers() -> void:
 	fade_layer.name = "Fade"
 	add_child(fade_layer)
 	_fade_root = UI.attach(fade_layer)
+	_saved_tag = (load("res://scripts/ui/kit/saved_tag.gd") as Script).new()
+	_saved_tag.name = "SavedTag"
+	_saved_tag.set("allowed", func() -> bool: return is_instance_valid(hub) and not is_instance_valid(intro))
+	_fade_root.add_child(_saved_tag)
 	_fade = ColorRect.new()
 	_fade.color = Color(UI.C_VOID, 0.0)
 	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -175,6 +220,7 @@ func _build_layers() -> void:
 
 
 func _process(delta: float) -> void:
+	_count_play()
 	if _time_limit > 0.0:
 		_clock += delta
 		if _clock >= _time_limit:
@@ -183,10 +229,49 @@ func _process(delta: float) -> void:
 			quit_game()
 
 
+## Play time is real seconds with a place, a battle or the intro on screen (not the title, not the
+## pause menu, and a frame longer than a second counts as one: the app was asleep). Every
+## AUTOSAVE_S seconds of walking the game is written, so a crash never costs more than a minute.
+func _count_play() -> void:
+	var now := Time.get_ticks_msec()
+	var dt := clampf((now - _last_ms) / 1000.0, 0.0, 1.0)
+	_last_ms = now
+	var walking := is_instance_valid(hub)
+	if not (walking or is_instance_valid(battle) or is_instance_valid(intro)) or top_name() == "pause":
+		return
+	Save.add_play(dt)
+	if walking:
+		var place: Variant = hub.get("place")
+		if place is Dictionary and String((place as Dictionary).get("name", "")) != "" and Save.place_name != String(place["name"]):
+			Save.place_name = String(place["name"])
+			Save.touch()                 # (the slot card names the place: written with the next flush)
+		_autosave_t += dt
+		if _autosave_t >= AUTOSAVE_S and not _busy:
+			_autosave_t = 0.0
+			Save.touch()
+			Save.flush()
+
+
+func _on_saved() -> void:
+	_autosave_t = 0.0
+	if is_instance_valid(battle):
+		_saved_in_battle = true
+
+
 # ------------------------------------------------------------------ screens
+## The script of a screen: a row of SCREENS, or else scripts/ui/<name>.gd. "" = there is none.
+func screen_path(screen_name: String) -> String:
+	var path := String(SCREENS.get(screen_name, "res://scripts/ui/%s.gd" % screen_name))
+	return path if ResourceLoader.exists(path) else ""
+
+
 ## Opens a screen on top of the others. `setup` sets variables on it before it builds itself.
 func open(screen_name: String, setup: Dictionary = {}) -> Control:
-	var s: Control = (load(SCREENS[screen_name]) as Script).new()
+	var path := screen_path(screen_name)
+	if path == "":
+		push_warning("main: there is no screen called '%s'" % screen_name)
+		return null
+	var s: Control = (load(path) as Script).new()
 	s.name = screen_name
 	s.set("backdrop", backdrop)
 	for key: String in setup:
@@ -241,6 +326,7 @@ func top_screen() -> Control:
 func _refresh_layers() -> void:
 	var in_run := run != null
 	var in_hub := is_instance_valid(hub)
+	var in_battle := is_instance_valid(battle)
 	backdrop.visible = not in_run and not in_hub and not is_instance_valid(intro) and not is_instance_valid(battle)
 	var dimmed: bool = not _names.is_empty() and not (_names.back() in BRIGHT)
 	backdrop.call("set_dimmed", dimmed)
@@ -258,21 +344,26 @@ func _refresh_layers() -> void:
 		_title3d = null
 	if lit:
 		backdrop.visible = false
-	_shade.visible = ((in_run or in_hub) and not _stack.is_empty()) or (lit and dimmed)
+	_shade.visible = ((in_run or in_hub or in_battle) and not _stack.is_empty()) or (lit and dimmed)
 	hud.visible = in_run and _stack.is_empty()      # the pause menu shows its own numbers
 	touch.set("hub_mode", in_hub)
 	touch.call("set_active", (in_run or in_hub) and _stack.is_empty() and not _ending)
 	if in_hub:
 		hub.set("frozen", not _stack.is_empty())
+	if in_battle:
+		battle.set("frozen", not _stack.is_empty())     # (a battle without that variable just ignores it)
 
 
 func show_title() -> void:
+	if is_instance_valid(hub) or is_instance_valid(battle):
+		Save.touch()                     # (the place and the time played go into the slot's card)
 	await _drop_run()
 	_drop_hub()
 	_drop_intro()
 	_drop_battle()
 	get_tree().paused = false
 	close_all()
+	Save.flush()                     # (leaving for the title is a natural pause: the game is written)
 	open("title")
 	Sfx.music("title")
 	# a place or battle freed this frame still counts as alive until the frame ends: look again after
@@ -294,9 +385,18 @@ func show_battle(spot: int, night: bool = false, story: String = "") -> void:
 	battle.set("night", night)
 	battle.set("story", story)
 	battle.connect("finished", _on_battle_finished)
+	_battle_args = [spot, night, story]
 	_world.add_child(battle)
 	_refresh_layers()
-	Sfx.battle(story != "" and Tale.BATTLES.has(story) and Tale.BATTLES[story].has("boss"))
+	# the battle's music: a boss is a fight that cannot be fled from (the battle knows once it is built)
+	var boss: bool = story != "" and Tale.BATTLES.has(story) and Tale.BATTLES[story].has("boss")
+	var rules: Variant = battle.get("fight")
+	if rules is Object and rules.get("no_flee") != null:
+		boss = bool(rules.get("no_flee"))
+	if Sfx.has_method("battle_for"):
+		Sfx.call("battle_for", story, boss)
+	else:
+		Sfx.battle(boss)
 
 
 func _drop_battle() -> void:
@@ -317,11 +417,32 @@ func _on_battle_finished(outcome: String, summary: Dictionary) -> void:
 	if _busy:
 		return
 	var story := String(summary.get("story", ""))
+	_then_screen = ""
 	match outcome:
+		"retry":
+			# "Try again" on a lost fight: the same battle once more (the battle has already put
+			# health, mana and supplies back as they were when it began). He is not moved.
+			await _transition(show_battle.bind(int(summary.get("spot", _battle_args[0])), bool(summary.get("night", _battle_args[1])),
+				String(summary.get("story", _battle_args[2]))))
+			return
 		"win":
 			if story != "":
-				# a battle of the story: winning moves the story on (scripts/data/tale.gd)
-				_news = String(Tale.apply(Tale.BATTLES[story].get("win", {})).get("say", "Won"))
+				# a battle of the story: winning moves the story on (scripts/data/tale.gd). A battle
+				# that has done that itself says so ("applied") and hands over what came of it.
+				var fx: Dictionary = {}
+				if bool(summary.get("applied", false)):
+					fx = {"say": String(summary.get("say", "Won"))}
+					for key: String in ["screen", "battle"]:
+						if summary.has(key):
+							fx[key] = summary[key]
+				else:
+					fx = Tale.apply(_battle_row(story).get("win", {}))
+				_news = String(fx.get("say", "Won"))
+				_then_screen = String(fx.get("screen", ""))
+				if String(fx.get("battle", "")) != "":
+					# the win leads straight into the next battle (no rest in between)
+					await _transition(show_battle.bind(-1, bool(_battle_args[1]), String(fx["battle"])))
+					return
 			else:
 				Roamers.beaten(int(summary.get("spot", -1)))
 				if int(summary.get("spot", -1)) >= 0 and int(summary["spot"]) < Roamers.SPOTS.size():
@@ -333,6 +454,52 @@ func _on_battle_finished(outcome: String, summary: Dictionary) -> void:
 		_:
 			_news = "You got away."
 	await _transition(_after_battle)
+
+
+## A battle of the story by id: tale.gd's own table, or (once it offers it) Tale.battle_row(),
+## which also knows the battles of the story's later modules.
+func _battle_row(id: String) -> Dictionary:
+	var tale: Script = Tale
+	if _script_has(tale, "battle_row"):
+		var row: Variant = tale.call("battle_row", id)
+		if row is Dictionary:
+			return row
+	return Tale.BATTLES.get(id, {})
+
+
+static func _script_has(script: Script, method: String) -> bool:
+	for m: Dictionary in script.get_script_method_list():
+		if String(m["name"]) == method:
+			return true
+	return false
+
+
+## "Give up the fight" in the battle's pause menu: the fight ends as lost. The battle does it
+## itself when it can (give_up()); otherwise the same price is paid here as for a lost fight.
+func _battle_give_up() -> void:
+	if not is_instance_valid(battle) or _busy:
+		return
+	close_all()
+	if battle.has_method("give_up"):
+		battle.call("give_up")
+		return
+	battle.set("frozen", true)
+	battle.process_mode = Node.PROCESS_MODE_DISABLED
+	var share := float((battle.get_script() as Script).get_script_constant_map().get("LOSE_COINS", 0.2))
+	var lost := roundi(float(Save.hub_get("bank:coins")) * share)
+	Save.hub_set("bank:coins", Save.hub_get("bank:coins") - lost)
+	Wounds.rest()
+	Save.flush()
+	_on_battle_finished("lose", {"spot": _battle_args[0], "story": _battle_args[2], "lost": lost, "gave_up": true})
+
+
+## The pause menu over a battle (Resume, Settings, Give up the fight). The battle holds still
+## while it is open (`frozen`, set in _refresh_layers) and is shaded like a walking place.
+func _pause_battle() -> void:
+	if _busy or not _stack.is_empty() or not is_instance_valid(battle) or battle.get("_over") == true:
+		return
+	Sfx.play("ui_click")
+	open("pause", {"run": null, "in_battle": true})
 
 
 func _after_battle() -> void:
@@ -349,6 +516,15 @@ func _after_battle() -> void:
 			await G.save_shot("after_battle.png")
 		G.quit(0)
 	_news = ""
+	if _saved_in_battle and is_instance_valid(_saved_tag) and Save.disk:
+		_saved_tag.call("show_now")       # what the battle gave him is on the disk: say so now that he walks again
+	_saved_in_battle = false
+	if _then_screen != "":
+		# the story asked for a screen of its own (the ending): it opens over the place
+		var screen := _then_screen
+		_then_screen = ""
+		if screen_path(screen) != "":
+			open(screen)
 
 
 ## The animated intro (scripts/hub/intro.gd). When it ends, or is skipped, you wake in your room.
@@ -390,6 +566,7 @@ func show_hub(place: String = "", at: Vector2 = Vector2.INF) -> void:
 	hub.set("start_place", place)          # "" = your room in the tavern (Places.START)
 	hub.set("start_at", at)
 	hub.connect("action", _on_action)
+	Save.begin()                           # a place is open: there is a game in this slot now
 	_world.add_child(hub)
 	_refresh_layers()
 
@@ -407,15 +584,36 @@ func _on_action(what: String, arg: Variant) -> void:
 		_waiting_talk = arg          # a story moment that came during a fade or over another window: shown right after
 		return
 	if _busy:
+		if what in ["hub_encounter", "tale_do"] and is_instance_valid(hub):
+			_queued = [what, arg]    # a fight or a story step asked for during a fade is not lost: it runs when the fade ends
 		return
 	match what:
 		"back":
 			if top_name() == "pause" or (run != null and _stack.size() == 1 and top_name() in ["hub_talk", "knight"]):
 				resume()                # (a note read in a level, or the Knight screen, closes like the pause menu)
-			elif _stack.size() > 1 or is_instance_valid(hub):
+			elif _stack.size() > 1 or is_instance_valid(hub) or is_instance_valid(battle):
 				close_top()             # in the camp a talk window is the only screen open: Leave must close it
 				if is_instance_valid(hub) and _stack.is_empty():
 					hub.call("refresh_heroes")      # the mirror may have changed his looks
+		"continue", "new_game":
+			# the title or the slots screen chose a saved game (or an empty slot for a new one)
+			if what == "new_game":
+				Save.new_game(int(arg))
+			else:
+				Save.use_slot(int(arg))
+			G.world_clock = -1.0        # the time of day is read from that game when its first place opens
+			_autosave_t = 0.0
+			_on_action("play", null)
+		"slots":
+			open("slots", {"mode": String(arg)})
+		"open_screen":
+			# any screen of scripts/ui by its file name: "journal", or ["knight", {"page": "items"}]
+			var screen := String(arg[0]) if arg is Array else String(arg)
+			var setup: Dictionary = arg[1] if arg is Array and (arg as Array).size() > 1 and arg[1] is Dictionary else {}
+			if screen_path(screen) != "":
+				open(screen, setup)
+		"battle_give_up":
+			_battle_give_up()
 		"play":
 			if Save.hub_get("tale:intro" if Tale.on() else "seen:cutscene") == 0 and not G.flag("uitour"):
 				_transition(show_intro)     # the first time: the animated intro, then your room
@@ -452,6 +650,7 @@ func _on_action(what: String, arg: Variant) -> void:
 				_transition(show_battle.bind(-1, dusk, String(fx["battle"])))
 			else:
 				_news = String(fx.get("say", ""))
+				_then_screen = String(fx.get("screen", ""))
 				_transition(_after_battle)
 		"hub_encounter":
 			# a roamer touched the knight on the world map: a turn-based battle, then back to this spot
@@ -640,6 +839,7 @@ func start_run(hero_id: String, seed_value: int) -> void:
 	_seed = seed_value
 	_ending = false
 	Save.set_setting("last_hero", hero_id)
+	Save.begin()
 	var path := RUN_SCRIPT
 	if (G.flag("uitour") and G.arg("uitour") != "flow") or G.flag("fakerun") or not ResourceLoader.exists(RUN_SCRIPT):
 		path = FAKE_RUN_SCRIPT
@@ -816,6 +1016,8 @@ func give_up() -> void:
 
 
 func quit_game() -> void:
+	if is_instance_valid(hub) or is_instance_valid(battle):
+		Save.touch()                     # (so the time played up to this moment is written too)
 	Save.flush()
 	G.quit()
 
@@ -831,7 +1033,13 @@ func _back() -> void:
 	elif run != null:
 		pause()
 	elif is_instance_valid(battle):
-		battle.call("on_back")         # Back in a battle: one step back in its menu
+		# Back in a battle: one step back in its menu; with nothing to step back from, the pause menu.
+		# A battle that answers false says "nothing to step back from"; an older one answers nothing,
+		# and then the pause opens only from its first page (the orders).
+		var page: Variant = battle.get("_menu_page")
+		var answer: Variant = battle.call("on_back")
+		if (answer is bool and not answer) or (answer == null and page is String and page == "commands"):
+			_pause_battle()
 	elif is_instance_valid(intro):
 		intro.call("skip")             # Back during the intro: skip it
 	elif is_instance_valid(hub):
@@ -858,6 +1066,16 @@ func _unhandled_input(event: InputEvent) -> void:
 	# the gamepad's B button also means "back" while a menu is open
 	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_B and not _stack.is_empty():
 		_back()
+		return
+	# J / M / I (and their pad buttons): the journal, the map, the items, straight from a walking place
+	if event.is_pressed() and not event.is_echo() and is_instance_valid(hub) and _stack.is_empty() and not _busy \
+			and not is_instance_valid(intro) and not _ending:
+		for row: Array in HOTKEYS:
+			if InputMap.has_action(String(row[0])) and event.is_action_pressed(String(row[0])) and Pause.has_screen(String(row[1]), String(row[3])):
+				Sfx.play("ui_click")
+				open(String(row[1]), row[2])
+				get_viewport().set_input_as_handled()
+				return
 
 
 func _notification(what: int) -> void:
@@ -867,6 +1085,56 @@ func _notification(what: int) -> void:
 		# the phone switched to another app: do not let the hero die meanwhile
 		if run != null and not G.flag("autotest") and not G.flag("uitour"):
 			pause()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_hold()
+
+
+## The player looked away (another window in front) or the gamepad came unplugged: the game waits.
+## Walking: the pause menu. A battle: its pause menu, so nothing happens unseen. Never in a test.
+func _hold() -> void:
+	if _testing or _busy or _ending or not _stack.is_empty() or is_instance_valid(intro):
+		return
+	if is_instance_valid(battle):
+		_pause_battle()
+	elif is_instance_valid(hub):
+		open_hub_pause()
+	elif run != null:
+		pause()
+
+
+func _on_joy_changed(_device: int, connected: bool) -> void:
+	if not connected and not Controls.using_touch:
+		_hold()
+
+
+## Test (--openscreen=<name>[:page]): opens that screen over the place 2 s after it shows.
+func _open_screen_test() -> void:
+	await get_tree().create_timer(2.0, true, false, true).timeout
+	var parts := G.arg("openscreen").split(":")
+	var setup := {}
+	if parts.size() > 1:
+		setup["page"] = parts[1]
+	if screen_path(parts[0]) == "":
+		print("[main] --openscreen: there is no screen '%s'" % parts[0])
+	else:
+		open(parts[0], setup)
+		print("[main] --openscreen: %s is open" % parts[0])
+	if G.arg("shots") != "":
+		await get_tree().create_timer(1.0, true, false, true).timeout
+		await G.save_shot("screen_%s.png" % parts[0])
+		G.quit(0)
+
+
+## Test (--battle=... --battlepause): the battle's pause menu after 6 s.
+func _battle_pause_test() -> void:
+	await get_tree().create_timer(6.0, true, false, true).timeout
+	_pause_battle()
+	print("[main] --battlepause: top screen is '%s', the battle is %s" % [top_name(),
+		"held" if is_instance_valid(battle) and battle.get("frozen") == true else "not held (no 'frozen' in this battle)"])
+	if G.arg("shots") != "":
+		await get_tree().create_timer(1.0, true, false, true).timeout
+		await G.save_shot("battle_pause.png")
+		G.quit(0)
 
 
 # ------------------------------------------------------------------ fades
@@ -880,6 +1148,12 @@ func _transition(change: Callable) -> void:
 	await _fade_to(0.0)
 	_busy = false
 	_show_waiting_talk()
+	if not _queued.is_empty():
+		# a fight or a story step that was asked for while the screen was black
+		var q := _queued
+		_queued = []
+		if is_instance_valid(hub) and _stack.is_empty():
+			_on_action(String(q[0]), q[1])
 
 
 func _fade_to(alpha: float, time: float = 0.16) -> void:
