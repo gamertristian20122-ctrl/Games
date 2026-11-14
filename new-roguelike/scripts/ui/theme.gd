@@ -78,21 +78,144 @@ const ICON_BOOK := "ui_book"
 const ICON_COIN := "icon_tithe_imp"       ## the same gold coin picture as the old Tithe Imp item
 
 # ------------------------------------------------------------------ key prompts
-## THE binding table the prompts show. It mirrors scripts/core/controls.gd and the engine's ui_*
-## actions exactly; change a key there, change it here. "hold" = the verb means holding it down.
+## What each prompt kind shows (UI.prompt(kind, verb)). "action" = an InputMap action made in
+## scripts/core/controls.gd (ACTIONS): its cap is read from the InputMap, so it follows the
+## Controls screen (rebinding). "actions" = two of them joined with "/". "key" / "pad" = fixed text
+## (the engine's own ui_* buttons, which are not rebound); a fixed "pad" letter is an Xbox name and
+## is changed to the pad in use by pad_word(). "hold" = the verb means holding it down.
+## Any InputMap action name works as a kind too (UI.prompt("open_map", "Map")).
 const PROMPTS := {
 	"confirm": {"key": "Enter", "pad": "A"},
-	"back": {"key": "Esc", "pad": "B"},
-	"talk": {"key": "Q", "pad": "LB"},
-	"knight": {"key": "C", "pad": "Y"},
-	"pause": {"key": "Esc", "pad": "Start"},
-	"fast": {"key": "Space", "pad": "A", "hold": true},
-	"page": {"key": "Q/E", "pad": "LB/RB"},
-	"page_prev": {"key": "Q", "pad": "LB"},
-	"page_next": {"key": "E", "pad": "RB"},
+	"back": {"action": "pause", "pad": "B"},
+	"talk": {"action": "interact"},
+	"knight": {"action": "menu"},
+	"pause": {"action": "pause"},
+	"fast": {"action": "fast", "hold": true},
+	"page": {"actions": ["page_prev", "page_next"]},
+	"page_prev": {"action": "page_prev"},
+	"page_next": {"action": "page_next"},
 	"target": {"key": "< >", "pad": "D-pad"},
-	"move": {"key": "WASD", "pad": "L"},
+	"move": {"key": "WASD", "pad": "L", "moves": true},
+	"journal": {"action": "open_journal"},
+	"map": {"action": "open_map"},
+	"items": {"action": "open_items"},
+	"log": {"action": "talk_log"},
+	"auto": {"action": "auto"},
 }
+## Short names for keys whose engine name is long or has no letter in the font.
+const KEY_WORDS := {
+	KEY_ESCAPE: "Esc", KEY_ENTER: "Enter", KEY_KP_ENTER: "Enter", KEY_SPACE: "Space", KEY_TAB: "Tab",
+	KEY_SHIFT: "Shift", KEY_CTRL: "Ctrl", KEY_ALT: "Alt", KEY_BACKSPACE: "Bksp", KEY_DELETE: "Del",
+	KEY_INSERT: "Ins", KEY_HOME: "Home", KEY_END: "End", KEY_PAGEUP: "PgUp", KEY_PAGEDOWN: "PgDn",
+	KEY_LEFT: "Left", KEY_RIGHT: "Right", KEY_UP: "Up", KEY_DOWN: "Down", KEY_CAPSLOCK: "Caps",
+	KEY_QUOTELEFT: "`", KEY_MINUS: "-", KEY_EQUAL: "=", KEY_BRACKETLEFT: "[", KEY_BRACKETRIGHT: "]",
+	KEY_SEMICOLON: ";", KEY_APOSTROPHE: "'", KEY_COMMA: ",", KEY_PERIOD: ".", KEY_SLASH: "/", KEY_BACKSLASH: "\\",
+}
+## The words on gamepad caps for each make of pad: text only, no logos, no platform colours.
+## The setting "pad_glyphs" picks one ("auto" = from the name of the pad in use). A button with no
+## row shows "B<number>". Nintendo pads have A / B and X / Y the other way round.
+const PAD_STYLES := [["auto", "Auto"], ["xbox", "Xbox"], ["ps", "PlayStation"], ["nintendo", "Nintendo"]]
+const PAD_WORDS := {
+	"xbox": {JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
+		JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB", JOY_BUTTON_BACK: "Select", JOY_BUTTON_START: "Start",
+		JOY_BUTTON_LEFT_STICK: "LS", JOY_BUTTON_RIGHT_STICK: "RS", JOY_BUTTON_GUIDE: "Home",
+		JOY_BUTTON_DPAD_UP: "D-up", JOY_BUTTON_DPAD_DOWN: "D-down", JOY_BUTTON_DPAD_LEFT: "D-left", JOY_BUTTON_DPAD_RIGHT: "D-right"},
+	"ps": {JOY_BUTTON_A: "Cross", JOY_BUTTON_B: "Circle", JOY_BUTTON_X: "Square", JOY_BUTTON_Y: "Triangle",
+		JOY_BUTTON_LEFT_SHOULDER: "L1", JOY_BUTTON_RIGHT_SHOULDER: "R1", JOY_BUTTON_BACK: "Create", JOY_BUTTON_START: "Options",
+		JOY_BUTTON_LEFT_STICK: "L3", JOY_BUTTON_RIGHT_STICK: "R3", JOY_BUTTON_GUIDE: "PS"},
+	"nintendo": {JOY_BUTTON_A: "B", JOY_BUTTON_B: "A", JOY_BUTTON_X: "Y", JOY_BUTTON_Y: "X",
+		JOY_BUTTON_LEFT_SHOULDER: "L", JOY_BUTTON_RIGHT_SHOULDER: "R", JOY_BUTTON_BACK: "-", JOY_BUTTON_START: "+",
+		JOY_BUTTON_GUIDE: "Home"},
+}
+## Xbox letter -> button, for the fixed "pad" texts above.
+const PAD_LETTERS := {"A": JOY_BUTTON_A, "B": JOY_BUTTON_B, "X": JOY_BUTTON_X, "Y": JOY_BUTTON_Y,
+	"LB": JOY_BUTTON_LEFT_SHOULDER, "RB": JOY_BUTTON_RIGHT_SHOULDER, "Start": JOY_BUTTON_START}
+
+
+## The make of pad whose words are shown: "xbox", "ps" or "nintendo".
+static func pad_style() -> String:
+	var want: Variant = Save.setting("pad_glyphs")
+	var style := String(want) if want != null else "auto"
+	if PAD_WORDS.has(style):
+		return style
+	var pad := int(Controls.get("active_pad")) if Controls.get("active_pad") != null else -1
+	var pad_name := Input.get_joy_name(pad).to_lower() if pad >= 0 else ""
+	for word: String in ["dualsense", "dualshock", "playstation", "sony", "ps3", "ps4", "ps5"]:
+		if pad_name.contains(word):
+			return "ps"
+	for word: String in ["nintendo", "switch", "joy-con", "joycon"]:
+		if pad_name.contains(word):
+			return "nintendo"
+	return "xbox"
+
+
+## The word on the cap of a gamepad button (-1 = nothing bound: a dash).
+static func pad_name(button: int) -> String:
+	if button < 0:
+		return "-"
+	var words: Dictionary = PAD_WORDS[pad_style()]
+	if words.has(button):
+		return String(words[button])
+	var base: Dictionary = PAD_WORDS["xbox"]
+	return String(base[button]) if base.has(button) else "B%d" % button
+
+
+## A fixed Xbox word ("A", "LB/RB", "Start") in the words of the pad in use.
+static func pad_word(text: String) -> String:
+	var parts: Array = []
+	for part: String in text.split("/"):
+		parts.append(pad_name(int(PAD_LETTERS[part])) if PAD_LETTERS.has(part) else part)
+	return "/".join(PackedStringArray(parts))
+
+
+## The word on the cap of a physical key (-1 = nothing bound: a dash).
+static func key_name(code: int) -> String:
+	if code < 0:
+		return "-"
+	if KEY_WORDS.has(code):
+		return String(KEY_WORDS[code])
+	# (the letter printed on the player's own keyboard layout, where the system knows it)
+	var local := code
+	if DisplayServer.get_name() != "headless":
+		local = int(DisplayServer.keyboard_get_keycode_from_physical(code as Key))
+	var word := OS.get_keycode_string((local if local != 0 else code) as Key)
+	return word if word != "" else "?"
+
+
+## The cap text of an InputMap action: its first key, or its first pad button when `pad`.
+## Follows rebinding. "-" when nothing is bound; the action's name when there is no such action.
+static func cap_for(action: String, pad: bool = false) -> String:
+	if not InputMap.has_action(action):
+		return action
+	for ev: InputEvent in InputMap.action_get_events(action):
+		if pad and ev is InputEventJoypadButton:
+			return pad_name((ev as InputEventJoypadButton).button_index)
+		if not pad and ev is InputEventKey:
+			var k := ev as InputEventKey
+			return key_name(k.physical_keycode if k.physical_keycode != 0 else k.keycode)
+	return "-"
+
+
+## The cap text of a prompt kind (a PROMPTS key, an InputMap action name, or literal key text).
+static func cap_text(kind: String, pad: bool) -> String:
+	if not PROMPTS.has(kind):
+		return cap_for(kind, pad) if InputMap.has_action(kind) else kind
+	var row: Dictionary = PROMPTS[kind]
+	if pad and row.has("pad"):
+		return pad_word(String(row["pad"]))
+	if row.has("moves") and not pad:
+		# "WASD" while those are the keys; the four caps the player chose otherwise
+		var four := ""
+		for id: String in ["move_up", "move_left", "move_down", "move_right"]:
+			four += cap_for(id, false)
+		return four if four.length() == 4 else "%s %s %s %s" % [cap_for("move_up"), cap_for("move_left"), cap_for("move_down"), cap_for("move_right")]
+	if row.has("action"):
+		return cap_for(String(row["action"]), pad)
+	if row.has("actions"):
+		var both: Array = row["actions"]
+		return "%s/%s" % [cap_for(String(both[0]), pad), cap_for(String(both[1]), pad)]
+	return String(row.get("key", kind))
+
 
 # ------------------------------------------------------------------ fonts
 ## Two OFL families (assets/fonts/hd/, credits in scripts/data/credits.gd) + the pixel logo font.
@@ -191,11 +314,30 @@ const UiRootScript = preload("res://scripts/ui/kit/ui_root.gd")
 
 
 ## The Text size in use: --uisize=small|normal|large wins over the saved setting "ui_size".
+## A player who never chose one gets "large" on a small screen (800 px tall or less: a Steam Deck,
+## a small laptop); settings.gd writes "ui_size_set" when the row is used. Test runs keep "normal"
+## so their pictures stay the same (--screenh=<px> tests the rule).
 static func ui_size_name() -> String:
 	var n := G.arg("uisize")
 	if n == "":
 		n = String(Save.setting("ui_size"))
+		var chosen: Variant = Save.setting("ui_size_set")
+		if n == "normal" and (chosen == null or not bool(chosen)) and _small_screen():
+			n = "large"
 	return n if TARGET_H.has(n) else "normal"
+
+
+static var _screen_h := -1
+
+
+static func _small_screen() -> bool:
+	if _screen_h < 0:
+		_screen_h = 0
+		if G.arg("screenh") != "":
+			_screen_h = int(G.arg("screenh"))
+		elif not is_phone() and DisplayServer.get_name() != "headless" and not (G.flag("uitour") or G.arg("shots") != "" or G.flag("nosave")):
+			_screen_h = DisplayServer.screen_get_size().y
+	return _screen_h > 0 and _screen_h <= 800
 
 
 ## [p, s] for the current window: p = screen px per UI px, s = screen px per game px.

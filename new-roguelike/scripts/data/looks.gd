@@ -11,6 +11,11 @@ extends RefCounted
 
 const DEFAULT_NAME := "Aldous"
 const NAME_MAX := 12
+## Names to pick from when there is no keyboard (a gamepad, a Steam Deck): the "Pick a name" row
+## and the "Any name" button of the Your knight screen. Made up for this game; add or change freely.
+const NAMES := ["Aldous", "Berrin", "Corwyn", "Davith", "Edda", "Fenwick", "Garrow", "Halvard", "Isolt",
+	"Jorund", "Kestrel", "Lowen", "Maren", "Nesta", "Osric", "Perrin", "Quillon", "Rowan", "Sabine",
+	"Torvald", "Ulla", "Verena", "Wystan", "Yarrow"]
 
 const ARMOUR := [
 	{"id": "steel", "name": "Steel", "tint": Color(1, 1, 1)},

@@ -17,6 +17,9 @@ var _stage: Control
 var _body: AnimatedSprite2D
 var _weapon: Sprite2D
 var _name: LineEdit
+var _pick: Control               ## the "Pick a name" row (a SettingRow of Looks.NAMES)
+## The words of the two name helpers (placeholders: the owner rewrites the game's words).
+const WORDS := {"pick": "Pick a name", "any": "Any name"}
 var _ph := false
 
 
@@ -70,9 +73,31 @@ func build() -> void:
 	_name.custom_minimum_size.y = 22 if not _ph else 20
 	_name.placeholder_text = Looks.DEFAULT_NAME
 	_name.text_changed.connect(func(t: String) -> void: Save.set_setting("hero_name", t.strip_edges()))
-	_name.text_submitted.connect(func(_t: String) -> void: _name.release_focus())
+	_name.text_submitted.connect(func(_t: String) -> void: _pick.grab_focus())
+	# a gamepad has no letters: ask the system for its on-screen keyboard where there is one
+	_name.focus_entered.connect(func() -> void:
+		if bool(Controls.get("last_pad")) and DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD):
+			DisplayServer.virtual_keyboard_show(_name.text, Rect2(_name.global_position, _name.size)))
 	name_row.add_child(_name)
 	name_row.add_child(UI.spacer(6 if not _ph else 3, 0))
+	# no keyboard needed: a list of names to turn through, and a button that picks any of them
+	_pick = SettingRow.new()
+	_pick.options = Looks.NAMES
+	_pick.setup("choice", WORDS["pick"], maxi(Looks.NAMES.find(Looks.hero_name()), 0))
+	_pick.changed.connect(func(v: Variant) -> void:
+		_set_name(String(Looks.NAMES[int(v)]))
+		Sfx.play("ui_click"))
+	list.add_child(_pick)
+	var any := UI.button(WORDS["any"], _any_name)
+	any.name = "AnyName"
+	any.custom_minimum_size.y = UI.row_h + (2.0 if not _ph else 0.0)
+	any.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var any_pad := MarginContainer.new()
+	any_pad.add_theme_constant_override("margin_left", 10 if not _ph else 6)
+	any_pad.add_theme_constant_override("margin_right", 8 if not _ph else 4)
+	any_pad.add_theme_constant_override("margin_top", 2)
+	any_pad.add_child(any)
+	list.add_child(any_pad)
 
 	# (v0.39.0, the owner: swords and armour are UPGRADES now, earned at the smith; only the name is chosen here)
 	list.add_child(UI.spacer(0, 6 if not _ph else 2))
@@ -85,11 +110,26 @@ func build() -> void:
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pad.add_child(hint)
 	list.add_child(pad)
-	default_focus = _name
+	# (a keyboard starts in the name field; a gamepad on the list, where left and right already work)
+	default_focus = _pick if bool(Controls.get("last_pad")) else _name
 	if not _ph:
 		_add_back_button()
 	_show.call_deferred()
 	UI.pop_in(panel)
+
+
+func _set_name(n: String) -> void:
+	_name.text = n
+	Save.set_setting("hero_name", n)
+
+
+## A name from the list, never the one he has now.
+func _any_name() -> void:
+	var names: Array = Looks.NAMES.filter(func(n: String) -> bool: return n != Looks.hero_name())
+	var n := String(names[randi() % names.size()])
+	_set_name(n)
+	_pick.set("index", maxi(Looks.NAMES.find(n), 0))
+	_pick.call("_show")
 
 
 func _header() -> Control:
@@ -121,7 +161,7 @@ func _add_back_button() -> void:
 
 
 func help_pairs() -> Array:
-	return [["target", "Change"], ["back", "Back"]]
+	return [["target", "Change"], ["confirm", "Choose"], ["back", "Back"]]
 
 
 func _choice(title: String, rows: Array, key: String, kind: String, chips: Array = []) -> Control:
