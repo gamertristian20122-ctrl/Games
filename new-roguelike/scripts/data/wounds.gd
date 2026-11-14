@@ -40,3 +40,10 @@ static func any() -> bool:
 		if String(k).begins_with("wound:hp:") and Save.hub_get(String(k)) > 0:
 			return true
 	return false
+
+
+## (quality pass P11) Writes down where one fighter stands now, outside a battle (an item used from
+## the Items page): health and mana as they are, against their full amounts.
+static func set_now(id: String, hp: int, max_hp: int, mp: int, max_mp: int) -> void:
+	Save.hub_set("wound:hp:" + id, clampi(max_hp - hp, 0, max_hp))
+	Save.hub_set("wound:mp:" + id, clampi(max_mp - mp, 0, max_mp))
