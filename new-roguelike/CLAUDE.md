@@ -1704,3 +1704,25 @@ Everything on the v0.3.0 fix list is done and the camp exists. Ideas for the nex
 7. Sound pass for the seven bosses (they reuse monster and door sounds).
 8. Boss names are placeholders the owner may want to rename (`scripts/data/bosses.gd`).
 Not planned unless the owner asks: anything for publishers (pitch, slides, trailer, store text).
+
+## v0.45.0 (14 Nov 2026): the big quality pass (review against shipped RPGs, then 9 packages)
+The owner: "review the entire game compared to other online games ... make the game a lot better". Also new rule
+from the owner: graphics and attack animations MAY be changed by code as long as the pictures come from the
+purchased pixel art (no AI-generated art or audio, still). Review and plan: docs/review_2026-11-14.md (older) and
+each package's note in `docs/pass/*.md` (READ THESE for details, flags and what is left):
+- 01 rules: the Lantern (one light passed between fighters, flame 0-3, a Flare per hero), statuses (burn, weak,
+  exposed, slowed, braced), monster kits by `ai` (`scripts/data/foe_kits.gd`), enemy intents, boss scripts with
+  phases (`scripts/data/boss_moves.gd`), Waking Ember + Cleansing Salt, deeds, Story / Normal / Hard mode.
+- 02 battle screen: boss staging, pause, retry, speed. 03 look: no orange squares, Sands/Cinder grades, map names.
+- 04 shell: 3 save slots, atomic save + backup, Continue / New Game / Load, Quit fixed, `dev/compile_all.gd`;
+  tools/check.sh now tests the LIVE game (compile, saves, tale tour, battle chain).
+- 05 input: real InputMap actions, rebinding screen, settings in five tabs, text speed, talk log and skip.
+- 06 sound: bus layout, music per land and boss, stingers (level up, defeat, ...), battle move sounds, music room.
+- 07 world kit: `scripts/data/more.gd` module registry (new places/battles as new files), doors, levers, signs,
+  beacon travel (`travel.gd`), Play resumes where you were.
+- 08 the Lantern on screen: Lantern order, flame pips, Flare row, intent chips, status pips, 7 one-time lessons
+  (`lessons.gd`, setting `hints`), howto.gd; balance retuned (normal fights end at ~55-65% health).
+- 11 menus: Journal on J (story, errands, secrets, monsters, records), world map on M, Items outside battle.
+- NOT built (cut by the owner to save usage): chapter four, the ending, three dungeons, Emberfall rebuild,
+  cutting the roguelike code. The plan for them is in the review JSON's packages P09, P10, P12, P13, P14.
+- APK 64 MB (music added). Nobody has played this version by hand: expect bugs.

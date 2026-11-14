@@ -2485,6 +2485,7 @@ func _finish() -> void:
 		# every monster beaten is counted (the bestiary reads "kills:<id>")
 		for f: Dictionary in fight.foes:
 			Save.hub_set("kills:" + String(f["id"]), Save.hub_get("kills:" + String(f["id"])) + 1)
+		Save.hub_set("rec:wins", Save.hub_get("rec:wins") + 1)
 		# A STORY FIGHT IS WON FOR GOOD HERE, not on "Continue": the story moves on and is written to
 		# the save at once (closing the game on the victory panel used to lose the win). main.gd
 		# sees summary["applied"] and does not apply it again (twice is harmless: a step never goes back).
