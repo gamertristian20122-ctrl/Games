@@ -137,3 +137,11 @@ Built in the quality pass of 14 Nov 2026. Everything here is code and words; no 
   pads depend on the pad's name and were not seen with real hardware.
 - On a phone the Controls screen shows only four rows at a time (it scrolls).
 - All new words (row names, hints, the Controls screen, the names list) are placeholders for the owner.
+
+## Checked again after the restart (14 Nov 2026)
+
+A second builder picked this package up after the first was cut off. Nothing had to be rewritten. Run again on
+the saved work: full compile `files=164 bad=0`; `--uitour=tale` 43 checks, 0 failed; the scratch harness 26
+checks, 0 failed (headless). The renderer was NOT run again; the pictures of the first builder (settings tabs,
+erase question, Controls screen, talk box, talk log, name screen) were looked at and are in
+`<scratchpad>/pass/P05/`.
