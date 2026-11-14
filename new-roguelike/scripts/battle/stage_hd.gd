@@ -52,15 +52,23 @@ const LOOK := {
 		"wet": 0.3, "top_rim": [0.55, Color("a8c4ff")], "fire_boost": 2.6, "spell": 1.0, "tame": 0.0, "beam": 0.0,
 		"pool": [Color("a8bcff"), 3.6], "earth": 1.0, "earth_gain": 4.6, "earth_tint": Color(0.86, 0.9, 1.0),
 		"gold": 0.0, "punch": 1.08},
-	"desert": {"sun": Color("ffe0b0"), "sun_energy": 1.7, "ambient": Color("8a7c98"), "ambient_energy": 0.2,
-		"fog": Color("ffe4c0"), "fog_density": 0.0035, "fog_sun": 0.6, "fog_aniso": 0.2, "exposure": 1.45,
-		"sky_top": Color("6a8ac4"), "sky_low": Color("ffd8a0"), "clouds": Color("fff0dc"), "stars": 0.0,
+	# THE SANDS and THE CINDER ROCK (quality pass P03, 14 Nov 2026): both were one orange from sky to
+	# ground. The sands now have a blue sky paling to cream, clear cool air and blue-violet shade
+	# under the same warm sun; the rock is cold blue-grey under a faint moon, so only fire and lava
+	# are orange. The old value stands in the comment beside each changed line.
+	"desert": {"sun": Color("ffe0b0"), "sun_energy": 1.7, "ambient": Color("6f80c0"), "ambient_energy": 0.26,     # was ambient 8a7c98, 0.2
+		"fog": Color("dde4f0"), "fog_density": 0.0022, "fog_sun": 0.6, "fog_aniso": 0.2, "exposure": 1.45,       # was fog ffe4c0, 0.0035
+		"sky_top": Color("3f74cc"), "sky_low": Color("c6d8ee"), "clouds": Color("f8f4ec"), "stars": 0.0,         # was 6a8ac4, ffd8a0, fff0dc
+		# the sun's disc stood behind the turn rail (top left); it is now low on the right, clear of
+		# the HUD, on the side the shadows fall away from (was the default, Vector3(-0.36, 0.13, -0.92))
+		"sky_glow": Vector3(0.235, 0.07, -0.96),
 		"wet": 0.0, "top_rim": [0.3, Color("fff4dc")], "fire_boost": 1.0, "spell": 0.75, "tame": 0.6, "beam": 0.0,
 		"earth": 0.0, "gold": 0.0, "punch": 1.16},
-	"rock": {"sun": Color("ffb890"), "sun_energy": 1.2, "ambient": Color("6a4a5a"), "ambient_energy": 0.30,
-		"fog": Color("a04a2a"), "fog_density": 0.026, "fog_sun": 0.6, "exposure": 1.3,
-		"sky_top": Color("10070a"), "sky_low": Color("4a1a12"), "clouds": Color("3a1a16"), "stars": 0.3,
-		"wet": 0.0, "top_rim": [0.45, Color("ffb080")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0, "beam": 0.0,
+	"rock": {"sun": Color("a8bcf0"), "sun_energy": 1.0, "ambient": Color("3c4a70"), "ambient_energy": 0.30,       # was sun ffb890, 1.2, ambient 6a4a5a
+		"fog": Color("2c3a56"), "fog_density": 0.012, "fog_sun": 0.6, "exposure": 1.3,                           # was fog a04a2a, 0.026
+		"sky_top": Color("04070e"), "sky_low": Color("18233a"), "clouds": Color("1c2436"), "stars": 0.3,         # was 10070a, 4a1a12, 3a1a16
+		"wet": 0.0, "top_rim": [0.5, Color("a8c0ff")], "fire_boost": 2.4, "spell": 1.0, "tame": 0.0, "beam": 0.0,   # was [0.45, ffb080]
+		"pool": [Color("9fb2e8"), 1.6],        # was the wood's golden pool by default (ffb860, 2.6): the clearing is moonlit, the fire alone is warm
 		"earth": 0.0, "gold": 0.0},
 }
 const SPELL_ENERGY := 6.0          ## a spell light at power 1 (the flat look's is 5 + 6 x power, without fog)

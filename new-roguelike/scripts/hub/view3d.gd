@@ -532,6 +532,7 @@ func _twin(label: Label, holder: Node2D) -> void:
 			sign.add_theme_color_override("font_color", ink)
 			sign.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
 			sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			sign.set_meta("ink", ink)
 			copy = sign
 		_:
 			var plain := label.duplicate() as Label
@@ -548,6 +549,7 @@ func _twin(label: Label, holder: Node2D) -> void:
 
 func _sync_words(_zoom: float) -> void:
 	var ysort: Node2D = hub._ysort
+	var signs: Array = []            # the world-map names shown this frame (kept apart afterwards)
 	# game px (what the camera's unproject gives) -> UI px of the words layer
 	var k := float(_words.get("stretch")) / maxf(float(_words.get("px")), 0.01)
 	for trio: Array in _twins:
@@ -582,6 +584,8 @@ func _sync_words(_zoom: float) -> void:
 			copy.visible = shown
 		if not shown:
 			continue
+		if kind == "sign":
+			_sign_mode(copy as Label, int(copy.get_meta("edge", 0)))      # (its size must be right before it is placed)
 		match kind:
 			"tag":
 				copy.set("text", label.text)
@@ -595,19 +599,81 @@ func _sync_words(_zoom: float) -> void:
 		var at := cam.unproject_position(p) * k
 		copy.position = (at - Vector2(copy.size.x * 0.5, copy.size.y)).round()
 		if kind == "sign":
-			_keep_clear(copy)
+			_keep_clear(copy, at)
+			if copy.modulate.a > 0.02:
+				signs.append(copy)
+	_spread_signs(signs)
 
 
-## World-map place names stay on the screen, inside the phone's safe area, and fade out under the
-## story line (top left) and the coins / pause / level buttons (top right) instead of covering them.
-func _keep_clear(copy: Control) -> void:
+const SIGN_REACH := 0.42            ## a place this far beyond the screen's edge (in screen widths) still gets a small pointer
+const SIGN_ARROW := 9.0             ## UI px kept free beside a pointer for its little arrow
+
+## A world-map name is either the full name over its place (`side` 0) or, when the place lies just
+## beyond the left (-1) or right (1) edge of the screen, a SMALL name at that edge with a little
+## arrow: "it is that way". Changes the letters' size only when the state changes.
+func _sign_mode(sign: Label, side: int) -> void:
+	if int(sign.get_meta("mode", -9)) == side:
+		return
+	sign.set_meta("mode", side)
+	var ph := UI.is_phone()
+	sign.add_theme_font_size_override("font_size", (8 if ph else 10) if side == 0 else 7)
+	sign.reset_size()
+	var arrow := sign.get_node_or_null("arrow") as Node2D
+	if side == 0:
+		if arrow != null:
+			arrow.visible = false
+		return
+	if arrow == null:
+		# (two triangles made by code: the name's ink over a dark edge, so it reads on sand and leaves)
+		arrow = Node2D.new()
+		arrow.name = "arrow"
+		var tri := PackedVector2Array([Vector2(0.0, -3.0), Vector2(4.0, 0.0), Vector2(0.0, 3.0)])
+		var back := Polygon2D.new()
+		back.polygon = PackedVector2Array([Vector2(-1.5, -5.0), Vector2(6.0, 0.0), Vector2(-1.5, 5.0)])
+		back.color = Color(UI.C_INK, 0.85)
+		arrow.add_child(back)
+		var front := Polygon2D.new()
+		front.polygon = tri
+		front.color = sign.get_meta("ink", UI.C_PARCH)
+		arrow.add_child(front)
+		sign.add_child(arrow)
+	arrow.visible = true
+	arrow.scale = Vector2(float(side), 1.0)
+	arrow.position = Vector2(sign.size.x + 3.0 if side > 0 else -3.0, sign.size.y * 0.5 + 0.5)
+
+
+## World-map place names (quality pass P03). `at` is where the place itself is on the screen (UI px).
+##   the place is on the screen       its full name, moved a little if it would stick out
+##   just beyond the left / right     a small name at that edge with an arrow, fainter the further
+##   further away, or above / below   nothing (they used to be pushed onto the screen: four names
+##                                    stacked on each other at the right edge, pointing at nothing)
+## Names also stay inside the phone's safe area and fade out under the story line (top left) and
+## the coins / pause / level buttons (top right) instead of covering them.
+func _keep_clear(copy: Control, at: Vector2) -> void:
 	var room: Vector2 = _words.size if _words is Control else Vector2(get_viewport().get_visible_rect().size)
 	var cut := UI.safe_insets(copy)
 	var pad := 6.0
-	var lo := cut.x + pad
-	var hi := room.x - cut.z - pad - copy.size.x
-	if hi > lo:
-		copy.position.x = clampf(copy.position.x, lo, hi)
+	var left := cut.x + pad
+	var right := room.x - cut.z - pad
+	var beyond := at.x - clampf(at.x, left, right)           # 0 = the place is on the screen; else how far out, signed
+	var side := 0 if beyond == 0.0 else (1 if beyond > 0.0 else -1)
+	copy.set_meta("edge", side)
+	if side != int(copy.get_meta("mode", 0)):
+		_sign_mode(copy as Label, side)
+		copy.position = (at - Vector2(copy.size.x * 0.5, copy.size.y)).round()
+	var away := 1.0
+	if side != 0:
+		var reach := room.x * SIGN_REACH
+		if absf(beyond) > reach or at.y < room.y * 0.1 or at.y > room.y - cut.w - pad:
+			copy.modulate.a = 0.0
+			return
+		away = lerpf(0.92, 0.4, absf(beyond) / reach)
+		copy.position.x = right - SIGN_ARROW - copy.size.x if side > 0 else left + SIGN_ARROW
+	else:
+		var lo := left
+		var hi := right - copy.size.x
+		if hi > lo:
+			copy.position.x = clampf(copy.position.x, lo, hi)
 	var r := Rect2(copy.position, copy.size)
 	var band := room.y * 0.24                        # the HUD's top strip
 	var fade := 1.0
@@ -618,7 +684,29 @@ func _keep_clear(copy: Control) -> void:
 		copy.position.x = minf(copy.position.x, room.x * 0.86 - copy.size.x)
 	if r.end.y > room.y - cut.w - pad:
 		fade = minf(fade, clampf((room.y - cut.w - r.position.y) / maxf(r.size.y, 1.0) - 0.5, 0.0, 1.0))
-	copy.modulate.a = fade
+	copy.modulate.a = fade * away
+
+
+## No two world-map names lie on each other: from the top of the screen down, a name that would
+## touch one already placed moves down below it (the higher one keeps its place over its site).
+func _spread_signs(signs: Array) -> void:
+	if signs.size() < 2:
+		return
+	signs.sort_custom(func(a: Control, b: Control) -> bool:
+		return a.position.y < b.position.y if a.position.y != b.position.y else a.get_index() < b.get_index())
+	var placed: Array[Rect2] = []
+	for c: Control in signs:
+		var r := Rect2(c.position, c.size).grow_individual(SIGN_ARROW, 1.0, SIGN_ARROW, 1.0)
+		for _step in 6:
+			var hit := false
+			for other: Rect2 in placed:
+				if r.intersects(other):
+					r.position.y = other.end.y
+					hit = true
+			if not hit:
+				break
+		c.position.y = r.position.y + 1.0
+		placed.append(r)
 
 
 # ------------------------------------------------------------------ every frame

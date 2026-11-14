@@ -4,8 +4,9 @@
     python3 -I tools/import_hub.py [--sheet /abs/dir]     then: godot --headless --path . --import
 
 It ONLY cuts: every piece is an untouched rectangle of a pack sheet (the two earth patches also
-lose the grass painted round them: pixels removed, none changed) (found as an "island" of
-non-transparent pixels inside a region named below). Output: assets/art/hub/hub_*.png and
+lose the grass painted round them, and the desert stones in UNSANDED lose the sand painted round
+them: pixels removed, none changed) (found as an "island" of non-transparent pixels inside a
+region named below). Output: assets/art/hub/hub_*.png and
 assets/art/hub/hub_pieces.json (size and source of every piece). --sheet writes a labelled
 contact sheet to LOOK at. Packs: Fairy Forest, Cemetery, Free Pack Exterior (zips in
 assets_raw/paid_pixel_crawler/zips/; the repo is private because of them).
@@ -278,6 +279,49 @@ TRIMMED = [
 ]
 
 
+# Desert pieces the pack painted WITH sand round them (they are cut from a ground sheet). On sand
+# nobody sees it; on the dark rock of the Cinder land, or under a real shadow, each one was an
+# orange square. The sand that touches the piece's edge is removed (pixels removed, none changed):
+# see unsand(). Blocks are listed so a later re-cut stays clean; the pack drew them without sand.
+UNSANDED = ("dpebble_", "dblock_", "dboulder_", "dspire_", "dcave", "drockbed")
+SAND = (209, 137, 70)       # the sand tile's main colour; its other grains are within 5 of it
+SAND_NEAR = 34              # also takes the soft shadow the pack painted on the sand (181, 105, 51)
+# the sand's own grains: a pocket of them shut in between two rocks is removed too (never in the
+# sandstone blocks, which are built of these very colours)
+SAND_GRAINS = {(212, 139, 71), (209, 137, 70), (206, 134, 67), (204, 131, 63), (202, 130, 63), (196, 123, 54)}
+
+
+def unsand(piece, pockets=True):
+    """Clears the sand round a piece: a flood from every edge pixel through sand-coloured pixels."""
+    px = piece.load()
+    w, h = piece.size
+
+    def sandy(x, y):
+        r, g, b, a = px[x, y]
+        return a > 0 and max(abs(r - SAND[0]), abs(g - SAND[1]), abs(b - SAND[2])) <= SAND_NEAR
+
+    stack = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    seen = set()
+    while stack:
+        x, y = stack.pop()
+        if (x, y) in seen or not (0 <= x < w and 0 <= y < h):
+            continue
+        seen.add((x, y))
+        if px[x, y][3] == 0:
+            pass                       # already empty: the flood passes through
+        elif sandy(x, y):
+            px[x, y] = (0, 0, 0, 0)
+        else:
+            continue
+        stack += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    if pockets:
+        for y in range(h):
+            for x in range(w):
+                if px[x, y][:3] in SAND_GRAINS:
+                    px[x, y] = (0, 0, 0, 0)
+    return piece
+
+
 def sheet(pack, ending):
     key = (pack[0], ending)
     if key not in _cache:
@@ -358,6 +402,8 @@ def main():
     for name, pack, ending, x, y, w, h in TRIMMED:
         im, src = sheet(pack, ending)
         piece = im.crop((x, y, x + w, y + h))
+        if name.startswith(UNSANDED):
+            piece = unsand(piece, not name.startswith("dblock_"))
         box = piece.getbbox()
         save(name, piece.crop(box), src, (x + box[0], y + box[1], x + box[2], y + box[3]))
     for name, pack, ending, x, y, w, h in HALVED:
