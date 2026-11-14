@@ -14,6 +14,12 @@ extends "res://scripts/ui/screen.gd"
 ## HD GUI (Lantern Glass, spec 6.4): the veil, a header (name, title and level, tabs), then three
 ## columns on a PC: the knight on a warm glow with his XP, the list, and a detail panel. On a phone
 ## the portrait column is left out and the list and the detail stand side by side.
+##   Party  (P11) live health and mana bars per member.
+##   Items  (quality pass P11) the supplies in the pack: pick one, then who it is for (cards with live
+##          health and mana bars). Supplies.use_on() does the sums of a battle (fight.gd _item), and a
+##          use that would do nothing says why. Also the coins in the chest and the arms owned.
+## (P11) Skills are told by their battle rules (battles.gd SKILL, made stronger by the rank of arms.gd);
+## the pages turn with the InputMap actions page_prev / page_next. New words: scripts/data/journal_text.gd KNIGHT.
 ## Test hooks kept for scripts/ui/ui_tour.gd: _gear_list, _skill_list, _party_box, _hint, _skill_text,
 ## _reset and the node names gear_<id>, weapon_<id>, skill_<id>, party_<id>, party_why, stat_<id>.
 
@@ -28,12 +34,16 @@ const Skills = preload("res://scripts/data/skills.gd")
 const Allies = preload("res://scripts/data/allies.gd")
 const Battles = preload("res://scripts/data/battles.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Supplies = preload("res://scripts/data/supplies.gd")
+const Arms = preload("res://scripts/data/arms.gd")
+const Txt = preload("res://scripts/data/journal_text.gd")
 
 ## main.gd already darkens the world under every menu (its shade); the veil gives some light back.
 const VEIL_GAIN := 2.4
-const PAGES := [["stats", "Stats"], ["gear", "Gear"], ["skills", "Skills"], ["party", "Party"]]
+const PAGES := [["stats", "Stats"], ["gear", "Gear"], ["skills", "Skills"], ["party", "Party"], ["items", "Items"]]
+const W := Txt.KNIGHT
 
-var page := "stats"              ## "stats", "gear", "skills" or "party" (main.gd may set it before the screen builds)
+var page := "stats"              ## "stats", "gear", "skills", "party" or "items" (main.gd may set it before the screen builds)
 var _ph := false
 var _stage: Control
 var _name_head: Label
@@ -63,6 +73,9 @@ var _gear_name: Label
 var _gear_text: Label
 var _skill_name: Label
 var _skill_text: Label
+var _item_list: VBoxContainer    ## (P11) the Items page
+var _item_sel := ""              ## the supply chosen last
+var _use_box: VBoxContainer      ## the party cards in the detail panel (Items page)
 
 
 func build() -> void:
@@ -98,7 +111,7 @@ func build() -> void:
 	lists.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lists.size_flags_stretch_ratio = 0.36 if not _ph else 0.55
 	body.add_child(lists)
-	for p: Control in [_build_stats_page(), _build_gear_page(), _build_skills_page(), _build_party_page()]:
+	for p: Control in [_build_stats_page(), _build_gear_page(), _build_skills_page(), _build_party_page(), _build_items_page()]:
 		p.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		lists.add_child(p)
 	var right := UI.vbox(0)
@@ -128,6 +141,8 @@ func _pairs_for(which: String) -> Array:
 			return [["confirm", "Choose"], ["page", "Page"], ["back", "Close"]]
 		"party":
 			return [["confirm", "Choose"], ["page", "Page"], ["back", "Close"]]
+		"items":
+			return [["confirm", "Use"], ["page", "Page"], ["back", "Close"]]
 	return [["confirm", "Add a point"], ["page", "Page"], ["back", "Close"]]
 
 
@@ -187,7 +202,7 @@ func _tab(id: String, text: String, phone: bool) -> Button:
 	tb.toggle_mode = true
 	tb.focus_mode = Control.FOCUS_NONE      # Q / E (LB / RB) page through; the arrows stay in the list
 	if phone:
-		tb.custom_minimum_size = Vector2(52, 22)
+		tb.custom_minimum_size = Vector2(44, 22)
 		tb.add_theme_font_size_override("font_size", 8)
 	else:
 		tb.custom_minimum_size = Vector2(0, 22)
@@ -211,15 +226,14 @@ func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or is_instance_valid(_dialog):
 		return
 	var dir := 0
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode == KEY_Q:
+	if InputMap.has_action("page_prev") and event.is_action_pressed("page_prev"):
+		dir = -1
+	elif InputMap.has_action("page_next") and event.is_action_pressed("page_next"):
+		dir = 1
+	elif not InputMap.has_action("page_prev") and event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode == KEY_Q:      # (only when the controls file made no page actions)
 			dir = -1
 		elif event.physical_keycode == KEY_E:
-			dir = 1
-	elif event is InputEventJoypadButton and event.pressed:
-		if event.button_index == JOY_BUTTON_LEFT_SHOULDER:
-			dir = -1
-		elif event.button_index == JOY_BUTTON_RIGHT_SHOULDER:
 			dir = 1
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		get_viewport().set_input_as_handled()
@@ -371,6 +385,9 @@ func _build_detail() -> Control:
 		if _ph:
 			b.add_theme_font_size_override("font_size", UI.size_small)
 		_put_row.add_child(b)
+	_use_box = UI.vbox(2 if not _ph else 1)
+	_use_box.visible = false
+	v.add_child(_use_box)
 	_hint = _d_text
 	_gear_name = _d_title
 	_gear_text = _d_text
@@ -400,6 +417,7 @@ func _show_page(which: String, focus_first: bool = false) -> void:
 		var tb: Button = _tabs[key]
 		tb.set_pressed_no_signal(key == page)
 	_put_row.visible = page == "skills"
+	_use_box.visible = page == "items"
 	if page == "gear":
 		_fill_gear()
 		_detail_show("Gear", "Tap a piece to wear it. Tap it again to take it off.", UI.C_GOLD,
@@ -409,6 +427,9 @@ func _show_page(which: String, focus_first: bool = false) -> void:
 		_skill_say("Skills", "Learned as you level up. Tap one, then choose its button. Skills cost mana (the blue bar).", UI.C_GOLD)
 	elif page == "party":
 		_fill_party()
+	elif page == "items":
+		_fill_items()
+		_items_detail()
 	else:
 		refresh()
 	if is_instance_valid(help):
@@ -843,15 +864,67 @@ func _known_count() -> int:
 
 func _about_skill(id: String) -> void:
 	var r := Skills.row(id)
-	var meta := "%s, %d mana, rests %s s" % [String(r["kind"]).capitalize(), int(r["mana"]), str(float(r["cd"])).trim_suffix(".0")]
-	var slot := Skills.button_of(id)
+	var meta := String(W["mana"]) % [String(r["kind"]).capitalize(), int(r["mana"])]
+	var rules := skill_rules(id)
+	var text := String(r["text"]) if rules == "" else rules
 	if Skills.known(id):
-		var where := "On skill button %d." % (slot + 1) if slot >= 0 else "Not on a button. Tap it, then choose a button."
-		_skill_say(String(r["name"]), String(r["text"]), UI.C_GOLD, meta, where, UI.C_GOOD if slot >= 0 else UI.C_DIM)
+		_skill_say(String(r["name"]), text, UI.C_GOLD, meta, rank_line(id), UI.C_GOOD)
 	else:
 		var how := "A teacher can teach it now: Brother Odo in Wickmere, Sister Imre in Dustwatch." if Skills.open_for(id) \
 			else "It opens at level %d; then a teacher (Brother Odo in Wickmere) teaches it." % int(r["level"])
-		_skill_say(String(r["name"]), "%s %s" % [how, String(r["text"])], UI.C_DIM, meta)
+		_skill_say(String(r["name"]), text, UI.C_DIM, meta, how, UI.C_DIM)
+
+
+## (P11) What a skill does in a battle, with its numbers at the rank it has (battles.gd SKILL, arms.gd ranked()):
+## "Hits every monster for 95% of a blow. Stun chance 25%." ("" = the skill has no battle row).
+static func skill_rules(id: String, who: String = "knight") -> String:
+	if not Battles.SKILL.has(id):
+		return ""
+	var base: Dictionary = (Battles.SKILL[id] as Dictionary).duplicate()
+	base["id"] = id
+	base["name"] = String(Skills.row(id).get("name", id))
+	var s := Arms.ranked(who, base)
+	var aim := String(W.get("aim_" + String(s.get("aim", "foe")), "one monster"))
+	var out: Array = [String(s.get("text", ""))]
+	if float(s.get("power", 0.0)) > 0.0:
+		out.append(String(W["hits"]) % [aim, roundi(float(s["power"]) * 100.0)])
+	if s.has("heal"):
+		out.append(String(W["heals"]) % [aim, roundi(float(s["heal"]) * 100.0)])
+	if s.has("stun"):
+		out.append(String(W["stun"]) % roundi(float(s["stun"]) * 100.0))
+	if s.has("status"):
+		var st: Dictionary = Battles.STATUS.get(String(s["status"][0]), {})
+		out.append(String(W["status"]) % [roundi(float(s["status"][1]) * 100.0), String(st.get("name", "")), String(st.get("text", ""))])
+	if s.has("bonus"):
+		var vs: Array = (s["bonus"]["vs"] as Array).map(func(v: String) -> String:
+			return "stunned" if v == "stun" else String((Battles.STATUS.get(v, {}) as Dictionary).get("name", v)).to_lower())
+		out.append(String(W["bonus"]) % [str(float(s["bonus"]["mult"])), " and ".join(vs)])
+	if bool(s.get("safe", false)):
+		out.append(String(W["safe"]))
+	if bool(s.get("pierce", false)):
+		out.append(String(W["pierce"]))
+	if bool(s.get("cleanse", false)):
+		out.append(String(W["cleanse"]))
+	return " ".join(out).strip_edges()
+
+
+## (P11) "Rank 1 of 3. Next rank (a teacher, 52 coins): +22% to its blow."
+static func rank_line(id: String, who: String = "knight") -> String:
+	var rk := maxi(1, Arms.rank(who, id))
+	var line := String(W["rank"]) % [rk, Arms.RANK_MAX]
+	if rk >= Arms.RANK_MAX:
+		return line + " " + String(W["rank_top"])
+	var row: Dictionary = Battles.SKILL.get(id, {})
+	var adds: Array = []
+	if row.has("power") and float(row["power"]) > 0.0:
+		adds.append(String(W["rank_power"]) % roundi(Arms.RANK_POWER * 100.0))
+	if row.has("heal"):
+		adds.append(String(W["rank_heal"]) % roundi(Arms.RANK_HEAL * 100.0))
+	if row.has("stun"):
+		adds.append(String(W["rank_stun"]) % roundi(Arms.RANK_STUN * 100.0))
+	if adds.is_empty():
+		return line
+	return line + " " + String(W["rank_next"]) % [Arms.price(who, id, Skills.index_of(id)), ", ".join(adds)]
 
 
 ## "On button 1 / 2": puts the tapped skill there. It always answers: when it cannot, it says why.
@@ -890,6 +963,11 @@ func _fill_party() -> void:
 	for c in _party_box.get_children():
 		_party_box.remove_child(c)
 		c.queue_free()
+	if Tale.on():                          # (P11) everybody's health and mana as the last battle left them
+		_party_box.add_child(_section(String(W["health_head"])))
+		for u: Dictionary in Battles.party():
+			_party_box.add_child(_member_card(u, Callable()))
+		_party_box.add_child(UI.spacer(0, 4 if not _ph else 2))
 	var mate := Allies.with()
 	var known: Array = []
 	for r: Dictionary in Allies.LIST:
@@ -969,6 +1047,220 @@ func _party_toggle(id: String, here: bool) -> void:
 	Sfx.play("ui_start")
 	send("party_set", "" if here else id)
 	_fill_party()
+
+
+# ------------------------------------------------------------------ (P11) the Items page
+func _build_items_page() -> Control:
+	var right := UI.vbox(0)
+	_pages["items"] = right
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	right.add_child(scroll)
+	_item_list = UI.vbox(0)
+	_item_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_item_list)
+	return right
+
+
+## The icon a supply shows (the battle screen's own choice; new items fall back to the flask).
+static func _item_icon(id: String) -> String:
+	return String({"herb": "icon_misers_flask", "tonic": "icon_sparking_tonic", "elixir": "icon_swift_tonic"}.get(id, "icon_misers_flask"))
+
+
+func _fill_items() -> void:
+	var keep := ""
+	var f := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	if f != null and _item_list.is_ancestor_of(f):
+		keep = String(f.name)
+	for c in _item_list.get_children():
+		_item_list.remove_child(c)
+		c.queue_free()
+	_item_list.add_child(_section(String(W["items_head"])))
+	var any := false
+	for r: Dictionary in Supplies.LIST:
+		var id := String(r["id"])
+		var n := Supplies.count(id)
+		if n <= 0 and id != _item_sel:
+			continue
+		any = true
+		var b := _line("item_" + id, _item_icon(id), String(r["name"]), UI.C_GOLD if id == _item_sel else UI.C_PARCH, true, "x%d" % n,
+			UI.C_GOLD if n > 0 else UI.C_FAINT)
+		b.focus_entered.connect(_about_item.bind(id))
+		b.pressed.connect(_pick_item.bind(id))
+		_item_list.add_child(b)
+	if not any:
+		var none := UI.label(String(W["items_none"]), "Small")
+		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		none.custom_minimum_size.x = 60
+		none.add_theme_color_override("font_color", UI.C_FAINT)
+		_item_list.add_child(none)
+	_item_list.add_child(UI.spacer(0, 4 if not _ph else 2))
+	_item_list.add_child(_section(String(W["coins_head"]), String(W["coins"]) % Save.hub_get("bank:coins")))
+	_item_list.add_child(UI.spacer(0, 2))
+	_item_list.add_child(_section(String(W["arms_head"])))
+	for line: String in Arms.LINES:
+		var who := String(Arms.LINES[line]["who"])
+		if who != "knight" and not Allies.joined(who):
+			continue
+		var tiers: Array = Arms.LINES[line]["tiers"]
+		var cur := Arms.current(line)
+		var l := UI.label(String(W["arms_line"]) % [String(Arms.LINES[line]["label"]).capitalize(), String(cur["name"]), tiers.find(cur) + 1, tiers.size()], "Small")
+		l.add_theme_color_override("font_color", UI.C_PARCH)
+		var pad := MarginContainer.new()
+		pad.add_theme_constant_override("margin_left", 10 if not _ph else 6)
+		pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pad.add_child(l)
+		_item_list.add_child(pad)
+	if keep != "":
+		var again := _item_list.get_node_or_null(NodePath(keep))
+		if again is Control:
+			(again as Control).grab_focus.call_deferred()
+
+
+## The detail panel of the Items page: the supply chosen (or the page's hint) and a card per party member.
+func _items_detail(said: String = "", said_colour: Color = UI.C_GOOD) -> void:
+	if _item_sel != "" and not Supplies.row(_item_sel).is_empty():
+		var r := Supplies.row(_item_sel)
+		_detail_show(String(r["name"]), String(r["text"]), UI.C_GOLD,
+			String(W["item_have"]) % [Supplies.count(_item_sel), Supplies.cap_of(_item_sel)], said if said != "" else String(W["item_pick"]), said_colour)
+	else:
+		_detail_show(String(W["items_tab"]), String(W["items_hint"]), UI.C_GOLD, "", said, said_colour)
+	_fill_use_box()
+
+
+func _about_item(id: String) -> void:
+	var r := Supplies.row(id)
+	_detail_show(String(r["name"]), String(r["text"]), UI.C_GOLD, String(W["item_have"]) % [Supplies.count(id), Supplies.cap_of(id)],
+		String(W["item_pick"]) if id == _item_sel else "", UI.C_GOOD)
+
+
+func _pick_item(id: String) -> void:
+	_item_sel = id
+	Sfx.play("ui_click")
+	_fill_items()
+	_items_detail()
+	if _use_box.get_child_count() > 0:
+		var first := _first_button(_use_box)
+		if first != null:
+			first.grab_focus.call_deferred()
+
+
+## One card per party member: name, health and mana bars with numbers, and what the chosen supply
+## would give them ("+12"). Pressing it uses the supply on them.
+func _fill_use_box() -> void:
+	for c in _use_box.get_children():
+		_use_box.remove_child(c)
+		c.queue_free()
+	var party := Battles.party()
+	var head := UI.label(String(W["use_head"]), "Head")
+	head.add_theme_font_size_override("font_size", 10 if not _ph else 8)
+	head.add_theme_color_override("font_color", UI.C_DIM)
+	_use_box.add_child(head)
+	for u: Dictionary in party:
+		_use_box.add_child(_member_card(u, _use_on.bind(String(u["id"]))))
+
+
+func _member_card(u: Dictionary, on_press: Callable) -> Button:
+	var id := String(u["id"])
+	var b := Button.new()
+	b.name = "member_" + id
+	b.custom_minimum_size = Vector2(0, 30 if not _ph else 22)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.focus_mode = Control.FOCUS_ALL if on_press.is_valid() else Control.FOCUS_NONE
+	if not on_press.is_valid():
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UI.juice(b)
+	var row := UI.hbox(6 if not _ph else 3)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 6 if not _ph else 3
+	row.offset_right = -6 if not _ph else -3
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(row)
+	var coin := UI.medallion(String(u["sprite"]), 10.0 if not _ph else 7.0, UI.C_STEEL, false)
+	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(coin)
+	var words := UI.vbox(0)
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(words)
+	var hp := int(u.get("start_hp", u["max_hp"]))
+	var mp := int(u.get("start_mp", u["max_mp"]))
+	var top := UI.hbox(4)
+	words.add_child(top)
+	var nl := UI.label(String(u["name"]), "Small")
+	nl.add_theme_color_override("font_color", UI.C_GOLD)
+	nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(nl)
+	var nums := UI.label("%d/%d  %d/%d" % [hp, int(u["max_hp"]), mp, int(u["max_mp"])], "Small")
+	nums.add_theme_color_override("font_color", UI.C_LOW if hp * 10 < int(u["max_hp"]) * 3 else UI.C_DIM)
+	top.add_child(nums)
+	if _item_sel != "" and on_press.is_valid():
+		var pv := Supplies.preview_use(_item_sel, id)
+		var gain := 0
+		for pair: Array in pv["targets"]:
+			if String(pair[0]["id"]) == id:
+				gain = int(pair[1])
+		var g := UI.label(("+%d" % gain) if gain > 0 else "-", "Small")
+		g.add_theme_color_override("font_color", (UI.C_MP_A if bool(pv["mana"]) else UI.C_GOOD) if gain > 0 else UI.C_FAINT)
+		top.add_child(g)
+	var bars := UI.hbox(3)
+	words.add_child(bars)
+	var bw := 70.0 if not _ph else 40.0
+	var hb := UI.bar("hp", bw)
+	hb.call("set_value", float(hp), float(u["max_hp"]), false)
+	bars.add_child(hb)
+	var mb := UI.bar("mp", bw * 0.7)
+	mb.call("set_value", float(mp), maxf(1.0, float(u["max_mp"])), false)
+	bars.add_child(mb)
+	_hairline(b)
+	if on_press.is_valid():
+		b.pressed.connect(on_press)
+	return b
+
+
+func _use_on(member_id: String) -> void:
+	if _item_sel == "":
+		Sfx.play("shop_deny")
+		_items_detail(String(W["item_choose_first"]), UI.C_BAD)
+		return
+	var r := Supplies.row(_item_sel)
+	var got := Supplies.use_on(_item_sel, member_id)
+	if String(got["why"]) != "":
+		Sfx.play("shop_deny")
+		_items_detail(String(got["why"]), UI.C_BAD)
+		return
+	Sfx.play("shop_buy")
+	var targets: Array = got["targets"]
+	var what := String(W["mp"] if bool(got["mana"]) else W["hp"])
+	var said := ""
+	if targets.size() == 1:
+		said = String(W["item_used"]) % [String(r["name"]), String(targets[0][0]["name"]), int(targets[0][1]), what]
+	else:
+		var sum := 0
+		for pair: Array in targets:
+			sum += int(pair[1])
+		said = String(W["item_used_all"]) % [String(r["name"]), sum, what]
+	var keep := "member_" + member_id
+	_fill_items()
+	_items_detail(said, UI.C_GOOD)
+	var again := _use_box.get_node_or_null(NodePath(keep))
+	if again is Control:
+		(again as Control).grab_focus.call_deferred()
+
+
+## Test (journal.gd --p11tour): choose a Healing Herb and use it on the knight, as a player would.
+func tour_use() -> void:
+	if Supplies.count("herb") <= 0:
+		Supplies.give("herb")
+	var lost := Save.hub_get("wound:hp:knight")
+	var n := Supplies.count("herb")
+	var whole := Supplies.preview_use("tonic", "knight")
+	_pick_item("herb")
+	_use_on("knight")
+	print("[knight] items test: herb used on the knight, health lost %d -> %d, herbs %d -> %d, %s; a tonic on a knight with full mana says \"%s\"" % [
+		lost, Save.hub_get("wound:hp:knight"), n, Supplies.count("herb"), _d_next.text, String(whole["why"])])
 
 
 # ------------------------------------------------------------------ the Stats page: spending

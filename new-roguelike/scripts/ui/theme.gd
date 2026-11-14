@@ -47,6 +47,8 @@ const C_COMMON := Color(0.95, 0.92, 0.85)              ## rarity text
 const C_RARE := Color(0.5, 0.75, 1.0)
 const C_EPIC := Color(0.78, 0.55, 1.0)
 const C_WASH := Color(0.02, 0.025, 0.045)              ## the wash behind text on the bare world
+const C_SILHOUETTE := Color(0.05, 0.05, 0.08, 0.92)     ## (P11) a monster not met yet: its shape only
+const C_LAND := [Color(0.30, 0.38, 0.26), Color(0.56, 0.47, 0.30), Color(0.36, 0.30, 0.28)]   ## (P11) map: grass, sand, rock
 
 # ---- the old names, kept so every older screen still compiles (remapped onto the new palette)
 const C_VOID := Color("0b0a10")         ## behind everything (the fade)
@@ -494,6 +496,22 @@ static func rs_lozenge(ci: RID, at: Vector2, s: float, col: Color, rule_len := 2
 	if rule_len > 0.0:
 		for side: float in [-1.0, 1.0]:
 			rs_rule(ci, at + Vector2(side * (s + 2.0), 0), at + Vector2(side * (s + 2.0 + rule_len), 0), Color(col, 0.9), Color(col, 0.0))
+
+
+## (quality pass P11) The world map screen's name plate: a lozenge marker with the name beside it
+## in Cinzel caps on a soft ink wash. `at` = the marker's centre (centred: the plate's centre); returns the plate's rect.
+static func rs_map_tag(ci: RID, at: Vector2, text: String, col: Color, fsize := 9, centred := false) -> Rect2:
+	_load_fonts()
+	var f: Font = font_head
+	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x
+	if centred:
+		at.x = roundf(at.x - (w + 18.0) * 0.5 + 6.0)
+	var r := Rect2(at.x - 6.0, at.y - fsize * 0.5 - 4.0, w + 18.0, fsize + 8.0)
+	RenderingServer.canvas_item_add_rect(ci, r, Color(C_WASH, 0.62))
+	rs_rule(ci, r.position + Vector2(0, r.size.y), r.end, Color(col, 0.55), Color(col, 0.0))
+	rs_lozenge(ci, at, 3.5, col, 0.0)
+	f.draw_string(ci, Vector2(at.x + 7.0, at.y + fsize * 0.38), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize, col)
+	return r
 
 
 ## The flame pointer (focus cursor): a lozenge stretched sideways, ink rim, ember body, pale core.
