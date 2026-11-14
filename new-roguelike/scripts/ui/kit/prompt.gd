@@ -2,8 +2,10 @@ extends Control
 ## Prompt: a key prompt (UI.prompt(kind, verb)). Keyboard: a parchment key cap with the key.
 ## Gamepad: a round parchment cap with the face letter (a pill for longer names). No platform colours
 ## or logos. Touch: nothing (the control hides). Updates live when the device changes.
-## kind = a key of UI.PROMPTS ("confirm", "back", "talk", "knight", "pause", "fast", "page", "target")
-## or any literal key text ("Tab"). verb = the word drawn after the cap ("" = cap only).
+## kind = a key of UI.PROMPTS ("confirm", "back", "talk", "knight", "pause", "fast", "page", "target",
+## "journal", "map", "items", "log", "auto"), the name of an InputMap action (scripts/core/controls.gd
+## ACTIONS), or any literal key text ("Tab"). The cap follows the Controls screen (rebinding) and
+## the "Button icons" setting. verb = the word drawn after the cap ("" = cap only).
 
 const UI = preload("res://scripts/ui/theme.gd")
 
@@ -38,10 +40,7 @@ func _on_device(_touch: bool) -> void:
 
 ## The text on the cap for this kind and device.
 static func cap_text(what: String, pad: bool) -> String:
-	if UI.PROMPTS.has(what):
-		var row: Dictionary = UI.PROMPTS[what]
-		return String(row["pad"] if pad else row["key"])
-	return what
+	return UI.cap_text(what, pad)
 
 
 func _refresh() -> void:
