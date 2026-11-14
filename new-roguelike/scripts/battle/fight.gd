@@ -9,9 +9,11 @@ extends RefCounted
 ##   f.result()                               "" while it lasts, then "win", "lose" or "fled"
 ## An action:  {"do": "attack", "target": unit}   {"do": "skill", "skill": row, "target": unit or null}
 ##             {"do": "guard"}                    {"do": "flee"}
+##             {"do": "item", "item": row of supplies.gd, "target": unit}  (taken out of the pack)
 ## An event:   {"type": "hit" | "heal" | "miss" | "guard" | "stun" | "stunned" | "flee" | "say", ...}
 
 const Battles = preload("res://scripts/data/battles.gd")
+const Supplies = preload("res://scripts/data/supplies.gd")
 
 var party: Array = []
 var foes: Array = []
@@ -30,8 +32,8 @@ func setup(the_party: Array, the_foes: Array, seed_value: int = 0) -> void:
 	else:
 		rng.randomize()
 	for u: Dictionary in party + foes:
-		u["hp"] = int(u["max_hp"])
-		u["mp"] = int(u["max_mp"])
+		u["hp"] = int(u.get("start_hp", u["max_hp"]))       # (v0.38.0: the party may come in hurt)
+		u["mp"] = int(u.get("start_mp", u["max_mp"]))
 		u["guard"] = false
 		u["stun"] = 0
 	order.clear()
@@ -130,6 +132,26 @@ func act(who: Dictionary, action: Dictionary) -> Array:
 					events.append({"type": "stun", "target": t})
 			if bool(skill.get("safe", false)):
 				who["guard"] = true
+		"item":
+			var item: Dictionary = action["item"]
+			if not Supplies.take(String(item["id"])):
+				events.append({"type": "say", "text": "None left."})
+				return events
+			var aimed: Array = alive(party) if String(item.get("aim", "friend")) == "party" else [action.get("target", who)]
+			var first := true
+			for t: Dictionary in aimed:
+				if int(t["hp"]) <= 0:
+					continue
+				var amount := 0
+				var mana := item.has("mana")
+				if mana:
+					amount = mini(roundi(float(t["max_mp"]) * float(item["mana"])), int(t["max_mp"]) - int(t["mp"]))
+					t["mp"] = int(t["mp"]) + amount
+				else:
+					amount = mini(maxi(1, roundi(float(t["max_hp"]) * float(item["heal"]))), int(t["max_hp"]) - int(t["hp"]))
+					t["hp"] = int(t["hp"]) + amount
+				events.append({"type": "item", "who": who, "item": item, "target": t, "amount": amount, "mana": mana, "first": first})
+				first = false
 		"flee":
 			if not no_flee and rng.randf() < Battles.FLEE_CHANCE:
 				fled = true
@@ -200,6 +222,11 @@ func auto_choice(who: Dictionary) -> Dictionary:
 			for p: Dictionary in alive(party):
 				if float(p["hp"]) < float(p["max_hp"]) * 0.4:
 					return {"do": "skill", "skill": s, "target": p}
+	# (v0.38.0) a herb for somebody badly hurt when no spell can do it
+	if Supplies.count("herb") > 0:
+		for p: Dictionary in alive(party):
+			if float(p["hp"]) < float(p["max_hp"]) * 0.3:
+				return {"do": "item", "item": Supplies.row("herb"), "target": p}
 	var best := {}
 	for s: Dictionary in who["skills"]:
 		if not can_use(who, s) or float(s.get("power", 0.0)) <= 0.0:

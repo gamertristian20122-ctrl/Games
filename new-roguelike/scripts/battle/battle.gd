@@ -17,6 +17,8 @@ signal _picked(action: Dictionary)
 const Stage = preload("res://scripts/battle/stage.gd")
 const Fight = preload("res://scripts/battle/fight.gd")
 const Battles = preload("res://scripts/data/battles.gd")
+const Supplies = preload("res://scripts/data/supplies.gd")
+const Wounds = preload("res://scripts/data/wounds.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Allies = preload("res://scripts/data/allies.gd")
@@ -794,7 +796,7 @@ func _show_commands(back: bool = false) -> void:
 	var list: Container
 	if _ph:
 		var grid := GridContainer.new()
-		grid.columns = 2
+		grid.columns = 3
 		grid.add_theme_constant_override("h_separation", 4)
 		grid.add_theme_constant_override("v_separation", 4)
 		list = grid
@@ -805,14 +807,19 @@ func _show_commands(back: bool = false) -> void:
 	var skills := _row("Skills", UI.ICON_SKILLS, func() -> void: _on_skills_row())
 	var guard := _row("Guard", UI.icon_or([UI.ICON_SHIELD, UI.ICON_GUARD]), func() -> void: _choose({"do": "guard"}))
 	var flee := _row("Flee", UI.icon_or([UI.ICON_BOOT, UI.ICON_FLEE]), func() -> void: _on_flee_row())
+	var items := _row("Items", "icon_misers_flask", func() -> void: _on_items_row())
+	items.set_meta("text", "Herbs and tonics from your pack.")
+	_items_row = items
 	_skills_row = skills
 	_flee_row = flee
 	attack.set_meta("text", "Strike one monster.")
 	skills.set_meta("text", "Your skills; they cost mana.")
 	guard.set_meta("text", "Take less than half until your next turn; a little mana back.")
 	flee.set_meta("text", "Try to run from the fight.")
-	for b: Button in [attack, skills, guard, flee]:
+	for b: Button in [attack, skills, items, guard, flee]:
 		list.add_child(b)
+	if Supplies.bag().is_empty():
+		_refuse(items, "Your pack is empty. Sellers in town have herbs and tonics.")
 	var warn := ""
 	if bool(fight.get("no_flee")):
 		_refuse(flee, "No running from this one.")
@@ -829,6 +836,57 @@ func _show_commands(back: bool = false) -> void:
 	(_warn.get_child(0) as Label).text = warn
 	_set_help("commands")
 	(skills if back and _came_from == "skills" else attack).grab_focus.call_deferred()
+
+
+var _items_row: Button
+var _waiting_item := {}
+const LOSE_COINS := 0.2            ## a lost battle costs this share of the coins
+
+
+func _on_items_row() -> void:
+	if _refused(_items_row):
+		return
+	_show_items()
+
+
+## The pack (scripts/data/supplies.gd): what is in it and how many; the one picked is aimed like a heal.
+func _show_items(back: bool = false) -> void:
+	_clear_menu()
+	_menu_page_next = "items"
+	_came_from = "items"
+	var page := UI.vbox(0)
+	_head(page, "Items")
+	var list := UI.vbox(0)
+	page.add_child(list)
+	var first: Button = null
+	for pair: Array in Supplies.bag():
+		var item: Dictionary = pair[0]
+		var icon: String = {"herb": "icon_misers_flask", "tonic": "icon_sparking_tonic", "elixir": "icon_swift_tonic"}.get(String(item["id"]), "icon_misers_flask")
+		var b := _row(String(item["name"]), icon, func() -> void: _on_item(item), "x%d" % int(pair[1]), UI.C_GOLD)
+		b.set_meta("text", String(item["text"]))
+		if _ph:
+			b.custom_minimum_size.x = PHONE_LIST_W - 8.0
+		if first == null:
+			first = b
+		list.add_child(b)
+	if _ph:
+		var back_row := _row("Back", "", func() -> void: on_back())
+		back_row.set_meta("text", "")
+		list.add_child(back_row)
+	_add_detail(page)
+	_open_page(page, "items", -1 if back else 1)
+	_set_help("skills")
+	if first != null:
+		first.grab_focus.call_deferred()
+
+
+func _on_item(item: Dictionary) -> void:
+	_waiting_skill = {}
+	_waiting_item = item
+	if String(item.get("aim", "friend")) == "party":
+		_choose({"do": "item", "item": item, "target": null})
+	else:
+		_ask_target("friend", "Tap who gets it.")
 
 
 func _on_skills_row() -> void:
@@ -919,12 +977,14 @@ func _on_skill_row(b: Button, skill: Dictionary) -> void:
 
 func _on_attack() -> void:
 	_waiting_skill = {}
+	_waiting_item = {}
 	_came_from = "commands"
 	_ask_target("foe", "Tap the monster to strike.")
 
 
 func _on_skill(skill: Dictionary) -> void:
 	_waiting_skill = skill
+	_waiting_item = {}
 	match String(skill.get("aim", "foe")):
 		"foes", "self":
 			_choose({"do": "skill", "skill": skill, "target": null})
@@ -943,6 +1003,8 @@ func _ask_target(aim: String, words: String) -> void:
 		_target_picked(choices[0], aim)
 		return
 	var order := "Attack" if _waiting_skill.is_empty() else String(_waiting_skill["name"])
+	if not _waiting_item.is_empty():
+		order = String(_waiting_item["name"])
 	_clear_menu()
 	_menu_page_next = "aim"
 	_menu_page = "aim"
@@ -1035,7 +1097,9 @@ func _target_picked(unit: Dictionary, forced_aim: String = "") -> void:
 	if aim == "" or _acting.is_empty():
 		return
 	Sfx.play("ui_click")
-	if _waiting_skill.is_empty():
+	if not _waiting_item.is_empty():
+		_choose({"do": "item", "item": _waiting_item, "target": unit})
+	elif _waiting_skill.is_empty():
 		_choose({"do": "attack", "target": unit})
 	else:
 		_choose({"do": "skill", "skill": _waiting_skill, "target": unit})
@@ -1223,6 +1287,16 @@ func _play(events: Array) -> void:
 		"say":
 			_say(String(first["text"]))
 			await _wait(0.5)
+		"item":
+			_say("%s uses a %s." % [String(who["name"]), String(first["item"]["name"])])
+			Sfx.play("heart_pickup", -6.0)
+			for e: Dictionary in events:
+				var t: Dictionary = e["target"]
+				var at: Vector3 = (t["home"] as Vector3) + Vector3(0.0, float(t["top"]) * 0.5, 0.15)
+				stage.call("burst", at, Color(0.55, 0.75, 1.0) if bool(e["mana"]) else Color(0.6, 1.0, 0.55), 0.7, 1.2)
+				_float(t, "+%d" % int(e["amount"]), UI.C_MP_A if bool(e["mana"]) else UI.C_GREEN)
+			_refresh()
+			await _wait(0.8)
 	# a turn is over when every fall it caused has been shown
 	var guard_t := 0.0
 	while _dying > 0 and guard_t < 4.0:
@@ -1639,15 +1713,30 @@ func _finish() -> void:
 			Skills.fill_empty()
 		if String(reward["gear"]) != "" and Gear.grant(String(reward["gear"])):
 			lines.append("Found: %s" % String(Gear.row(String(reward["gear"]))["name"]))
+		if String(reward.get("supply", "")) != "" and Supplies.give(String(reward["supply"])) > 0:
+			lines.append("Found: a %s" % String(Supplies.row(String(reward["supply"]))["name"]))
+		# (v0.38.0) the hurt stay hurt; a new level makes everybody whole
+		Wounds.keep(fight.party)
+		if int(summary["levels"]) > 0:
+			Wounds.rest()
+			lines.append("Everybody is rested by the new level.")
 		Save.flush()
 		Sfx.victory()
 	elif outcome == "lose":
 		head = "You fall..."
+		# (v0.38.0) it costs something now: a share of the coins, and the way back
+		var lost := roundi(float(Save.hub_get("bank:coins")) * LOSE_COINS)
+		Save.hub_set("bank:coins", Save.hub_get("bank:coins") - lost)
+		Wounds.rest()
+		summary["lost"] = lost
 		lines.append("Somebody carries you back to your bed.")
-		lines.append("Nothing is lost.")
+		lines.append("You lost %d coins on the way." % lost if lost > 0 else "You had no coins to lose.")
+		Save.flush()
 	else:
 		outcome = "fled"
 		head = "You got away"
+		Wounds.keep(fight.party)
+		Save.flush()
 	if G.flag("autoplay"):
 		print("[battle] autoplay result=%s rounds=%d" % [outcome, int(fight.round_no)])
 	if _auto and G.flag("animend") and outcome != "fled":
@@ -1899,9 +1988,14 @@ func on_back() -> void:
 		"skills":
 			Sfx.play("ui_back")
 			_show_commands(true)
+		"items":
+			Sfx.play("ui_back")
+			_show_commands(true)
 		"aim":
 			Sfx.play("ui_back")
-			if _waiting_skill.is_empty():
+			if not _waiting_item.is_empty():
+				_show_items(true)
+			elif _waiting_skill.is_empty():
 				_show_commands(true)
 			else:
 				_show_skills(true)
@@ -1926,6 +2020,21 @@ func _take_shot() -> void:
 		await get_tree().create_timer(float(G.arg("spellwait", "0.16")), true, false, true).timeout
 		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_spell.png"))
 		_fx = []
+	if G.flag("shotitems"):
+		# test: --shotitems writes battle_items.png (the pack), uses a herb on the knight, then battle_herb.png
+		for u: Dictionary in fight.party:
+			u["hp"] = maxi(1, int(u["max_hp"]) / 3)
+		_refresh()
+		_show_items()
+		await get_tree().create_timer(0.5).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_items.png"))
+		var before := int(fight.party[0]["hp"])
+		_on_item(Supplies.row("herb"))
+		await get_tree().create_timer(0.3).timeout
+		_target_picked(fight.party[0], "friend")
+		await get_tree().create_timer(1.0).timeout
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_herb.png"))
+		print("[battle] herb test: knight %d -> %d, herbs left %d" % [before, int(fight.party[0]["hp"]), Supplies.count("herb")])
 	if G.flag("shotmenu"):
 		_show_skills()
 		await get_tree().create_timer(0.4).timeout

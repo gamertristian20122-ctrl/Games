@@ -1561,7 +1561,7 @@ The owner played and answered the review. Done in this version:
   party uses fight.gd `auto_choice`. `--autoplay` starts with it on (test; prints the result).
 - `G.DEMO` is false again (the whole game). A demo build: set it true, or run with `--demo`.
 **The owner's list for the full game (their words, 14 Nov 2026), still TO DO, in the order I proposed:**
-1. Make fights matter + balance (health carries over, items, inns).
+1. Make fights matter + balance: DONE in v0.38.0.
 2. "All the weapons and armor types are going to be upgrades. Remove that from custom abilities": the sword
    look and armour colour leave the Your-knight screen and become upgrades you earn or buy.
 3. Side quests and secrets.
@@ -1571,6 +1571,28 @@ The owner played and answered the review. Done in this version:
 6. "Really good music" (human-made CC0 / CC-BY only).
 They said these are GOOD AS THEY ARE, do not touch: graphics quality settings, the intro, map names, attack
 animations, the story text.
+
+## v0.38.0 (14 Nov 2026): fights matter (wounds carry over, items, inn, shops) + balance
+Step 1 of the owner's full-game list.
+- **Wounds** (`scripts/data/wounds.gd`): health and mana carry over between battles (saved as what is LOST,
+  "wound:hp:<id>" / "wound:mp:<id>"). Battles.party() applies them; fight.gd setup starts from "start_hp".
+  Who falls gets up after a won fight with 15%. Whole again by: a bed ("Sleep", also the camp fires), a room
+  at the inn (Oswin the barkeep, 6 + 2 per level coins), a new level.
+- **Losing costs**: 20% of the coins (`battle.gd LOSE_COINS`), then you wake in bed, rested.
+- **Supplies** (`scripts/data/supplies.gd`): Healing Herb (40% hp, 12), Mana Tonic (50% mp, 18), Hearth Elixir
+  (whole party 34%, 45, from step 7). 3 herbs + 1 tonic at the start, cap 9 each, 22% drop after a won battle.
+  Sold by `SELLERS` (barkeep, Mira in Wickmere, Nib in Dustwatch): a person in that list gets role "supplies".
+- **Battle**: a new "Items" order (phone: 3 x 2 tiles), an items page, `{"do": "item"}` in fight.gd, an "item"
+  event (green / blue numbers, a burst). Auto (and the bot) use a herb on anybody under 30%.
+- **Walking HUD**: under the coins, everybody's health while somebody is hurt (red under 35%).
+- **Balance** (`dev/battle_sim.tscn -- --nosave --streak` / `--chain`): fights in a row before a fall, rested at
+  the start, starting pack: woods L1-2 alone 3-4, the Sands L5-7 with Thessaly 4.5-6, L9 with both 7 (was 13:
+  packs now get one more monster on tier 1+ lands when two companions have joined). Chapter one's three story
+  battles in a row: 100% (a level-up between them heals).
+- Test flags: `--battle=story:glade --shotitems --shots=<dir>` (items page, a herb used), `--hurt` (knight at
+  16/46 in walking places), `--talkend` with `--hubtalk=<id>` (the talk's choices).
+- TRAP found: `./tools/check.sh` does NOT compile battle.gd (it is loaded on demand). A typed-inference error
+  there only shows when a battle opens: always open one battle (or run the tale tour) after editing it.
 
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:

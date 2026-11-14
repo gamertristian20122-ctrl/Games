@@ -11,6 +11,8 @@ const Battles = preload("res://scripts/data/battles.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
 const Allies = preload("res://scripts/data/allies.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Wounds = preload("res://scripts/data/wounds.gd")
+const Rpg = preload("res://scripts/data/rpg.gd")
 
 var rng := RandomNumberGenerator.new()
 
@@ -48,9 +50,105 @@ func _line(fights: int, make: Callable) -> String:
 	return "%3d%% %.1fr %2d%%hp" % [roundi(100.0 * wins / fights), float(rounds) / fights, roundi(100.0 * left / maxf(wins, 1))]
 
 
+## (v0.38.0) --streak: health carries over now. How many roamer battles in a row a party wins
+## before it falls, starting rested with the starting pack (3 herbs, 1 tonic), never resting.
+## The aim: 3 to 6 on the land of its level, so a player rests (bed, inn) every few fights.
+func _streak(level: int, mates: Array, spot: int, tries: int) -> float:
+	var total := 0
+	Save.hub_set("rpg:lvl", level)
+	for id: String in ["thessaly", "sera"]:
+		Save.hub_set("ally:" + id, 1 if mates.has(id) else 0)
+	for t in tries:
+		Wounds.rest()
+		Save.hub_set("bag:init", 1)
+		Save.hub_set("bag:herb", 3)
+		Save.hub_set("bag:tonic", 1)
+		var won := 0
+		while won < 30:
+			var party := Battles.party()
+			var f := Fight.new()
+			f.setup(party, Battles.pack_for(spot, rng), rng.randi())
+			while f.result() == "":
+				var who := f.next()
+				if who.is_empty():
+					break
+				if f.stunned(who):
+					f.act(who, {})
+				elif String(who["side"]) == "party":
+					f.act(who, f.auto_choice(who))
+				else:
+					f.act(who, f.foe_choice(who))
+			if f.result() != "win":
+				break
+			Wounds.keep(f.party)
+			won += 1
+		total += won
+	Wounds.rest()
+	return float(total) / float(tries)
+
+
 func _ready() -> void:
 	var fights := int(G.arg("fights", "200"))
 	rng.seed = 7
+	if G.flag("chain"):
+		# (v0.38.0) chapter one's story battles one after the other, hurt as the last left them, with the
+		# starting pack and the auto bot's use of herbs; levels as the tale tour reaches them
+		for start: int in [1, 2]:
+			var whole := 0
+			var left := 0.0
+			for t in 200:
+				Wounds.rest()
+				Save.hub_set("bag:init", 1)
+				Save.hub_set("bag:herb", 3)
+				Save.hub_set("bag:tonic", 1)
+				Save.hub_set("ally:sera", 0)
+				Save.hub_set("ally:thessaly", 0)
+				var ok := true
+				var at := 0.0
+				Save.hub_set("rpg:lvl", start)
+				Save.hub_set("rpg:xp", 0)
+				for row: Array in [["glade", start, false], ["deepwood", start, true], ["giant", start, true]]:
+					Save.hub_set("ally:thessaly", 1 if bool(row[2]) else 0)
+					var spec := Battles.scripted(String(row[0]))
+					var f := Fight.new()
+					f.setup(spec["party"], spec["foes"], rng.randi())
+					f.no_flee = true
+					while f.result() == "":
+						var who := f.next()
+						if who.is_empty():
+							break
+						if f.stunned(who):
+							f.act(who, {})
+						elif String(who["side"]) == "party":
+							var sweeping := false
+							for foe: Dictionary in f.alive(f.foes):
+								sweeping = sweeping or f.sweep_next(foe)
+							f.act(who, {"do": "guard"} if sweeping and float(who["hp"]) < float(who["max_hp"]) * 0.6 else f.auto_choice(who))
+						else:
+							f.act(who, f.foe_choice(who))
+					if f.result() != "win":
+						ok = false
+						break
+					at = float(f.party[0]["hp"]) / float(f.party[0]["max_hp"])
+					Wounds.keep(f.party)
+					var gain := Battles.reward(f.foes, int(spec["tier"]))
+					if Rpg.add_xp(int(gain["xp"]) + int(spec["xp_bonus"])) > 0:
+						Wounds.rest()                   # a new level makes everybody whole (as in the game)
+				if ok:
+					whole += 1
+					left += at
+			print("(giant met at level %d) " % Rpg.level() + "chapter one in a row from level %d: %d%% win all three, knight ends at %d%% hp" % [start, whole / 2, roundi(100.0 * left / maxf(whole, 1))])
+		G.quit(0)
+		return
+	if G.flag("streak"):
+		var lands := {"grass": 0, "robbers": 4, "sand": 5, "rock": 10}
+		for row: Array in [[1, []], [2, []], [3, ["thessaly"]], [5, ["thessaly"]], [7, ["thessaly"]], [9, ["thessaly", "sera"]], [12, ["thessaly", "sera"]]]:
+			var line := "level %2d +%d:" % [int(row[0]), (row[1] as Array).size()]
+			for kind: String in lands:
+				line += "  %s %4.1f" % [kind, _streak(int(row[0]), row[1], int(lands[kind]), 60)]
+			print(line)
+		G.quit(0)
+		return
 	var spots := {"grass": 0, "robbers": 4, "sand": 5, "rock": 10}
 	for level: int in [1, 2, 4, 7, 10, 14]:
 		Save.hub_set("rpg:lvl", level)

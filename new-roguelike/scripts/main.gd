@@ -47,6 +47,8 @@ const Gear = preload("res://scripts/data/gear.gd")
 const Allies = preload("res://scripts/data/allies.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Supplies = preload("res://scripts/data/supplies.gd")
+const Wounds = preload("res://scripts/data/wounds.gd")
 const HubData = preload("res://scripts/data/hub.gd")
 
 var run: Node                    ## the game being played, or null on the menus
@@ -322,7 +324,7 @@ func _on_battle_finished(outcome: String, summary: Dictionary) -> void:
 				Roamers.beaten(int(summary.get("spot", -1)))
 				_news = "Won: +%d XP, %d coins" % [int(summary.get("xp", 0)), int(summary.get("coins", 0))]
 		"lose":
-			_news = "You wake in your bed."
+			_news = "You wake in your bed." + (" %d coins are gone." % int(summary.get("lost", 0)) if int(summary.get("lost", 0)) > 0 else "")
 			_from_place = ""
 		_:
 			_news = "You got away."
@@ -480,8 +482,36 @@ func _on_action(what: String, arg: Variant) -> void:
 			_transition(show_intro)         # the bed: watch the intro again
 		"hub_sleep":
 			close_top()
+			Wounds.rest()                   # (v0.38.0) a night in a bed makes everybody whole
+			Save.flush()
 			if is_instance_valid(hub):
 				hub.call("sleep")
+		"hub_inn":
+			# (v0.38.0) a room at the inn: paid, then the same as a night in a bed
+			var price := Supplies.inn_price()
+			close_top()
+			if Save.hub_get("bank:coins") >= price:
+				Save.hub_set("bank:coins", Save.hub_get("bank:coins") - price)
+				Wounds.rest()
+				Save.flush()
+				Sfx.play("ui_start")
+				if is_instance_valid(hub):
+					hub.call("sleep")
+					hub.call("say", "A good night's sleep. Everybody is rested.")
+			else:
+				Sfx.play("ui_back")
+		"hub_supply":
+			# (v0.38.0) buying a supply for the pack
+			var item := Supplies.row(String(arg))
+			var ok := not item.is_empty() and Save.hub_get("bank:coins") >= int(item["price"]) and Supplies.count(String(arg)) < Supplies.CAP
+			if ok:
+				Save.hub_set("bank:coins", Save.hub_get("bank:coins") - int(item["price"]))
+				Supplies.give(String(arg))
+				Save.flush()
+			Sfx.play("ui_start" if ok else "ui_back")
+			close_top()
+			if is_instance_valid(hub):
+				hub.call("retalk")
 		"hub_notes":
 			var pages: Array = []
 			for i: int in Story.notes_found():

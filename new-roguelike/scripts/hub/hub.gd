@@ -38,6 +38,9 @@ const EnemyScript = preload("res://scripts/entities/enemy.gd")
 const UI = preload("res://scripts/ui/theme.gd")
 const View3D = preload("res://scripts/hub/view3d.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Supplies = preload("res://scripts/data/supplies.gd")
+const Battles = preload("res://scripts/data/battles.gd")
+const Wounds = preload("res://scripts/data/wounds.gd")
 const Interior = preload("res://scripts/hub/arch/interior.gd")
 
 signal action(what: String, arg: Variant)
@@ -90,6 +93,7 @@ var _banner: Control             ## the place banner (scripts/ui/walk_kit.gd Ban
 var _ui: Control                 ## the interface's root on the UI grid (UI.attach): story line, coins, banner, toast, help
 var _toast: Control              ## one small card bottom-centre (WalkKit Toast): hub.say(), "The way is shut."
 var _coins: Control              ## the coins, top-right (WalkKit Coins)
+var _hurt: Label                 ## (v0.38.0) the party's health while somebody is hurt
 var _help: Control               ## "[C] Knight  [Esc] Pause" bottom-right
 var _walk_t := 0.0               ## seconds the knight has been walking without a stop
 var _still_t := 0.0              ## seconds he has stood still
@@ -350,6 +354,7 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 		Save.hub_set("camp", int(place["camp"]))      # the next Play opens here
 	_build_signs()
 	_quests.goal_only = place.has("signs")
+	refresh_hurt()
 	_prompt.scale = Vector2.ONE / _zoom
 	if bool(place.get("outdoor", false)):
 		_build_light()
@@ -383,6 +388,22 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 			say(String(news["say"]))
 	if _view != null:
 		_view.call("rebuild")
+
+
+## (v0.38.0) the party's health line under the coins: only while somebody is hurt.
+func refresh_hurt() -> void:
+	if not is_instance_valid(_hurt):
+		return
+	if G.flag("hurt") and Save.hub_get("wound:hp:knight") == 0:
+		Save.hub_set("wound:hp:knight", 30)        # test: --hurt : the knight comes back from a hard fight
+	var bits: Array = []
+	var low := false
+	if Wounds.any():
+		for u: Dictionary in Battles.party():
+			bits.append("%s %d/%d" % [String(u["name"]), int(u["start_hp"]), int(u["max_hp"])])
+			low = low or float(u["start_hp"]) < float(u["max_hp"]) * 0.35
+	_hurt.text = "   ".join(bits)
+	_hurt.add_theme_color_override("font_color", UI.C_RED if low else UI.C_PARCH)
 
 
 ## Is this place a room the 3D look builds for real (a place's "inside", scripts/hub/arch/interior.gd)?
@@ -532,6 +553,17 @@ func _build_hud() -> void:
 	_toast.offset_top = -bottom - (16.0 if UI.is_phone() else 24.0) - 8.0
 	_toast.offset_bottom = -bottom
 	_ui.add_child(_toast)
+	# (v0.38.0) the party's health under the coins, only while somebody is hurt
+	_hurt = UI.label("", "Small")
+	_hurt.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_hurt.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_hurt.offset_left = -(220.0 if UI.is_phone() else 360.0) - right
+	_hurt.offset_right = -right - 2.0
+	_hurt.offset_top = ins.y + (17.0 if UI.is_phone() else 32.0)
+	_hurt.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
+	_hurt.add_theme_constant_override("outline_size", 1 if UI.is_phone() else 3)
+	_hurt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ui.add_child(_hurt)
 	_help = UI.help_strip([["knight", "Knight"], ["pause", "Pause"]], "bottom_right")
 	_ui.add_child(_help)
 
@@ -553,6 +585,7 @@ func _sync_hud(delta: float, moving: bool) -> void:
 	_quests.modulate.a = move_toward(_quests.modulate.a, want, delta * 2.0)
 	_coins.visible = not frozen
 	_coins.set("value", Upgrades.coins())
+	_hurt.visible = not frozen and _hurt.text != ""
 	_banner.visible = _banner.visible and not frozen
 	if frozen:
 		_toast.call("hide_now")
@@ -1470,7 +1503,11 @@ func _talk(index: int) -> void:
 		info["pages"] = (said_now.get("pages", []) as Array).duplicate()
 		if said_now.has("option"):
 			info["options"].append({"text": String(said_now["option"]), "what": "tale_do", "arg": said_now["do"]})
-		if Tale.RETIRED.has(role):
+		if Supplies.SELLERS.has(id):
+			role = "supplies"                # (v0.38.0) sells herbs and tonics; the barkeep also lets rooms
+			if said_now.is_empty() and String(row.get("text", "")) != "":
+				info["pages"] = [String(row["text"])]
+		elif Tale.RETIRED.has(role):
 			if said_now.is_empty():
 				info["pages"] = [Tale.LATER]
 			role = "chat"
@@ -1545,6 +1582,18 @@ func _talk(index: int) -> void:
 				info["pages"] = (mate.get("pages", []) as Array).duplicate()
 				info["options"].append({"text": "Travel with me, %s" % String(mate["name"]), "what": "hub_ally", "arg": String(mate["id"])})
 			info["lines"].append(["To send her back here later: tap Lv, then Party.", UI.C_FAINT])
+		"supplies":
+			if Supplies.INN.has(id):
+				var room := Supplies.inn_price()
+				info["options"].append({"text": "A room for the night: %d coins (everybody rested)" % room, "what": "hub_inn",
+					"off": Upgrades.coins() < room, "why": _poor(room)})
+			for item: Dictionary in Supplies.on_sale(Tale.step()):
+				var price := int(item["price"])
+				var full := Supplies.count(String(item["id"])) >= Supplies.CAP
+				info["options"].append({"text": "%s: %d coins (you have %d)" % [item["name"], price, Supplies.count(String(item["id"]))], "what": "hub_supply",
+					"arg": item["id"], "off": full or Upgrades.coins() < price, "why": "Your pack holds no more of those." if full else _poor(price)})
+				info["lines"].append(["%s: %s" % [item["name"], item["text"]], UI.C_DIM])
+			info["lines"].append(["Coins: %d" % Upgrades.coins(), UI.C_GOLD])
 		"train":
 			info["options"].append({"text": "Train in the yard", "what": "hub_train"})
 		"bed":
@@ -1554,7 +1603,7 @@ func _talk(index: int) -> void:
 			else:
 				info["lines"].append(["A place to rest. The game opens here next time, at the camp you last walked into.", UI.C_DIM])
 			info["lines"].append(["You carry %d item%s. Camp chest: %d coins." % [carried.size(), "" if carried.size() == 1 else "s", Upgrades.coins()], UI.C_GOLD])
-			info["options"].append({"text": "Sleep until morning" if _is_night() else "Sleep until nightfall", "what": "hub_sleep"})
+			info["options"].append({"text": ("Sleep until morning" if _is_night() else "Sleep until nightfall") + (" (everybody rested)" if Wounds.any() else ""), "what": "hub_sleep"})
 			info["options"].append({"text": "Remember how it began (the intro)", "what": "hub_intro"})
 		"shop":
 			for entry: Array in Shop.stock():
@@ -1819,6 +1868,15 @@ func _tour_end() -> void:
 			action.emit("hub_shelf", "Tam")      # test: --hubtalk=shelf opens the smith's shelf of gear
 		else:
 			talk_to(G.arg("hubtalk"))
+		if G.flag("talkend"):            # test: --talkend : skip to the choices at the end of the talk
+			await get_tree().create_timer(0.6).timeout
+			var main_node := get_tree().root.get_node_or_null("Main")
+			var top: Variant = main_node.call("top_screen") if main_node != null else null
+			for i in 8:
+				if top is Node and (top as Node).has_method("_advance"):
+					(top as Node).call("_finish_words")
+					(top as Node).call("_advance")
+					await get_tree().create_timer(0.15).timeout
 		await get_tree().create_timer(0.8).timeout
 		G.save_shot("hub_talk_%s.png" % G.arg("hubtalk"))
 		await get_tree().create_timer(0.3).timeout

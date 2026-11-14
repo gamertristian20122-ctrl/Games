@@ -7,7 +7,8 @@ extends RefCounted
 ##   Strength = harder blows    Vitality = more health    Spirit = more mana, stronger spells
 ##   Agility  = acts earlier in the round
 ## A round: everybody acts once, the quickest first. On your turn: Attack, Skills, Guard or Flee.
-## Everybody starts every battle rested (full health and mana): there are no potions or inns yet.
+## v0.38.0: health and mana CARRY OVER between battles (scripts/data/wounds.gd); the pack's supplies
+## (scripts/data/supplies.gd) are the Items order; a bed, the inn or a level-up makes everybody whole.
 ## Every number is a first guess, measured only with the test bot (`--battlesim`). Words are
 ## placeholders the owner may rewrite.
 
@@ -19,6 +20,8 @@ const Enemies = preload("res://scripts/data/enemies.gd")
 const Roamers = preload("res://scripts/data/roamers.gd")
 const Heroes = preload("res://scripts/data/heroes.gd")
 const Tale = preload("res://scripts/data/tale.gd")
+const Wounds = preload("res://scripts/data/wounds.gd")
+const Supplies = preload("res://scripts/data/supplies.gd")
 
 const DEF_HALF := 24.0             ## this much defence halves a blow (see fight.gd _blow)
 const CRIT_CHANCE := 0.06          ## a blow lands half as hard again this often
@@ -145,6 +148,7 @@ static func party(extra: Array = []) -> Array:
 			"max_hp": int(a["hp"]) + int(a["hp_level"]) * (lvl - 1), "max_mp": int(a["mp"]) + int(a["mp_level"]) * (lvl - 1),
 			"atk": float(a["atk"]) + float(a["atk_level"]) * (lvl - 1), "def": float(a["def"]) + float(a["def_level"]) * (lvl - 1),
 			"speed": float(a["speed"]), "magic": 1.0, "dodge": 0.0, "skills": (a["skills"] as Array).duplicate(true)})
+	Wounds.apply(out)                  # everybody starts as hurt as the last battle left them
 	return out
 
 
@@ -197,6 +201,14 @@ static func pack_for(spot: int, rng: RandomNumberGenerator) -> Array:
 	var count := 2 + (1 if rng.randf() < 0.45 else 0)
 	if Rpg.level() < 3 and tier == 0:
 		count = 1 + (1 if rng.randf() < 0.6 else 0)
+	# (v0.38.0) a party of three or four meets a bigger pack: with both companions a fight in the Sands
+	# was over before it started and twelve in a row could be won without a rest (dev/battle_sim --streak)
+	var friends := 0
+	for row: Dictionary in Allies.LIST:
+		if Allies.joined(String(row["id"])):
+			friends += 1
+	if friends >= 2 and tier > 0:
+		count += 1
 	var out: Array = [foe(Roamers.shows(spot), tier)]
 	while out.size() < count:
 		out.append(foe(String(shows[rng.randi() % shows.size()]), tier))
@@ -222,4 +234,4 @@ static func reward(foes: Array, tier: int) -> Dictionary:
 		gear = Gear.roll_common(tier)
 		if gear != "" and Gear.owned(gear):
 			gear = ""
-	return {"xp": xp, "coins": coins, "gear": gear}
+	return {"xp": xp, "coins": coins, "gear": gear, "supply": Supplies.drop(Tale.step())}
