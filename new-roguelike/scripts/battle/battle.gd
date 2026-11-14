@@ -117,6 +117,7 @@ var _lean_want := 0.0
 var _stop_k := 1.0                 ## the hit-stop's share of the time scale
 var _ff := 1.0                     ## and the fast-forward's
 var _hold_t := 0.0
+var _ff_latch := false               ## Settings > "ff_toggle": fast-forward stays on until "fast" is pressed again
 var _combo := {}                   ## a combo's one counting number, by the fighter hit
 var _plan: Array = []              ## test: --animplan=lunge,slam,thessaly:volley (what the bot picks, in order)
 var _win_do := {}                  ## a story battle's "win" (tale.gd): applied the moment the fight is won
@@ -164,7 +165,9 @@ func _ready() -> void:
 		_xp_bonus = int(spec["xp_bonus"])
 		_boss_fight = bool(spec["boss"])
 		# (the story moves on the moment the fight is won, see _finish; battles.gd may hand the "win" out itself)
-		var win: Variant = spec.get("win", Tale.BATTLES.get(story, {}).get("win", {}))
+		# (Tale.battle_row also knows a module's battles and notes which place foe this fight beats)
+		var story_row: Dictionary = Tale.battle_row(story)
+		var win: Variant = story_row.get("win", {}) if not story_row.is_empty() else spec.get("win", {})
 		_win_do = win if win is Dictionary else {}
 	else:
 		var kind := Roamers.kind_of(spot)
@@ -1314,10 +1317,18 @@ func _shade(u: Dictionary, k: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	# Auto and the speed plate have keys of their own (T and F; pad Y and X), in the fight and while choosing
+	# (Settings > fast-forward as a switch, "ff_toggle": a press of the "fast" action turns it on or off)
+	if not _over and InputMap.has_action("fast") and event.is_action_pressed("fast") and not event.is_echo() and Save.setting("ff_toggle") == true:
+		_ff_latch = not _ff_latch
+	# (the "auto" action may be rebound to any key or pad button: scripts/core/controls.gd)
+	if not _over and not _auto and InputMap.has_action("auto") and event.is_action_pressed("auto") and not event.is_echo():
+		Sfx.play("ui_click")
+		_toggle_auto()
+		get_viewport().set_input_as_handled()
+		return
 	if not _over and not _auto and event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo:
 		var code := (event as InputEventKey).physical_keycode
-		var auto_key := event.is_action_pressed("auto") if InputMap.has_action("auto") else code == KEY_T
-		if auto_key:
+		if not InputMap.has_action("auto") and code == KEY_T:
 			Sfx.play("ui_click")
 			_toggle_auto()
 			get_viewport().set_input_as_handled()
@@ -2656,9 +2667,11 @@ func _fast_forward(real: float) -> void:
 	var choosing := not _acting.is_empty()
 	var held := not choosing and not _over and (Input.is_key_pressed(KEY_SPACE) or Input.is_key_pressed(KEY_SHIFT)
 		or Input.is_action_pressed("ui_accept") or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
-		or Input.is_joy_button_pressed(0, JOY_BUTTON_A) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER))
+		or (InputMap.has_action("fast") and Input.is_action_pressed("fast"))
+		or Input.is_joy_button_pressed(maxi(0, Controls.active_pad), JOY_BUTTON_A) or Input.is_joy_button_pressed(maxi(0, Controls.active_pad), JOY_BUTTON_RIGHT_SHOULDER))
 	_hold_t = _hold_t + real if held else 0.0
-	var want := FF_SPEED if _hold_t >= FF_HOLD else 1.0
+	var latched: bool = _ff_latch and not choosing and not _over and Save.setting("ff_toggle") == true
+	var want := FF_SPEED if (_hold_t >= FF_HOLD or latched) else 1.0
 	# (the speed plate: only while the fight plays out, never while you choose or read the result)
 	var pick := float(speed_pick) if (not choosing and not _over and _intro <= 0.0) else 1.0
 	if want != _ff or pick != _pick:

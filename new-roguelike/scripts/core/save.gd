@@ -58,6 +58,9 @@ const DEFAULT_SETTINGS := {
 	"pad_glyphs": "auto",    # which gamepad's button pictures the hints show
 	"fps_cap": 0,            # PC: 0 = no cap
 	"binds": {},             # rebound keys and pad buttons: action name -> what the rebind screen stores
+	"borderless": false,     # PC: a window without a frame (scripts/ui/display.gd)
+	"window_size": "",       # PC: "" = as it is, or "1600x900"
+	"ui_size_set": false,    # true once the player picked a text size (stops the small-screen rule of theme.gd)
 }
 const DEFAULTS := {
 	"version": VERSION,

@@ -1847,6 +1847,8 @@ func _talk(index: int) -> void:
 		_near = -1
 		_last_talk = -1
 		Sfx.play("ui_back" if shut else "chest_open", -4.0)
+		if not shut and words != "":
+			Sfx.sting("item_get")
 		if G.flag("allfinds"):
 			print("[finds] %s: %s" % [row["find"], "LOCKED" if shut else "opened"])
 		action.emit("talk", {"name": row["name"], "title": "", "sprite": "", "pages": [words if words != "" else Tale.KIT["empty"]], "heard": "", "lines": [], "options": []})
@@ -1996,7 +1998,7 @@ func _talk(index: int) -> void:
 					"off": Upgrades.coins() < room, "why": _poor(room)})
 			for item: Dictionary in Supplies.on_sale(Tale.step()):
 				var price := int(item["price"])
-				var full := Supplies.count(String(item["id"])) >= Supplies.CAP
+				var full := Supplies.count(String(item["id"])) >= Supplies.cap_of(String(item["id"]))
 				info["options"].append({"text": "%s: %d coins (you have %d)" % [item["name"], price, Supplies.count(String(item["id"]))], "what": "hub_supply",
 					"arg": item["id"], "off": full or Upgrades.coins() < price, "why": "Your pack holds no more of those." if full else _poor(price)})
 				info["lines"].append(["%s: %s" % [item["name"], item["text"]], UI.C_DIM])

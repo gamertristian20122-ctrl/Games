@@ -56,6 +56,9 @@ const HOTKEYS := [
 ]
 ## The game is written to the disk this often while walking (seconds of real time).
 const AUTOSAVE_S := 60.0
+## A battle that is not in tale.gd's own table (a module's, scripts/data/more.gd) can be started and
+## won here: show_battle() and _on_battle_finished() ask Tale.battle_row(). hub.gd looks for this constant.
+const MORE_BATTLES := true
 const RUN_SCRIPT := "res://scripts/run/run.gd"
 const FAKE_RUN_SCRIPT := "res://scripts/ui/dev_fake_run.gd"
 const HUB_SCRIPT := "res://scripts/hub/hub.gd"
@@ -389,7 +392,7 @@ func show_battle(spot: int, night: bool = false, story: String = "") -> void:
 	_world.add_child(battle)
 	_refresh_layers()
 	# the battle's music: a boss is a fight that cannot be fled from (the battle knows once it is built)
-	var boss: bool = story != "" and Tale.BATTLES.has(story) and Tale.BATTLES[story].has("boss")
+	var boss: bool = story != "" and _battle_row(story).has("boss")      # (also a module's battle: Tale.battle_row)
 	var rules: Variant = battle.get("fight")
 	if rules is Object and rules.get("no_flee") != null:
 		boss = bool(rules.get("no_flee"))
@@ -433,7 +436,10 @@ func _on_battle_finished(outcome: String, summary: Dictionary) -> void:
 				if bool(summary.get("applied", false)):
 					fx = {"say": String(summary.get("say", "Won"))}
 					for key: String in ["screen", "battle"]:
-						if summary.has(key):
+						# (battle.gd hands these over as "do_screen" / "do_battle")
+						if summary.has("do_" + key):
+							fx[key] = summary["do_" + key]
+						elif summary.has(key):
 							fx[key] = summary[key]
 				else:
 					fx = Tale.apply(_battle_row(story).get("win", {}))
@@ -639,6 +645,8 @@ func _on_action(what: String, arg: Variant) -> void:
 			# moves on, and either a battle starts or the place is shown anew (people come and go,
 			# a beacon burns) with a line on the banner
 			var fx := Tale.apply(arg)
+			if arg is Dictionary and (arg as Dictionary).has("light"):
+				Sfx.sting("beacon_lit")         # a beacon burns again
 			close_all()
 			_from_place = ""
 			var dusk := false
@@ -647,6 +655,8 @@ func _on_action(what: String, arg: Variant) -> void:
 				_from_at = hub.call("hero_pos")
 				dusk = bool(hub.call("_is_night"))
 			if fx.has("battle"):
+				if is_instance_valid(hub):
+					hub.set("frozen", true)      # (close_all let him go: he stands still while the screen fades to the fight)
 				_transition(show_battle.bind(-1, dusk, String(fx["battle"])))
 			else:
 				_news = String(fx.get("say", ""))
@@ -687,6 +697,7 @@ func _on_action(what: String, arg: Variant) -> void:
 			close_top()
 			Wounds.rest()                   # (v0.38.0) a night in a bed makes everybody whole
 			Save.flush()
+			Sfx.sting("inn_rest")
 			if is_instance_valid(hub):
 				hub.call("sleep")
 		"hub_inn":
@@ -697,7 +708,7 @@ func _on_action(what: String, arg: Variant) -> void:
 				Save.hub_set("bank:coins", Save.hub_get("bank:coins") - price)
 				Wounds.rest()
 				Save.flush()
-				Sfx.play("ui_start")
+				Sfx.sting("inn_rest")
 				if is_instance_valid(hub):
 					hub.call("sleep")
 					hub.call("say", "A good night's sleep. Everybody is rested.")
@@ -712,7 +723,7 @@ func _on_action(what: String, arg: Variant) -> void:
 				hub.call("enter", String(hub.get("place_id")), hub.call("hero_pos"))      # what it sends you to find may lie here
 		"errand_done":
 			var got := Errands.hand_in(String(arg))
-			Sfx.play("victory_sting", -6.0)
+			Sfx.sting("quest_done")
 			close_top()
 			if is_instance_valid(hub):
 				hub.call("say", "Done: %s. %s" % [String(Errands.row(String(arg))["name"]), got])
@@ -739,7 +750,7 @@ func _on_action(what: String, arg: Variant) -> void:
 		"hub_supply":
 			# (v0.38.0) buying a supply for the pack
 			var item := Supplies.row(String(arg))
-			var ok := not item.is_empty() and Save.hub_get("bank:coins") >= int(item["price"]) and Supplies.count(String(arg)) < Supplies.CAP
+			var ok := not item.is_empty() and Save.hub_get("bank:coins") >= int(item["price"]) and Supplies.count(String(arg)) < Supplies.cap_of(String(arg))
 			if ok:
 				Save.hub_set("bank:coins", Save.hub_get("bank:coins") - int(item["price"]))
 				Supplies.give(String(arg))
