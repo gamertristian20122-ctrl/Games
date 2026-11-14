@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/amb_wind.ogg-8a685f02bf14173c0630a20a50c0a97c
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

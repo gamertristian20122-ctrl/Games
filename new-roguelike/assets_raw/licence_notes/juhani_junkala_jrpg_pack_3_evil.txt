@@ -31,3 +31,7 @@ Game-ready files made from this source:
   ../../music/alt/floor_alt_whispers_from_beyond.ogg <- Evil5 - Whispers From Beyond.ogg
 
 Processing for the game-ready files in ../../music/: decode, one fixed gain per track to reach about -16 LUFS integrated (no compressor, no dynamic loudness filter), stereo 44.1 kHz Ogg Vorbis at about 100 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers are in ../../music/manifest.json.
+
+Note 14 Nov 2026 (sound pass P06): no new files. The roles changed: floor1.ogg (Catacombs) plays on the Cinder Stair,
+floor2.ogg (Witch's Lair) is the wild fight music of the Sands, floor3.ogg (Apocalypse) of the Cinder Mountains;
+title.ogg is no longer played inside any dungeon. See scripts/data/tracks.gd.

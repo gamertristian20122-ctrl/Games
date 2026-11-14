@@ -23,3 +23,8 @@ Files used for the game set (copied unchanged into used/, same relative paths as
 
 Processing for the game-ready files in ../../sfx/: ffmpeg only (mono, 44.1 kHz, silence trimmed, short fades, peak level, Ogg Vorbis q4). No synthesis, no effects.
 Per-file details (which roar was cut out, how the fire loop was crossfaded) are in ../../sfx/manifest.json.
+
+Added 14 Nov 2026 (sound pass P06), from the same download (same sha256 as above; fetched again and checked by
+assets_raw/audio/build_p06_audio.py):
+  assets/audio/sfx/status_on.ogg          <- slime_02.ogg
+Processing (assets_raw/audio/build_p06_audio.py): mono 44.1 kHz, silence cut off both ends, 2 ms / 25 ms fades, peak level to -3 dBFS, Ogg Vorbis q4. No synthesis, no effects. Per-file numbers: assets_raw/audio/manifest_p06.json.

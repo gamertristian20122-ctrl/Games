@@ -1,0 +1,28 @@
+Pack: JRPG Pack 1 Exploration
+Page: https://opengameart.org/content/jrpg-pack-1-exploration
+Author: Juhani Junkala (Subspace Audio; https://juhanijunkala.com/)
+Published on the page: 2017-05-12
+Retrieved: 2026-11-14 (UTC), sound pass P06
+
+Licence: CC0 1.0 Universal (public domain dedication) - commercial, closed-source use allowed, no credit required
+Licence evidence: OpenGameArt page field, verbatim: "License(s): CC0"; the bundled INFO.txt (kept beside this pack's download in
+  assets_raw/audio/music/src_p06/juhani_junkala_jrpg_pack_1_exploration/INFO.txt), verbatim: "These music tracks have been released under CC0 creative commons license. You can do anything you want with these tunes."
+
+Human-made evidence: published in 2017, years before generative music tools existed. INFO.txt is signed by the composer: "I'm a classically trained composer, producer and a sound designer with over 20 years of experience." Same composer as the tracks the game already used.
+AI check: published before 2022; no AI-generation wording, tags or disclosure on the page or in the bundled files.
+
+Original download (NOT in git: the repo skips *.zip; build_p06_audio.py fetches it again and checks the sha256):
+  JRPG%20Music%20Pack%20%231%20%5BExploration%5D%20by%20Juhani%20Junkala.zip
+    from https://opengameart.org/sites/default/files/JRPG%20Music%20Pack%20%231%20%5BExploration%5D%20by%20Juhani%20Junkala.zip
+    sha256 115a36ca3e076e8e4bd6617a205f2b8834ea7bf250f2ba39613a7f1f1834d60a  (16406435 bytes)
+
+Game files made from it:
+  assets/audio/music/road.ogg           <- Exploration1 - Grasslands.ogg          (the Elfwood Road; gain -3.5 dB, -16.1 LUFS, 71.489 s)
+  assets/audio/music/emberfall.ogg      <- Exploration2 - Military Base.ogg       (Emberfall; gain -4.3 dB, -16.1 LUFS, 88.615 s)
+  assets/audio/music/suncourt.ogg       <- Exploration3 - Tha'el Mines.ogg        (the Sunwell; gain -3.5 dB, -16.0 LUFS, 60.0 s)
+  assets/audio/music/beacon.ogg         <- Exploration4 - Prairie Nights.ogg      (the beacon's hill; gain -3.2 dB, -16.0 LUFS, 92.903 s)
+  assets/audio/music/deepwood.ogg       <- Exploration5 - Sneaking Around.ogg     (the Deepwood; gain -1.5 dB, -16.0 LUFS, 92.0 s)
+
+Processing (assets_raw/audio/build_p06_audio.py): decode, one fixed gain per track towards -16 LUFS integrated (less when the peak would pass -1 dBFS; no compressor, no limiter), stereo 44.1 kHz Ogg Vorbis 96 kbps. Loops keep their exact sample count; the last 128 samples (2.9 ms) get a raised-cosine ramp so the end meets the first sample. No synthesis, no added effects. Per-file numbers: assets_raw/audio/manifest_p06.json.
+
+Nobody has listened to these in the game yet: each role is a guess from the title. The Music room (Settings) plays them all.

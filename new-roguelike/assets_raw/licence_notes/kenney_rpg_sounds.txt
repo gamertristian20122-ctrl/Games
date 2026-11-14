@@ -29,3 +29,16 @@ Per-file details (which roar was cut out, how the fire loop was crossfaded) are 
 
 Added 2026-11-14 (v0.35.0): OGG/drawKnife2.ogg, copied unchanged as assets/audio/sfx/battle_start.ogg
   (a blade drawn: the sound of a fight starting). Same download, same sha256 as above.
+
+Added 14 Nov 2026 (sound pass P06), from the same download (same sha256 as above; fetched again and checked by
+assets_raw/audio/build_p06_audio.py):
+  assets/audio/sfx/slash_light_1.ogg      <- OGG/knifeSlice.ogg
+  assets/audio/sfx/slash_light_2.ogg      <- OGG/knifeSlice2.ogg
+  assets/audio/sfx/ui_equip.ogg           <- OGG/clothBelt.ogg
+  assets/audio/sfx/coins.ogg              <- OGG/handleCoins.ogg
+  assets/audio/sfx/page_turn_1.ogg        <- OGG/bookFlip1.ogg
+  assets/audio/sfx/page_turn_2.ogg        <- OGG/bookFlip2.ogg
+  assets/audio/sfx/page_turn_3.ogg        <- OGG/bookFlip3.ogg
+  assets/audio/sfx/battle_start.ogg       <- OGG/drawKnife2.ogg
+  (battle_start.ogg is the same drawKnife2.ogg as before, now raised to a -3 dBFS peak: it peaked at -23 dBFS and could not be heard)
+Processing (assets_raw/audio/build_p06_audio.py): mono 44.1 kHz, silence cut off both ends, 2 ms / 25 ms fades, peak level to -3 dBFS, Ogg Vorbis q4. No synthesis, no effects. Per-file numbers: assets_raw/audio/manifest_p06.json.

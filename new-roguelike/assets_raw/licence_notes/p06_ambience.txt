@@ -1,0 +1,38 @@
+Ambience added by the sound pass P06 (14 Nov 2026)
+The untouched downloads are in ../audio/ambience_src/p06/ (the three single files are in git; wind.zip is fetched again by
+../audio/build_p06_audio.py, which checks every sha256). Only cutting, level, speed, crossfades and re-encoding; nothing synthesised.
+
+1. Wind - IgnasD   (already used since 12 Nov 2026; see place_ambience_and_footsteps.txt)
+   Page: https://opengameart.org/content/wind   (posted 2015-03-04)   Licence: CC0   Credit not required.
+   File: wind.zip  sha256 8f6185f6eb836a5c35c492e8dabd276e507ba3e4dca0e7d551d04c689d0c0d63
+   Game file: assets/audio/sfx/amb_wind.ogg, now 33.466 s long (it was a 5.4 s loop heard in half the game).
+   How: Wind.ogg and Wind2.ogg in a row, each again at 0.84 / 1.12 / 0.78 / 1.07 speed, 1.4 s equal-power crossfades, tail crossfaded into the head. The whole download is only 15 s of wind, so the longer loop is made
+   by playing its two gusts again slower and faster; no other source.
+
+2. Loopable Dungeon Ambience - JaggedStone
+   Page: https://opengameart.org/content/loopable-dungeon-ambience   (posted 2014-10-17)
+   Licence: CC0 (page field "License(s): CC0")   Credit not required.
+   Human-made evidence, page text: "A loopable dungeon/cave ambient track with a low frequency wind effect and water drips". 2014.
+   File: dungeon_ambient_1_0.ogg  sha256 df491823e4877371c34dbda4e9321cd83a4a14fa7573cee0ebca1ae423b70e6e
+   Game file: assets/audio/sfx/amb_cave.ogg (94.31 s; the Sunwell, the Cinder Stair). How: the whole published loop; level only.
+
+3. Crickets Ambient Noise - loopable - Wolfgang_ (the page's optional attribution notice: "Ted Kerr")
+   Page: https://opengameart.org/content/crickets-ambient-noise-loopable   (posted 2021-09-03)
+   Licence: CC0 (page field "License(s): CC0")   Credit not required (credited anyway).
+   Human-made evidence, page text: "Ambient night cricket sounds 11 seconds, but loopable." A field recording, posted 2021.
+   File: crickets_1.mp3  sha256 5b5bd1f744087888c5623543c3ff80be9c2ce106093993e7c8a8492b0280b2c0
+   Game file: assets/audio/sfx/amb_crickets.ogg (31.57 s; night out of doors where birds or the wood are heard by day).
+   How: the recording at 1.0, 0.93 and 1.06 speed in a row, 1 s crossfades, tail into head.
+
+4. Hammer on Anvil - themightyglider
+   Page: https://opengameart.org/content/hammer-on-anvil   (posted 2020-01-15)
+   Licence: CC0 (page field "License(s): CC0")   Credit not required (credited anyway).
+   Page text, verbatim: "3 short hits of an hammer on an anvil  Derivated from: https://freesound.org/people/Duasun/sounds/321889/"
+   NOT VERIFIED: the licence of that freesound recording could not be read (freesound.org answers 403 from the cloud
+   container). The OpenGameArt uploader released the derivative as CC0, which is only right if the recording was CC0 too.
+   THE OWNER SHOULD OPEN THAT FREESOUND PAGE ONCE and check it says "Creative Commons 0". If it does not: delete
+   assets/audio/sfx/anvil_1..3.ogg, the AMB_SPOTS row in scripts/core/sfx.gd and the credit row (the game stays silent there).
+   File: forger_0.ogg  sha256 c62556be3d4148586100b657c97e5a30499fdc80a917bd1a2e2d1cddf5098f39
+   Game files: assets/audio/sfx/anvil_1.ogg, anvil_2.ogg, anvil_3.ogg (the three strokes cut apart; one is heard every 6 to 15 s in Emberfall).
+
+AI check: every page was read for AI / generated wording; none found. All four were published between 2014 and 2021 by named people.
