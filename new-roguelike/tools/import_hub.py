@@ -25,6 +25,7 @@ DESERT = ("Pixel_Crawler_-_Desert.zip", "Assets/")        # the desert camp and 
 FORGE = ("Pixel_Crawler_-_Forge_1.2.zip", "Assets/")     # the mountain camp
 GARDEN = ("Pixel_Crawler_-_Garden_Environment.zip", "Assets/")           # the town: cobbles, fountain, statues, cypresses, flowers
 CASTLE = ("Pixel_Crawler_-_Castle_Environment_0.3.zip", "Assets/")       # the town: potted trees, banners, busts
+INSIDE = ("Pixel_Crawler_-_Free_Pack_Exterior_0.1.zip", "Environment/Structures/Buildings/Interior/")   # the room and the hall
 HIDE = ("Pixel_Crawler_-_Hideout_1.0.zip", "Assets/")                    # street dressing: barrels, a sack, a notice board
 
 # (name, pack, file ending, region x0 y0 x1 y1, gap px that still joins two islands, smallest piece px)
@@ -238,6 +239,42 @@ TRIMMED = [
     ("sround", FREE, "Structures/Stations/Bonfire/Bonfire.png", 0, 164, 32, 26),
     ("slog_s", FREE, "Structures/Stations/Bonfire/Bonfire.png", 0, 264, 32, 16),
     ("cshield", CASTLE, "Tiles.png", 336, 190, 16, 18),
+] + [(n, INSIDE, "Interior_Props_01.png", x, y, w, h) for n, x, y, w, h in [
+    # THE TWO INTERIORS (your room, the Hollow Flagon) built as real 3D rooms (scripts/hub/arch/interior.gd):
+    # the Free Pack's own interior furniture, each piece untouched. Tables, beds and benches are drawn
+    # in three-quarter view: interior.gd lays their top rows flat as the top and stands the bottom rows
+    # up as the front, so they get real height.
+    ("itable_a", 7, 99, 34, 29), ("itable_b", 7, 131, 34, 29), ("itable_c", 7, 163, 34, 29),
+    ("itable_long", 0, 0, 64, 26), ("itable_tall", 279, 0, 34, 48), ("itable_blue", 327, 0, 34, 48),
+    ("itable_round", 80, 7, 32, 35), ("icounter_a", 368, 6, 64, 42), ("icounter_b", 432, 6, 64, 42),
+    ("ichair_side", 66, 3, 12, 24), ("ichair_back", 67, 34, 11, 24), ("ichair_s", 67, 72, 11, 18),
+    ("istool", 81, 62, 14, 18), ("istool_red", 97, 61, 14, 19), ("istool_s", 81, 82, 14, 14),
+    ("ibench", 0, 204, 48, 20), ("ibench_b", 128, 295, 48, 21),
+    ("ibed", 33, 293, 46, 54), ("ibed_single", 1, 293, 30, 54),
+    ("inight", 102, 112, 21, 24), ("icabinet", 112, 67, 32, 29), ("ishelf2", 48, 97, 49, 40),
+    ("irack", 176, 144, 48, 33), ("ihooks", 48, 150, 64, 21),
+    ("ichand", 242, 64, 28, 31), ("ichain", 221, 95, 7, 17),
+    ("idoor_a", 230, 210, 36, 46), ("idoor_b", 276, 210, 40, 46), ("idoor_c", 325, 210, 38, 46),
+    ("iwin_a", 64, 176, 28, 32), ("iwin_stone", 98, 176, 28, 32), ("iwin_shut", 137, 176, 30, 40),
+    ("iwin_big", 176, 176, 48, 40), ("iwin_small", 225, 160, 30, 32),
+    ("ihearth", 272, 47, 48, 97), ("ioven", 385, 47, 46, 97),
+    ("ibarrel", 224, 120, 16, 24), ("icrate", 208, 120, 16, 24),
+    ("iwolf", 552, 8, 16, 17), ("ibear", 584, 7, 16, 17),
+    ("icandle", 405, 256, 7, 16), ("istick_a", 533, 197, 9, 11), ("istick_b", 546, 192, 12, 16),
+    ("imug_a", 564, 277, 9, 8), ("imug_b", 580, 277, 9, 8),
+    ("ibottle_0", 516, 289, 8, 13), ("ibottle_1", 532, 289, 9, 13), ("ibottle_2", 548, 289, 9, 13),
+    ("ibottle_3", 563, 289, 11, 13), ("ibottle_4", 579, 289, 11, 13), ("ibottle_5", 516, 305, 8, 13),
+    ("ibottle_6", 532, 305, 9, 13), ("ibottle_7", 548, 305, 9, 13), ("ibottle_8", 563, 305, 11, 13),
+    ("ibottle_9", 579, 305, 11, 13), ("ibottle_10", 563, 321, 11, 13), ("ibottle_11", 579, 321, 11, 13),
+    ("iplant_a", 17, 352, 14, 32), ("iplant_b", 32, 360, 15, 24), ("iplant_c", 48, 354, 32, 30),
+    ("irug_g", 336, 336, 48, 48), ("irug_d", 384, 336, 48, 48), ("irug_x", 432, 304, 80, 80),
+    ("iboard", 226, 260, 28, 23), ("isword", 98, 261, 28, 9), ("ipainting", 80, 320, 16, 16),
+]] + [(n, INSIDE, "Interior_Walls_01.png", x, y, w, h) for n, x, y, w, h in [
+    # the room's surfaces: plaster over a dark wainscot, a timber post, two floors that repeat
+    ("iwall", 496, 96, 64, 48), ("iwall_wood", 400, 96, 64, 48), ("iplaster", 508, 100, 40, 20),
+    ("ipost", 562, 135, 12, 60), ("ifloor_herring", 176, 592, 32, 32), ("ifloor_plank", 16, 576, 48, 64),
+]] + [
+    ("imirror", FREE, "Props/Static/Furniture.png", 32, 148, 32, 56),
 ]
 
 

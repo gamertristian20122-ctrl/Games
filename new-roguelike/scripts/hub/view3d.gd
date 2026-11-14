@@ -46,9 +46,9 @@ const Hd = preload("res://scripts/fx/hd.gd")
 
 const PX := 1.0 / 16.0
 const PITCH := 35.0                 ## how steeply the camera looks down out of doors, in degrees (low, like a stage)
-const PITCH_INDOORS := 62.0         ## a room is one painted picture: looked at more from above, it keeps its shape
+const PITCH_INDOORS := 50.0         ## a room (built for real by scripts/hub/arch/interior.gd, whose PITCH must match): walls with height
 const TILT := 8.0                   ## how far standing things lean back towards the camera, out of doors ...
-const TILT_INDOORS := 45.0          ## ... and in a room (so people are not squashed by the steep view)
+const TILT_INDOORS := 16.0          ## ... and in a room
 const FOV := 30.0
 const WIDE := 1.3                   ## out of doors the camera stands this much further back than the flat one: whole houses fit, people are smaller
 const LEAN := HdLight.LEAN          ## which way a shadow falls on the ground, per unit of height

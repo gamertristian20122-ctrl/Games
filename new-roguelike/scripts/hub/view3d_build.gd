@@ -18,6 +18,7 @@ const Hd = preload("res://scripts/fx/hd.gd")
 const Kit = preload("res://scripts/hub/arch/kit.gd")
 const House = preload("res://scripts/hub/arch/house.gd")
 const Sites = preload("res://scripts/hub/arch/sites.gd")
+const Interior = preload("res://scripts/hub/arch/interior.gd")
 
 const PX := 1.0 / 16.0
 const MARGIN := Vector2(336, 208)   ## how far past the edges of a place the ground is painted, px
@@ -367,6 +368,8 @@ func build_houses(place: Dictionary) -> void:
 		_cast(kit.take_corners(), shade)
 	# the rest of a place's architecture: kerbs, walls, steps, a bridge, a jetty (scripts/hub/arch/sites.gd)
 	Sites.new(kit, self).build(String(v.hub.get("place_id")), place, shade)
+	if place.has("inside"):
+		Interior.new(kit, self).build(place)          # your room and the tavern hall as real rooms (scripts/hub/arch/interior.gd)
 	var made := kit.commit()
 	if made.is_empty():
 		return
