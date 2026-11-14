@@ -33,6 +33,10 @@ const LIST := [
 		"from": 99, "place": "", "pos": Vector2.ZERO, "face": -1, "pages": [],
 		"about": "The elf warden of the Rune Glade. Quick with a bow; her roots can hold a monster still.",
 		"hp": 6, "hp_levels": 3, "damage": 0.5, "rate": 1.2, "range": 140.0, "shot": "sunbolt", "shot_speed": 190.0, "keep": 62.0},
+	{"id": "grukk", "name": "Grukk", "title": "Smith of the Cinder Forges", "sprite": "pc_orc_warrior", "hands": "pc_hand_base_9",
+		"from": 99, "place": "", "pos": Vector2.ZERO, "face": -1, "pages": [],
+		"about": "The Thane's runaway apprentice. Slow, very hard to knock down, and his hammer shakes the ground.",
+		"hp": 8, "hp_levels": 3, "damage": 0.7, "rate": 0.7, "range": 40.0, "shot": "sunbolt", "shot_speed": 150.0, "keep": 20.0},
 ]
 
 

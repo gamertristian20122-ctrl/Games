@@ -19,7 +19,7 @@ const Tale = preload("res://scripts/data/tale.gd")
 const Errands = preload("res://scripts/data/errands.gd")
 const WIDTH := 126.0
 ## The heading over the story line: [first step of the chapter, "Chapter ...", "The land"].
-const CHAPTERS := [[0, "Chapter One", "The Elfwood"], [7, "Chapter Two", "The Sands"]]
+const CHAPTERS := [[0, "Chapter One", "The Elfwood"], [7, "Chapter Two", "The Sands"], [14, "Chapter Three", "The Cinder Mountains"], [22, "Chapter Four", "The Sunken Archive"]]
 
 var in_camp := false
 var goal_only := false           ## the world map: only where to go next, so the list hides little of the map

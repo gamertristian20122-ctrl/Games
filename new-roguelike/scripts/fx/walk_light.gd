@@ -86,7 +86,7 @@ const GRADES := {
 
 ## Which land a place belongs to, for "lit" (Tale.lit(land)).
 const LAND := {"elfwood": "elfwood", "deepwood": "elfwood", "glade": "elfwood", "beacon": "elfwood",
-	"dustwatch": "sands", "suncourt": "sands"}
+	"dustwatch": "sands", "suncourt": "sands", "emberfall": "cinder", "cinderpeak": "cinder"}
 
 
 ## The grade for a place: `day` 1 = full day, 0 = night (rows are blended by it).

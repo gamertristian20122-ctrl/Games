@@ -1564,7 +1564,7 @@ The owner played and answered the review. Done in this version:
 1. Make fights matter + balance: DONE in v0.38.0.
 2. Weapons and armour as upgrades (+ the companions', + skills taught): DONE in v0.39.0.
 3. Side quests and secrets: DONE in v0.42.0.
-4. "Add the other parts and make the game a lot longer. My goal was 8 to 10 hours": chapters three and four,
+4. (chapter three DONE in v0.44.0) "Add the other parts and make the game a lot longer. My goal was 8 to 10 hours": chapters three and four,
    the ending, more to do in every land.
 5. Cut the old roguelike code.
 6. "Really good music" (human-made CC0 / CC-BY only).
@@ -1662,6 +1662,23 @@ credits); still no AI-generated pictures. Order of work they chose: portraits, a
   CARD_CODE light()); a light row with a 5th field "held" (the shard in the Dune Queen's hand) gets no halo.
 - NOT from the game, asked the owner: the grid of small white diamonds over their screenshots (our renders never
   show it; it is likely a phone overlay).
+
+## v0.44.0 (14 Nov 2026): CHAPTER THREE, the Cinder Mountains (Grukk joins)
+The owner: the game goes by "way too fast ... needs to be more in depth" (they meant the story's length).
+- tale.gd steps 14-22 (LAST_STEP 22): 14 Grukk in Dustwatch tells of Thane Orvald and JOINS (option, "join") >
+  15 battle "pass" at the world map's Cinder Pass (site_pass, behind the rockfall) > 16 walk into Emberfall (ENTER)
+  > 17 Forgemaster Bryn: battle "forgedoor" > 18 the Cinder Stair (new place `Tale.cinderpeak()`, through the
+  forge arch of Emberfall, exit "tale": 18): battle "ashstair" with the ash-bound smiths > 19 boss "colossus"
+  (BOSSES: The Ember Colossus, boss_mecha_golem, 380 hp, Slag Wave) > 20 set the shard ("light": "cinder") >
+  21 Hale: +120 coins > 22 "The Sunken Archive waits in the next chapter". New SCENES emberfall, stair, cinder_dawn.
+  New TALK rows: site_pass, bryn, kessa, aurel, pell, ashbound, orvald, cinderbeacon; Hale 14-22.
+- places.gd `_fit_cinder()`: world exit to Emberfall opens at step 16 (its old "need" erased), Grukk leaves
+  Dustwatch after step 14, Bryn/Aurel talk, the forge arch exit. allies.gd + battles.gd ALLY "grukk" (52 hp, slow,
+  Cleave / Hammerfall / Temper), FX for them; arms.gd line "hammer" (2 upgrades); Pell sells supplies; sfx
+  "cinderpeak"; walk_light LAND emberfall/cinderpeak = "cinder"; quest_list CHAPTERS three and four.
+- `--uitour=tale` plays chapter three too: 43 checks, 0 failed (the knight ends near level 9; the party of four
+  wins the chapter's fights in about 4 rounds, the Colossus in 7: maybe easy, judge by playing).
+- All new words are AI-written placeholders, like the rest of the story.
 
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:

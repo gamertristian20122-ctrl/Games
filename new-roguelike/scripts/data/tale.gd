@@ -14,8 +14,9 @@ extends RefCounted
 ## Queen's daughter, joins after holding the wall with him; the Queen sends the knight after the
 ## Dune Gorgon of the Bone Dunes, then gives up her shard (and with it her sight); the beacon of
 ## the Sands stands in the Sunwell under the town (suncourt()).
-## Chapters three and four (the Cinder Mountains and Grukk, the Sunken Archive) and the end under
-## Hollow Hill are NOT built yet.
+## CHAPTER THREE (v0.44.0, steps 14 to 22): Grukk the smith goes home to the Cinder Mountains with the knight;
+## the Cinder Pass, Emberfall, the forge door, the Cinder Stair, Thane Orvald who fused with his shard (the Ember
+## Colossus), the third beacon (cinderpeak()). Chapter four (the Sunken Archive) and the end are NOT built yet.
 ##
 ## HOW IT WORKS
 ##   step()        where the story stands: a number kept in the save ("tale:step"). STEPS[step] is
@@ -56,9 +57,18 @@ const STEPS := [
 	"Bring word to the Dune Queen",                       # 11
 	"Set the second shard in the beacon of the Sands",    # 12
 	"Bring word to Captain Hale in Wickmere",             # 13
-	"The Cinder Mountains wait in the next chapter",      # 14
+	# CHAPTER THREE: the Cinder Mountains (v0.44.0)
+	"Ask Grukk in Dustwatch about the Cinder Mountains",  # 14
+	"Cross the Cinder Pass, north-east of Dustwatch",     # 15
+	"Climb on to Emberfall, the smiths' town",            # 16
+	"Find Forgemaster Bryn at the forge door",            # 17
+	"Climb the Cinder Stair behind the forge",            # 18
+	"Face Thane Orvald at the dark beacon",               # 19
+	"Set the third shard in the beacon",                  # 20
+	"Bring word to Captain Hale in Wickmere",             # 21
+	"The Sunken Archive waits in the next chapter",       # 22
 ]
-const LAST_STEP := 14
+const LAST_STEP := 22
 
 ## The words under the intro's seven pictures (scripts/hub/intro.gd; the pictures are the old ones).
 const INTRO := [
@@ -95,7 +105,13 @@ const TALK := {
 			"The Queen gave it up herself? ...Then she is worth ten of the lords I have met. Drink to her tonight, all of you.",
 			"Two beacons dark: the Cinder Mountains and the Archive. Take the watch's thanks. You have earned more than we have.",
 		], "option": "Take the watch's thanks", "do": {"step": 14, "coins": 90, "say": "Chapter two is done: +90 coins"}},
-		{"from": 14, "pages": ["The smiths of the Cinder Mountains sent no word in a year. Rest, knight. The mountains are the next chapter, and they will still be there."]},
+		{"from": 14, "to": 20, "pages": ["The smiths of the Cinder Mountains sent no word in a year. Grukk knows the way, if anybody does. Go carefully, knight."]},
+		{"from": 21, "to": 21, "pages": [
+			"Three lights. The children have run out of names for them, so they call the new one \"the angry one\". It is very red.",
+			"A lord who melted into his own shard. I would not have believed it from anybody else. The orc came back with you? Good. I like him.",
+			"One beacon dark: the Sunken Archive. Take the watch's thanks. We are running out of chest.",
+		], "option": "Take the watch's thanks", "do": {"step": 22, "coins": 120, "say": "Chapter three is done: +120 coins"}},
+		{"from": 22, "pages": ["The Archive is under the sea of sand and water both. Seraphine knows more than she says. Rest first, knight."]},
 	],
 	"barkeep": [
 		{"from": 0, "pages": ["The Hollow Flagon. Your bed is upstairs and paid for by the watch. Sleep when the night gets too long; the lamps will keep."]},
@@ -207,7 +223,59 @@ const TALK := {
 	],
 	"grukk": [
 		{"from": 7, "to": 12, "pages": ["Grukk forges for the Queen's wall now. Before that, the mountains. Grukk does not talk about the mountains. Buy something."]},
-		{"from": 13, "pages": ["Two lights. The mountains next, yes? ...Grukk has been thinking. Grukk will talk about the mountains soon. Not yet."]},
+		{"from": 13, "to": 13, "pages": ["Two lights. The mountains next, yes? ...Grukk has been thinking. Grukk will talk about the mountains soon. Not yet."]},
+		{"from": 14, "to": 14, "pages": [
+			"Grukk will talk about the mountains now. Sit. No. Stand, it is short.",
+			"Grukk was apprentice to Thane Orvald, lord of the forges. The Thane took the shard home and put it in the great furnace, to make a fire that never goes out.",
+			"The fire did not go out. The Thane went in. Grukk saw his hand turn to coal and keep working the bellows. Grukk ran. Grukk has been running for a year.",
+			"Enough running. The pass is north-east, past the rockfall the Queen's people dug out. Grukk knows the way. Grukk carries the big hammer.",
+		], "option": "Take Grukk to the mountains", "do": {"step": 15, "join": "grukk", "say": "Grukk, Smith of the Cinder Forges, travels with you"}},
+	],
+	# chapter three: the Cinder Mountains
+	"site_pass": [
+		{"from": 15, "to": 15, "pages": [
+			"The old mine road climbs into the dark. The air coming down it is hot, and it smells of struck flint.",
+			"Grukk: \"Rubble men. The Thane made them to haul ore. Now they haul nothing and hate everything. Hammers up.\"",
+		], "option": "Go up the pass", "do": {"battle": "pass"}},
+	],
+	"bryn": [
+		{"from": 0, "to": 16, "pages": ["The forge door stays shut. Whatever you are selling, we have stopped buying."]},
+		{"from": 17, "to": 17, "pages": [
+			"Grukk? Grukk! We buried an empty coffin for you, you great green coward. ...It is good to see you.",
+			"Listen. The Thane's ash-bound come out of the forge every night, and every night there are more. They are at the door now. Can you hear them?",
+		], "option": "Hold the forge door", "do": {"battle": "forgedoor"}},
+		{"from": 18, "to": 20, "pages": ["The Cinder Stair goes up behind the forge to the beacon. The Thane sits at the top. What is left of him."]},
+		{"from": 21, "pages": ["The furnace is just a furnace again. Cold. We will light it ourselves, with coal, like honest smiths."]},
+	],
+	"kessa": [
+		{"from": 0, "to": 19, "pages": ["Farrier, and now smith, since the smiths went in the furnace. Grukk was the worst apprentice the Thane ever had. Also the only one who ran."]},
+		{"from": 20, "pages": ["You brought the boy back alive. Tell him his old anvil is still here. I kept it oiled."]},
+	],
+	"aurel": [
+		{"from": 0, "pages": ["I walked here to pray at the third beacon. I have been praying at the bottom of the stair for nine months. It is a very long stair."]},
+	],
+	"pell": [
+		{"from": 0, "pages": ["Ore, slag, a boot with a foot still in it. Mostly honest goods. Buy something or move along, the light is better there."]},
+	],
+	"ashbound": [
+		{"from": 18, "to": 18, "pages": [
+			"Halfway up the stair, the rock is warm under your boots. Figures stand in the smoke: smiths, still in their aprons, their eyes like coals.",
+			"Grukk: \"Hob. Tarrow. Little Senn. ...They were my friends. They cannot hear me. Do it quickly.\"",
+		], "option": "Do it quickly", "do": {"battle": "ashstair"}},
+	],
+	"orvald": [
+		{"from": 19, "to": 19, "pages": [
+			"At the top of the stair the beacon stands cold. Against it, as big as a house, sits something made of slag and fire, working a bellows that is not there.",
+			"\"GRUKK. YOU LET THE FIRE GO OUT.\" The voice is the Thane's. The rest of him is not.",
+			"Grukk: \"Master. It is time to stop working.\"",
+		], "option": "Fight the Ember Colossus", "do": {"battle": "colossus"}},
+	],
+	"cinderbeacon": [
+		{"from": 20, "to": 20, "pages": [
+			"In the cooling slag lies the third shard, red as a heart. Grukk will not touch it. \"Grukk has held enough fire.\"",
+			"The beacon is cold and black. It is waiting.",
+		], "option": "Set the shard in the beacon", "do": {"step": 21, "light": "cinder", "say": "The beacon of the Mountains burns"}},
+		{"from": 21, "pages": ["The beacon burns deep red, and the mountain is warm from the top down instead of from the bottom up. The shard is in the fire for good."]},
 	],
 	"nib": [
 		{"from": 7, "to": 12, "pages": ["Charms against the dead, two coins. Do they work? Nobody has come back to complain."]},
@@ -312,6 +380,18 @@ const SCENES := [
 		"Look up. The light is climbing the walls of the well, and over the top, and out across the dunes.",
 		"She is smiling. Do you see? She cannot see it, and she is smiling.",
 	]},
+	# chapter three
+	{"id": "emberfall", "place": "emberfall", "from": 17, "to": 17, "name": "Emberfall", "title": "The smiths' town", "sprite": "", "pages": [
+		"Emberfall was built into the mountain's side, one forge above the next. Most of the chimneys are cold. Most of the doors are barred.",
+		"Grukk stops at the edge of the square and does not say anything for a long time.",
+	]},
+	{"id": "stair", "place": "cinderpeak", "from": 18, "to": 18, "name": "The Cinder Stair", "title": "", "sprite": "", "pages": [
+		"The stair is cut into the mountain, black stone glassy with heat. Far above, something red pulses in time with a great slow breath.",
+	]},
+	{"id": "cinder_dawn", "place": "cinderpeak", "from": 21, "to": 21, "name": "Grukk", "title": "Smith of the Cinder Forges", "sprite": "pc_orc_warrior", "pages": [
+		"Look. The mountain is red at the top now, not at the bottom. That is how it was when Grukk was small.",
+		"The Thane was a hard master. He was not a bad one. Grukk will make him a proper grave, later. A forged one.",
+	]},
 	{"id": "two_lights", "place": "village", "from": 13, "to": 13, "name": "Wickmere", "title": "", "sprite": "", "pages": [
 		"The lamps of Wickmere are lit as always. But tonight, low in the south-east, there is a second glow on the sky, and the children keep climbing the wall to see it.",
 	]},
@@ -337,6 +417,19 @@ const BATTLES := {
 	"gorgon": {"title": "The Dune Gorgon", "look": "desert", "tier": 1, "boss": "gorgon",
 		"foes": ["dust_mummy"],
 		"win": {"step": 11, "say": "The Dune Gorgon falls"}},
+	# chapter three: the Cinder Mountains
+	"pass": {"title": "The rubble men of the pass", "look": "rock", "tier": 2,
+		"foes": ["rubble_walker", "magma_heart", "ash_bat"], "xp_bonus": 40,
+		"win": {"step": 16, "say": "The Cinder Pass is open"}},
+	"forgedoor": {"title": "The ash-bound at the forge door", "look": "rock", "tier": 2,
+		"foes": ["lantern_head", "magma_heart", "rubble_walker", "lantern_head"], "xp_bonus": 50,
+		"win": {"step": 18, "say": "The forge door holds. The Cinder Stair is open"}},
+	"ashstair": {"title": "The smiths on the stair", "look": "rock", "tier": 2,
+		"foes": ["lantern_head", "rubble_walker", "magma_heart", "ash_bat"], "xp_bonus": 60,
+		"win": {"step": 19, "say": "The way to the top is clear"}},
+	"colossus": {"title": "The Ember Colossus", "look": "rock", "tier": 2, "boss": "colossus",
+		"foes": ["magma_heart"],
+		"win": {"step": 20, "say": "The Ember Colossus falls. Thane Orvald is at rest"}},
 }
 
 ## Bosses of the story's battles. The numbers are for a knight of about level 4 with one companion.
@@ -348,12 +441,16 @@ const BOSSES := {
 	"gorgon": {"name": "The Dune Gorgon", "sprite": "pc_medusa", "tint": Color(1.0, 0.92, 0.78),
 		"hp": 240, "atk": 10.0, "def": 3.0, "speed": 11.0, "sweep": 3, "sweep_power": 0.7, "sweep_name": "Stone Gaze",
 		"xp": 140, "coins": 70},
+	"colossus": {"name": "The Ember Colossus", "sprite": "boss_mecha_golem", "tint": Color(1.0, 0.82, 0.70),
+		"hp": 380, "atk": 12.5, "def": 5.0, "speed": 9.0, "sweep": 3, "sweep_power": 0.7, "sweep_name": "Slag Wave",
+		"xp": 230, "coins": 110},
 }
 
 ## Walking into a place at a step: {place: {step: do}}.
 const ENTER := {
 	"elfwood": {1: {"step": 2}},
 	"dustwatch": {7: {"step": 8}},
+	"emberfall": {16: {"step": 17}},
 }
 
 ## THE FAIRY DUST (scripts/hub/trail.gd): where the glitter on the ground leads at each step. [place id,
@@ -753,6 +850,51 @@ static func suncourt() -> Dictionary:
 				"pos": Vector2(206, 262), "face": 1, "role": "chat", "text": "", "tale_from": 9},
 			{"id": "sandbeacon", "name": "The beacon", "title": "", "ghost": true, "pos": Vector2(280, 214), "top": 44, "role": "chat", "text": "",
 				"tale_from": 12},
+		],
+		"lights": lights,
+	}
+
+
+
+## THE CINDER STAIR AND THE BEACON OF THE MOUNTAINS (chapter three, v0.44.0): a stair of black rock cut up the
+## mountain behind Emberfall's forge, lava in its cracks, and the third beacon on the flat top. The ash-bound
+## smiths wait halfway up (step 18), the Ember Colossus at the top (19).
+static func cinderpeak() -> Dictionary:
+	var glow := lit("cinder")
+	var lights: Array = [[Vector2(120, 300), Color(1.0, 0.45, 0.2), 1.4, 0.8], [Vector2(360, 300), Color(1.0, 0.45, 0.2), 1.4, 0.8],
+		[Vector2(90, 200), Color(1.0, 0.5, 0.25), 1.0, 0.6], [Vector2(390, 200), Color(1.0, 0.5, 0.25), 1.0, 0.6]]
+	if glow:
+		lights.append([Vector2(240, 170), Color(1.0, 0.55, 0.3), 3.6, 1.4])
+	else:
+		lights.append([Vector2(240, 180), Color(0.55, 0.45, 0.8), 1.3, 0.35])
+	return {
+		"name": "The Cinder Stair", "size": Vector2(480, 430), "outdoor": true, "walk": Rect2(30, 120, 420, 280), "spawn": Vector2(240, 378),
+		"ground": "hub_drock", "tint": Color(1.0, 0.86, 0.76) if glow else Color(0.66, 0.58, 0.74),
+		"rise": {"from": 96.0, "over": 80.0, "height": 34.0},
+		"hills": [{"at": Vector2(240, 204), "radius": 182.0, "height": 46.0, "top": 104.0}],
+		"floor": [["hub_fflag", Rect2(200, 150, 80, 250)]],
+		"decals": [["hub_flava", 110, 300], ["hub_flava", 370, 300], ["hub_flava", 90, 200], ["hub_flava", 390, 200], ["hub_drockbed", 160, 250], ["hub_drockbed", 320, 250]],
+		"props": [["hub_rock_2", 70, 360, 14, 3], ["hub_rock_1", 410, 360, 12, 3], ["hub_rock_3", 60, 250, 8, 2], ["hub_rock_0", 420, 250, 8, 2],
+			["hub_fbroken", 150, 150, 9, 2], ["hub_fbust", 330, 150, 9, 2], ["hub_dtree_0", 50, 140, 6, 2], ["hub_dtree_1", 430, 140, 5, 2],
+			["hub_fbarrel_2", 130, 340, 5, 1], ["hub_fcrate_1", 350, 336, 8, 2], ["hub_anvil_0", 300, 344, 10, 3],
+			# the beacon: a black stone with the fire bowl on top
+			["hub_rock_2", 240, 190, 16, 3], ["hub_stone_0", 212, 196, 8, 2], ["hub_stone_0", 270, 198, 8, 2]],
+		"beacon": {"pos": Vector2(240, 186), "lit": glow, "lift": 30.0},
+		"paths": [],
+		"scatter": {"hub_pebble": [20, 30], "hub_dblock": [4, 8]},
+		"forest": {"top_gaps": [], "behind": [], "open": [Rect2(180, 400, 120, 80)],
+			"big": ["hub_rock_2", "hub_dtree_0", "hub_rock_1", "hub_fbroken", "hub_rock_moss_2"],
+			"side": ["hub_dtree_1", "hub_rock_0", "hub_rock_2"],
+			"low": ["hub_rock_3", "hub_stone_2", "hub_rock_0", "hub_stone_1"],
+			"young": ["hub_dtree_1"]},
+		"exits": [{"rect": Rect2(200, 392, 80, 10), "to": "emberfall", "at": Vector2(300, 200)}],
+		"people": [
+			{"id": "ashbound", "name": "The ash-bound", "title": "Smiths of the furnace", "sprite": "pc_stone_broken", "hands": "pc_hand_forge_9",
+				"pos": Vector2(240, 300), "face": 1, "role": "chat", "text": "", "tale_from": 18, "tale_to": 18, "tint": Color(1.0, 0.7, 0.55)},
+			{"id": "orvald", "name": "Thane Orvald", "title": "The Ember Colossus", "sprite": "boss_mecha_golem", "pos": Vector2(250, 232), "face": -1,
+				"role": "chat", "text": "", "tale_from": 19, "tale_to": 19, "tint": Color(1.0, 0.82, 0.70), "solid": 18.0},
+			{"id": "cinderbeacon", "name": "The beacon", "title": "", "ghost": true, "pos": Vector2(240, 214), "top": 44, "role": "chat", "text": "",
+				"tale_from": 20},
 		],
 		"lights": lights,
 	}

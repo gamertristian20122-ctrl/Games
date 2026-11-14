@@ -47,6 +47,11 @@ const LINES := {
 		{"id": "thorn", "name": "Thornheart bow", "price": 200, "from": 7, "atk": 0.32, "hp": 10},
 		{"id": "sun", "name": "Sunstring bow", "price": 400, "from": 14, "atk": 0.52, "hp": 18},
 	]},
+	"hammer": {"who": "grukk", "label": "hammer", "tiers": [
+		{"id": "forge", "name": "Forge hammer", "price": 0, "from": 0, "atk": 0.0, "hp": 0},
+		{"id": "maul", "name": "Cinder maul", "price": 260, "from": 15, "atk": 0.2, "hp": 10},
+		{"id": "thane", "name": "The Thane's hammer", "price": 480, "from": 21, "atk": 0.42, "hp": 20},
+	]},
 	"staff": {"who": "sera", "label": "staff", "tiers": [
 		{"id": "archive", "name": "Archive staff", "price": 0, "from": 0, "atk": 0.0, "hp": 0},
 		{"id": "glass", "name": "Sunglass staff", "price": 150, "from": 9, "atk": 0.18, "hp": 6},

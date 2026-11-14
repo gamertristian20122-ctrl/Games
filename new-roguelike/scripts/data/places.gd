@@ -55,9 +55,13 @@ static func get_place(id: String) -> Dictionary:
 			return Tale.beacon()
 		"suncourt":
 			return Tale.suncourt()
+		"cinderpeak":
+			return Tale.cinderpeak()
 	var place := _base_place(id)
 	if id == "dustwatch" or id == "world":
 		_fit_sands(id, place)
+	if id == "emberfall" or id == "world" or id == "dustwatch":
+		_fit_cinder(id, place)
 	if id == "dustwatch":
 		# folk round the camp fire on the dais, and two by the trader's awning
 		_extras(place, [["pc_bandit_scout", 292, 296, 1], ["pc_npc_tavern_a", 350, 294, -1], ["pc_royal_priest", 296, 318, 1],
@@ -1106,3 +1110,32 @@ static func _along(corners: Array, step: float) -> Array:
 			d += step
 		carry = d - length
 	return out
+
+
+
+## CHAPTER THREE of the story (v0.44.0): the road to Emberfall opens after the Cinder Pass is won; Grukk leaves
+## Dustwatch when he joins; Emberfall's people speak for the story; the forge arch leads up the Cinder Stair
+## (Tale.cinderpeak()) once the forge door has held. Only while the story is on.
+static func _fit_cinder(id: String, place: Dictionary) -> void:
+	match id:
+		"world":
+			for e: Dictionary in place["exits"]:
+				if String(e["to"]) == "emberfall":
+					e.erase("need")
+					e["tale"] = 16
+					e["why"] = "The Cinder Pass is held by the rubble men. Win the pass first."
+			for sg: Dictionary in place["signs"]:
+				if String(sg["text"]) == "Emberfall":
+					sg.erase("need")
+		"dustwatch":
+			for row: Dictionary in place["people"]:
+				if String(row["id"]) == "grukk":
+					row["tale_to"] = 14                          # after that he travels with the knight
+		"emberfall":
+			place["tint"] = Color(1.0, 0.88, 0.78) if Tale.lit("cinder") else place["tint"]
+			for row: Dictionary in place["people"]:
+				if ["bryn", "aurel"].has(String(row["id"])):
+					row["role"] = "chat"
+			(place["exits"] as Array).append({"rect": Rect2(276, 150, 48, 8), "to": "cinderpeak", "at": Vector2(240, 378), "tale": 18,
+				"why": "The forge door is barred. Forgemaster Bryn keeps it."})
+			# (the spot to step back down on from the stair)

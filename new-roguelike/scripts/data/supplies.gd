@@ -19,7 +19,7 @@ const START := {"herb": 3, "tonic": 1}   ## in the pack when the story begins (g
 const CAP := 9                           ## the most of one kind the pack holds
 const DROP_CHANCE := 0.22                ## a won battle leaves a supply this often
 ## who sells supplies (an id of a person); the barkeep also lets a room (the inn)
-const SELLERS := ["barkeep", "mira", "nib"]
+const SELLERS := ["barkeep", "mira", "nib", "pell"]
 const INN := ["barkeep"]
 const INN_PRICE := 6                     ## a room for the night: this ...
 const INN_PRICE_LEVEL := 2               ## ... and this much more per level of the knight

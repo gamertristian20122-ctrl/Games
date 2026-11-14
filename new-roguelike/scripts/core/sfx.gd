@@ -34,6 +34,7 @@ const PLACES := {
 	"dustwatch": ["shop", "wind", "sand"],     # the desert camp: a market tune in the wind
 	"suncourt": ["title", "wind", "stone"],    # the Sunwell under Dustwatch: old stone, wind in the shafts
 	"emberfall": ["town", "fire", "stone"],
+	"cinderpeak": ["title", "wind", "stone"],     # (v0.44.0) the Cinder Stair and the third beacon
 	"_": ["town", "birds", "grass"],
 }
 ## each ambience loop -> [file in SFX_DIR, how loud it sits (dB, before the sound volume)]

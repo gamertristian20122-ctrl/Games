@@ -69,6 +69,7 @@ const FX := {
 	"sunmend": [Color(1.0, 0.95, 0.6), "rise", 1.6],
 	"pierce": [Color(0.7, 1.0, 0.7), "burst", 1.6], "volley": [Color(0.8, 1.0, 0.8), "burst", 1.2],
 	"roots": [Color(0.4, 0.9, 0.4), "rise", 1.4], "sweep": [Color(0.5, 0.9, 0.4), "burst", 2.2],
+	"cleave": [Color(1.0, 0.7, 0.4), "burst", 2.0], "quake": [Color(1.0, 0.6, 0.3), "burst", 2.4], "temper": [Color(1.0, 0.75, 0.45), "rise", 1.4],
 }
 
 ## What each of the knight's skills (scripts/data/skills.gd) does in a battle.
@@ -100,6 +101,12 @@ const ALLY := {
 			{"id": "pierce", "name": "Piercing Shot", "kind": "sword", "mana": 4, "aim": "foe", "power": 1.8, "text": "One arrow, drawn to the ear."},
 			{"id": "volley", "name": "Volley", "kind": "sword", "mana": 8, "aim": "foes", "power": 0.9, "text": "Arrows over every monster."},
 			{"id": "roots", "name": "Binding Roots", "kind": "spell", "mana": 6, "aim": "foe", "power": 0.6, "stun": 0.8, "text": "Roots hold one monster: it may lose its next turn."},
+		]},
+	"grukk": {"hp": 52, "hp_level": 7, "mp": 14, "mp_level": 2, "atk": 9.0, "atk_level": 2.0, "def": 3.0, "def_level": 0.5, "speed": 8.0,
+		"skills": [
+			{"id": "cleave", "name": "Cleave", "kind": "sword", "mana": 5, "aim": "foe", "power": 2.0, "text": "One great swing of the hammer."},
+			{"id": "quake", "name": "Hammerfall", "kind": "sword", "mana": 9, "aim": "foes", "power": 0.85, "stun": 0.35, "text": "The ground shakes under every monster; some fall over."},
+			{"id": "temper", "name": "Temper", "kind": "spell", "mana": 8, "aim": "self", "heal": 0.35, "safe": true, "text": "Grukk breathes like a bellows: he heals and guards."},
 		]},
 }
 
