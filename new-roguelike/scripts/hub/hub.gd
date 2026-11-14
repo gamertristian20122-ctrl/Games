@@ -206,6 +206,7 @@ func _ready() -> void:
 		if G.arg("tourat") != "":         # test: --tourat=x,y : the knight walks there, one picture (hub_4.png)
 			var xy := G.arg("tourat").split(",")
 			_tour = [Vector2(float(xy[0]), float(xy[1]))]
+			_tour_jump = G.flag("tourjump")      # test: --tourjump : he starts right beside that spot (no walk across the map)
 		if G.flag("walkui"):
 			# test: --walkui : first a picture of the interface standing still (hub_walkui.png): the place
 			# banner, a toast (--hubsay=<words>), the help strip, the story line; then the tour
@@ -273,6 +274,8 @@ func enter(id: String, at: Vector2 = Vector2.INF) -> void:
 	for p: Array in place.get("props", []):
 		var s := _prop(String(p[0]), Vector2(p[1], p[2]), float(p[3]), float(p[4]))
 		s.flip_h = p.size() > 5 and bool(p[5])          # (field 5: mirrored)
+		if p.size() > 6:
+			s.modulate = p[6]                             # (field 6: a tint, e.g. the black thorn of the world map)
 		if String(p[0]) == "hub_slantern":
 			_lantern_glass(s, bool(place.get("iron_lamps", false)) and _view != null)
 			if bool(place.get("iron_lamps", false)) and _view != null:
@@ -1272,6 +1275,14 @@ func _physics_process(delta: float) -> void:
 				else:
 					_go(String(e["to"]), e["at"])
 				break
+		# a locked place of the world map (places.gd _lock_world): pushing against it says why
+		if _shut_t <= 0.0:
+			for row: Dictionary in place.get("shut", []):
+				if (row["rect"] as Rect2).has_point(_hero.position):
+					_shut_t = 4.0
+					_toast.call("show_text", String(row["why"]), 3.0)
+					Sfx.play("ui_back")
+					break
 		if absf(move.x) > 0.1:
 			_face = signf(move.x)
 	var want := "run" if moving else "idle"
@@ -1758,8 +1769,12 @@ func _pack_line() -> String:
 
 
 ## --hub --shots: walk to a few spots and save a picture at each.
+var _tour_jump := false
 func _tour_step(delta: float) -> Vector2:
 	var target: Vector2 = _tour[0]
+	if _tour_jump:
+		_tour_jump = false
+		_hero.position = target + Vector2(-10, 0)
 	var d := target - _hero.position
 	_tour_t += delta
 	if d.length() < 3.0 or _tour_t > 9.0:

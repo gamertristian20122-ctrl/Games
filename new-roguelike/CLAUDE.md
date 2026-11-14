@@ -1506,6 +1506,21 @@ All in the PHONE (gl_compatibility) path; HD is untouched.
 - Battle picture on the phone renderer: `--battle=story:glade --nosave --shotspell=firebolt --uiphone
   --shots=<dir>` with `--fixed-fps 24` before `--`.
 
+## v0.34.0 (14 Nov 2026): a bigger world map with locked places
+The owner: "places I can SEE early but only reach later ... that open as the story goes on". They said "you pick".
+- The world map is 2000 x 1400 now (was 1120 tall): the Southwood (too thick to walk) and the old kingdom's
+  sands lie south of a wall.
+- `places.gd _lock_world()` (story on only) builds three barriers out of pack pieces:
+  the THORN WALL along the whole woods/sands edge (hub_vine_* tinted dark; lets go of the east road once
+  `Tale.lit("elfwood")`), the ROCKFALL ridge at x ~1500 (two gaps, at the trails y ~557 and ~819, open once
+  `Tale.lit("sands")`; behind it the Cinder Pass and the Sunken Archive), and the KING'S WALL at y ~1134 with an
+  iron gate at x 1244 (never opens yet: a later chapter; ruins and a blue glow are seen over it).
+- New data: a 7th prop field is a tint; a place's `"shut"` rows [{"rect", "why"}] make hub.gd say why when the
+  knight pushes against a barrier. The fairy dust routes round barriers by itself (they are round stops).
+- Test: `./tools/shot.sh world <dir> --tourat=x,y --tourjump` (he starts beside that spot). Checked: CHECK
+  PASSED, `--uitour=tale` 28/28. NOT checked by hand: walking through the opened gaps (34 px free each).
+- No broken bridge: the packs have no river piece that looks right from this camera.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.

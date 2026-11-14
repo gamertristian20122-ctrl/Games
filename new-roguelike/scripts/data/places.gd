@@ -745,11 +745,11 @@ static func _world() -> Dictionary:
 	var dry := ["hub_cactus_4", "hub_cactus_3", "hub_dbush_0", "hub_dbush_1", "hub_dshrub", "hub_cactus_2", "hub_dtree_1", "hub_dbush_2", "hub_dshrub", "hub_tusk_2", "hub_cactus_0", "hub_dtree_0"]
 	var crag := ["hub_rock_2", "hub_rock_1", "hub_dtree_0", "hub_rock_0", "hub_rock_3", "hub_dtree_1", "hub_stone_2", "hub_rock_2"]
 	return {
-		"name": "The Wide World", "size": Vector2(2000, 1120), "outdoor": true, "walk": Rect2(40, 70, 1920, 1010), "spawn": Vector2(300, 650),
+		"name": "The Wide World", "size": Vector2(2000, 1400), "outdoor": true, "walk": Rect2(40, 70, 1920, 1290), "spawn": Vector2(300, 650),
 		"zoom": 0.5, "hero_scale": 2.0, "speed": 2.5, "tint": Color(0.86, 0.90, 0.94),
 		"regions": [
-			["hub_sand", [Vector2(880, -80), Vector2(920, 140), Vector2(850, 320), Vector2(910, 480), Vector2(840, 660), Vector2(890, 840), Vector2(830, 1010), Vector2(870, 1200),
-				Vector2(2080, 1200), Vector2(2080, -80)]],
+			["hub_sand", [Vector2(880, -80), Vector2(920, 140), Vector2(850, 320), Vector2(910, 480), Vector2(840, 660), Vector2(890, 840), Vector2(830, 1010), Vector2(870, 1200), Vector2(850, 1480),
+				Vector2(2080, 1480), Vector2(2080, -80)]],
 			["hub_drock", [Vector2(1330, -80), Vector2(1310, 110), Vector2(1390, 240), Vector2(1400, 380), Vector2(1500, 450), Vector2(1640, 410), Vector2(1770, 460),
 				Vector2(1900, 420), Vector2(2080, 460), Vector2(2080, -80)]],
 		],
@@ -767,6 +767,10 @@ static func _world() -> Dictionary:
 			{"rect": Rect2(40, 70, 760, 420), "ids": trees, "n": 46, "solid": 7.0},
 			{"rect": Rect2(420, 110, 360, 330), "ids": elf, "n": 30, "solid": 7.0},
 			{"rect": Rect2(40, 740, 760, 330), "ids": trees, "n": 42, "solid": 7.0},
+			# v0.34.0: the Southwood, too thick to walk, and the old kingdom's sands beyond the King's Wall (seen, not yet reached)
+			{"rect": Rect2(30, 1090, 800, 290), "ids": trees, "n": 70, "solid": 7.0},
+			{"rect": Rect2(940, 1170, 260, 180), "ids": dry, "n": 10, "solid": 6.0}, {"rect": Rect2(1560, 1180, 360, 180), "ids": dry, "n": 12, "solid": 6.0},
+			{"rect": Rect2(900, 1150, 1050, 220), "ids": ["hub_dgrass_0", "hub_dgrass_1", "hub_dgrass_2", "hub_dgrass_3", "hub_dblock_2", "hub_dblock_3"], "n": 50, "solid": 0.0, "poly": 0},
 			# the Sands: (round two) clumps of desert growth with open sand between them, not one even spread
 			{"rect": Rect2(950, 80, 160, 150), "ids": dry, "n": 9, "solid": 6.0}, {"rect": Rect2(1120, 300, 160, 170), "ids": dry, "n": 9, "solid": 6.0},
 			{"rect": Rect2(950, 730, 190, 150), "ids": dry, "n": 9, "solid": 6.0}, {"rect": Rect2(1320, 960, 240, 110), "ids": dry, "n": 9, "solid": 6.0},
@@ -997,6 +1001,7 @@ static func _emberfall() -> Dictionary:
 ## stair leads down to the Sunwell (Tale.suncourt()). Only while the story is on.
 static func _fit_sands(id: String, place: Dictionary) -> void:
 	if id == "world":
+		_lock_world(place)
 		for e: Dictionary in place["exits"]:
 			if String(e["to"]) == "dustwatch":
 				e.erase("need")
@@ -1016,3 +1021,84 @@ static func _fit_sands(id: String, place: Dictionary) -> void:
 		"why": "Nobody goes down the stair tonight. Captain Sefa's orders."})
 	if Tale.lit("sands"):
 		(place["lights"] as Array).append([Vector2(320, 190), Color(1.0, 0.84, 0.52), 2.2, 0.8])     # the beacon's light up the stair
+
+
+## LOCKED PLACES OF THE WORLD MAP (v0.34.0; the owner: "places I can SEE early but only reach later ...
+## that open as the story goes on"). Only while the story is on. Three of them:
+##   the thorn wall   black thorn all along the edge of the woods, grown across the east road. It lets go
+##                    of the road when the beacon of the Elfwood burns (Tale.lit("elfwood")).
+##   the rockfall     a ridge of rock across the sands east of Dustwatch; its two gaps are choked with
+##                    boulders until the beacon of the Sands burns (Tale.lit("sands")).
+##   the King's Gate  a sandstone wall across the south with an iron gate. Beyond it lie the ruins of the
+##                    old kingdom, seen over the wall. It stays locked: a later chapter opens it.
+## A barrier is props (a 7th prop field is a tint) whose round stops block the knight. "shut" rows
+## ([{"rect", "why"}], read by hub.gd) say why when he pushes against one.
+static func _lock_world(place: Dictionary) -> void:
+	var props: Array = place["props"]
+	var shut: Array = []
+	var thorn := Color(0.50, 0.34, 0.58)
+	# --- the thorn wall: along the edge between the woods and the sands
+	var open_road := Tale.lit("elfwood")
+	var edge := [Vector2(905, 60), Vector2(906, 140), Vector2(836, 320), Vector2(896, 480), Vector2(826, 660), Vector2(876, 840), Vector2(816, 1010), Vector2(850, 1110)]
+	var n := 0
+	for at: Vector2 in _along(edge, 21.0):
+		n += 1
+		var in_road := at.y > 622.0 and at.y < 706.0
+		if in_road and open_road:
+			if at.y < 634.0 or at.y > 694.0:
+				props.append(["hub_vine_3", at.x, at.y, 0, 1, n % 2 == 0, Color(0.62, 0.52, 0.40)])      # what is left of it: dry stems by the road
+			continue
+		props.append(["hub_vine_0" if n % 3 != 1 else "hub_vine_1", at.x + float((n * 7) % 9 - 4), at.y, 11, 2, n % 2 == 0, thorn])
+	if not open_road:
+		shut.append({"rect": Rect2(790, 624, 70, 80), "why": "Black thorn has grown across the road. It will not let go while the beacon of the wood is dark."})
+	# --- the rockfall: a ridge across the eastern sands, its two gaps (where the trails run) full of boulders
+	var open_east := Tale.lit("sands")
+	var ridge := [Vector2(1492, 60), Vector2(1506, 300), Vector2(1494, 470), Vector2(1508, 700), Vector2(1496, 900), Vector2(1510, 1104)]
+	n = 0
+	for at: Vector2 in _along(ridge, 27.0):
+		n += 1
+		var gap := (at.y > 514.0 and at.y < 600.0) or (at.y > 776.0 and at.y < 862.0)
+		if gap and open_east:
+			continue
+		var id: String = ["hub_rock_2", "hub_rock_1", "hub_rock_3", "hub_rock_0"][n % 4] if at.y < 470.0 else ["hub_dboulder_0", "hub_dboulder_1", "hub_dboulder_0"][n % 3]
+		props.append([id, at.x + float((n * 5) % 11 - 5), at.y, 14, 2, n % 2 == 0])
+	if not open_east:
+		for y: float in [557.0, 819.0]:
+			shut.append({"rect": Rect2(1440, y - 44.0, 70, 88), "why": "A rockfall shuts the way east. Nobody will dig it out while the dunes are haunted."})
+	# --- the King's Wall across the south, and its locked gate under the Bone Dunes
+	for i in 20:
+		var x := 908.0 + 56.0 * float(i)
+		if i == 6:
+			props.append(["hub_dpillar_0", x - 24.0, 1136, 5, 2])
+			props.append(["hub_door_iron", x - 10.0, 1134, 0, 0])
+			props.append(["hub_door_iron", x + 10.0, 1134, 0, 0, true])
+			props.append(["hub_dpillar_0", x + 24.0, 1136, 5, 2])
+			continue
+		props.append(["hub_bsandwall", x, 1134, 0, 0, i % 2 == 0])
+	(place["blocks"] as Array).append(Rect2(870, 1112, 1140, 24))
+	(place["blocks"] as Array).append(Rect2(30, 1104, 846, 300))                # the Southwood: no way through
+	shut.append({"rect": Rect2(1204, 1070, 80, 44), "why": "The King's Gate is locked. Beyond it lies the old kingdom: a road for a later chapter."})
+	# what is seen over the wall: the ruins of the old kingdom
+	for row: Array in [["hub_obelisk_0", 1180, 1250, 12, 2], ["hub_obelisk_1", 1310, 1250, 12, 2], ["hub_dstone_0", 1245, 1290, 9, 2],
+			["hub_dpillar_3", 1120, 1300, 5, 2], ["hub_dpillar_1", 1380, 1304, 6, 2], ["hub_dpillar_2", 1440, 1240, 6, 2], ["hub_tusk_0", 1700, 1290, 10, 3],
+			["hub_obelisk_2", 1500, 1330, 10, 2], ["hub_dpillar_0", 1010, 1240, 6, 2], ["hub_dblock_1", 1290, 1316, 0, 1], ["hub_dblock_0", 1200, 1322, 0, 1]]:
+		props.append(row)
+	(place["signs"] as Array).append({"text": "The King's Gate", "pos": Vector2(1244, 990), "need": "locked"})
+	(place["lights"] as Array).append([Vector2(1245, 1270), Color(0.5, 0.7, 1.0), 1.8, 0.5])          # something still glows among the ruins
+	place["shut"] = shut
+
+
+## Points every `step` px along a line of corners.
+static func _along(corners: Array, step: float) -> Array:
+	var out: Array = []
+	var carry := 0.0
+	for i in corners.size() - 1:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[i + 1]
+		var length := a.distance_to(b)
+		var d := carry
+		while d < length:
+			out.append(a.lerp(b, d / length))
+			d += step
+		carry = d - length
+	return out
