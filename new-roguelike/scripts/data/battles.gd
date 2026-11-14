@@ -50,7 +50,10 @@ const FLAME_MAX := 3               ## the flame at which the carrier's Flare is 
 const HEAVY_UNGUARDED := 1         ## flame lost when the carrier takes a heavy blow unguarded
 const FLAME_ON_KILL := 1           ## flame gained when the carrier fells a monster (once a turn, on top of the blow's)
 ## monsters' health by how many companions have joined (0 .. 3): four fighters fell a pack too fast
-const CROWD_HP := [1.0, 1.0, 1.15, 1.35]
+const CROWD_HP := [1.0, 1.05, 1.2, 1.35]
+## (quality pass P08, balance) ... and their blows: a party of four ended a rock-land fight with 80%+ of
+## its health, so a bigger party now meets harder-hitting monsters too
+const CROWD_ATK := [1.0, 1.25, 1.35, 1.3]
 
 ## STATUSES: things that stay on a fighter for some of ITS OWN turns (a turn counts at its start).
 ##   "turns"  how long        "bad"  true = an ill (Cleansing Salt and Sunflare take it off)
@@ -86,7 +89,7 @@ const SAY := {
 
 ## HOW HARD (Settings > battle mode; Save.setting("battle_mode"), nothing set = "normal"):
 ## a multiplier on every monster's and boss's health and attack.
-const MODE := {"story": 0.75, "normal": 1.0, "hard": 1.3}
+const MODE := {"story": 0.75, "normal": 1.0, "hard": 1.18}   ## (P08 balance: hard was 1.3; monsters grow with the party and the level now)
 ## tests and the battle sim force a mode with this ("" = read the setting)
 static var mode_force := ""
 
@@ -138,7 +141,9 @@ const FOE_HP_TIER := 0.36          ## and this much more per tier of the land (0
 const FOE_ATK := 5.0                ## (quality pass P01: was 4.6; the knight stood 11 blows in the woods)
 #const FOE_ATK := 4.6
 const FOE_ATK_TIER := 1.8
-const FOE_ATK_LEVEL := 0.07        ## monsters hit this much harder per level of the knight
+const FOE_ATK_LEVEL := 0.12        ## monsters hit this much harder per level of the knight (P08 balance: was 0.07)
+const BOSS_ATK_LEVEL := 0.08       ## (P08 balance) a boss grows less per level (it was FOE_ATK_LEVEL, 0.07)
+const FOE_HP_LEVEL := 0.03         ## (P08 balance) and have this much more health per level, on top of Rpg.foe_scale()
 const FOE_DEF_TIER := 1.0
 const FOE_XP := 0.7                ## XP per point of the row's "hp" (x 1 + tier)
 const FOE_COINS := 3              ## (v0.39.0: was 2; skills and arms are bought now)
@@ -298,7 +303,7 @@ static func boss(boss_id: String) -> Dictionary:
 	return {"id": boss_id, "name": String(row.get("name", boss_id)), "sprite": String(row.get("sprite", "boss_ogre")), "side": "foes", "boss": true,
 		"tint": row.get("tint", Color.WHITE),
 		"max_hp": roundi(float(row.get("hp", 150)) * (1.0 + 0.09 * (lvl - 1)) * hard * more_hp), "max_mp": 0,
-		"atk": float(row.get("atk", 8.0)) * (1.0 + FOE_ATK_LEVEL * (lvl - 1)) * hard * more_atk, "def": float(row.get("def", 0.0)), "speed": float(row.get("speed", 9.0)),
+		"atk": float(row.get("atk", 8.0)) * (1.0 + BOSS_ATK_LEVEL * (lvl - 1)) * hard * more_atk, "def": float(row.get("def", 0.0)), "speed": float(row.get("speed", 9.0)),
 		"magic": 1.0, "dodge": 0.0, "skills": [],
 		"sweep": int(row.get("sweep", 0)), "sweep_power": float(row.get("sweep_power", 0.7)), "sweep_name": String(row.get("sweep_name", "Sweep")),
 		"moves": row.get("moves", plan.get("moves", [])), "phases": row.get("phases", plan.get("phases", [])),
@@ -337,10 +342,11 @@ static func foe(enemy_id: String, tier: int) -> Dictionary:
 		if Allies.joined(String(a["id"])):
 			friends += 1
 	var crowd := float(CROWD_HP[clampi(friends, 0, CROWD_HP.size() - 1)])
+	var crowd_atk := float(CROWD_ATK[clampi(friends, 0, CROWD_ATK.size() - 1)])
 	return {"id": enemy_id, "name": String(row.get("name", enemy_id)), "sprite": String(row.get("sprite", "pc_skeleton_base")), "side": "foes",
 		"tint": row.get("tint", Color.WHITE),
-		"max_hp": maxi(6, roundi(base * FOE_HP * (1.0 + FOE_HP_TIER * tier) * Rpg.foe_scale() * float(kit["hp"]) * hard * crowd)), "max_mp": 0,
-		"atk": (FOE_ATK + FOE_ATK_TIER * tier) * (1.0 + FOE_ATK_LEVEL * (lvl - 1)) * float(kit["atk"]) * hard, "def": FOE_DEF_TIER * tier + float(kit["def"]),
+		"max_hp": maxi(6, roundi(base * FOE_HP * (1.0 + FOE_HP_TIER * tier) * Rpg.foe_scale() * (1.0 + FOE_HP_LEVEL * (lvl - 1)) * float(kit["hp"]) * hard * crowd)), "max_mp": 0,
+		"atk": (FOE_ATK + FOE_ATK_TIER * tier) * (1.0 + FOE_ATK_LEVEL * (lvl - 1)) * float(kit["atk"]) * hard * crowd_atk, "def": FOE_DEF_TIER * tier + float(kit["def"]),
 		"speed": 5.0 + float(row.get("speed", 40.0)) / 9.0, "magic": 1.0, "dodge": float(kit["dodge"]), "skills": [],
 		"kind": kind, "kit": kit, "line": String(kit["line"]),
 		"xp": maxi(2, roundi(base * FOE_XP * (1.0 + tier))), "coins": FOE_COINS + tier}

@@ -42,6 +42,284 @@ static func text_w(f: Font, s: String, size: int) -> float:
 	return f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 
 
+# ------------------------------------------------------------------ the Lantern, statuses, intents (quality pass P08)
+## The colour of each status of battles.gd STATUS on a pip ("stun" = loses its next turn).
+const STATUS_COL := {"burn": Color(1.0, 0.5, 0.18), "weak": Color(0.72, 0.5, 0.95), "exposed": Color(0.95, 0.3, 0.3),
+	"slowed": Color(0.45, 0.8, 1.0), "braced": Color(0.62, 0.78, 0.95), "stun": Color(0.75, 0.95, 1.0)}
+const C_LANTERN := Color(1.0, 0.78, 0.38)
+
+
+## [[id, colour, turns], ...] of a fighter's statuses (and a stun), in a fixed order.
+static func pips_of(u: Dictionary) -> Array:
+	var out: Array = []
+	var st: Dictionary = u.get("status", {})
+	for id: String in ["burn", "weak", "exposed", "slowed", "braced"]:
+		if int(st.get(id, 0)) > 0:
+			out.append([id, STATUS_COL[id], int(st[id])])
+	for id: String in st:
+		if not STATUS_COL.has(id) and int(st[id]) > 0:
+			out.append([id, UI.C_DIM, int(st[id])])
+	if int(u.get("stun", 0)) > 0 and int(u.get("hp", 0)) > 0:
+		out.append(["stun", STATUS_COL["stun"], int(u["stun"])])
+	return out
+
+
+## Status pips from `at` (top left) to the right: a coloured square each with its turns in it.
+## Returns the width drawn.
+static func draw_pips(c: CanvasItem, at: Vector2, u: Dictionary, cell: float = 9.0) -> float:
+	var x := at.x
+	for p: Array in pips_of(u):
+		var col: Color = p[1]
+		var r := Rect2(Vector2(x, at.y), Vector2(cell, cell))
+		c.draw_rect(r.grow(1.0), Color(UI.C_INK, 0.85))
+		c.draw_rect(r, col.darkened(0.25))
+		c.draw_rect(Rect2(r.position, Vector2(cell, cell * 0.4)), col.lightened(0.15))
+		var n := "%d" % int(p[2])
+		var fs := int(maxf(cell - 1.0, 6.0))
+		var tw := text_w(UI.font_num, n, fs)
+		c.draw_string(UI.font_num, Vector2(x + (cell - tw) * 0.5, at.y + cell - 1.0), n, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, UI.C_INK)
+		x += cell + 3.0
+	return x - at.x
+
+
+## A small lantern drawn in code: a brass cap and ring, a glass body with a flame in it. `at` = its
+## top middle, `k` = scale (1 = 8 x 12 UI px). lit 0..1: how bright the glass glows.
+static func draw_lantern(c: CanvasItem, at: Vector2, k: float = 1.0, lit: float = 1.0) -> void:
+	var ink := Color(UI.C_INK, 0.9)
+	var brass := UI.C_BRASS
+	# the ring and cap
+	c.draw_arc(at + Vector2(0, 1.5 * k), 1.6 * k, PI, TAU, 6, brass, maxf(1.0, k))
+	c.draw_rect(Rect2(at + Vector2(-3.5, 2.5) * k, Vector2(7, 2) * k), ink)
+	c.draw_rect(Rect2(at + Vector2(-3, 3) * k, Vector2(6, 1.2) * k), brass)
+	# the glass
+	var body := Rect2(at + Vector2(-3.5, 4.5) * k, Vector2(7, 6) * k)
+	c.draw_rect(body.grow(0.8), ink)
+	c.draw_rect(body, Color(0.3, 0.2, 0.1).lerp(Color(1.0, 0.72, 0.3), lit))
+	c.draw_rect(Rect2(body.position + Vector2(1.5, 1.5) * k, Vector2(4, 3.2) * k), Color(1.0, 0.95, 0.7, 0.35 + 0.65 * lit))
+	c.draw_line(body.position + Vector2(body.size.x * 0.5, 0), body.position + Vector2(body.size.x * 0.5, body.size.y), Color(brass, 0.7), maxf(1.0, k * 0.8))
+	# the foot
+	c.draw_rect(Rect2(at + Vector2(-4, 10.5) * k, Vector2(8, 1.6) * k), ink)
+	c.draw_rect(Rect2(at + Vector2(-3.5, 10.7) * k, Vector2(7, 1.0) * k), brass)
+
+
+## One flame pip (a teardrop): lit = ember with a hot core, unlit = a dim outline. `at` = its foot.
+static func draw_flame(c: CanvasItem, at: Vector2, k: float, lit: bool) -> void:
+	var pts := PackedVector2Array([at + Vector2(0, -7) * k, at + Vector2(2.6, -2.6) * k, at + Vector2(2.4, -0.6) * k,
+		at + Vector2(0, 0.6) * k, at + Vector2(-2.4, -0.6) * k, at + Vector2(-2.6, -2.6) * k])
+	var outline := pts.duplicate()
+	outline.append(pts[0])
+	if lit:
+		c.draw_colored_polygon(pts, UI.C_EMBER)
+		c.draw_colored_polygon(PackedVector2Array([at + Vector2(0, -3.8) * k, at + Vector2(1.2, -1.2) * k, at + Vector2(0, -0.2) * k, at + Vector2(-1.2, -1.2) * k]), Color(1.0, 0.95, 0.7))
+		c.draw_polyline(outline, Color(UI.C_INK, 0.9), 1.0)
+	else:
+		c.draw_colored_polygon(pts, Color(UI.C_INK, 0.7))
+		c.draw_polyline(outline, Color(UI.C_BRASS, 0.55), 1.0)
+
+
+## The lantern and its three flames, left to right from `at` (the lantern's top left). Width drawn.
+static func draw_holder(c: CanvasItem, at: Vector2, flame: int, k: float = 1.0) -> float:
+	draw_lantern(c, at + Vector2(4.0 * k, 0.0), k, 0.45 + 0.55 * float(flame) / 3.0)
+	for i in 3:
+		draw_flame(c, at + Vector2((12.0 + 6.5 * i) * k, 11.0 * k), k, i < flame)
+	return 30.0 * k
+
+
+## A 12 x 16 lantern picture made in code (the Lantern order's icon on the commands page).
+static var _lantern_tex: Texture2D
+static func lantern_tex() -> Texture2D:
+	if _lantern_tex != null:
+		return _lantern_tex
+	var rows := [
+		"....oooo....",
+		"...o....o...",
+		"...o....o...",
+		"..kkkkkkkk..",
+		".kbbbbbbbbk.",
+		".kgyyyyyygk.",
+		".kgyywwyygk.",
+		".kgywwwwygk.",
+		".kgywwwwygk.",
+		".kgyywwyygk.",
+		".kgyyyyyygk.",
+		".kbbbbbbbbk.",
+		"..kkkkkkkk..",
+		"...kbbbbk...",
+		"..kbbbbbbk..",
+		"..kkkkkkkk..",
+	]
+	var cols := {"o": Color(0.55, 0.42, 0.25), "k": Color(0.1, 0.08, 0.1), "b": Color(0.78, 0.62, 0.36), "g": Color(0.95, 0.6, 0.2),
+		"y": Color(1.0, 0.8, 0.35), "w": Color(1.0, 0.97, 0.8)}
+	var img := Image.create(12, 16, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for y in rows.size():
+		var line: String = rows[y]
+		for x in line.length():
+			if cols.has(line[x]):
+				img.set_pixel(x, y, cols[line[x]])
+	_lantern_tex = ImageTexture.create_from_image(img)
+	return _lantern_tex
+
+
+## The little code picture of an intent (fight.gd unit["intent"]["icon"]), centred on `at`.
+static func draw_intent_icon(c: CanvasItem, at: Vector2, icon: String, k: float = 1.0) -> void:
+	var ink := Color(UI.C_INK, 0.95)
+	match icon:
+		"blow":
+			# a short sword, point up and right
+			c.draw_line(at + Vector2(-3.5, 3.5) * k, at + Vector2(3.5, -3.5) * k, ink, 3.0 * k)
+			c.draw_line(at + Vector2(-3.0, 3.0) * k, at + Vector2(3.5, -3.5) * k, UI.C_PARCH, 1.4 * k)
+			c.draw_line(at + Vector2(-3.2, -0.2) * k, at + Vector2(0.2, 3.2) * k, UI.C_BRASS, 1.6 * k)
+		"heavy":
+			# two heavy chevrons pointing down
+			for i in 2:
+				var y := (-3.5 + 3.5 * i) * k
+				var pts := PackedVector2Array([at + Vector2(-4, y), at + Vector2(0, y + 3.0 * k), at + Vector2(4, y)])
+				c.draw_polyline(pts, ink, 3.2 * k)
+				c.draw_polyline(pts, UI.C_BAD, 1.6 * k)
+		"all":
+			# a burst: eight rays
+			for i in 8:
+				var d := Vector2.from_angle(TAU * float(i) / 8.0)
+				c.draw_line(at + d * 1.5 * k, at + d * 4.5 * k, ink, 2.6 * k)
+				c.draw_line(at + d * 1.5 * k, at + d * 4.2 * k, UI.C_BAD, 1.2 * k)
+		"fuse":
+			c.draw_circle(at, 4.5 * k, ink)
+			c.draw_circle(at, 3.5 * k, Color(1.0, 0.45, 0.2))
+			c.draw_line(at + Vector2(2, -3) * k, at + Vector2(4, -5.5) * k, UI.C_GOLD, 1.2 * k)
+		"heal":
+			c.draw_rect(Rect2(at + Vector2(-1.5, -4.5) * k, Vector2(3, 9) * k).grow(1.0), ink)
+			c.draw_rect(Rect2(at + Vector2(-4.5, -1.5) * k, Vector2(9, 3) * k).grow(1.0), ink)
+			c.draw_rect(Rect2(at + Vector2(-1.5, -4.5) * k, Vector2(3, 9) * k), UI.C_GOOD)
+			c.draw_rect(Rect2(at + Vector2(-4.5, -1.5) * k, Vector2(9, 3) * k), UI.C_GOOD)
+		"wind":
+			# drawing back: two chevrons pointing away (right)
+			for i in 2:
+				var x := (-3.0 + 3.5 * i) * k
+				var pts := PackedVector2Array([at + Vector2(x, -3.5 * k), at + Vector2(x + 3.0 * k, 0), at + Vector2(x, 3.5 * k)])
+				c.draw_polyline(pts, ink, 3.0 * k)
+				c.draw_polyline(pts, UI.C_GOLD, 1.4 * k)
+		_:
+			# stunned / nothing: a small grey "z"
+			var pts := PackedVector2Array([at + Vector2(-3, -3) * k, at + Vector2(3, -3) * k, at + Vector2(-3, 3) * k, at + Vector2(3, 3) * k])
+			c.draw_polyline(pts, ink, 3.0 * k)
+			c.draw_polyline(pts, UI.C_DIM, 1.4 * k)
+
+
+## The edge colour of an intent's chip: how much it should worry you.
+static func intent_col(icon: String) -> Color:
+	match icon:
+		"heavy", "all", "fuse":
+			return UI.C_BAD
+		"blow":
+			return UI.C_EMBER
+		"heal":
+			return UI.C_GOOD
+		"wind":
+			return UI.C_GOLD
+	return UI.C_FAINT
+
+
+## OVER EACH MONSTER: what it means to do this round (an icon, a short word, the face of the one it
+## goes for) and under its bar its status pips. battle.gd moves `head_at` / `feet_at` every frame.
+class FoeMarks extends Control:
+	var unit: Dictionary
+	var short := {}                    ## lessons.gd WORDS intent_short
+	var face: Control                  ## a small coin of the one a single blow goes for
+	var _face_id := ""
+	var _key := ""
+	var head_at := Vector2.ZERO        ## the chip's bottom middle (over the head)
+	var feet_at := Vector2.ZERO        ## the pips' top left (beside the bar)
+	var show_intent := true
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func setup(u: Dictionary, words: Dictionary) -> void:
+		unit = u
+		short = words
+		UI._load_fonts()
+
+	func _intent() -> Dictionary:
+		var it: Dictionary = unit.get("intent", {})
+		if it.is_empty() or bool(it.get("done", false)) or int(unit.get("hp", 0)) <= 0:
+			return {}
+		return it
+
+	func _word(it: Dictionary) -> String:
+		var icon := String(it.get("icon", "none"))
+		var w := String(short.get(icon, ""))
+		if icon == "fuse":
+			return w % maxi(1, int(unit.get("fuse", 1))) if w.contains("%d") else w
+		if icon == "blow" or (icon == "heavy" and it.get("target") is Dictionary):
+			var t: Variant = it.get("target")
+			if t is Dictionary and not (t as Dictionary).is_empty():
+				return (w + " " if w != "" else "") + String((t as Dictionary).get("name", "")).get_slice(" ", 0)
+		return w
+
+	## Called every frame by battle.gd; redraws only when something changed.
+	func sync() -> void:
+		var it := _intent()
+		var tgt: Variant = it.get("target") if not it.is_empty() else null
+		var tid := ""
+		if tgt is Dictionary and not (tgt as Dictionary).is_empty():
+			tid = String((tgt as Dictionary).get("sprite", ""))
+		var key := str(head_at) + str(feet_at) + str(show_intent) + String(it.get("icon", "")) + _word(it) + tid + str(pips_of_unit())
+		if key == _key:
+			return
+		_key = key
+		var want_face := show_intent and tid != "" and ["blow", "heavy"].has(String(it.get("icon", "")))
+		if want_face and tid != _face_id:
+			if is_instance_valid(face):
+				face.queue_free()
+			face = UI.medallion(tid, 5.0 if UI.is_phone() else 7.0, UI.C_STEEL, false, (tgt as Dictionary).get("tint", Color.WHITE))
+			face.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(face)
+			_face_id = tid
+		if is_instance_valid(face):
+			face.visible = want_face
+		queue_redraw()
+
+	func pips_of_unit() -> Array:
+		return load("res://scripts/battle/battle_ui.gd").call("pips_of", unit)
+
+	func _draw() -> void:
+		if unit.is_empty() or int(unit.get("hp", 0)) <= 0:
+			if is_instance_valid(face):
+				face.visible = false
+			return
+		var ph := UI.is_phone()
+		var ui: GDScript = load("res://scripts/battle/battle_ui.gd")
+		ui.call("draw_pips", self, feet_at, unit, 6.0 if ph else 8.0)
+		var it := _intent()
+		if it.is_empty() or not show_intent:
+			return
+		var icon := String(it.get("icon", "none"))
+		var word := _word(it)
+		var fs := 7 if ph else 9
+		var k := 0.75 if ph else 1.0
+		var face_w := 0.0
+		if is_instance_valid(face) and face.visible:
+			face_w = face.custom_minimum_size.x + 2.0
+			word = String(short.get(icon, ""))       # (the face says who)
+		var tw := UI.font_bold.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x if word != "" else 0.0
+		var h := 12.0 if ph else 16.0
+		var w := 4.0 + 10.0 * k + (3.0 + tw if word != "" else 0.0) + face_w + 4.0
+		var r := Rect2(Vector2(roundf(head_at.x - w * 0.5), roundf(head_at.y - h)), Vector2(w, h))
+		var edge: Color = ui.call("intent_col", icon)
+		draw_rect(r, Color(UI.C_WASH, 0.82))
+		draw_rect(r, Color(edge, 0.9), false, 1.0)
+		draw_rect(Rect2(r.position + Vector2(1, r.size.y - 2), Vector2(r.size.x - 2, 1)), Color(edge, 0.45))
+		var ic := r.position + Vector2(4.0 + 5.0 * k, h * 0.5)
+		ui.call("draw_intent_icon", self, ic, icon, k)
+		var x := r.position.x + 4.0 + 10.0 * k + 3.0
+		if word != "":
+			ui.call("ink_text", self, UI.font_bold, Vector2(x, r.position.y + h * 0.5 + fs * 0.36), word, fs, edge.lerp(UI.C_PARCH, 0.35), 2)
+			x += tw + 2.0
+		if is_instance_valid(face) and face.visible:
+			face.position = Vector2(x, r.position.y + (h - face.custom_minimum_size.y) * 0.5).round()
+
+
 # ------------------------------------------------------------------ a fighter of your side
 class Card extends Control:
 	const H_PC := 44.0
@@ -51,6 +329,8 @@ class Card extends Control:
 	var is_phone := false
 	var acting := false
 	var targeted := false
+	var holder := false                ## (quality pass P08) carries the Lantern: a lantern and three flame pips
+	var flame := 0
 	var base := Vector2.ZERO           ## where the layout puts it (lift and jolt move it from there)
 	var button: Button                 ## the whole card: picks this fighter for a heal
 	var hp_bar: Control
@@ -206,6 +486,13 @@ class Card extends Control:
 			# (and the mana, small and blue, left of the health: a caster reads it without opening Skills)
 			var mp_x := w - 2.0 - UI.font_num.get_string_size(hp_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x - 5.0
 			ink_text_(UI.font_num, Vector2(mp_x, 11), "%d" % int(unit["mp"]), 7, UI.C_MP_A.lerp(Color.WHITE, 0.25), HORIZONTAL_ALIGNMENT_RIGHT)
+			# (P08) right of the numbers (the name and the bars leave no room inside): the Lantern
+			# and its flames, then the status pips
+			var ui_p: GDScript = load("res://scripts/battle/battle_ui.gd")
+			var nx := w + 4.0
+			if holder and not down:
+				nx += float(ui_p.call("draw_holder", self, Vector2(nx, 2.5), flame, 0.6)) + 3.0
+			ui_p.call("draw_pips", self, Vector2(nx, 4.0), unit, 6.0)
 			return
 		# an ember glow spilling out under the acting card
 		if glow > 0.0:
@@ -223,6 +510,15 @@ class Card extends Control:
 		_txt(UI.font_num, Vector2(bx + hw, 29), "%d" % int(unit["hp"]), 12, hp_col, HORIZONTAL_ALIGNMENT_RIGHT)
 		_txt(UI.font_bold, Vector2(mx, 29), "MP", 8, UI.C_DIM)
 		_txt(UI.font_num, Vector2(mx + mw, 29), "%d" % int(unit["mp"]), 12, UI.C_PARCH, HORIZONTAL_ALIGNMENT_RIGHT)
+		# (P08) the Lantern sits on the card's top edge at the right, its three flames beside it;
+		# the status pips on the top edge at the left
+		var ui_p: GDScript = load("res://scripts/battle/battle_ui.gd")
+		if holder and not down:
+			var hold_at := Vector2(w - 50.0, -11.0)
+			for k in 3:
+				draw_circle(hold_at + Vector2(10, 11), 12.0 - k * 3.5, Color(UI.C_EMBER, 0.05 + 0.05 * k + 0.04 * flame))
+			ui_p.call("draw_holder", self, hold_at, flame, 1.3)
+		ui_p.call("draw_pips", self, Vector2(bx, -5.0), unit, 8.0)
 
 	## Text at a baseline point; right-aligned text ENDS at `at.x`.
 	func _txt(f: Font, at: Vector2, s: String, sz: int, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
@@ -245,6 +541,7 @@ class Rail extends Control:
 	var holder: Control
 	var round_no := 0
 	var end_x := 0.0                    ## where the last coin ends (the boss bar keeps clear of it)
+	var div_x := -1.0                   ## (P08) where the divider before the next round stands (-1 = none)
 	var _key := ""
 	var _tw: Tween
 
@@ -260,10 +557,14 @@ class Rail extends Control:
 		size = Vector2(120, 26) if is_phone else Vector2(240, 56)
 
 	## line = the fighters in the order they act, the one acting now first.
-	func set_line(line: Array, round_number: int) -> void:
+	## (P08) next = the next round's order (fight.gd upcoming_next()): smaller coins after a divider.
+	func set_line(line: Array, round_number: int, next: Array = []) -> void:
 		round_no = round_number
 		var key := ""
 		for u: Dictionary in line:
+			key += String(u["id"]) + str(u["home"]) + str(int(u.get("stun", 0)) > 0) + ";"
+		key += "|"
+		for u: Dictionary in next:
 			key += String(u["id"]) + str(u["home"]) + ";"
 		queue_redraw()
 		if key == _key:
@@ -285,6 +586,8 @@ class Rail extends Control:
 			# (the mouse over a face says who it is; the first acts now)
 			m.mouse_filter = Control.MOUSE_FILTER_PASS
 			m.tooltip_text = String(u["name"])
+			if int(u.get("stun", 0)) > 0 and i > 0:
+				m.modulate = Color(0.5, 0.52, 0.58, 0.85)      # (stunned: it will lose that turn)
 			holder.add_child(m)
 			if i == 1 and not is_phone:
 				# who comes next: a small NEXT above the second coin
@@ -305,6 +608,28 @@ class Rail extends Control:
 				x += (r + 10.0) if i == 0 else 14.0
 			else:
 				x += (r + 9.0 + 13.0) if i == 0 else 22.0
+		# (P08) the next round, after a thin divider: smaller, fainter coins
+		div_x = -1.0
+		var room := 2 if is_phone else 5
+		if not next.is_empty() and line.size() <= (6 if is_phone else 7):
+			div_x = x - (6.0 if is_phone else 10.0) + (2.0 if is_phone else 4.0)
+			x = div_x + (8.0 if is_phone else 12.0)
+			for j in mini(next.size(), room):
+				var u: Dictionary = next[j]
+				var r := 4.5 if is_phone else 7.0
+				var ring := UI.C_STEEL if String(u["side"]) == "party" else UI.C_FOE
+				var m := UI.medallion(String(u["sprite"]), r, ring, false, u.get("tint", Color.WHITE))
+				if String(u["side"]) != "party":
+					m.set("shape", "foe")
+				m.position = (Vector2(x, y) - m.custom_minimum_size * 0.5).round()
+				m.modulate.a = 0.7
+				m.mouse_filter = Control.MOUSE_FILTER_PASS
+				m.tooltip_text = String(u["name"])
+				holder.add_child(m)
+				end_x = x + r
+				x += 11.0 if is_phone else 17.0
+		var want_w := maxf(end_x + (10.0 if is_phone else 20.0), 120.0 if is_phone else 240.0)
+		size.x = want_w
 		# the turn passed: the coins slide in from the right into their places
 		if had and not UI.instant and is_inside_tree():
 			if _tw != null and _tw.is_valid():
@@ -329,8 +654,17 @@ class Rail extends Control:
 			return
 		if is_phone:
 			UI.rs_rule(ci, Vector2(14, 13), Vector2(14 + 100, 13), Color(UI.C_BRASS, 0.7), Color(UI.C_BRASS, 0.0))
+			if div_x > 0.0:
+				draw_line(Vector2(div_x, 6), Vector2(div_x, 20), Color(UI.C_BRASS, 0.8), 1.0)
 			return
-		UI.rs_rule(ci, Vector2(28, 26), Vector2(28 + 175, 26), Color(UI.C_BRASS, 0.8), Color(UI.C_BRASS, 0.0))
+		UI.rs_rule(ci, Vector2(28, 26), Vector2(28 + maxf(175.0, end_x - 20.0), 26), Color(UI.C_BRASS, 0.8), Color(UI.C_BRASS, 0.0))
+		if div_x > 0.0:
+			draw_line(Vector2(div_x, 13), Vector2(div_x, 39), Color(UI.C_INK, 0.8), 3.0)
+			draw_line(Vector2(div_x, 13), Vector2(div_x, 39), Color(UI.C_BRASS, 0.9), 1.0)
+			if round_no > 0:
+				var rs := "%d" % (round_no + 1)
+				draw_string_outline(UI.font_bold, Vector2(div_x + 4, 12), rs, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, 3, Color(UI.C_INK, 0.85))
+				draw_string(UI.font_bold, Vector2(div_x + 4, 12), rs, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, UI.C_DIM)
 		if round_no > 0:
 			var s := "ROUND  %d" % round_no
 			draw_string_outline(UI.font_bold, Vector2(14, 51), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, 3, Color(UI.C_INK, 0.85))
@@ -458,6 +792,8 @@ class Brackets extends Control:
 class Plate extends Control:
 	var title := ""
 	var bar: Control
+	var lines: Array = []              ## (P08) [[text, colour], ...] under the bar: intent, kit line, damage preview
+	var unit: Dictionary = {}
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -475,7 +811,11 @@ class Plate extends Control:
 			title = t
 			animate = false
 		var w := maxf(ceilf(UI.font_head.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) + (14.0 if ph else 24.0), 56.0 if ph else 80.0)
-		size = Vector2(w, 17.0 if ph else 26.0)
+		unit = u
+		var lfs := 7 if ph else 9
+		for l: Array in lines:
+			w = maxf(w, minf(ceilf(UI.font_body.get_string_size(String(l[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x) + (12.0 if ph else 18.0), 200.0 if ph else 260.0))
+		size = Vector2(w, (17.0 if ph else 26.0) + lines.size() * (9.0 if ph else 12.0) + (2.0 if not lines.is_empty() else 0.0))
 		var bw := w - (10.0 if ph else 16.0)
 		bar.custom_minimum_size.x = bw
 		bar.size.x = bw
@@ -491,6 +831,18 @@ class Plate extends Control:
 		var tw := UI.font_head.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var at := Vector2(roundf((size.x - tw) * 0.5), 9.0 if ph else 13.0)
 		draw_string(UI.font_head, at, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, UI.C_PARCH)
+		# (P08) the status pips at the right end of the title row, then the lines under the bar
+		if not unit.is_empty():
+			var ui_p: GDScript = load("res://scripts/battle/battle_ui.gd")
+			var n := (ui_p.call("pips_of", unit) as Array).size()
+			if n > 0:
+				var cell := 6.0 if ph else 7.0
+				ui_p.call("draw_pips", self, Vector2(size.x - 4.0 - n * (cell + 3.0), -cell - 4.0), unit, cell)
+		var lfs := 7 if ph else 9
+		var y := (17.0 if ph else 26.0) + (7.0 if ph else 9.0)
+		for l: Array in lines:
+			draw_string(UI.font_body, Vector2(6.0 if ph else 9.0, y), String(l[0]), HORIZONTAL_ALIGNMENT_LEFT, size.x - (10.0 if ph else 16.0), lfs, l[1])
+			y += 9.0 if ph else 12.0
 
 
 ## The boss's name and long bar at the top (brass caps on the bar).
