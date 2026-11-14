@@ -522,8 +522,14 @@ func _twin(label: Label, holder: Node2D) -> void:
 			var sign := UI.label("", "HudHead")
 			var ph := UI.is_phone()
 			sign.add_theme_font_size_override("font_size", 8 if ph else 10)
-			sign.add_theme_constant_override("outline_size", 3)
-			sign.add_theme_color_override("font_color", label.get_meta("sign_colour", UI.C_PARCH))
+			sign.add_theme_constant_override("outline_size", 1 if ph else 3)      # (phone: 3 px of ink on 8 px letters left a dark smear)
+			sign.add_theme_constant_override("shadow_offset_x", 0)
+			sign.add_theme_constant_override("shadow_offset_y", 1)
+			sign.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
+			var ink: Color = label.get_meta("sign_colour", UI.C_PARCH)
+			if ink == UI.C_FAINT:
+				ink = Color(0.80, 0.78, 0.72)          # a place still shut: pale and plain (the dark grey could not be read on sand)
+			sign.add_theme_color_override("font_color", ink)
 			sign.add_theme_color_override("font_outline_color", Color(UI.C_INK, 0.85))
 			sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			copy = sign

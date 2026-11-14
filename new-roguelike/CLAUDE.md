@@ -1490,6 +1490,15 @@ of the reference game (golden forest camp, ship at night, town street): tilt-shi
 - The owner installed two skills for Godot (`wshobson/agents@godot-gdscript-patterns`,
   `gamedev-skills/.../godot-gdscript`) in the Games repo root (.claude/skills, not committed).
 
+## v0.32.0 (14 Nov 2026): phone look round two ("don't stop till it's really really good")
+All in the PHONE (gl_compatibility) path; HD is untouched.
+- `walk_light.gd POST_CODE` (`#ifndef HD_POST`): colours 9% deeper, and one soft pool of light in the middle of
+  the picture (where the knight stands) with the frame sinking into shade (`0.84 + 0.36 * pool`).
+- `view3d_water.gd WATER_CODE`: long flat ripples (noise stretched sideways), the far side mirrors the sky,
+  dark troughs, a thin line of foam lapping at the bank, more glints. The harbour now glitters.
+- World-map signs on the phone: 1 px outline + a drop shadow (3 px of ink on 8 px letters was a smear);
+  a shut place's name is pale parchment, not dark grey.
+
 ## Next: the publisher demo (the owner, 13 Nov 2026, "we will do that later")
 The owner wants grant/publisher money ($30-50k). Plan, in order:
 1. Cut the game down to a DEMO: the town, the first fights and ONE boss. Fewer places, all polished.

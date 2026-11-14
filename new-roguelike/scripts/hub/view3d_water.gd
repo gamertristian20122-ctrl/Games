@@ -27,16 +27,24 @@ void fragment() {
 	float wob = texture(hh_dapple, w * 0.19).r - 0.5;
 	float edge = length(UV * 2.0 - 1.0) * 1.1 + wob * 0.16;
 	if (edge > 1.0) { discard; }
-	float n1 = texture(hh_dapple, w * 0.13 + vec2(TIME * 0.011, TIME * 0.006)).r;
-	float n2 = texture(hh_dapple, w * 0.29 - vec2(TIME * 0.014, -TIME * 0.009)).r;
+	// (v0.32.0) long flat ripples that run across the pond, as still water looks from a low camera:
+	// the noise is stretched sideways; pale bands are the sky in the crests, dark bands the troughs
+	float n1 = texture(hh_dapple, w * vec2(0.06, 0.26) + vec2(TIME * 0.012, TIME * 0.005)).r;
+	float n2 = texture(hh_dapple, w * vec2(0.10, 0.41) - vec2(TIME * 0.015, -TIME * 0.008)).r;
 	float ripple = n1 * n2 * 4.0;
-	vec3 c = mix(vec3(0.03, 0.13, 0.17), vec3(0.10, 0.32, 0.33), smoothstep(0.35, 0.95, edge));
-	c = mix(c, sky, smoothstep(0.85, 1.35, ripple) * 0.5);
+	vec3 c = mix(vec3(0.02, 0.11, 0.16), vec3(0.08, 0.31, 0.31), smoothstep(0.30, 0.95, edge));
+	c = mix(c, sky * 0.75, (1.0 - UV.y) * 0.30);                       // the far side mirrors more of the sky
+	c *= 1.0 - smoothstep(0.75, 0.30, ripple) * 0.22;
+	c = mix(c, sky, smoothstep(0.90, 1.30, ripple) * 0.42);
+	// a thin pale line of foam that laps in and out at the bank
+	float lap = edge + sin(TIME * 0.9 + wob * 24.0) * 0.012;
+	float foam = smoothstep(0.865, 0.895, lap) * (1.0 - smoothstep(0.905, 0.93, lap));
+	c = mix(c, vec3(0.74, 0.90, 0.88), foam * (0.35 + 0.3 * day));
 	c = mix(c, vec3(0.22, 0.17, 0.10), smoothstep(0.93, 1.0, edge));
 	ALBEDO = c;
 	// glints: single art pixels that twinkle where the ripples run highest
-	float twinkle = step(0.955, fract(sin(dot(floor(at * 16.0), vec2(12.9898, 78.233))) * 43758.5453 + TIME * 0.3));
-	EMISSION = vec3(1.0, 0.92, 0.7) * smoothstep(1.3, 1.6, ripple) * twinkle * (0.2 + day) * 1.6 * (1.0 - smoothstep(0.85, 0.95, edge));
+	float twinkle = step(0.94, fract(sin(dot(floor(at * 16.0), vec2(12.9898, 78.233))) * 43758.5453 + TIME * 0.3));
+	EMISSION = vec3(1.0, 0.92, 0.7) * smoothstep(1.2, 1.5, ripple) * twinkle * (0.2 + day) * 1.8 * (1.0 - smoothstep(0.85, 0.95, edge));
 	ROUGHNESS = 1.0;
 	sun_share = sun_at(at);
 }

@@ -241,6 +241,15 @@ void fragment() {
 	float bk = clamp(blue * (1.0 - smoothstep(0.06, 0.5 + 0.1 * max(blue - 0.6, 0.0), l)), 0.0, 0.85);
 	col = mix(col, vec3(l) * vec3(0.55, 0.76, 1.45), bk);
 #endif
+#ifndef HD_POST
+	// THE PHONE (v0.32.0), as in the reference pictures: the colours a little deeper, and one soft pool
+	// of light where the knight stands (the middle of the picture) with the frame sinking into shade
+	col = mix(vec3(l), col, 1.09);
+	vec2 pc = (SCREEN_UV - vec2(0.5, 0.50)) * vec2(1.0, 1.25);
+	float pool = exp(-dot(pc, pc) * 4.5);
+	col *= 0.84 + 0.36 * pool;
+	l = dot(col, vec3(0.299, 0.587, 0.114));
+#endif
 	col = mix(col, col * warm, smoothstep(0.25, 0.9, l));
 	col = mix(col, col * shade, 1.0 - smoothstep(0.0, 0.3, l));
 	col = mix(col, haze, lift * (1.0 - l));
